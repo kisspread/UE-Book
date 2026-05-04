@@ -40,8 +40,7 @@ jobs:
             -d chat_id="${TG_CHAT_ID}" \
             -d text="▶️ UE Doc Pipeline started
           Version: ${{ inputs.version }}
-          Force: ${{ inputs.force || 'incremental' }}" \
-            -d parse_mode=HTML || true
+          Force: ${{ inputs.force || 'incremental' }}" || true
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -50,14 +49,13 @@ jobs:
 
       - name: Install gh CLI
         run: |
-          (type -p wget >/dev/null || apt-get install wget -y) \
-          && mkdir -p -m 755 /etc/apt/keyrings \
-          && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-          && cat $out | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-          && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-          && apt-get update \
-          && apt-get install gh -y
+          sudo mkdir -p -m 755 /etc/apt/keyrings
+          wget -qO /tmp/gh-keyring.gpg https://cli.github.com/packages/githubcli-archive-keyring.gpg
+          sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null < /tmp/gh-keyring.gpg
+          sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gh
 
       - name: Install dependencies
         run: pip install -r v2/requirements.txt
@@ -87,7 +85,6 @@ jobs:
       - name: Notify result
         if: always()
         run: |
-          # Parse results from last_run.json
           if [ -f v2/last_run.json ]; then
             SUMMARY=$(python3 -c "
           import json
@@ -104,7 +101,7 @@ jobs:
           lines.append(f'⏱️ {elapsed:.0f}s')
           if names: lines.append(f'Generated: {\", \".join(names)}')
           if err_names: lines.append(f'Errors: {\", \".join(err_names)}')
-          print('\\\\n'.join(lines))
+          print('\\n'.join(lines))
           ")
           else
             SUMMARY="Pipeline output not found"
@@ -120,5 +117,4 @@ jobs:
             -d text="${STATUS} UE Doc Pipeline finished
           Version: ${{ inputs.version }}
 
-          ${SUMMARY}" \
-            -d parse_mode=HTML || true
+          ${SUMMARY}" || true
