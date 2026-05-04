@@ -6,99 +6,65 @@
 |---|---|
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
+| 包含内容 | ✅ 有（.uplugin 配置文件） |
 | 模块 | 无（纯内容插件） |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-13 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/AllToolsets) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/AllToolsets) | |
 
 ## 用途
 
-`AllToolsets` 是一个**聚合器插件**，其本身不包含任何功能代码。它的唯一作用是**声明对 Epic 官方一系列“工具集”插件的依赖**，并确保它们被一起启用。
+AllToolsets 是一个**聚合器插件**，其本身不包含任何功能代码。它的核心作用是作为一个“开关”，通过声明对一系列其他 Toolsets 插件的依赖，实现**一键启用所有 Epic 官方提供的工具集插件**。
 
-这个插件的存在解决了以下问题：
-1.  **简化管理**：开发者无需手动逐个查找和启用所有相关的工具集插件，只需启用 `AllToolsets` 即可一键启用所有官方工具集。
-2.  **确保一致性**：保证项目中使用了最新、最完整的官方工具集组合，避免遗漏。
-3.  **实验性功能集合**：由于它本身是实验性的 (`IsExperimentalVersion: true`)，并且默认禁用 (`EnabledByDefault: false`)，它代表了 Epic 正在开发或测试中的一整套工具集。
+它解决的问题是：当开发者（尤其是 Epic 内部或需要完整工具链的团队）需要同时使用多个独立的 Toolsets 插件（如 AI 工具集、动画助手工具集、自动化测试工具集等）时，无需在项目设置中手动逐个查找并启用它们，只需启用 `AllToolsets` 这一个插件即可。
 
 ## 使用场景
 
--   你正在开发一个大型项目，希望使用 Epic 提供的所有官方编辑器增强工具和自动化测试工具，但不想逐个查找和配置。
--   你正在评估 Epic 的实验性工具集功能，希望快速启用整个套件进行测试。
--   你希望确保团队所有成员的开发环境都启用了同一套标准工具集。
+- 你正在搭建一个需要完整开发工具链的项目，希望一次性获得 Epic 提供的所有官方工具集。
+- 你是 Epic 内部开发者或参与需要标准化工具环境的项目，需要确保团队成员使用统一的工具集配置。
+- 你想快速体验或测试所有可用的 Toolsets 插件，而不想花时间在插件管理器中逐个搜索和启用。
 
 ## 蓝图用法
 
-此插件本身**不提供任何蓝图节点**。它的价值在于启用其依赖的子插件，这些子插件（如 `AIModuleToolset`, `AnimationAssistantToolset` 等）可能会提供各自的蓝图节点。
-
-启用 `AllToolsets` 后，你可以在蓝图编辑器中查找由其依赖插件提供的功能。
+此插件为纯配置聚合器，不包含任何蓝图可调用的函数或属性。其作用仅体现在插件管理器的启用状态上。
 
 ## C++ 用法
 
-此插件本身**不提供任何 C++ API**。它是一个纯配置插件。
-
-### 头文件引入
-
-无需引入任何头文件。
-
-### 基本用法
-
-在项目的 `.uproject` 文件或编辑器插件设置中启用 `AllToolsets` 插件即可。启用后，其所有依赖的工具集插件将自动被加载。
-
-### 进阶用法
-
-由于此插件是实验性的，你可能需要在代码中检查其依赖的某个特定工具集插件是否已加载，再使用其功能。但这通常不是 `AllToolsets` 本身的功能，而是其依赖插件的功能。
+此插件不包含任何模块或源代码，因此不提供 C++ API。
 
 ## Demo 示例
 
-此插件没有可演示的代码。一个最小的“使用”示例就是在 `.uproject` 文件中启用它：
-
-```json
-{
-    "Plugins": [
-        {
-            "Name": "AllToolsets",
-            "Enabled": true
-        }
-    ]
-}
-```
+不适用。此插件无功能代码，无需示例。
 
 ## 模块依赖
 
-此插件本身没有模块，但它声明了对以下插件的依赖（从 `.uplugin` 的 `Plugins` 数组提取）：
+此插件本身无模块，但其 `.uplugin` 文件声明了对以下其他 Toolsets 插件的依赖。启用 `AllToolsets` 将自动启用这些插件：
 
 | 模块 | 用途 |
 |---|---|
-| `AIModuleToolset` | AI 模块相关的编辑器工具集 |
-| `AnimationAssistantToolset` | 动画辅助工具集 |
+| `AIModuleToolset` | AI 模块相关的工具集 |
+| `AnimationAssistantToolset` | 动画助手工具集 |
 | `AutomationTestToolset` | 自动化测试工具集 |
-| *(其他未在提供的元数据中列出的工具集插件)* | |
-
-**注意**：这些依赖插件本身可能还有各自的模块依赖。
+| `NiagaraToolsets` | Niagara 特效相关的工具集 |
+| *(其他在 .uplugin 中声明的 Toolsets 插件)* | ... |
 
 ## 维护状态
 
 ### 近期更新
 
--   2026-04-24 `0cd2b3ea` [Backout] - CL53139837
--   2026-04-24 `8dc8f3fd` Standardize Epic toolset plugin structure
--   2026-04-23 `c868841e` Rename NiagaraAIAssistantTools plugin to NiagaraToolsets
+- `0cd2b3ea` 2026-04-24 — [Backout] - CL53139837
+- `8dc8f3fd` 2026-04-24 — Standardize Epic toolset plugin structure
+- `c868841e` 2026-04-23 — Rename NiagaraAIAssistantTools plugin to NiagaraToolsets
 
 ### 维护评价
 
--   **创建时间**：非常新（2026年4月创建）。
--   **更新频率**：近期（2026年4月）有活跃的提交，包括结构调整和依赖项重命名。
--   **维护状态**：**活跃维护中**。作为 Epic 官方实验性工具集的聚合器，它会随着子工具集插件的更新而更新。
--   **已知限制**：
-    1.  **实验性**：插件本身标记为实验性，其包含的工具集功能可能不稳定或在未来版本中发生变化。
-    2.  **默认禁用**：需要手动启用。
-    3.  **无自身功能**：完全依赖于子插件。
--   **推荐使用**：如果你希望快速试用 Epic 的全套实验性编辑器工具，可以启用。但在生产项目中，建议根据具体需求，有选择地启用其依赖的子插件，而不是整个聚合器，以保持对项目依赖的精确控制。
+- **创建时间**：2026年4月，非常新的插件。
+- **最近更新**：最近一周内有多次提交，主要涉及结构调整和依赖项重命名，表明该插件及其关联的 Toolsets 生态系统仍在**积极开发和调整中**。
+- **维护状态**：**活跃维护中**。作为 Epic 官方工具链的聚合器，其更新频率与底层 Toolsets 插件的开发进度直接相关。
+- **已知限制**：这是一个实验性插件 (`IsExperimentalVersion: true`)，默认未启用 (`EnabledByDefault: false`)。其包含的 Toolsets 列表可能随版本变化。
+- **推荐使用**：**推荐给需要完整 Epic 工具链的开发者**。但请注意其“实验性”状态，底层工具集可能不稳定或发生变更。对于生产项目，建议根据实际需求单独评估并启用所需的特定 Toolsets 插件。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/AllToolsets)
--   官方文档：无
--   测试用例：无（此插件无代码，因此无测试用例）
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/AllToolsets)

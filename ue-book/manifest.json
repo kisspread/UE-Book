@@ -4148,7 +4148,8 @@
     "AllToolsets": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/AllToolsets/"
+      "doc_path": "docs/5.8/small/AllToolsets/",
+      "forced": true
     },
     "AnimationAssistantToolset": {
       "generated_in": "5.8",
