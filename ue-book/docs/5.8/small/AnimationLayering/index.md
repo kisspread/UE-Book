@@ -30,6 +30,11 @@
 | [AnimationLayering](AnimationLayering.md) | Runtime | 提供动画层叠的核心运行时功能、数据类型和蓝图接口。 |
 | [AnimationLayeringUncookedOnly](AnimationLayeringUncookedOnly.md) | Runtime | 提供仅在编辑器（未打包）环境下使用的动画层叠相关工具和资产处理功能。 |
 
+### 近期更新
+
+- 2026-04-23 `ee8f5281` Animation Layering: Add missing CopyBoneMotion AnimGraphNode
+- 2026-04-17 `1845d881` AnimationLayering: Add new public experimental Animation Layering plugin
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Animation/AnimationLayering)

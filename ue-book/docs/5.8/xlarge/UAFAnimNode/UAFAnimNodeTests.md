@@ -225,11 +225,11 @@ void FSimpleUAFOverlayNode::Evaluate_AnyThread(FPoseContext& Output)
 
 ### 近期更新
 
-```
-- 2026-04-14 a1b2c3d Initial commit: Add UAFAnimNode plugin structure and core nodes.
-- 2026-04-10 e4f5g6h [UAF] Implement base state machine node evaluation.
-- 2026-04-08 i7j8k9l Add test cases for UAF animation blending.
-```
+- 2026-04-15 `8d8f8b4b` Implement blend overwrite and accumulate AnimOps
+- 2026-04-14 `64a20049` Add newly relevant hint to allow nodes to be re-used
+- 2026-04-14 `36403a6d` Add accessor to set the play rate
+- 2026-04-14 `afb293fa` Add construction variants to AnimOp ArrayView
+- 2026-04-14 `d1af965e` Add InputValue anim node/op
 
 ### 维护评价
 

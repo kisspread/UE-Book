@@ -30,6 +30,14 @@
 | `AutomationTestToolset` | Editor | 核心模块，提供测试发现、管理和执行的编辑器工具与界面。 |
 | `AutomationTestToolsetTests` | Editor | 测试模块，包含针对 `AutomationTestToolset` 插件自身功能的自动化测试用例。 |
 
+### 近期更新
+
+- 2026-04-18 `6471b168` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
+- 2026-04-17 `8c911af5` [Backout] - CL52878047
+- 2026-04-17 `9404cd3e` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
+- 2026-04-14 `b391684d` [AutomationTestToolset] Guard `HandleTestsRefreshed` filter reset behind `bDiscoveryRequested`.
+- 2026-04-13 `73b95c3f` [AutomationTestToolset] Move `AutomationTestToolset` tests from `Editor` to `AI.Toolsets` category.
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset)

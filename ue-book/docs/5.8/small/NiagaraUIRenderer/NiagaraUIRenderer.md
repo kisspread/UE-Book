@@ -182,7 +182,8 @@ void UMyNiagaraUIWidget::SetProjectionPlane(ENiagaraUIScreenPlane InPlane)
 
 ### 近期更新
 
-由于该插件为新创建的实验性插件，暂无足够的 git 历史记录可供分析。
+- 2026-04-06 `a55b12c5` - Add debug drawing to UI renderer
+- 2026-04-02 `6697fae6` - Niagara UI Renderer plugin
 
 ### 维护评价
 

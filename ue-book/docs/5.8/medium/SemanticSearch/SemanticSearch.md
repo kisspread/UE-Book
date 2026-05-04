@@ -342,11 +342,11 @@ void RegisterMyProcessor()
 
 ### 近期更新
 
-由于该插件创建于 2026-04-10（未来日期），无法获取实际的 git log 信息。以下基于源码分析推断：
-
-- 插件标记为 `IsExperimentalVersion: true`，`EnabledByDefault: false`
-- 版本号为 `0.1`，描述中明确标注"Very early work in progress"
-- 代码结构完整，包含 48 个源文件，涵盖完整的资产处理、索引、搜索管线
+- 2026-04-14 `4f427608` Add support for blueprints (just thumbnail based for now)
+- 2026-04-14 `9a4f650f` ? [SemanticSearch] Improve indexing UX and fix progress tracking
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-13 `e76c6114` Prevent FAISS index from being saved multiple times OnFilesLoaded
+- 2026-04-10 `37224b75` [Semantic Seach] Only allow modules to be packaged in editor builds.
 
 ### 维护评价
 

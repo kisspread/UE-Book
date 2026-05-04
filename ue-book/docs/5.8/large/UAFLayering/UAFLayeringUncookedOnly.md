@@ -236,10 +236,11 @@ void FMyLayerStackTool::CreateAndPopulateLayerStack()
 
 ### 近期更新
 
-由于无法访问具体的 git log，基于插件元数据进行分析：
-- 创建时间：2026-03-04
-- 版本：0.1
-- 状态：实验性 (`IsExperimentalVersion: true`)，默认禁用 (`EnabledByDefault: false`)
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-10 `797a6da6` Rename GetComponent to GetOrAddComponent to match functionality
+- 2026-03-05 `dd5531fb` UAF Layering:
+- 2026-03-04 `d9a06590` Update UAF blend profiles
+- 2026-03-04 `95766f52` UAF Layering: Expand outliner items per default
 
 ### 维护评价
 

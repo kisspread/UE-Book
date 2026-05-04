@@ -159,7 +159,11 @@ void AMessageBusTesterDemoActor::OpenMessageBusTesterPanel()
 
 ### 近期更新
 
-由于该插件创建于 2025-11-10，且当前提供的信息中没有包含 git log，无法获取具体的近期提交记录。根据其创建时间和实验性状态，它很可能是一个非常新的、仍在积极开发中的插件。
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-01-15 `738ab46a` Fixed localization warnings
+- 2025-11-27 `29081f24` Fixup API macros
+- 2025-11-20 `f8d6103d` Enable NDK 29 for Android, fix compilation issues
+- 2025-11-10 `248fda82` Fix the statistics panel not updating with a remote client resets its UDP Messaging settings.
 
 ### 维护评价
 

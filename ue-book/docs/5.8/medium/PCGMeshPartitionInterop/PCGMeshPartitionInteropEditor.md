@@ -161,7 +161,11 @@ AMyMeshPartitionActor::AMyMeshPartitionActor()
 
 ### 近期更新
 
-由于未提供具体的 Git 日志，无法列出近期的 commit 记录。插件创建于 2026 年 3 月，标记为实验性（`IsExperimentalVersion: true`）且默认未启用（`EnabledByDefault: false`）。
+- 2026-04-16 `445f07c6` [Mesh Partition]
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-03-27 `71c13324` Fixed localization warnings
+- 2026-03-20 `4f6ea1be` [Mesh Partition]
+- 2026-03-05 `29f7cf7b` [Mesh Partition]
 
 ### 维护评价
 

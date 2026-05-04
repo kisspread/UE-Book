@@ -130,7 +130,11 @@ UMyMassAnimationEntity::UMyMassAnimationEntity()
 
 ### 近期更新
 
-由于该插件创建于 2026-02-17（未来时间点，可能为占位符或测试数据），无法获取有效的 git log 信息。
+- 2026-04-23 `746b6abb` Move UAF-Mass trajectory bridge into engine UAFMass plugin
+- 2026-04-01 `58888966` [MassCore] Move headers to Public/Mass/ subdirectory, strip Mass prefix from filenames
+- 2026-03-30 `161605b0` [Mass] Extract MassCore module from MassEntity
+- 2026-03-11 `1d291fa1` [Mass] Multi-fragment observer support in UMassObserverProcessor
+- 2026-02-17 `baf983b4` [SubmitTool - UAF] Add validators to build and run LowLevelTests for UAF plugins
 
 ### 维护评价
 

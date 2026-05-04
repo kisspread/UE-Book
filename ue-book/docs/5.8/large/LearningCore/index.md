@@ -162,11 +162,11 @@ void ALearningCoreDemo::BeginPlay()
 
 ### 近期更新
 
-```
-- 2026-04-14 abc1234 Initial commit for LearningCore plugin.
-- 2026-04-10 def5678 Add basic network definition and inference API.
-- 2026-04-08 ghi9012 Setup plugin structure and build system.
-```
+- 2026-04-24 `553c9043` [LearningAgents] Pass NNECpuPath to python directly
+- 2026-04-24 `e424031e` [LearningAgents] Fix python site-package paths on Linux and Mac
+- 2026-04-21 `34a398cd` LearningCore: Added tolerance to FindTime and ContainsTime functions.
+- 2026-04-16 `ec5e1d55` LearningCore: Added binary search optimization for find on frames and frame ranges indices.
+- 2026-04-14 `25720c8e` LearningCore: Added Sparse and NamedSparse observations
 
 ### 维护评价
 

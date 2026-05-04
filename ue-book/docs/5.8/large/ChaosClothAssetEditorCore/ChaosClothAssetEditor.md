@@ -247,9 +247,11 @@ FMyClothEditorExtension::GetSimulationVisualization(UChaosClothAssetEditorMode* 
 
 ### 近期更新
 
-```
-- 2026-04-07 初始提交，创建 ChaosClothAssetEditorCore 插件
-```
+- 2026-04-21 `600f5cce` [Chaos Cloth Asset] Moved Cloth Asset modules out of beta.
+- 2026-04-14 `0d40a411` [ContentBrowser] New Add Menu Physics Menu
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-10 `0be5748b` Dataflow : Move all assets to use the new way to bind dataflow menu commends in the asset context me
+- 2026-04-07 `30afa955` Cloth : Use the new template user experience
 
 > 注：该插件创建时间较新（2026-04-07），git log 仅显示初始提交。多个类标记了 `UE_DEPRECATED(5.8, ...)`，表明部分功能正在从编辑器模块向运行时模块迁移。
 

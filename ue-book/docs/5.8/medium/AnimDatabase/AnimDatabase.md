@@ -280,7 +280,11 @@ AnimDatabase 依赖以下插件（来自 .uplugin 的 Plugins 字段）：
 
 ### 近期更新
 
-由于该插件为实验性插件且创建时间较新（2026-04-10），暂无可用的 git log 历史记录。
+- 2026-04-24 `05f62ee5` AnimGen: Added support for debug drawing on the canvas
+- 2026-04-22 `2fc4ab35` AnimGen: No longer auto-refresh when changing frame ranges or frame attributes on the various editor
+- 2026-04-22 `e4a63951` AnimDatabase: Added a couple more frame attribute functions
+- 2026-04-10 `4f791a26` AnimDatabase: Adjusted how bone weights are computed to improve autoencoder accuracy on foot joints
+- 2026-04-10 `3f7370fe` AnimGen: Added attribute smoothing to help reduce the noise
 
 ### 维护评价
 

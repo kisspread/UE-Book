@@ -126,7 +126,10 @@ TSharedRef<SDockTab> FMyTerminalPanel::OnSpawnTab(const FSpawnTabArgs& Args)
 
 ### 近期更新
 
-由于该插件创建时间较新（2026-04-08），且位于 Experimental 目录下，暂无足够的 git 历史记录可供分析。
+- 2026-04-20 `c9454ad1` [Terminal] Forward full key/modifier matrix to the *PTY* via a dedicated translator.
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-09 `98f0c628` [Terminal] Add `StartupCommands` setting to execute commands on new terminal window creation.
+- 2026-04-08 `ca248609` [Terminal] Move `Terminal` plugin to `Engine/Plugins/Experimental`.
 
 ### 维护评价
 

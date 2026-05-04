@@ -74,9 +74,11 @@ MCP 服务器通常由插件自动管理生命周期。开发者主要关注的�
 
 ### 近期更新
 
-```
-- 2026-04-18 初始提交，包含完整的 MCP 服务器实现和测试套件
-```
+- 2026-04-24 `626f7a76` [ModelContextProtocol] Strict-type check for `isError` field in `IsToolResultSuccess`.
+- 2026-04-22 `8be45e82` [ModelContextProtocol] Log tool call results at *VeryVerbose* for symmetry with input logging.
+- 2026-04-22 `b103f5fa` [ModelContextProtocol] Add analytics instrumentation for tool calls and sessions.
+- 2026-04-19 `f4f92133` [ModelContextProtocol] Fix flaky `ToolsetRegistry.Deferred` tests by dropping `bConnected` assertion
+- 2026-04-18 `6471b168` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
 
 ### 维护评价
 

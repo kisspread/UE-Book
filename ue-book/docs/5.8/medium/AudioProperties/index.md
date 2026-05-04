@@ -34,6 +34,14 @@
 - [AudioProperties 模块文档](AudioProperties.md)
 - [AudioPropertiesEditor 模块文档](AudioPropertiesEditor.md)
 
+### 近期更新
+
+- 2026-04-14 `01c9ce5d` [ContentBrowser] New Add Menu Audio Menu
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-02-12 `68131ef1` Instantiate Audio Properties Name Parser when creating new Property Sheet, as this is the de facto d
+- 2026-01-15 `738ab46a` Fixed localization warnings
+- 2026-01-14 `4b3fba09` Walk UClass inheritance when overriding property details from a property sheet to avoid visualizatio
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/AudioProperties)

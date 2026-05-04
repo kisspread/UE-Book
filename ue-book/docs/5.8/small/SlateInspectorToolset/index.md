@@ -160,9 +160,11 @@ FReply SMyEditorTool::OnInspectClicked()
 
 ### 近期更新
 
-```
-- 2026-04-03 abc1234 初始提交：创建 SlateInspectorToolset 插件框架，包含基础检查和测试模块。
-```
+- 2026-04-18 `6471b168` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
+- 2026-04-17 `8c911af5` [Backout] - CL52878047
+- 2026-04-17 `9404cd3e` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
+- 2026-04-13 `69570138` [SlateInspectorToolset] Move `SlateInspectorToolset` tests from `Editor` to `AI.Toolsets` category.
+- 2026-04-03 `7f02bd73` [AI Toolsets]: Move all toolsets to load at post engine init to simplify registration when toolset r
 
 ### 维护评价
 

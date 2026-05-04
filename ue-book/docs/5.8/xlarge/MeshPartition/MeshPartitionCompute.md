@@ -163,11 +163,11 @@ void FMyCustomChannelProcessor::ProcessChannelData(FRHICommandListImmediate& RHI
 
 ### 近期更新
 
-由于此插件为实验性且创建时间较新（2026年），其 git 历史可能较短。假设的近期更新模式如下（基于实验性插件的典型开发周期）：
-
--   2026-04-23 `a1b2c3d` Initial commit of MeshPartitionCompute module with core rasterization shaders.
--   2026-04-20 `e4f5g6h` Optimized border fill shader for better cache utilization.
--   2026-04-18 `i7j8k9l` Added MIP chain generation compute shaders (FillPull and FillPush).
+- 2026-04-24 `44085aba` Mesh Partition: avoid passing hard-coded SM6 argument to GenerateMips. Fixes a crash on projects wit
+- 2026-04-24 `473e05b1` Mesh Terrain sculpt layer tools:
+- 2026-04-24 `bb6e1b38` Guard against empty UV-Layers and unset element triangles
+- 2026-04-23 `2a27739c` Add a path where the for-all-modifiers iteration allows null modifiers to be silently skipped, to av
+- 2026-04-23 `dbed6742` Fix broken handling of UV seams at mesh skirt vertices -- take care to copy the UVs from the vertice
 
 ### 维护评价
 

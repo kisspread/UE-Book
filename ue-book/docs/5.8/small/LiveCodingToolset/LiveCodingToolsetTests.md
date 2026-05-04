@@ -59,7 +59,7 @@ LiveCodingToolset 是一个围绕 Unreal Engine 的 **Live Coding（实时编码
 
 ### 近期更新
 
-由于该插件创建时间较新（2026-04-23），暂无足够的 git 历史记录可供分析。
+- 2026-04-23 `0d1e3ace` [LiveCodingToolset] Move the *Live Coding* *MCP* tool into a dedicated Engine plugin under `Engine/P
 
 ### 维护评价
 

@@ -236,7 +236,11 @@ void UMyTestRunnerTool::OnTestsRunComplete(const FString& ResultJson, bool bSucc
 
 ### 近期更新
 
-由于该插件创建于 2026 年 4 月，且为实验性插件，目前没有可用的 git 提交历史记录。其维护状态完全取决于 Epic Games 内部的开发计划。
+- 2026-04-18 `6471b168` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
+- 2026-04-17 `8c911af5` [Backout] - CL52878047
+- 2026-04-17 `9404cd3e` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
+- 2026-04-14 `b391684d` [AutomationTestToolset] Guard `HandleTestsRefreshed` filter reset behind `bDiscoveryRequested`.
+- 2026-04-13 `73b95c3f` [AutomationTestToolset] Move `AutomationTestToolset` tests from `Editor` to `AI.Toolsets` category.
 
 ### 维护评价
 

@@ -58,11 +58,8 @@
 
 ### 近期更新
 
-```
-- 2024-03-15 1a2b3c4 Initial commit for Niagara UI Renderer plugin
-- 2024-03-10 d5e6f7g Add editor module for asset editing and preview
-- 2024-03-05 h8i9j0k Implement core UI sprite renderer for Niagara CPU particles
-```
+- 2026-04-06 `a55b12c5` - Add debug drawing to UI renderer
+- 2026-04-02 `6697fae6` - Niagara UI Renderer plugin
 
 ### 维护评价
 

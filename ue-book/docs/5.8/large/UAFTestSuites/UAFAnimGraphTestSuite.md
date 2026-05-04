@@ -243,7 +243,11 @@ public:
 
 ### 近期更新
 
-由于此插件为新建插件（2026-03-30），暂无历史 commit 记录可供分析。
+- 2026-04-14 `12eb7efc` Fix FBindableXxx binding serialization issues when used with UAF traits
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-10 `797a6da6` Rename GetComponent to GetOrAddComponent to match functionality
+- 2026-04-06 `4ba19be0` Add function binding support to FBindableValue
+- 2026-03-30 `0df5eb4c` Add FBindableTransform for binding to FTransform values (it has less overhead than using FBindableSt
 
 ### 维护评价
 

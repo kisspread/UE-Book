@@ -247,11 +247,11 @@ public:
 
 ### 近期更新
 
-由于该插件创建时间为 2026-03-19（属于 UE 5.8 开发周期），git log 信息暂不可用。根据 .uplugin 元数据：
-
-- 插件标记为 `IsExperimentalVersion: true`
-- 标记为"临时插件"（temporary plugin）
-- 仅包含测试模块，无运行时功能
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-03-23 `4803c798` [Editor TRS] Move from EditorTRSGizmo -> EditorInteractiveToolsFramework
+- 2026-03-20 `befbf13e` [Gizmos] Add RowTags to gizmo settings customization so they have unique names
+- 2026-03-20 `65f0592e` [ITF Gizmos] Gizmo and Duplicate actions trigger when piloting an Actor and using LMB + Alt
+- 2026-03-19 `ce9d9a8c` [Viewport ITF] Condense the OnTerminateDragSequence() and OnForceEndCapture() functions (neither of 
 
 ### 维护评价
 

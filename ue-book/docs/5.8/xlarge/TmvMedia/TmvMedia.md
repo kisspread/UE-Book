@@ -431,9 +431,11 @@ TmvMedia 模块本身的 Build.cs 依赖信息未完整提供，但从插件整�
 
 ### 近期更新
 
-```
-- 2026-04-18 abc1234 Initial commit of TmvMedia plugin with tiled-mipmap video framework
-```
+- 2026-04-24 `c7065a2f` [Tmv Media] Transcoding Commandlet
+- 2026-04-23 `efcad028` HDR: Fix HDR normalization factor across media causing incorrect brightness levels going from/to the
+- 2026-04-22 `323ab3ea` [TmvMediaUtils] Addressing Ux feedback for the MRG node
+- 2026-04-20 `4677c750` [TmvMedia] Adding start timecode support to tmv container
+- 2026-04-18 `1a28370d` [TmvMediaUtils] New version of the Movie Render Graph Tmv Encoder node.
 
 > 注：该插件创建于 2026-04-18，属于全新提交的实验性插件，尚无历史更新记录。
 

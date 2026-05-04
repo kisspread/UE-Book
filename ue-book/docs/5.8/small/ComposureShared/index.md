@@ -62,9 +62,7 @@ static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaterialFinder(
 
 ### 近期更新
 
-```
-- 2026-04-08 e2f9d530 Composure: Add ComposureShared plugin and migrate generic assets from legacy Composure to be shared
-```
+- 2026-04-08 `e2f9d530` Composure: Add ComposureShared plugin and migrate generic assets from legacy Composure to be shared 
 
 ### 维护评价
 

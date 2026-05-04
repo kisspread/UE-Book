@@ -262,7 +262,11 @@ void ASimpleMetaHumanCrowdActor::SetTrajectory_Implementation(const FTransformTr
 
 ### 近期更新
 
-由于这是一个非常新的插件（创建于 2026 年 4 月），且标记为实验性 (`IsExperimentalVersion: true`)，其 git 历史可能非常有限。基于其创建时间和实验性状态，可以推断它正处于**早期积极开发阶段**。
+- 2026-04-24 `56296dcc` The MetaHuman Crowd pipeline now does most of its processing on Mesh Descriptions and builds skeleta
+- 2026-04-24 `8d3ed3d0` [MHCrowd] Add missing plugin dependencies
+- 2026-04-24 `16907471` [MHCrowd] Add in experimental UAF support example for MH Crowds
+- 2026-04-23 `a0e976cb` [MHCrowd] Fix for animation merging
+- 2026-04-21 `227124bc` [MHCrowd] Add MetaHuman Mass classes to the MHCrowd plugin
 
 ### 维护评价
 

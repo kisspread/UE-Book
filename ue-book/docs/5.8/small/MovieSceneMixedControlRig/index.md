@@ -30,6 +30,14 @@
 | `MovieSceneMixedControlRig` | Runtime | 提供核心运行时逻辑，定义混合 Control Rig 轨道所需的数据结构和评估功能。 |
 | `MovieSceneMixedControlRigEditor` | Runtime | 提供编辑器集成，将混合功能注册到 Sequencer 编辑器界面中，使用户能够操作。 |
 
+### 近期更新
+
+- 2026-04-21 `eb0331ca` Anim Mixer: Bake To Control Rig and Anim Sequence support for anim mixer for binding, mixer track an
+- 2026-04-17 `62f614c6` Sequencer: Fix Control Rig gizmo drawing offset in Animation Mixer with multi-layer root motion
+- 2026-04-07 `8bf4fb4b` Sequencer: Restructure mixer evaluation around layers; new mask blend system
+- 2026-03-31 `b48e7f74` Fix shutdown issue with MovieScene
+- 2026-03-31 `c7aaaa03` Sequencer: Enable root motion extraction for control rig in Animation Mixer.
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/MovieSceneMixedControlRig)

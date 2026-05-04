@@ -119,9 +119,8 @@ void FMyMetaHumanAnimProcessor::ProcessAnimationData()
 
 ### 近期更新
 
-```
-- 2026-02-02 (初始提交) 插件创建，包含 MetaHumanAnimationSerialization 和 MetaHumanAnimationSerializationEditor 两个模块
-```
+- 2026-02-03 `f39fc2f9` Correct filename misspelling
+- 2026-02-02 `b1aae96f` Add new plugin to efficiently serialize facial animation curve data
 
 > ⚠️ 该插件创建时间较新（2026-02-02），git 历史记录有限。
 

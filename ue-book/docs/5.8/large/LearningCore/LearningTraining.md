@@ -232,7 +232,11 @@ void FMyTrainingAgent::Shutdown()
 
 ### 近期更新
 
-由于该插件创建于未来时间（2026-04-14），且为实验性插件，无法获取有效的 Git 提交历史。其维护状态和更新频率未知。
+- 2026-04-24 `553c9043` [LearningAgents] Pass NNECpuPath to python directly
+- 2026-04-24 `e424031e` [LearningAgents] Fix python site-package paths on Linux and Mac
+- 2026-04-21 `34a398cd` LearningCore: Added tolerance to FindTime and ContainsTime functions.
+- 2026-04-16 `ec5e1d55` LearningCore: Added binary search optimization for find on frames and frame ranges indices.
+- 2026-04-14 `25720c8e` LearningCore: Added Sparse and NamedSparse observations
 
 ### 维护评价
 

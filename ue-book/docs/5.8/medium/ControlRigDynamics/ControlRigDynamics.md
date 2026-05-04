@@ -328,20 +328,11 @@ void FMyRigUnit_CustomDynamicsStep::Execute()
 
 ### 近期更新
 
-由于该插件位于 `Engine/Plugins/Experimental/` 目录且为实验性插件，无法从提供的信息中获取具体 git log。基于源码版本历史（`FRigDynamicsObjectVersion`）可以看出该插件经历了大量迭代：
-
-```
-版本演进（从 FRigDynamicsObjectVersion 推断）：
-- FirstVersion → ParticleExtraDamping → DynamicsTargetMode → GravityMultiplier
-- PlaneDefinition → PlaneExtents → Constraints → HelperStructs
-- BonePositionAndOrientationSetting → NoCollisionColliders → CollisionParticles
-- TargetModeFloat → SimulationSpace → ConeLimits → AngleLimit
-- ResetDetection → ParticleValueDisplay → ConstraintVisualization
-- AngleLimitVisualization → CollideWithColliders → ParticleDrag
-- DragSettings → Confiners → RemoveSolverLevelColliders
-```
-
-共 **24 个版本迭代**，说明该插件经历了持续的功能开发和重构。
+- 2026-04-24 `a0e35edd` Control Rig Dynamics - Debugging widget
+- 2026-04-23 `c20a96e5` Control Rig Dynamics - Add cvars for visualization and debugging
+- 2026-04-23 `f919acb2` Control rig dynamics - remove support for having colliders in the solver itself (an unnecessary comp
+- 2026-04-23 `f9267d2f` Control Rig Dynamics - add input to the spawn nodes so the user can specify the default name of comp
+- 2026-04-23 `a339e1e7` Control Rig Dynamics - Add support for confiners
 
 ### 维护评价
 

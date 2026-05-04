@@ -205,7 +205,7 @@ void UOutfitDemoSubsystem::CreateAndPopulateOutfit()
 
 ### 近期更新
 
-由于该插件创建于未来时间（2026-04-22），无法获取真实的 git log。基于其 `IsBetaVersion: true` 和 `EnabledByDefault: false` 的状态，可以推断它正处于**早期积极开发阶段**。
+- 2026-04-22 `11dbcfb1` [Chaos Outfit Asset] Moved tthe ChaosOutfitAsset plugin out of Experimental and made it Beta.
 
 ### 维护评价
 

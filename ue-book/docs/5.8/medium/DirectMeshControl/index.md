@@ -30,6 +30,14 @@ Direct Mesh Control 插件提供了一种直观的动画制作方式，允许用
 | `DirectMeshControl` | Runtime | 提供核心的网格表面选择、交互与动画数据管理功能。 |
 | `DirectMeshControlRig` | Runtime | 将 Direct Mesh Control 的动画数据与 UE5 的动画系统（Control Rig）进行集成。 |
 
+### 近期更新
+
+- 2026-04-24 `7faab2ed` Direct Mesh Control: fixed library and proxies being GCd
+- 2026-04-16 `090ee041` Animation Mode: support for hovered state and colors for gizmo libraries
+- 2026-04-15 `f5734c77` Direct Mesh Control: documentation pass
+- 2026-04-14 `da21a789` Direct Mesh Control: remove useless logs
+- 2026-04-14 `331f0ab8` Direct Mesh Control: force DMC components animation updates in editor
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Animation/DirectMeshControl)

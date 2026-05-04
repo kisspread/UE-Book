@@ -222,7 +222,8 @@ void FNNEModelTestRunner::LogTestResults(int32 NumSuccesses, int32 NumSkipped, i
 
 ### 近期更新
 
-由于此插件创建于 2026-03-30，属于较新的实验性插件，暂无历史 commit 记录可查。
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-03-30 `6ab5ee4d` [NNE] NNEModelTests to experimental.
 
 ### 维护评价
 

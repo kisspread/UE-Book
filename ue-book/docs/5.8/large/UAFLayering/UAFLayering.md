@@ -193,9 +193,11 @@ void AMyLayeredCharacter::ToggleAttackLayer(bool bEnable)
 
 ### 近期更新
 
-由于创建时间为未来日期（2026-03-04），无法获取真实的 git 历史记录。此信息为占位符。
-
-- 2026-03-04 (初始提交) 插件创建，包含基础层叠框架、Trait 实现和蓝图工具函数。
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-10 `797a6da6` Rename GetComponent to GetOrAddComponent to match functionality
+- 2026-03-05 `dd5531fb` UAF Layering:
+- 2026-03-04 `d9a06590` Update UAF blend profiles
+- 2026-03-04 `95766f52` UAF Layering: Expand outliner items per default
 
 ### 维护评价
 

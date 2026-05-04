@@ -184,7 +184,7 @@ UChaosOutfitAsset* UMyOutfitGenerator::GenerateOutfitFromCloth(UChaosClothAsset*
 
 ### 近期更新
 
-由于插件创建于 2026-04-22，且当前信息未提供具体的 git log，无法列出近期提交记录。基于其创建时间和“实验性”标签，可以推断它是一个处于早期开发阶段的新功能。
+- 2026-04-22 `11dbcfb1` [Chaos Outfit Asset] Moved tthe ChaosOutfitAsset plugin out of Experimental and made it Beta.
 
 ### 维护评价
 

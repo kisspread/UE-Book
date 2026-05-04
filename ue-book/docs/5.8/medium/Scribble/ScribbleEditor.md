@@ -184,9 +184,11 @@ void SMyScribbleWindow::Construct(const FArguments& InArgs)
 
 ### 近期更新
 
--   2025-10-29 `abc1234` 初始提交，创建 Scribble 插件基础结构。
--   2025-11-15 `def5678` 实现核心图表面板和节点交互逻辑。
--   2025-12-01 `ghi9012` 修复节点拖拽和选择时的边界计算问题。
+- 2026-02-27 `4d4a6c4f` Slate Dynamic Invalidation - SNodePanel and SGraphPanel.
+- 2025-12-17 `8a277ed0` Removing `SNodePanel`'s unused attributes
+- 2025-11-03 `2dd6004c` Scribble: Fix uninitialized member
+- 2025-10-30 `8c30ef9e` Scribble Plugin First Steps
+- 2025-10-29 `d5d2f174` [Backout] - CL47509645
 
 ### 维护评价
 

@@ -116,6 +116,14 @@ def build_module_context(info: dict, module: dict, branch: str) -> str:
         lines.append(f"```cpp\n{content}\n```")
         lines.append("")
 
+
+    # Git log
+    if info.get("commits"):
+        lines.append("## Recent git history")
+        for c in info["commits"]:
+            lines.append(f"- `{c['sha'][:8]}` {c['date'][:10]} — {c['message']}")
+        lines.append("")
+
     return "\n".join(lines)
 
 
@@ -131,6 +139,14 @@ def build_summary_context(info: dict, module_docs: list[dict]) -> str:
     lines.append("请基于以上模块文档，生成一个精简的 index.md 汇总文档。")
     lines.append("包含：属性表、总体用途、模块列表、各模块一句话总结、使用场景、相关链接。")
     lines.append("不需要重复各模块的详细 API，引用模块文档即可。")
+
+
+    # Git log
+    if info.get("commits"):
+        lines.append("## Recent git history")
+        for c in info["commits"]:
+            lines.append(f"- `{c['sha'][:8]}` {c['date'][:10]} — {c['message']}")
+        lines.append("")
 
     return "\n".join(lines)
 

@@ -280,11 +280,11 @@ void ARtspStreamActor::OnMediaOpenFailed(FString FailedUrl)
 
 ### 近期更新
 
-由于该插件刚创建（2026-03-20），尚无后续更新记录。以下为初始提交信息：
-
-```
-- 2026-03-20 (initial) RTSPMedia 插件初始提交，包含完整的 RTSP 客户端、RTP 解包、H.264 解码和抖动缓冲区实现
-```
+- 2026-04-20 `3ed2062b` ElectraDecoders: modernized the decoder factory to be more usable for other clients
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-10 `e18acf19` More unreachable code warning fixes
+- 2026-03-25 `160bc52a` [RTSPMedia] Enable bProvideCpuBuffer by default
+- 2026-03-20 `1330a56b` [RTSPMedia] Add Provide CPU buffer option
 
 ### 维护评价
 

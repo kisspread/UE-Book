@@ -128,7 +128,8 @@ IMPLEMENT_MODULE(FNNEModelTestsEditorModule, NNEModelTestsEditor)
 
 ### 近期更新
 
-由于该插件创建日期较新（2026-03-30），且为实验性插件，暂无足够的 git 历史记录可供分析。
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-03-30 `6ab5ee4d` [NNE] NNEModelTests to experimental.
 
 ### 维护评价
 

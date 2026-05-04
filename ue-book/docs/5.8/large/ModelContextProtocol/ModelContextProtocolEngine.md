@@ -271,7 +271,11 @@ bool UMyGameTools::SetActorLocation(const FString& ActorName, const FVector& New
 
 ### 近期更新
 
-由于该插件创建于 2026-04-18，属于全新实验性插件，尚无足够的 git 历史记录可供分析。
+- 2026-04-24 `626f7a76` [ModelContextProtocol] Strict-type check for `isError` field in `IsToolResultSuccess`.
+- 2026-04-22 `8be45e82` [ModelContextProtocol] Log tool call results at *VeryVerbose* for symmetry with input logging.
+- 2026-04-22 `b103f5fa` [ModelContextProtocol] Add analytics instrumentation for tool calls and sessions.
+- 2026-04-19 `f4f92133` [ModelContextProtocol] Fix flaky `ToolsetRegistry.Deferred` tests by dropping `bConnected` assertion
+- 2026-04-18 `6471b168` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
 
 ### 维护评价
 

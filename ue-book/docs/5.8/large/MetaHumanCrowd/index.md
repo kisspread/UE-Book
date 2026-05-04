@@ -31,6 +31,14 @@ MetaHuman Crowd 插件旨在解决在 Unreal Engine 场景中高效生成和管�
 | `MetaHumanCrowd` | Runtime | 提供核心的群体生成、管理、LOD 和动画逻辑。 |
 | `MetaHumanCrowdEditor` | Runtime | 提供编辑器内的工具、资产和 UI，用于在编辑器中设计和预览人群。 |
 
+### 近期更新
+
+- 2026-04-24 `56296dcc` The MetaHuman Crowd pipeline now does most of its processing on Mesh Descriptions and builds skeleta
+- 2026-04-24 `8d3ed3d0` [MHCrowd] Add missing plugin dependencies
+- 2026-04-24 `16907471` [MHCrowd] Add in experimental UAF support example for MH Crowds
+- 2026-04-23 `a0e976cb` [MHCrowd] Fix for animation merging
+- 2026-04-21 `227124bc` [MHCrowd] Add MetaHuman Mass classes to the MHCrowd plugin
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/MetaHuman/MetaHumanCrowd)

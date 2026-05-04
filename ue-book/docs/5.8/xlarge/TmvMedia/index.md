@@ -200,7 +200,11 @@ void ATmvDemoActor::HandleMediaOpened()
 
 ### 近期更新
 
-由于这是一个新创建的插件（创建于 2026 年），尚无历史提交记录。其维护状态将取决于 Epic Games 对虚拟制片和高级媒体格式的持续投入。
+- 2026-04-24 `c7065a2f` [Tmv Media] Transcoding Commandlet
+- 2026-04-23 `efcad028` HDR: Fix HDR normalization factor across media causing incorrect brightness levels going from/to the
+- 2026-04-22 `323ab3ea` [TmvMediaUtils] Addressing Ux feedback for the MRG node
+- 2026-04-20 `4677c750` [TmvMedia] Adding start timecode support to tmv container
+- 2026-04-18 `1a28370d` [TmvMediaUtils] New version of the Movie Render Graph Tmv Encoder node.
 
 ### 维护评价
 

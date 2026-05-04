@@ -324,7 +324,11 @@ void FMyVolumeExample::RunExample()
 
 ### 近期更新
 
-由于该插件创建于 2026-01-24，属于全新实验性插件，暂无历史 commit 记录可供分析。
+- 2026-04-17 `49f946b4` [Dataflow]
+- 2026-01-27 `bc6b71b7` Dataflow:
+- 2026-01-24 `fa3617d8` [Backout] - CL50148102
+- 2026-01-24 `b815c490` Dataflow:
+- 2026-01-24 `67495252` Dataflow:
 
 ### 维护评价
 

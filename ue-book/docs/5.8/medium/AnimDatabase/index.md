@@ -31,6 +31,14 @@ AnimDatabase 是一个实验性插件，旨在提供一个用于管理和查询�
 | `AnimDatabase` | Runtime | 提供动画数据库的核心运行时功能，包括数据存储、查询接口和与动画系统的集成。 |
 | `AnimDatabaseEditor` | Editor | 提供在虚幻编辑器中创建、编辑和管理动画数据库资产的工具和界面。 |
 
+### 近期更新
+
+- 2026-04-24 `05f62ee5` AnimGen: Added support for debug drawing on the canvas
+- 2026-04-22 `2fc4ab35` AnimGen: No longer auto-refresh when changing frame ranges or frame attributes on the various editor
+- 2026-04-22 `e4a63951` AnimDatabase: Added a couple more frame attribute functions
+- 2026-04-10 `4f791a26` AnimDatabase: Adjusted how bone weights are computed to improve autoencoder accuracy on foot joints
+- 2026-04-10 `3f7370fe` AnimGen: Added attribute smoothing to help reduce the noise
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Animation/AnimDatabase)

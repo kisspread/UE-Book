@@ -177,9 +177,11 @@ void FMyAsyncPhysicsDemo::SimulateOneStep(float DeltaTime)
 
 ### 近期更新
 
-由于该插件创建于未来时间点 (2026-03-31)，无法获取真实的 git 提交历史。以下为基于其“实验性”状态的推测性描述：
-- 预计处于早期开发阶段，更新可能频繁但变动较大。
-- 主要围绕核心异步功能的实现、稳定性和性能优化。
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-13 `55407bce` Chaos API: Updated the scene api by splitting Tick into Start/End Tick. Also added WaitOnTick.
+- 2026-04-09 `c63a4c15` Chaos API: Updating shape instance to handle materials.
+- 2026-04-08 `6d6dbc44` Chaos API: Adding PhysicsService and removing the dependecy of the async plugin on dataflow.
+- 2026-03-31 `5f0e43c9` Chaos API: Updating shape instance to handle convex, triangle mesh, and height field geometry types.
 
 ### 维护评价
 

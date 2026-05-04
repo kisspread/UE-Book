@@ -30,6 +30,11 @@
 | `MetaHumanAnimationSerialization` | Runtime | 提供 MetaHuman 动画数据的核心序列化与反序列化功能，是运行时数据处理的基础。 |
 | `MetaHumanAnimationSerializationEditor` | Editor | 提供在 Unreal Editor 中导入、预览和编辑 MetaHuman 动画数据的工具与界面集成。 |
 
+### 近期更新
+
+- 2026-02-03 `f39fc2f9` Correct filename misspelling
+- 2026-02-02 `b1aae96f` Add new plugin to efficiently serialize facial animation curve data
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/MetaHuman/MetaHumanAnimationTools)

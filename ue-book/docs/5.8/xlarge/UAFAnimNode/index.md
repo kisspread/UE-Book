@@ -94,7 +94,11 @@ public:
 
 ### 近期更新
 
-由于创建时间为未来日期（2026-04-14），无法获取有效的 Git 历史记录。此信息可能为测试数据。
+- 2026-04-15 `8d8f8b4b` Implement blend overwrite and accumulate AnimOps
+- 2026-04-14 `64a20049` Add newly relevant hint to allow nodes to be re-used
+- 2026-04-14 `36403a6d` Add accessor to set the play rate
+- 2026-04-14 `afb293fa` Add construction variants to AnimOp ArrayView
+- 2026-04-14 `d1af965e` Add InputValue anim node/op
 
 ### 维护评价
 

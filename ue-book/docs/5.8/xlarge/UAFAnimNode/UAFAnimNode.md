@@ -280,9 +280,11 @@ namespace UE::UAF
 
 ### 近期更新
 
-```
-- 2026-04-14 abc1234 Initial commit of UAFAnimNode plugin
-```
+- 2026-04-15 `8d8f8b4b` Implement blend overwrite and accumulate AnimOps
+- 2026-04-14 `64a20049` Add newly relevant hint to allow nodes to be re-used
+- 2026-04-14 `36403a6d` Add accessor to set the play rate
+- 2026-04-14 `afb293fa` Add construction variants to AnimOp ArrayView
+- 2026-04-14 `d1af965e` Add InputValue anim node/op
 
 > 注：该插件创建于 2026-04-14，属于实验性新增插件，暂无更多 git 历史记录。
 

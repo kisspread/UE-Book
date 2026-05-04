@@ -235,7 +235,11 @@ bool UMyLayerItemDetails::HandleDoubleClick(
 
 ### 近期更新
 
-由于该插件创建时间较新（2026-03-04），且为实验性插件，暂无足够的 git 历史记录可供分析。
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-10 `797a6da6` Rename GetComponent to GetOrAddComponent to match functionality
+- 2026-03-05 `dd5531fb` UAF Layering:
+- 2026-03-04 `d9a06590` Update UAF blend profiles
+- 2026-03-04 `95766f52` UAF Layering: Expand outliner items per default
 
 ### 维护评价
 

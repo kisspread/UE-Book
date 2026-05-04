@@ -177,7 +177,11 @@ void FMyAudioAssetDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 
 ### 近期更新
 
-由于该插件创建于 2026 年 1 月 14 日，且为实验性插件，目前无法从提供的 git log 中获取具体的近期提交记录。其维护状态将高度依赖于 Epic Games 内部对音频工具链的开发计划。
+- 2026-04-14 `01c9ce5d` [ContentBrowser] New Add Menu Audio Menu
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-02-12 `68131ef1` Instantiate Audio Properties Name Parser when creating new Property Sheet, as this is the de facto d
+- 2026-01-15 `738ab46a` Fixed localization warnings
+- 2026-01-14 `4b3fba09` Walk UClass inheritance when overriding property details from a property sheet to avoid visualizatio
 
 ### 维护评价
 

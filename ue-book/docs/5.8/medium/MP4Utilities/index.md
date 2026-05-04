@@ -32,6 +32,14 @@ MP4Utilities 插件提供了一套底层工具，用于在 Unreal Engine 中直�
 | `MP4Boxes` | 实现 MP4 文件格式的核心数据结构，用于解析和构建 MP4 容器中的各种“盒子”（Box）。 | [MP4Boxes.md](MP4Boxes.md) |
 | `MP4Muxer` | 负责将多个媒体轨道（如音频、视频）多路复用打包成一个完整的 MP4 文件。 | [MP4Muxer.md](MP4Muxer.md) |
 
+### 近期更新
+
+- 2026-04-23 `0cd64869` ElectraDecoders: Fixed an issue where mp4a audio is wrapped inside a wave box in a QuickTime file. T
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-03-04 `3fbcc0a3` Protron: Await one sample from each selected track (video and audio, if enabled) to be ready before 
+- 2026-03-03 `6ea9f319` MP4Utilities: fixed handling of encrypted tracks that have no senc box; only reading well-known root
+- 2026-02-25 `ecaf73c3` Electra: Added a new mp4 handler path to the DASH and HLS segment reader; added common encryption ha
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Media/MP4Utilities)

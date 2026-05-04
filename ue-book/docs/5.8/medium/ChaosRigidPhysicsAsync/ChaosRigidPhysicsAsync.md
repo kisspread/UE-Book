@@ -290,11 +290,11 @@ void FAsyncPhysicsDemo::Shutdown()
 
 ### 近期更新
 
-由于该插件创建于 2026-03-31（未来日期），无法获取实际的 git 历史记录。以下为基于源码结构的分析：
-
-- 插件处于早期开发阶段，大量 API 标记为 `UE_INTERNAL`
-- 许多功能存在但被注释掉（如 CCD、MACD、最大速度限制、重力组等）
-- GeometryCollection 的 GT/PT 实现中大量函数被注释，仅有基础的激活/状态查询功能
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-13 `55407bce` Chaos API: Updated the scene api by splitting Tick into Start/End Tick. Also added WaitOnTick.
+- 2026-04-09 `c63a4c15` Chaos API: Updating shape instance to handle materials.
+- 2026-04-08 `6d6dbc44` Chaos API: Adding PhysicsService and removing the dependecy of the async plugin on dataflow.
+- 2026-03-31 `5f0e43c9` Chaos API: Updating shape instance to handle convex, triangle mesh, and height field geometry types.
 
 ### 维护评价
 

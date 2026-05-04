@@ -164,7 +164,11 @@ public:
 
 ### 近期更新
 
-由于该插件为实验性新插件（创建于 2026-03-31），暂无足够的 git 历史记录可供分析。
+- 2026-04-21 `eb0331ca` Anim Mixer: Bake To Control Rig and Anim Sequence support for anim mixer for binding, mixer track an
+- 2026-04-17 `62f614c6` Sequencer: Fix Control Rig gizmo drawing offset in Animation Mixer with multi-layer root motion
+- 2026-04-07 `8bf4fb4b` Sequencer: Restructure mixer evaluation around layers; new mask blend system
+- 2026-03-31 `b48e7f74` Fix shutdown issue with MovieScene
+- 2026-03-31 `c7aaaa03` Sequencer: Enable root motion extraction for control rig in Animation Mixer.
 
 ### 维护评价
 

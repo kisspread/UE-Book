@@ -90,7 +90,11 @@ PartitionSettings->bGenerateLODs = true;
 
 ### 近期更新
 
-由于插件创建时间非常近（2026年3月），尚无足够的历史提交记录可供分析。其维护状态将取决于 Epic Games 对实验性功能的后续投入。
+- 2026-04-16 `445f07c6` [Mesh Partition]
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-03-27 `71c13324` Fixed localization warnings
+- 2026-03-20 `4f6ea1be` [Mesh Partition]
+- 2026-03-05 `29f7cf7b` [Mesh Partition]
 
 ### 维护评价
 

@@ -50,9 +50,7 @@
 
 ### 近期更新
 
-```
-- 2026-04-10 77af3950 [EDA] Add SequencerTools toolset with Anim Mixer split into separate plugin
-```
+- 2026-04-10 `77af3950` [EDA] Add SequencerTools toolset with Anim Mixer split into separate plugin
 
 ### 维护评价
 

@@ -183,7 +183,11 @@ bool UMyCustomAudioParser::ParseProperties(TObjectPtr<UObject> TargetObject, con
 
 ### 近期更新
 
-由于该插件创建于 2026 年 1 月 14 日，且标记为实验性，目前无法获取到有意义的 git 提交历史。它很可能是一个非常新的、仍在积极开发中的功能。
+- 2026-04-14 `01c9ce5d` [ContentBrowser] New Add Menu Audio Menu
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-02-12 `68131ef1` Instantiate Audio Properties Name Parser when creating new Property Sheet, as this is the de facto d
+- 2026-01-15 `738ab46a` Fixed localization warnings
+- 2026-01-14 `4b3fba09` Walk UClass inheritance when overriding property details from a property sheet to avoid visualizatio
 
 ### 维护评价
 

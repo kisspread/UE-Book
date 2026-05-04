@@ -130,9 +130,11 @@ void FMyCustomSetupUnit::Execute()
 
 ### 近期更新
 
-```
-- 2026-04-14 abc1234 初始提交：创建 DirectMeshControl 和 DirectMeshControlRig 模块，实现基于多边形组的形状库生成功能。
-```
+- 2026-04-24 `7faab2ed` Direct Mesh Control: fixed library and proxies being GCd
+- 2026-04-16 `090ee041` Animation Mode: support for hovered state and colors for gizmo libraries
+- 2026-04-15 `f5734c77` Direct Mesh Control: documentation pass
+- 2026-04-14 `da21a789` Direct Mesh Control: remove useless logs
+- 2026-04-14 `331f0ab8` Direct Mesh Control: force DMC components animation updates in editor
 
 ### 维护评价
 

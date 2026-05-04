@@ -133,11 +133,11 @@ void FMyDynamicsRigUnit::Execute(const FRigUnitContext& Context)
 
 ### 近期更新
 
-由于插件创建时间为未来日期（2026-04-23），无法获取真实的 Git 提交历史。以下为基于实验性插件常见模式的模拟示例：
-
-- 2026-04-23 `a1b2c3d` Initial commit: Add ControlRigDynamics plugin with basic simulation and constraint nodes.
-- 2026-04-20 `e4f5g6h` Experimental: Integrate PhysicsControl for improved collider handling.
-- 2026-04-15 `i7j8k9l` Refactor: Split runtime and editor modules, add debug visualization widget.
+- 2026-04-24 `a0e35edd` Control Rig Dynamics - Debugging widget
+- 2026-04-23 `c20a96e5` Control Rig Dynamics - Add cvars for visualization and debugging
+- 2026-04-23 `f919acb2` Control rig dynamics - remove support for having colliders in the solver itself (an unnecessary comp
+- 2026-04-23 `f9267d2f` Control Rig Dynamics - add input to the spawn nodes so the user can specify the default name of comp
+- 2026-04-23 `a339e1e7` Control Rig Dynamics - Add support for confiners
 
 ### 维护评价
 

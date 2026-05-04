@@ -154,11 +154,11 @@ bool FUAFAssetCreationTest::RunTest(const FString& Parameters)
 
 ### 近期更新
 
-```
-- 2026-03-30 abc1234 Initial commit: Add UAF test suites plugin structure and core test utilities.
-- 2026-03-28 def5678 Implement asset data tests for UAFGraphFactoryAsset registration and class hierarchy.
-- 2026-03-25 ghi9012 Add blueprint test library with VM compilation and model access functions.
-```
+- 2026-04-14 `12eb7efc` Fix FBindableXxx binding serialization issues when used with UAF traits
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-10 `797a6da6` Rename GetComponent to GetOrAddComponent to match functionality
+- 2026-04-06 `4ba19be0` Add function binding support to FBindableValue
+- 2026-03-30 `0df5eb4c` Add FBindableTransform for binding to FTransform values (it has less overhead than using FBindableSt
 
 ### 维护评价
 

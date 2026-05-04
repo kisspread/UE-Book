@@ -160,11 +160,11 @@ void AAnimGenDemoCharacter::Tick(float DeltaTime)
 
 ### 近期更新
 
-由于提供的创建时间为未来日期（2026-04-20），且未提供 git log 信息，无法获取真实的提交历史。以下为基于实验性插件状态的推测性描述：
-
--   **初始提交**：插件框架搭建，包含自编码器模式和控制器模式的编辑器工具基础。
--   **功能迭代**：逐步完善训练流程、可视化工具和动画图节点。
--   **实验性标记**：插件一直处于 `IsExperimentalVersion: true` 状态，表明其 API 和功能可能不稳定。
+- 2026-04-24 `05f62ee5` AnimGen: Added support for debug drawing on the canvas
+- 2026-04-22 `2fc4ab35` AnimGen: No longer auto-refresh when changing frame ranges or frame attributes on the various editor
+- 2026-04-21 `f3505bce` AnimGen: Exposed seed as parameter
+- 2026-04-21 `0e8451f1` AnimGen: Various small fixes
+- 2026-04-20 `4955ba48` AnimGen: Added support for multiple progress bars to make training Controller status more clear.
 
 ### 维护评价
 

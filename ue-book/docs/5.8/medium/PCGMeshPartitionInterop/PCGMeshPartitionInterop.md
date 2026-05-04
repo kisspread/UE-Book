@@ -306,7 +306,11 @@ FPCGElementPtr UMyMegaMeshModifierSettings::CreateElement() const
 
 ### 近期更新
 
-由于该插件创建于 2026-03-05，属于全新插件，暂无历史 commit 记录可查。
+- 2026-04-16 `445f07c6` [Mesh Partition]
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-03-27 `71c13324` Fixed localization warnings
+- 2026-03-20 `4f6ea1be` [Mesh Partition]
+- 2026-03-05 `29f7cf7b` [Mesh Partition]
 
 ### 维护评价
 

@@ -88,7 +88,8 @@ public:
 
 ### 近期更新
 
-由于创建时间为未来日期（2026-03-30），当前（2025年）无法获取有效的 git log 历史记录。此信息可能为测试数据或占位符。
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-03-30 `6ab5ee4d` [NNE] NNEModelTests to experimental.
 
 ### 维护评价
 

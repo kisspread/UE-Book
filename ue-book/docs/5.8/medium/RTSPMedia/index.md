@@ -31,6 +31,14 @@
 | [RTSPMedia](RTSPMedia.md) | Runtime | 核心运行时模块，负责 RTSP 连接、流媒体解复用、解码和播放。 |
 | [RTSPMediaEditor](RTSPMediaEditor.md) | Editor | 编辑器集成模块，提供媒体源资产的创建和编辑器内的播放预览功能。 |
 
+### 近期更新
+
+- 2026-04-20 `3ed2062b` ElectraDecoders: modernized the decoder factory to be more usable for other clients
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-10 `e18acf19` More unreachable code warning fixes
+- 2026-03-25 `160bc52a` [RTSPMedia] Enable bProvideCpuBuffer by default
+- 2026-03-20 `1330a56b` [RTSPMedia] Add Provide CPU buffer option
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Media/RTSPMedia)

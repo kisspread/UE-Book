@@ -32,6 +32,14 @@
 
 *详细的 API 和用法请参考各模块的独立文档：[UAFMass.md](UAFMass.md) 和 [UAFMassTests.md](UAFMassTests.md)。*
 
+### 近期更新
+
+- 2026-04-23 `746b6abb` Move UAF-Mass trajectory bridge into engine UAFMass plugin
+- 2026-04-01 `58888966` [MassCore] Move headers to Public/Mass/ subdirectory, strip Mass prefix from filenames
+- 2026-03-30 `161605b0` [Mass] Extract MassCore module from MassEntity
+- 2026-03-11 `1d291fa1` [Mass] Multi-fragment observer support in UMassObserverProcessor
+- 2026-02-17 `baf983b4` [SubmitTool - UAF] Add validators to build and run LowLevelTests for UAF plugins
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/UAF/UAFMass)

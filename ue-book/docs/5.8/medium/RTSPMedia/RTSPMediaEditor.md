@@ -193,7 +193,11 @@ void AMyRtspPlayerActor::BeginPlay()
 
 ### 近期更新
 
-由于插件创建时间非常近（2026-03-20），且未提供具体的 Git 提交历史，无法列出近期更新记录。可以推断该插件处于初始发布阶段。
+- 2026-04-20 `3ed2062b` ElectraDecoders: modernized the decoder factory to be more usable for other clients
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-10 `e18acf19` More unreachable code warning fixes
+- 2026-03-25 `160bc52a` [RTSPMedia] Enable bProvideCpuBuffer by default
+- 2026-03-20 `1330a56b` [RTSPMedia] Add Provide CPU buffer option
 
 ### 维护评价
 

@@ -248,7 +248,11 @@ IMPLEMENT_MODULE(FMySandboxEditorModule, MySandboxEditor)
 
 ### 近期更新
 
-由于未提供具体的 Git 日志，无法列出近期的 commit 历史。基于插件的创建时间（2026年）和实验性状态，它很可能处于早期开发阶段。
+- 2026-04-24 `0b495ee3` Sandbox: Add support for reloading levels that are WP based.
+- 2026-04-23 `d023aa3e` Close editors and deselect after iteration is complete ? doing this inside
+- 2026-04-17 `c812283d` Fix spurious check that was occurring inside FNewSandboxArgs from within AI Assistant Sandbox Automa
+- 2026-04-16 `bf487acb` File Sandbox: Fix not being able to persist files in Lyra. The fix is to flush the file perform atte
+- 2026-04-16 `6ca4de07` File Sandbox: Fix file disappearing from content browser after persist.
 
 ### 维护评价
 

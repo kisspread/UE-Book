@@ -215,7 +215,11 @@ void AMP4DemoActor::AnalyzeMP4File()
 
 ### 近期更新
 
-由于创建时间为 2026 年 2 月，这是一个非常新的插件。基于其创建时间和当前提供的代码结构，可以推断它正处于积极开发或刚刚发布的阶段。
+- 2026-04-23 `0cd64869` ElectraDecoders: Fixed an issue where mp4a audio is wrapped inside a wave box in a QuickTime file. T
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-03-04 `3fbcc0a3` Protron: Await one sample from each selected track (video and audio, if enabled) to be ready before 
+- 2026-03-03 `6ea9f319` MP4Utilities: fixed handling of encrypted tracks that have no senc box; only reading well-known root
+- 2026-02-25 `ecaf73c3` Electra: Added a new mp4 handler path to the DASH and HLS segment reader; added common encryption ha
 
 ### 维护评价
 

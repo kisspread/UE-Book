@@ -168,7 +168,11 @@ void ASubsonicDemoActor::StopAudio()
 
 ### 近期更新
 
-由于插件创建时间较新（2026-04-02），暂无历史提交记录可查询。
+- 2026-04-23 `129c3dc2` Fix/silence PVS warnings
+- 2026-04-14 `01c9ce5d` [ContentBrowser] New Add Menu Audio Menu
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-13 `cb602f27` Subsonic: Subscriber implementation consolidation and removal of action and event scope
+- 2026-04-02 `cd4230bd` Remove code optimization submitted by mistake
 
 ### 维护评价
 

@@ -214,7 +214,11 @@ UMetaHumanCrowdEditorPipeline* UMyCrowdManager::GetCrowdPipeline() const
 
 ### 近期更新
 
-由于该插件创建于 2026 年（未来时间点，可能为测试数据），且当前信息中未提供 git log，无法获取具体的近期提交记录。基于其“实验性”状态，预计仍在积极开发中。
+- 2026-04-24 `56296dcc` The MetaHuman Crowd pipeline now does most of its processing on Mesh Descriptions and builds skeleta
+- 2026-04-24 `8d3ed3d0` [MHCrowd] Add missing plugin dependencies
+- 2026-04-24 `16907471` [MHCrowd] Add in experimental UAF support example for MH Crowds
+- 2026-04-23 `a0e976cb` [MHCrowd] Fix for animation merging
+- 2026-04-21 `227124bc` [MHCrowd] Add MetaHuman Mass classes to the MHCrowd plugin
 
 ### 维护评价
 

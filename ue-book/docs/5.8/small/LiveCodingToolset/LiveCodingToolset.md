@@ -136,7 +136,7 @@ void FMyEditorTool::TriggerAndCheckLiveCoding()
 
 ### 近期更新
 
-由于未提供具体的 Git 提交历史，无法列出近期更新记录。
+- 2026-04-23 `0d1e3ace` [LiveCodingToolset] Move the *Live Coding* *MCP* tool into a dedicated Engine plugin under `Engine/P
 
 ### 维护评价
 

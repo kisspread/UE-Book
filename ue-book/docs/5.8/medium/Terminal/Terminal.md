@@ -277,9 +277,10 @@ void SMyTerminalPanel::Construct(const FArguments& InArgs)
 
 ### 近期更新
 
-```
-- 2026-04-08 初始提交 — Terminal 插件首次引入
-```
+- 2026-04-20 `c9454ad1` [Terminal] Forward full key/modifier matrix to the *PTY* via a dedicated translator.
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-09 `98f0c628` [Terminal] Add `StartupCommands` setting to execute commands on new terminal window creation.
+- 2026-04-08 `ca248609` [Terminal] Move `Terminal` plugin to `Engine/Plugins/Experimental`.
 
 ### 维护评价
 

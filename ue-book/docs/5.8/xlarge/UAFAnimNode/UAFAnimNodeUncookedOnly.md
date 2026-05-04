@@ -195,11 +195,11 @@ void FAnimNode_SimpleUAFBlend::GatherDebugData(FNodeDebugData& DebugData)
 
 ### 近期更新
 
-由于创建时间为未来日期（2026-04-14），无法获取真实的 git 历史记录。以下为基于典型实验性插件维护模式的模拟信息：
-
-- 2026-04-14 `a1b2c3d` 初始提交：创建 UAFAnimNode 插件基础结构，包含核心动画节点模块。
-- 2026-03-28 `e4f5g6h` 功能更新：添加 UAFAnimNodeUncookedOnly 模块，实现动画节点的编辑器自定义界面。
-- 2026-03-15 `i7j8k9l` 实验性标记：将插件标记为实验性版本，禁用默认启用。
+- 2026-04-15 `8d8f8b4b` Implement blend overwrite and accumulate AnimOps
+- 2026-04-14 `64a20049` Add newly relevant hint to allow nodes to be re-used
+- 2026-04-14 `36403a6d` Add accessor to set the play rate
+- 2026-04-14 `afb293fa` Add construction variants to AnimOp ArrayView
+- 2026-04-14 `d1af965e` Add InputValue anim node/op
 
 ### 维护评价
 

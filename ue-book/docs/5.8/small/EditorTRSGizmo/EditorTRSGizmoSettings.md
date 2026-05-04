@@ -149,7 +149,11 @@ bool UMyGizmoConfigTool::IsNewGizmoEnabled() const
 
 ### 近期更新
 
-由于这是一个实验性临时插件，其更新记录可能不频繁或仅限于特定开发周期。基于其创建时间（2026年），它可能是一个较新的实验项目。
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-03-23 `4803c798` [Editor TRS] Move from EditorTRSGizmo -> EditorInteractiveToolsFramework
+- 2026-03-20 `befbf13e` [Gizmos] Add RowTags to gizmo settings customization so they have unique names
+- 2026-03-20 `65f0592e` [ITF Gizmos] Gizmo and Duplicate actions trigger when piloting an Actor and using LMB + Alt
+- 2026-03-19 `ce9d9a8c` [Viewport ITF] Condense the OnTerminateDragSequence() and OnForceEndCapture() functions (neither of 
 
 ### 维护评价
 

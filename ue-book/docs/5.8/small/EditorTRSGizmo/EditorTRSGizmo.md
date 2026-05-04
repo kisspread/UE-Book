@@ -137,9 +137,11 @@ void FMyGizmoTest::TestTransform()
 
 ### 近期更新
 
-```
-- 2026-03-19 (创建) 初始创建，作为 5.8 新版 TRS Gizmo 的临时开发插件
-```
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-03-23 `4803c798` [Editor TRS] Move from EditorTRSGizmo -> EditorInteractiveToolsFramework
+- 2026-03-20 `befbf13e` [Gizmos] Add RowTags to gizmo settings customization so they have unique names
+- 2026-03-20 `65f0592e` [ITF Gizmos] Gizmo and Duplicate actions trigger when piloting an Actor and using LMB + Alt
+- 2026-03-19 `ce9d9a8c` [Viewport ITF] Condense the OnTerminateDragSequence() and OnForceEndCapture() functions (neither of 
 
 > 由于该插件创建时间较近（2026-03-19），git log 中暂无后续更新记录。
 

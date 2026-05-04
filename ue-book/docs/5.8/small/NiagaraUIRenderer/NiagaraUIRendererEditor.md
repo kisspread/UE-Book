@@ -136,7 +136,8 @@ void UMyUIParticleWidget::NativeConstruct()
 
 ### 近期更新
 
-由于该插件为新创建（2026-04-02），暂无历史 commit 记录。
+- 2026-04-06 `a55b12c5` - Add debug drawing to UI renderer
+- 2026-04-02 `6697fae6` - Niagara UI Renderer plugin
 
 ### 维护评价
 

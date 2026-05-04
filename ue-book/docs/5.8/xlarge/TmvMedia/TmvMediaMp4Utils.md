@@ -257,7 +257,11 @@ void FTmvMediaDemo::PrintMp4Info(const FString& FilePath)
 
 ### 近期更新
 
-由于提供的创建时间为未来日期（2026-04-18），无法从当前时间点（2025年）获取有效的 git log 历史。此信息可能为占位符或测试数据。
+- 2026-04-24 `c7065a2f` [Tmv Media] Transcoding Commandlet
+- 2026-04-23 `efcad028` HDR: Fix HDR normalization factor across media causing incorrect brightness levels going from/to the
+- 2026-04-22 `323ab3ea` [TmvMediaUtils] Addressing Ux feedback for the MRG node
+- 2026-04-20 `4677c750` [TmvMedia] Adding start timecode support to tmv container
+- 2026-04-18 `1a28370d` [TmvMediaUtils] New version of the Movie Render Graph Tmv Encoder node.
 
 ### 维护评价
 

@@ -194,11 +194,11 @@ void UMySubsonicSubscriber::OnEventPostExecute(const FSubsonicExecutor& InExecut
 
 ### 近期更新
 
-由于插件创建日期为未来时间（2026-04-02），无法获取真实的 git 历史记录。以下为基于实验性插件的典型维护模式推测：
-
-- (推测) 初始提交：包含核心框架、事件系统、编辑器工具基础。
-- (推测) 功能迭代：添加新的内置动作类型、优化参数绑定、完善编辑器UX。
-- (推测) Bug修复：修复事件执行顺序、内存泄漏、编辑器崩溃等问题。
+- 2026-04-23 `129c3dc2` Fix/silence PVS warnings
+- 2026-04-14 `01c9ce5d` [ContentBrowser] New Add Menu Audio Menu
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-13 `cb602f27` Subsonic: Subscriber implementation consolidation and removal of action and event scope
+- 2026-04-02 `cd4230bd` Remove code optimization submitted by mistake
 
 ### 维护评价
 

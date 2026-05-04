@@ -30,6 +30,14 @@
 | `ChaosRigidPhysicsAsync` | Runtime | **核心模块**。实现了异步的 Chaos 刚体物理世界、求解器和相关组件。 |
 | `ChaosRigidPhysicsAsyncTests` | Runtime | **测试模块**。包含针对核心模块功能的自动化测试用例。 |
 
+### 近期更新
+
+- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
+- 2026-04-13 `55407bce` Chaos API: Updated the scene api by splitting Tick into Start/End Tick. Also added WaitOnTick.
+- 2026-04-09 `c63a4c15` Chaos API: Updating shape instance to handle materials.
+- 2026-04-08 `6d6dbc44` Chaos API: Adding PhysicsService and removing the dependecy of the async plugin on dataflow.
+- 2026-03-31 `5f0e43c9` Chaos API: Updating shape instance to handle convex, triangle mesh, and height field geometry types.
+
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosRigidPhysicsAsync)

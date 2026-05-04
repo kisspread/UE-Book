@@ -151,7 +151,8 @@ public:
 
 ### 近期更新
 
-由于该插件为实验性且创建时间较新，暂无可用的 git log 历史记录。
+- 2026-04-23 `ee8f5281` Animation Layering: Add missing CopyBoneMotion AnimGraphNode
+- 2026-04-17 `1845d881` AnimationLayering: Add new public experimental Animation Layering plugin
 
 ### 维护评价
 

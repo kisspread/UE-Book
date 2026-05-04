@@ -221,7 +221,8 @@ void FMetaHumanAnimSerializationExample::RunExample()
 
 ### 近期更新
 
-由于该插件创建时间较新（2026-02-02），暂无可用的 git 历史记录。
+- 2026-02-03 `f39fc2f9` Correct filename misspelling
+- 2026-02-02 `b1aae96f` Add new plugin to efficiently serialize facial animation curve data
 
 ### 维护评价
 
