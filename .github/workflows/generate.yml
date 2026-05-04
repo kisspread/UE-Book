@@ -27,10 +27,21 @@ jobs:
       LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
       LLM_MODEL: ${{ secrets.LLM_MODEL }}
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+      TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Notify start
+        run: |
+          curl -s "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TG_CHAT_ID}" \
+            -d text="▶️ UE Doc Pipeline started
+          Version: ${{ inputs.version }}
+          Force: ${{ inputs.force || 'incremental' }}" \
+            -d parse_mode=HTML || true
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -52,6 +63,7 @@ jobs:
         run: pip install -r v2/requirements.txt
 
       - name: Run pipeline
+        id: pipeline
         run: |
           ARGS="--version ${{ inputs.version }}"
           if [ "${{ inputs.force }}" = "all" ]; then
@@ -59,9 +71,11 @@ jobs:
           elif [ -n "${{ inputs.force }}" ]; then
             ARGS="$ARGS --force $(echo '${{ inputs.force }}' | tr ',' ' ')"
           fi
-          python3 -m v2.run $ARGS
+          python3 -m v2.run $ARGS 2>&1 | tee ../pipeline_output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
 
       - name: Commit and push
+        if: steps.pipeline.outputs.exit_code == '0'
         run: |
           cd ..
           git config user.name "github-actions[bot]"
@@ -69,3 +83,42 @@ jobs:
           git add ue-book/docs/ ue-book/manifest.json
           git diff --cached --quiet || git commit -m "docs: update UE ${{ inputs.version }} plugin docs [skip ci]"
           git push
+
+      - name: Notify result
+        if: always()
+        run: |
+          # Parse results from last_run.json
+          if [ -f v2/last_run.json ]; then
+            SUMMARY=$(python3 -c "
+          import json
+          d = json.load(open('v2/last_run.json'))
+          results = d.get('results', [])
+          success = sum(1 for r in results if r.get('success'))
+          failed = sum(1 for r in results if not r.get('success'))
+          elapsed = d.get('elapsed', 0)
+          names = [r['name'] for r in results if r.get('success')][:5]
+          err_names = [r['name'] for r in results if not r.get('success')][:3]
+          lines = []
+          if success: lines.append(f'✅ {success} succeeded')
+          if failed: lines.append(f'❌ {failed} failed')
+          lines.append(f'⏱️ {elapsed:.0f}s')
+          if names: lines.append(f'Generated: {\", \".join(names)}')
+          if err_names: lines.append(f'Errors: {\", \".join(err_names)}')
+          print('\\\\n'.join(lines))
+          ")
+          else
+            SUMMARY="Pipeline output not found"
+          fi
+
+          STATUS="✅"
+          if [ "${{ steps.pipeline.outputs.exit_code }}" != "0" ]; then
+            STATUS="❌"
+          fi
+
+          curl -s "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TG_CHAT_ID}" \
+            -d text="${STATUS} UE Doc Pipeline finished
+          Version: ${{ inputs.version }}
+
+          ${SUMMARY}" \
+            -d parse_mode=HTML || true
