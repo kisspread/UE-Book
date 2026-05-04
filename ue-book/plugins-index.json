@@ -1,0 +1,4074 @@
+[
+  {
+    "name": "GeometryScripting",
+    "category": "Runtime",
+    "src_files": 100,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/GeometryScripting"
+  },
+  {
+    "name": "OnlineSubsystem",
+    "category": "Online",
+    "src_files": 97,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineSubsystem"
+  },
+  {
+    "name": "AudioModulation",
+    "category": "Runtime",
+    "src_files": 95,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/AudioModulation"
+  },
+  {
+    "name": "ConcertSyncClient",
+    "category": "Developer",
+    "src_files": 95,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/Concert/ConcertSync/ConcertSyncClient"
+  },
+  {
+    "name": "ConcertSyncTest",
+    "category": "Developer",
+    "src_files": 93,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/Concert/ConcertSync/ConcertSyncTest"
+  },
+  {
+    "name": "MetaHumanSDK",
+    "category": "MetaHuman",
+    "src_files": 89,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/MetaHuman/MetaHumanSDK"
+  },
+  {
+    "name": "AudioSynesthesia",
+    "category": "Runtime",
+    "src_files": 87,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/AudioSynesthesia"
+  },
+  {
+    "name": "SVGImporter",
+    "category": "VirtualProduction",
+    "src_files": 85,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/SVGImporter"
+  },
+  {
+    "name": "CameraCalibrationCore",
+    "category": "VirtualProduction",
+    "src_files": 84,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/CameraCalibrationCore"
+  },
+  {
+    "name": "GeoReferencing",
+    "category": "Runtime",
+    "src_files": 84,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/GeoReferencing"
+  },
+  {
+    "name": "PropertyAnimator",
+    "category": "VirtualProduction",
+    "src_files": 82,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/PropertyAnimator"
+  },
+  {
+    "name": "ConcertMain",
+    "category": "Developer",
+    "src_files": 81,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/Concert/ConcertMain"
+  },
+  {
+    "name": "Composite",
+    "category": "Compositing",
+    "src_files": 80,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Compositing/Composite"
+  },
+  {
+    "name": "EnhancedInput",
+    "category": "EnhancedInput",
+    "src_files": 79,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/EnhancedInput"
+  },
+  {
+    "name": "WaveformEditor",
+    "category": "Editor",
+    "src_files": 78,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/WaveformEditor"
+  },
+  {
+    "name": "CinematicAssemblyTools",
+    "category": "VirtualProduction",
+    "src_files": 74,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/CinematicAssemblyTools"
+  },
+  {
+    "name": "PlasticSourceControl",
+    "category": "Developer",
+    "src_files": 74,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/PlasticSourceControl"
+  },
+  {
+    "name": "TraceSourceFilters",
+    "category": "Developer",
+    "src_files": 73,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/TraceSourceFiltering"
+  },
+  {
+    "name": "EaseCurveTool",
+    "category": "Animation",
+    "src_files": 72,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/EaseCurveTool"
+  },
+  {
+    "name": "MDLImporter",
+    "category": "Enterprise",
+    "src_files": 72,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Enterprise/MDLImporter"
+  },
+  {
+    "name": "OpenCV",
+    "category": "Runtime",
+    "src_files": 69,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/OpenCV"
+  },
+  {
+    "name": "DatasmithContent",
+    "category": "Enterprise",
+    "src_files": 68,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Enterprise/DatasmithContent"
+  },
+  {
+    "name": "GameplayTagsEditor",
+    "category": "Editor",
+    "src_files": 68,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/GameplayTagsEditor"
+  },
+  {
+    "name": "NetcodeUnitTest",
+    "category": "NetcodeUnitTest",
+    "src_files": 68,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/NetcodeUnitTest/NetcodeUnitTest"
+  },
+  {
+    "name": "ContextualAnimation",
+    "category": "Experimental",
+    "src_files": 66,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Experimental/Animation/ContextualAnimation"
+  },
+  {
+    "name": "MLAdapter",
+    "category": "AI",
+    "src_files": 66,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/AI/MLAdapter"
+  },
+  {
+    "name": "VariantManager",
+    "category": "Enterprise",
+    "src_files": 66,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Enterprise/VariantManager"
+  },
+  {
+    "name": "ZoneGraph",
+    "category": "Runtime",
+    "src_files": 66,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/ZoneGraph"
+  },
+  {
+    "name": "InterchangeTests",
+    "category": "Tests",
+    "src_files": 65,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Tests/InterchangeTests"
+  },
+  {
+    "name": "ChaosClothAsset",
+    "category": "ChaosClothAsset",
+    "src_files": 64,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/ChaosClothAsset"
+  },
+  {
+    "name": "AIAssistant",
+    "category": "Experimental",
+    "src_files": 63,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Experimental/AIAssistant"
+  },
+  {
+    "name": "InstancedActors",
+    "category": "Runtime",
+    "src_files": 63,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/InstancedActors"
+  },
+  {
+    "name": "ComputeFramework",
+    "category": "Runtime",
+    "src_files": 61,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/ComputeFramework"
+  },
+  {
+    "name": "TemplateSequence",
+    "category": "MovieScene",
+    "src_files": 61,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/MovieScene/TemplateSequence"
+  },
+  {
+    "name": "GameFeatures",
+    "category": "Runtime",
+    "src_files": 60,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/GameFeatures"
+  },
+  {
+    "name": "VirtualCamera",
+    "category": "VirtualProduction",
+    "src_files": 60,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/VirtualCamera"
+  },
+  {
+    "name": "LidarPointCloud",
+    "category": "Enterprise",
+    "src_files": 59,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Enterprise/LidarPointCloud"
+  },
+  {
+    "name": "ConcertSyncServer",
+    "category": "Developer",
+    "src_files": 58,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/Concert/ConcertSync/ConcertSyncServer"
+  },
+  {
+    "name": "OnlineSubsystemFacebook",
+    "category": "Online",
+    "src_files": 58,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineSubsystemFacebook"
+  },
+  {
+    "name": "ProjectLauncher",
+    "category": "Developer",
+    "src_files": 58,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/ProjectLauncher"
+  },
+  {
+    "name": "RivermaxCore",
+    "category": "VirtualProduction",
+    "src_files": 58,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/Rivermax/RivermaxCore"
+  },
+  {
+    "name": "ScriptableToolsFramework",
+    "category": "Runtime",
+    "src_files": 58,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/ScriptableToolsFramework"
+  },
+  {
+    "name": "CurveEditorTools",
+    "category": "Editor",
+    "src_files": 55,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/CurveEditorTools"
+  },
+  {
+    "name": "GeometryMask",
+    "category": "VirtualProduction",
+    "src_files": 55,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/GeometryMask"
+  },
+  {
+    "name": "OpenColorIO",
+    "category": "Compositing",
+    "src_files": 55,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Compositing/OpenColorIO"
+  },
+  {
+    "name": "ActorModifier",
+    "category": "VirtualProduction",
+    "src_files": 54,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/ActorModifier"
+  },
+  {
+    "name": "ChaosCloth",
+    "category": "ChaosCloth",
+    "src_files": 54,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/ChaosCloth"
+  },
+  {
+    "name": "NNEDenoiser",
+    "category": "NNE",
+    "src_files": 54,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/NNE/NNEDenoiser"
+  },
+  {
+    "name": "DatasmithFBXImporter",
+    "category": "Enterprise",
+    "src_files": 53,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Enterprise/DatasmithFBXImporter"
+  },
+  {
+    "name": "GoogleARCore",
+    "category": "Runtime",
+    "src_files": 53,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/AR/Google/GoogleARCore"
+  },
+  {
+    "name": "OnlineSubsystemSteam",
+    "category": "Online",
+    "src_files": 53,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineSubsystemSteam"
+  },
+  {
+    "name": "StylusInput",
+    "category": "Editor",
+    "src_files": 53,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/StylusInput"
+  },
+  {
+    "name": "ConsoleVariables",
+    "category": "Editor",
+    "src_files": 51,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/ConsoleVariablesEditor"
+  },
+  {
+    "name": "LevelSequenceEditor",
+    "category": "MovieScene",
+    "src_files": 51,
+    "size": "large",
+    "status": "pending",
+    "path": "Engine/Plugins/MovieScene/LevelSequenceEditor"
+  },
+  {
+    "name": "AssetSearch",
+    "category": "Editor",
+    "src_files": 50,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/AssetSearch"
+  },
+  {
+    "name": "MeshPainting",
+    "category": "MeshPainting",
+    "src_files": 50,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/MeshPainting"
+  },
+  {
+    "name": "NetworkPrediction",
+    "category": "Runtime",
+    "src_files": 50,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/NetworkPrediction"
+  },
+  {
+    "name": "TweeningUtils",
+    "category": "Animation",
+    "src_files": 50,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/TweeningUtils"
+  },
+  {
+    "name": "VariantManagerContent",
+    "category": "Enterprise",
+    "src_files": 50,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Enterprise/VariantManagerContent"
+  },
+  {
+    "name": "ActorModifierCore",
+    "category": "VirtualProduction",
+    "src_files": 49,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/ActorModifierCore"
+  },
+  {
+    "name": "Bridge",
+    "category": "Bridge",
+    "src_files": 49,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Bridge"
+  },
+  {
+    "name": "GuidedTutorials",
+    "category": "Editor",
+    "src_files": 49,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/GuidedTutorials"
+  },
+  {
+    "name": "ObjectMixer",
+    "category": "Editor",
+    "src_files": 49,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/ObjectMixer/ObjectMixer"
+  },
+  {
+    "name": "ConcertClientSharedSlate",
+    "category": "Developer",
+    "src_files": 48,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/Concert/ConcertUI/ConcertClientSharedSlate"
+  },
+  {
+    "name": "MessagingDebugger",
+    "category": "Messaging",
+    "src_files": 48,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Messaging/MessagingDebugger"
+  },
+  {
+    "name": "AppleARKit",
+    "category": "Runtime",
+    "src_files": 47,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/AR/AppleAR/AppleARKit"
+  },
+  {
+    "name": "CaptureData",
+    "category": "VirtualProduction",
+    "src_files": 47,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/CaptureData"
+  },
+  {
+    "name": "ConcertInsightsVisualizer",
+    "category": "Developer",
+    "src_files": 47,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/Concert/ConcertInsights/ConcertInsightsVisualizer"
+  },
+  {
+    "name": "SequencerScripting",
+    "category": "MovieScene",
+    "src_files": 47,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/MovieScene/SequencerScripting"
+  },
+  {
+    "name": "StageMonitoring",
+    "category": "VirtualProduction",
+    "src_files": 47,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/StageMonitoring"
+  },
+  {
+    "name": "AssetManagerEditor",
+    "category": "Editor",
+    "src_files": 46,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/AssetManagerEditor"
+  },
+  {
+    "name": "AudioMotorSim",
+    "category": "Runtime",
+    "src_files": 46,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/AudioMotorSim"
+  },
+  {
+    "name": "OnlineSubsystemEOS",
+    "category": "Online",
+    "src_files": 46,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineSubsystemEOS"
+  },
+  {
+    "name": "NetworkPredictionExtras",
+    "category": "Runtime",
+    "src_files": 45,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/NetworkPredictionExtras"
+  },
+  {
+    "name": "OnlineServicesEOSGS",
+    "category": "Online",
+    "src_files": 45,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineServicesEOSGS"
+  },
+  {
+    "name": "MassCrowd",
+    "category": "AI",
+    "src_files": 44,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/AI/MassCrowd"
+  },
+  {
+    "name": "RemoteControlProtocolDMX",
+    "category": "VirtualProduction",
+    "src_files": 44,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/RemoteControlProtocolDMX"
+  },
+  {
+    "name": "XRBase",
+    "category": "Runtime",
+    "src_files": 44,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/XRBase"
+  },
+  {
+    "name": "PerformanceCaptureWorkflow",
+    "category": "VirtualProduction",
+    "src_files": 43,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/PerformanceCaptureWorkflow"
+  },
+  {
+    "name": "GeometryMode",
+    "category": "Editor",
+    "src_files": 42,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/GeometryMode"
+  },
+  {
+    "name": "ModelingToolsEditorMode",
+    "category": "Editor",
+    "src_files": 42,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/ModelingToolsEditorMode"
+  },
+  {
+    "name": "AnimationWarping",
+    "category": "Animation",
+    "src_files": 41,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/AnimationWarping"
+  },
+  {
+    "name": "NearestNeighborModel",
+    "category": "Animation",
+    "src_files": 41,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/MLDeformer/NearestNeighborModel"
+  },
+  {
+    "name": "OnlineSubsystemTencent",
+    "category": "Online",
+    "src_files": 41,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineSubsystemTencent"
+  },
+  {
+    "name": "RigMapper",
+    "category": "Experimental",
+    "src_files": 41,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Experimental/Animation/RigMapper"
+  },
+  {
+    "name": "AdvancedRenamer",
+    "category": "Experimental",
+    "src_files": 40,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Experimental/AdvancedRenamer"
+  },
+  {
+    "name": "NamingTokens",
+    "category": "Developer",
+    "src_files": 40,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/NamingTokens"
+  },
+  {
+    "name": "UdpMessaging",
+    "category": "Messaging",
+    "src_files": 40,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Messaging/UdpMessaging"
+  },
+  {
+    "name": "OpenXR",
+    "category": "Runtime",
+    "src_files": 39,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/OpenXR"
+  },
+  {
+    "name": "EnvironmentQueryEditor",
+    "category": "AI",
+    "src_files": 38,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/AI/EnvironmentQueryEditor"
+  },
+  {
+    "name": "GameplayInteractions",
+    "category": "Runtime",
+    "src_files": 38,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/GameplayInteractions"
+  },
+  {
+    "name": "OnlineSubsystemIOS",
+    "category": "Online",
+    "src_files": 38,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/IOS/OnlineSubsystemIOS"
+  },
+  {
+    "name": "OnlineServicesOSSAdapter",
+    "category": "Online",
+    "src_files": 36,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineServicesOSSAdapter"
+  },
+  {
+    "name": "RivermaxMedia",
+    "category": "VirtualProduction",
+    "src_files": 36,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/Rivermax/RivermaxMedia"
+  },
+  {
+    "name": "AvalancheSceneState",
+    "category": "VirtualProduction",
+    "src_files": 35,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/AvalancheSceneState"
+  },
+  {
+    "name": "OnlineSubsystemGooglePlay",
+    "category": "Online",
+    "src_files": 35,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/Android/OnlineSubsystemGooglePlay"
+  },
+  {
+    "name": "PCGGeometryScriptInterop",
+    "category": "PCGInterops",
+    "src_files": 35,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/PCGInterops/PCGGeometryScriptInterop"
+  },
+  {
+    "name": "AutomatedPerfTesting",
+    "category": "Performance",
+    "src_files": 34,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Performance/AutomatedPerfTesting"
+  },
+  {
+    "name": "DataRegistry",
+    "category": "Runtime",
+    "src_files": 34,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/DataRegistry"
+  },
+  {
+    "name": "MQTT",
+    "category": "Protocols",
+    "src_files": 34,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Protocols/MQTT"
+  },
+  {
+    "name": "OnlineSubsystemGoogle",
+    "category": "Online",
+    "src_files": 34,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineSubsystemGoogle"
+  },
+  {
+    "name": "OperatorStack",
+    "category": "VirtualProduction",
+    "src_files": 34,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/OperatorStack"
+  },
+  {
+    "name": "PluginBrowser",
+    "category": "Editor",
+    "src_files": 33,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/PluginBrowser"
+  },
+  {
+    "name": "AsyncMessageSystem",
+    "category": "Experimental",
+    "src_files": 32,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Experimental/AsyncMessageSystem"
+  },
+  {
+    "name": "AudioGameplayVolume",
+    "category": "AudioGameplayVolume",
+    "src_files": 32,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/AudioGameplayVolume"
+  },
+  {
+    "name": "CaptureManagerDevices",
+    "category": "VirtualProduction",
+    "src_files": 32,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/CaptureManager/CaptureManagerDevices"
+  },
+  {
+    "name": "ColorGrading",
+    "category": "Editor",
+    "src_files": 32,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/ColorGrading"
+  },
+  {
+    "name": "SkeletalMeshModelingTools",
+    "category": "Animation",
+    "src_files": 32,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/SkeletalMeshModelingTools"
+  },
+  {
+    "name": "UMGWidgetPreview",
+    "category": "Editor",
+    "src_files": 32,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/UMGWidgetPreview"
+  },
+  {
+    "name": "AudioGameplay",
+    "category": "AudioGameplay",
+    "src_files": 31,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/AudioGameplay"
+  },
+  {
+    "name": "CaptureManagerEditor",
+    "category": "VirtualProduction",
+    "src_files": 31,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/CaptureManager/CaptureManagerEditor"
+  },
+  {
+    "name": "CustomDetailsView",
+    "category": "VirtualProduction",
+    "src_files": 31,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/CustomDetailsView"
+  },
+  {
+    "name": "NetworkPredictionInsights",
+    "category": "Runtime",
+    "src_files": 31,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/NetworkPredictionInsights"
+  },
+  {
+    "name": "OSC",
+    "category": "Runtime",
+    "src_files": 31,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/OSC"
+  },
+  {
+    "name": "CurveExpression",
+    "category": "Experimental",
+    "src_files": 30,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Experimental/Animation/CurveExpression"
+  },
+  {
+    "name": "DataLinkOAuth",
+    "category": "VirtualProduction",
+    "src_files": 30,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/DataLinkOAuth"
+  },
+  {
+    "name": "HierarchyTableAnimation",
+    "category": "Experimental",
+    "src_files": 30,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Experimental/Animation/HierarchyTableAnimation"
+  },
+  {
+    "name": "PerforceSourceControl",
+    "category": "Developer",
+    "src_files": 30,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/PerforceSourceControl"
+  },
+  {
+    "name": "WaveTable",
+    "category": "Runtime",
+    "src_files": 30,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/WaveTable"
+  },
+  {
+    "name": "DataValidation",
+    "category": "Editor",
+    "src_files": 29,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/DataValidation"
+  },
+  {
+    "name": "EditorTests",
+    "category": "Tests",
+    "src_files": 29,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Tests/EditorTests"
+  },
+  {
+    "name": "ScriptPlugin",
+    "category": "ScriptPlugin",
+    "src_files": 29,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/ScriptPlugin"
+  },
+  {
+    "name": "LandscapePatch",
+    "category": "Editor",
+    "src_files": 28,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/LandscapePatch"
+  },
+  {
+    "name": "SequenceValidator",
+    "category": "MovieScene",
+    "src_files": 28,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/MovieScene/SequenceValidator"
+  },
+  {
+    "name": "HierarchyTable",
+    "category": "Experimental",
+    "src_files": 27,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Experimental/Animation/HierarchyTable"
+  },
+  {
+    "name": "OnlineSubsystemNull",
+    "category": "Online",
+    "src_files": 27,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineSubsystemNull"
+  },
+  {
+    "name": "ConcertReplicationScripting",
+    "category": "Developer",
+    "src_files": 26,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/Concert/ConcertScripting/ConcertReplicationScripting"
+  },
+  {
+    "name": "EOSVoiceChat",
+    "category": "Online",
+    "src_files": 26,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/VoiceChat/EOSVoiceChat"
+  },
+  {
+    "name": "EngineCameras",
+    "category": "Cameras",
+    "src_files": 26,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Cameras/EngineCameras"
+  },
+  {
+    "name": "GameplayStateTree",
+    "category": "Runtime",
+    "src_files": 26,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/GameplayStateTree"
+  },
+  {
+    "name": "LiveLinkOpenTrackIO",
+    "category": "VirtualProduction",
+    "src_files": 26,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/LiveLinkOpenTrackIO"
+  },
+  {
+    "name": "MusicEnvironment",
+    "category": "Runtime",
+    "src_files": 26,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/MusicEnvironment"
+  },
+  {
+    "name": "NeuralMorphModel",
+    "category": "Animation",
+    "src_files": 26,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/MLDeformer/NeuralMorphModel"
+  },
+  {
+    "name": "OnlineServicesNull",
+    "category": "Online",
+    "src_files": 26,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineServicesNull"
+  },
+  {
+    "name": "WorldConditions",
+    "category": "Runtime",
+    "src_files": 26,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/WorldConditions"
+  },
+  {
+    "name": "ApexDestruction",
+    "category": "Runtime",
+    "src_files": 25,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/ApexDestruction"
+  },
+  {
+    "name": "BlendStack",
+    "category": "Animation",
+    "src_files": 25,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/BlendStack"
+  },
+  {
+    "name": "NNERuntimeORT",
+    "category": "NNE",
+    "src_files": 25,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/NNE/NNERuntimeORT"
+  },
+  {
+    "name": "OnlineServicesEOS",
+    "category": "Online",
+    "src_files": 25,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineServicesEOS"
+  },
+  {
+    "name": "TimedDataMonitor",
+    "category": "VirtualProduction",
+    "src_files": 25,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/TimedDataMonitor"
+  },
+  {
+    "name": "PropertyBindingUtils",
+    "category": "Runtime",
+    "src_files": 24,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/PropertyBindingUtils"
+  },
+  {
+    "name": "Soundscape",
+    "category": "Runtime",
+    "src_files": 24,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/Soundscape"
+  },
+  {
+    "name": "Switchboard",
+    "category": "VirtualProduction",
+    "src_files": 24,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/Switchboard"
+  },
+  {
+    "name": "MotionWarping",
+    "category": "Animation",
+    "src_files": 23,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/MotionWarping"
+  },
+  {
+    "name": "RHITests",
+    "category": "Tests",
+    "src_files": 23,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Tests/RHITests"
+  },
+  {
+    "name": "ScriptableToolsEditorMode",
+    "category": "Editor",
+    "src_files": 22,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/ScriptableToolsEditorMode"
+  },
+  {
+    "name": "SequencerAnimTools",
+    "category": "Editor",
+    "src_files": 22,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/SequencerAnimTools"
+  },
+  {
+    "name": "WorldMetrics",
+    "category": "WorldMetrics",
+    "src_files": 22,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/WorldMetrics"
+  },
+  {
+    "name": "AnimationModifierLibrary",
+    "category": "Animation",
+    "src_files": 21,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/AnimationModifierLibrary"
+  },
+  {
+    "name": "AvalancheDataLink",
+    "category": "VirtualProduction",
+    "src_files": 21,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/AvalancheDataLink"
+  },
+  {
+    "name": "MixedRealityCaptureFramework",
+    "category": "Runtime",
+    "src_files": 21,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/MixedRealityCaptureFramework"
+  },
+  {
+    "name": "MultiServerReplication",
+    "category": "Runtime",
+    "src_files": 21,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/MultiServerReplication"
+  },
+  {
+    "name": "NVCodecs",
+    "category": "Experimental",
+    "src_files": 21,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins"
+  },
+  {
+    "name": "SlateInsights",
+    "category": "Slate",
+    "src_files": 21,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Slate/SlateInsights"
+  },
+  {
+    "name": "SubversionSourceControl",
+    "category": "Developer",
+    "src_files": 21,
+    "size": "medium",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/SubversionSourceControl"
+  },
+  {
+    "name": "AnimationSharing",
+    "category": "Developer",
+    "src_files": 20,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/AnimationSharing"
+  },
+  {
+    "name": "CQTest",
+    "category": "Tests",
+    "src_files": 20,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/CQTest"
+  },
+  {
+    "name": "SequencerPlaylists",
+    "category": "VirtualProduction",
+    "src_files": 20,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/SequencerPlaylists"
+  },
+  {
+    "name": "SteamSockets",
+    "category": "Runtime",
+    "src_files": 20,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Steam/SteamSockets"
+  },
+  {
+    "name": "WarpUtils",
+    "category": "Runtime",
+    "src_files": 20,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/WarpUtils"
+  },
+  {
+    "name": "XRScribe",
+    "category": "Runtime",
+    "src_files": 20,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/XR/XRScribe"
+  },
+  {
+    "name": "GameInput",
+    "category": "Runtime",
+    "src_files": 19,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/GameInput"
+  },
+  {
+    "name": "GitSourceControl",
+    "category": "Developer",
+    "src_files": 19,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/GitSourceControl"
+  },
+  {
+    "name": "LiveLinkDevice",
+    "category": "Animation",
+    "src_files": 19,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/LiveLinkDevice"
+  },
+  {
+    "name": "OneSkyLocalizationService",
+    "category": "Developer",
+    "src_files": 19,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/OneSkyLocalizationService"
+  },
+  {
+    "name": "AnimToTexture",
+    "category": "Experimental",
+    "src_files": 18,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/AnimToTexture"
+  },
+  {
+    "name": "CompositeCore",
+    "category": "Compositing",
+    "src_files": 18,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Compositing/CompositeCore"
+  },
+  {
+    "name": "EOSShared",
+    "category": "Online",
+    "src_files": 18,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/EOSShared"
+  },
+  {
+    "name": "HTNPlanner",
+    "category": "AI",
+    "src_files": 18,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/AI/HTNPlanner"
+  },
+  {
+    "name": "HttpBlueprint",
+    "category": "Web",
+    "src_files": 18,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Web/HttpBlueprint"
+  },
+  {
+    "name": "ModularGameplay",
+    "category": "Runtime",
+    "src_files": 18,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/ModularGameplay"
+  },
+  {
+    "name": "RelativeIKOp",
+    "category": "Experimental",
+    "src_files": 18,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/Animation/RelativeIKOp"
+  },
+  {
+    "name": "DMXFixtures",
+    "category": "VirtualProduction",
+    "src_files": 17,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/DMX/DMXFixtures"
+  },
+  {
+    "name": "DetailPoseModel",
+    "category": "Experimental",
+    "src_files": 17,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/Animation/MLDeformer/DetailPoseModel"
+  },
+  {
+    "name": "EditorSysConfigAssistant",
+    "category": "Editor",
+    "src_files": 17,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/EditorSysConfigAssistant"
+  },
+  {
+    "name": "LibVpxCodecs",
+    "category": "Experimental",
+    "src_files": 17,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/AVCodecs/LibVpxCodecs"
+  },
+  {
+    "name": "MeshLODToolset",
+    "category": "Editor",
+    "src_files": 17,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/MeshLODToolset"
+  },
+  {
+    "name": "PerformanceCaptureCore",
+    "category": "Animation",
+    "src_files": 17,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/PerformanceCaptureCore"
+  },
+  {
+    "name": "RenderDocPlugin",
+    "category": "Developer",
+    "src_files": 17,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/RenderDocPlugin"
+  },
+  {
+    "name": "SoundCueTemplates",
+    "category": "Runtime",
+    "src_files": 17,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/SoundCueTemplates"
+  },
+  {
+    "name": "VertexDeltaModel",
+    "category": "Animation",
+    "src_files": 17,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/MLDeformer/VertexDeltaModel"
+  },
+  {
+    "name": "ChaosFleshGenerator",
+    "category": "Animation",
+    "src_files": 16,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/MLDeformer/ChaosFleshGenerator"
+  },
+  {
+    "name": "ContentBrowserAssetDataSource",
+    "category": "Editor",
+    "src_files": 16,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/ContentBrowser/ContentBrowserAssetDataSource"
+  },
+  {
+    "name": "DatasmithC4DImporter",
+    "category": "Enterprise",
+    "src_files": 16,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Enterprise/DatasmithC4DImporter"
+  },
+  {
+    "name": "FieldNotificationTrace",
+    "category": "Developer",
+    "src_files": 16,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/FieldNotificationTrace"
+  },
+  {
+    "name": "LiveLinkCamera",
+    "category": "VirtualProduction",
+    "src_files": 16,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/LiveLinkCamera"
+  },
+  {
+    "name": "LiveLinkCurveDebugUI",
+    "category": "Animation",
+    "src_files": 16,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/LiveLinkCurveDebugUI"
+  },
+  {
+    "name": "LiveLinkPrestonMDR",
+    "category": "VirtualProduction",
+    "src_files": 16,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/LiveLinkPrestonMDR"
+  },
+  {
+    "name": "RenderGraphInsights",
+    "category": "RenderGraphInsights",
+    "src_files": 16,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/RenderGraphInsights"
+  },
+  {
+    "name": "WorldPartitionHLODUtilities",
+    "category": "Editor",
+    "src_files": 16,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/WorldPartitionHLODUtilities"
+  },
+  {
+    "name": "ActorSequence",
+    "category": "MovieScene",
+    "src_files": 15,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/MovieScene/ActorSequence"
+  },
+  {
+    "name": "EditorScriptingUtilities",
+    "category": "Editor",
+    "src_files": 15,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/EditorScriptingUtilities"
+  },
+  {
+    "name": "MoviePipelineMaskRenderPass",
+    "category": "MovieScene",
+    "src_files": 15,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/MovieScene/MoviePipelineMaskRenderPass"
+  },
+  {
+    "name": "TraceUtilities",
+    "category": "TraceUtilities",
+    "src_files": 15,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/TraceUtilities"
+  },
+  {
+    "name": "ActorPalette",
+    "category": "Experimental",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/ActorPalette"
+  },
+  {
+    "name": "AppleARKitFaceSupport",
+    "category": "Runtime",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AR/AppleAR/AppleARKitFaceSupport"
+  },
+  {
+    "name": "AudioCapture",
+    "category": "Runtime",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AudioCapture"
+  },
+  {
+    "name": "AvalancheSequenceNavigator",
+    "category": "Experimental",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/AvalancheSequenceNavigator"
+  },
+  {
+    "name": "BlueprintHeaderView",
+    "category": "Editor",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/BlueprintHeaderView"
+  },
+  {
+    "name": "CryptoKeys",
+    "category": "Editor",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/CryptoKeys"
+  },
+  {
+    "name": "LensComponent",
+    "category": "VirtualProduction",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/LensComponent"
+  },
+  {
+    "name": "LiveLinkXR",
+    "category": "VirtualProduction",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/LiveLinkXR"
+  },
+  {
+    "name": "OnlineServicesEpicCommon",
+    "category": "Online",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/OnlineServicesEpicCommon"
+  },
+  {
+    "name": "SampleToolsEditorMode",
+    "category": "Editor",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/SampleToolsEditorMode"
+  },
+  {
+    "name": "SocketSubsystemEOS",
+    "category": "Online",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/SocketSubsystemEOS"
+  },
+  {
+    "name": "SoundMod",
+    "category": "Runtime",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/SoundMod"
+  },
+  {
+    "name": "SoundUtilities",
+    "category": "Runtime",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/SoundUtilities"
+  },
+  {
+    "name": "ZoneGraphAnnotations",
+    "category": "Runtime",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/ZoneGraphAnnotations"
+  },
+  {
+    "name": "nDisplayModularFeatures",
+    "category": "Runtime",
+    "src_files": 14,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/nDisplayModularFeatures"
+  },
+  {
+    "name": "AndroidDeviceProfileSelector",
+    "category": "Runtime",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AndroidDeviceProfileSelector"
+  },
+  {
+    "name": "AndroidFetchBackgroundDownload",
+    "category": "Online",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/Android/AndroidFetchBackgroundDownload"
+  },
+  {
+    "name": "AnimationBudgetAllocator",
+    "category": "Runtime",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AnimationBudgetAllocator"
+  },
+  {
+    "name": "AssetReferenceRestrictions",
+    "category": "Editor",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/AssetReferenceRestrictions"
+  },
+  {
+    "name": "AxFImporter",
+    "category": "Enterprise",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Enterprise/AxFImporter"
+  },
+  {
+    "name": "GooglePAD",
+    "category": "Runtime",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/GooglePAD"
+  },
+  {
+    "name": "LiveLinkMasterLockit",
+    "category": "VirtualProduction",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/LiveLinkMasterLockit"
+  },
+  {
+    "name": "NUTUnrealEngine",
+    "category": "NetcodeUnitTest",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/NetcodeUnitTest/NUTUnrealEngine"
+  },
+  {
+    "name": "ProceduralMeshComponent",
+    "category": "Runtime",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/ProceduralMeshComponent"
+  },
+  {
+    "name": "ReplayTracks",
+    "category": "MovieScene",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/MovieScene/ReplayTracks"
+  },
+  {
+    "name": "SkeletalMeshMorphTargetEditingTools",
+    "category": "Experimental",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/Animation/SkeletalMeshMorphTargetEditingTools"
+  },
+  {
+    "name": "SocketSubsystemSteamIP",
+    "category": "Online",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/SocketSubsystemSteamIP"
+  },
+  {
+    "name": "StormSyncAvalancheBridge",
+    "category": "VirtualProduction",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/StormSyncAvalancheBridge"
+  },
+  {
+    "name": "TcpMessaging",
+    "category": "Messaging",
+    "src_files": 13,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Messaging/TcpMessaging"
+  },
+  {
+    "name": "AMFCodecs",
+    "category": "Experimental",
+    "src_files": 12,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/AVCodecs/AMFCodecs"
+  },
+  {
+    "name": "ConcertInsightsClient",
+    "category": "Developer",
+    "src_files": 12,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/Concert/ConcertInsights/ConcertInsightsClient"
+  },
+  {
+    "name": "DisasterRecoveryClient",
+    "category": "Developer",
+    "src_files": 12,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/Concert/ConcertApp/DisasterRecoveryClient"
+  },
+  {
+    "name": "EpicStageApp",
+    "category": "VirtualProduction",
+    "src_files": 12,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/EpicStageApp"
+  },
+  {
+    "name": "FacialAnimation",
+    "category": "Editor",
+    "src_files": 12,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/FacialAnimation"
+  },
+  {
+    "name": "GoogleARCoreServices",
+    "category": "Runtime",
+    "src_files": 12,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AR/Google/GoogleARCoreServices"
+  },
+  {
+    "name": "LiveLinkInputDevice",
+    "category": "VirtualProduction",
+    "src_files": 12,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/LiveLinkInputDevice"
+  },
+  {
+    "name": "MultiUserTakes",
+    "category": "VirtualProduction",
+    "src_files": 12,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/MultiUserTakes"
+  },
+  {
+    "name": "WidgetAutomationTests",
+    "category": "Tests",
+    "src_files": 12,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/WidgetAutomationTests"
+  },
+  {
+    "name": "ChaosInsights",
+    "category": "ChaosInsights",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/ChaosInsights"
+  },
+  {
+    "name": "ContentBrowserClassDataSource",
+    "category": "Editor",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/ContentBrowser/ContentBrowserClassDataSource"
+  },
+  {
+    "name": "CustomizableSequencerTracks",
+    "category": "MovieScene",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/MovieScene/CustomizableSequencerTracks"
+  },
+  {
+    "name": "EditorDebugTools",
+    "category": "Editor",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/EditorDebugTools"
+  },
+  {
+    "name": "LiveLinkFreeD",
+    "category": "VirtualProduction",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/LiveLinkFreeD"
+  },
+  {
+    "name": "MIDIDevice",
+    "category": "Runtime",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/MIDIDevice"
+  },
+  {
+    "name": "MacGraphicsSwitching",
+    "category": "Editor",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/MacGraphicsSwitching"
+  },
+  {
+    "name": "MemoryUsageQueries",
+    "category": "MemoryUsageQueries",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/MemoryUsageQueries"
+  },
+  {
+    "name": "OnlineSubsystemApple",
+    "category": "Online",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/OnlineSubsystemApple"
+  },
+  {
+    "name": "OpenCVLensDistortion",
+    "category": "Compositing",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Compositing/OpenCVLensDistortion"
+  },
+  {
+    "name": "OpenXRHandTracking",
+    "category": "Runtime",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/OpenXRHandTracking"
+  },
+  {
+    "name": "Reflex",
+    "category": "Runtime",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Nvidia/Reflex"
+  },
+  {
+    "name": "RiderSourceCodeAccess",
+    "category": "Developer",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/RiderSourceCodeAccess"
+  },
+  {
+    "name": "SQLiteCore",
+    "category": "Runtime",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Database/SQLiteCore"
+  },
+  {
+    "name": "WebAuth",
+    "category": "Online",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/WebAuth"
+  },
+  {
+    "name": "WebMMoviePlayer",
+    "category": "Runtime",
+    "src_files": 11,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/WebMMoviePlayer"
+  },
+  {
+    "name": "ARUtilities",
+    "category": "Runtime",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AR/ARUtilities"
+  },
+  {
+    "name": "AnimationLocomotionLibrary",
+    "category": "Animation",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/AnimationLocomotionLibrary"
+  },
+  {
+    "name": "AvalancheDisplayCluster",
+    "category": "Experimental",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/AvalancheDisplayCluster"
+  },
+  {
+    "name": "ChaosClothGenerator",
+    "category": "Animation",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/MLDeformer/ChaosClothGenerator"
+  },
+  {
+    "name": "DirectoryPlaceholder",
+    "category": "Developer",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/DirectoryPlaceholder"
+  },
+  {
+    "name": "GameplayBehaviorSmartObjects",
+    "category": "Runtime",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/GameplayBehaviorSmartObjects"
+  },
+  {
+    "name": "HTTPChunkInstaller",
+    "category": "Runtime",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/HTTPChunkInstaller"
+  },
+  {
+    "name": "LiveLinkOverNDisplay",
+    "category": "Runtime",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/LiveLinkOvernDisplay"
+  },
+  {
+    "name": "LiveLinkVRPN",
+    "category": "VirtualProduction",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/LiveLinkVRPN"
+  },
+  {
+    "name": "OnlineFrameworkCommon",
+    "category": "Online",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/OnlineFrameworkCommon"
+  },
+  {
+    "name": "OodleNetwork",
+    "category": "Compression",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Compression/OodleNetwork"
+  },
+  {
+    "name": "RemoteControlProtocolMIDI",
+    "category": "VirtualProduction",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/RemoteControlProtocolMIDI"
+  },
+  {
+    "name": "Spatialization",
+    "category": "Runtime",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Spatialization"
+  },
+  {
+    "name": "VirtualScouting",
+    "category": "VirtualProduction",
+    "src_files": 10,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/VirtualScouting"
+  },
+  {
+    "name": "ADM",
+    "category": "Runtime",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/ADM"
+  },
+  {
+    "name": "Adjust",
+    "category": "Runtime",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Analytics/Adjust"
+  },
+  {
+    "name": "ContentBrowserFileDataSource",
+    "category": "Editor",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/ContentBrowser/ContentBrowserFileDataSource"
+  },
+  {
+    "name": "DTLSHandlerComponent",
+    "category": "Runtime",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/PacketHandlers/DTLSHandlerComponent"
+  },
+  {
+    "name": "MovieSceneTextTrack",
+    "category": "MovieScene",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/MovieScene/MovieSceneTextTrack"
+  },
+  {
+    "name": "PixWinPlugin",
+    "category": "Developer",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/PixWinPlugin"
+  },
+  {
+    "name": "PropertyAccessNode",
+    "category": "Developer",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/PropertyAccessNode"
+  },
+  {
+    "name": "RemoteControlWebInterface",
+    "category": "VirtualProduction",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/RemoteControlWebInterface"
+  },
+  {
+    "name": "ReplicationGraph",
+    "category": "Runtime",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/ReplicationGraph"
+  },
+  {
+    "name": "TrajectoryTools",
+    "category": "Experimental",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/Animation/TrajectoryTools"
+  },
+  {
+    "name": "VisualStudioSourceCodeAccess",
+    "category": "Developer",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/VisualStudioSourceCodeAccess"
+  },
+  {
+    "name": "XcodeGPUDebuggerPlugin",
+    "category": "Developer",
+    "src_files": 9,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/XcodeGPUDebuggerPlugin"
+  },
+  {
+    "name": "AndroidFileServer",
+    "category": "Runtime",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AndroidFileServer"
+  },
+  {
+    "name": "AnimationData",
+    "category": "Animation",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/AnimationData"
+  },
+  {
+    "name": "AppleImageUtils",
+    "category": "Runtime",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AppleImageUtils"
+  },
+  {
+    "name": "ChangelistReview",
+    "category": "Editor",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/ChangelistReview"
+  },
+  {
+    "name": "ChunkDownloader",
+    "category": "Runtime",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/ChunkDownloader"
+  },
+  {
+    "name": "DMXDisplayCluster",
+    "category": "VirtualProduction",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/DMX/DMXDisplayCluster"
+  },
+  {
+    "name": "DataCharts",
+    "category": "VirtualProduction",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/DataCharts"
+  },
+  {
+    "name": "LiveLinkLens",
+    "category": "VirtualProduction",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/LiveLinkLens"
+  },
+  {
+    "name": "LocationServicesAndroidImpl",
+    "category": "Runtime",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/LocationServicesAndroidImpl"
+  },
+  {
+    "name": "MobileLauncherProfileWizard",
+    "category": "Editor",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/MobileLauncherProfileWizard"
+  },
+  {
+    "name": "RivermaxSync",
+    "category": "VirtualProduction",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/Rivermax/RivermaxSync"
+  },
+  {
+    "name": "RuntimeTests",
+    "category": "Tests",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/RuntimeTests"
+  },
+  {
+    "name": "SceneStateDataLink",
+    "category": "VirtualProduction",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/SceneStateDataLink"
+  },
+  {
+    "name": "SpeedTreeImporter",
+    "category": "Editor",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/SpeedTreeImporter"
+  },
+  {
+    "name": "StaticMeshEditorModeling",
+    "category": "Editor",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/StaticMeshEditorModeling"
+  },
+  {
+    "name": "SunPosition",
+    "category": "Runtime",
+    "src_files": 8,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/SunPosition"
+  },
+  {
+    "name": "AutomationDriverTests",
+    "category": "Tests",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/AutomationDriverTests"
+  },
+  {
+    "name": "CQTestEnhancedInput",
+    "category": "Tests",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/CQTestEnhancedInput"
+  },
+  {
+    "name": "FunctionalTestingEditor",
+    "category": "Tests",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/FunctionalTestingEditor"
+  },
+  {
+    "name": "GeForceNOWWrapper",
+    "category": "Runtime",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Nvidia/GeForceNOWWrapper"
+  },
+  {
+    "name": "InputDebugging",
+    "category": "Runtime",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/InputDebugging"
+  },
+  {
+    "name": "LevelStreamingPersistence",
+    "category": "Runtime",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/LevelStreamingPersistence"
+  },
+  {
+    "name": "LiveLinkUnrealDevice",
+    "category": "Animation",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/LiveLinkUnrealDevice"
+  },
+  {
+    "name": "LocationServicesIOSImpl",
+    "category": "Runtime",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/LocationServicesIOSImpl"
+  },
+  {
+    "name": "MaterialAnalyzer",
+    "category": "Editor",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/MaterialAnalyzer"
+  },
+  {
+    "name": "ModelViewViewModelPreview",
+    "category": "Editor",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/ModelViewViewModelPreview"
+  },
+  {
+    "name": "OnlineBase",
+    "category": "Online",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/OnlineBase"
+  },
+  {
+    "name": "OnlineSubsystemAmazon",
+    "category": "Online",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/OnlineSubsystemAmazon"
+  },
+  {
+    "name": "SteamShared",
+    "category": "Runtime",
+    "src_files": 7,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Steam/SteamShared"
+  },
+  {
+    "name": "AndroidPermission",
+    "category": "Runtime",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AndroidPermission"
+  },
+  {
+    "name": "AutomationUtils",
+    "category": "Experimental",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/AutomationUtils"
+  },
+  {
+    "name": "BlendSpaceMotionAnalysis",
+    "category": "Animation",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/BlendSpaceMotionAnalysis"
+  },
+  {
+    "name": "CableComponent",
+    "category": "Runtime",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/CableComponent"
+  },
+  {
+    "name": "ConcertInsightsCore",
+    "category": "Developer",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/Concert/ConcertInsights/ConcertInsightsCore"
+  },
+  {
+    "name": "ControlRigSpline",
+    "category": "Animation",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/ControlRigSpline"
+  },
+  {
+    "name": "DatasmithMVR",
+    "category": "VirtualProduction",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/DMX/DatasmithMVR"
+  },
+  {
+    "name": "DisplayClusterLaunch",
+    "category": "Editor",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/DisplayClusterLaunch"
+  },
+  {
+    "name": "FbxAutomationTestBuilder",
+    "category": "Tests",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/FbxAutomationTestBuilder"
+  },
+  {
+    "name": "GPUReshape",
+    "category": "Developer",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/GPUReshape"
+  },
+  {
+    "name": "HDRIBackdrop",
+    "category": "Runtime",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/HDRIBackdrop"
+  },
+  {
+    "name": "ICVFXTesting",
+    "category": "VirtualProduction",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/ICVFXTesting"
+  },
+  {
+    "name": "IOSReplayKit",
+    "category": "Runtime",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/IOSReplayKit"
+  },
+  {
+    "name": "LensDistortion",
+    "category": "Compositing",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Compositing/LensDistortion"
+  },
+  {
+    "name": "LightMixer",
+    "category": "Editor",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/ObjectMixer/LightMixer"
+  },
+  {
+    "name": "Locomotor",
+    "category": "Experimental",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/Animation/Locomotor"
+  },
+  {
+    "name": "MotionTrajectory",
+    "category": "Experimental",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/Animation/MotionTrajectory"
+  },
+  {
+    "name": "NavCorridor",
+    "category": "Runtime",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/NavCorridor"
+  },
+  {
+    "name": "PCGExternalDataInterop",
+    "category": "PCGInterops",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/PCGInterops/PCGExternalDataInterop"
+  },
+  {
+    "name": "PreLoadScreenMoviePlayer",
+    "category": "Runtime",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/PreLoadScreenMoviePlayer"
+  },
+  {
+    "name": "RenderTrace",
+    "category": "Runtime",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/RenderTrace"
+  },
+  {
+    "name": "SQLiteSupport",
+    "category": "Runtime",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Database/SQLiteSupport"
+  },
+  {
+    "name": "WebBrowserWidget",
+    "category": "Runtime",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/WebBrowserWidget"
+  },
+  {
+    "name": "WinDualShock",
+    "category": "Runtime",
+    "src_files": 6,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Windows/WinDualShock"
+  },
+  {
+    "name": "AESGCMHandlerComponent",
+    "category": "Runtime",
+    "src_files": 5,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/PacketHandlers/AESGCMHandlerComponent"
+  },
+  {
+    "name": "ActorLayerUtilities",
+    "category": "Runtime",
+    "src_files": 5,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/ActorLayerUtilities"
+  },
+  {
+    "name": "AnalyticsMulticast",
+    "category": "Runtime",
+    "src_files": 5,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Analytics/AnalyticsMulticast"
+  },
+  {
+    "name": "ArchVisCharacter",
+    "category": "Runtime",
+    "src_files": 5,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/ArchVisCharacter"
+  },
+  {
+    "name": "ConcertInsightsServer",
+    "category": "Developer",
+    "src_files": 5,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/Concert/ConcertInsights/ConcertInsightsServer"
+  },
+  {
+    "name": "ContentBrowserAliasDataSource",
+    "category": "Editor",
+    "src_files": 5,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/ContentBrowser/ContentBrowserAliasDataSource"
+  },
+  {
+    "name": "Firebase",
+    "category": "Runtime",
+    "src_files": 5,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Firebase"
+  },
+  {
+    "name": "LocationServicesBPLibrary",
+    "category": "Runtime",
+    "src_files": 5,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/LocationServicesBPLibrary"
+  },
+  {
+    "name": "PropertyAccessEditor",
+    "category": "Runtime",
+    "src_files": 5,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/PropertyAccess"
+  },
+  {
+    "name": "RemoteControlProtocolOSC",
+    "category": "VirtualProduction",
+    "src_files": 5,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/RemoteControlProtocolOSC"
+  },
+  {
+    "name": "UbaController",
+    "category": "UbaController",
+    "src_files": 5,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/UbaController"
+  },
+  {
+    "name": "AnalyticsBlueprintLibrary",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Analytics/AnalyticsBlueprintLibrary"
+  },
+  {
+    "name": "AndroidBackgroundService",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AndroidBackgroundService"
+  },
+  {
+    "name": "AndroidMoviePlayer",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AndroidMoviePlayer"
+  },
+  {
+    "name": "AnimatorKit",
+    "category": "Animation",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/AnimatorKit"
+  },
+  {
+    "name": "AppleMoviePlayer",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AppleMoviePlayer"
+  },
+  {
+    "name": "AsyncMessageSystemTests",
+    "category": "Experimental",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/AsyncMessageSystemTests"
+  },
+  {
+    "name": "BlueprintFileUtils",
+    "category": "BlueprintFileUtils",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/BlueprintFileUtils"
+  },
+  {
+    "name": "BlueprintMaterialTextureNodes",
+    "category": "Editor",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/BlueprintMaterialTextureNodes"
+  },
+  {
+    "name": "CLionSourceCodeAccess",
+    "category": "Developer",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/CLionSourceCodeAccess"
+  },
+  {
+    "name": "CQTestExperimental",
+    "category": "Tests",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/CQTestExperimental"
+  },
+  {
+    "name": "CameraShakePreviewer",
+    "category": "Cameras",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Cameras/CameraShakePreviewer"
+  },
+  {
+    "name": "CodeLiteSourceCodeAccess",
+    "category": "Developer",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/CodeLiteSourceCodeAccess"
+  },
+  {
+    "name": "CompositePlane",
+    "category": "VirtualProduction",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/CompositePlane"
+  },
+  {
+    "name": "CustomMeshComponent",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/CustomMeshComponent"
+  },
+  {
+    "name": "DiscoveryBeaconReceiver",
+    "category": "DiscoveryBeaconReceiver",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/DiscoveryBeaconReceiver"
+  },
+  {
+    "name": "DummyMeshReconstructor",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/MeshReconstruction/DummyMeshReconstructor"
+  },
+  {
+    "name": "DumpGPUServices",
+    "category": "Developer",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/DumpGPUServices"
+  },
+  {
+    "name": "EOSOverlayInputProvider",
+    "category": "Online",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/EOSOverlayInputProvider"
+  },
+  {
+    "name": "ExternalGPUStatistics",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/ExternalGPUStatistics"
+  },
+  {
+    "name": "KDevelopSourceCodeAccess",
+    "category": "Developer",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/KDevelopSourceCodeAccess"
+  },
+  {
+    "name": "N10XSourceCodeAccess",
+    "category": "Developer",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/N10XSourceCodeAccess"
+  },
+  {
+    "name": "NullSourceCodeAccess",
+    "category": "Developer",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/NullSourceCodeAccess"
+  },
+  {
+    "name": "OptionalMobileFeaturesBPLibrary",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/OptionalMobileFeaturesBPLibrary"
+  },
+  {
+    "name": "PCGPythonInterop",
+    "category": "PCGInterops",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/PCGInterops/PCGPythonInterop"
+  },
+  {
+    "name": "RemoteControlInterception",
+    "category": "VirtualProduction",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/RemoteControlInterception"
+  },
+  {
+    "name": "RemoteDatabaseSupport",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Database/RemoteDatabaseSupport"
+  },
+  {
+    "name": "RigMapperOp",
+    "category": "Experimental",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/Animation/RigMapperOp"
+  },
+  {
+    "name": "SlateScripting",
+    "category": "Slate",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Slate/SlateScripting"
+  },
+  {
+    "name": "SoundFields",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/SoundFields"
+  },
+  {
+    "name": "TestFramework",
+    "category": "Tests",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/TestFramework"
+  },
+  {
+    "name": "TextureFormatOodle",
+    "category": "Developer",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/TextureFormatOodle"
+  },
+  {
+    "name": "UObjectPlugin",
+    "category": "Developer",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/UObjectPlugin"
+  },
+  {
+    "name": "VisualStudioCodeSourceCodeAccess",
+    "category": "Developer",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/VisualStudioCodeSourceCodeAccess"
+  },
+  {
+    "name": "WindowsMoviePlayer",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/WindowsMoviePlayer"
+  },
+  {
+    "name": "XCodeSourceCodeAccess",
+    "category": "Developer",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/XCodeSourceCodeAccess"
+  },
+  {
+    "name": "XInputDevice",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Windows/XInputDevice"
+  },
+  {
+    "name": "XRVisualization",
+    "category": "Runtime",
+    "src_files": 4,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/XR/XRVisualization"
+  },
+  {
+    "name": "AbilitySystemGameFeatureActions",
+    "category": "Experimental",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/AbilitySystemGameFeatureActions"
+  },
+  {
+    "name": "AssetTags",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/AssetTags"
+  },
+  {
+    "name": "DatabaseSupport",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Database/DatabaseSupport"
+  },
+  {
+    "name": "ExampleDeviceProfileSelector",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/ExampleDeviceProfileSelector"
+  },
+  {
+    "name": "FileLogging",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Analytics/FileLogging"
+  },
+  {
+    "name": "GoogleCloudMessaging",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/GoogleCloudMessaging"
+  },
+  {
+    "name": "LinuxDeviceProfileSelector",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/LinuxDeviceProfileSelector"
+  },
+  {
+    "name": "LiveLinkExampleDevice",
+    "category": "Animation",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/LiveLinkExampleDevice"
+  },
+  {
+    "name": "LiveUpdateForSlate",
+    "category": "Editor",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/LiveUpdateForSlate"
+  },
+  {
+    "name": "MobilePatchingUtils",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/MobilePatchingUtils"
+  },
+  {
+    "name": "MsQuic",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/MsQuic"
+  },
+  {
+    "name": "OpenXREyeTracker",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/OpenXREyeTracker"
+  },
+  {
+    "name": "OpenXRViveTracker",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/OpenXRViveTracker"
+  },
+  {
+    "name": "PluginUtils",
+    "category": "Developer",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/PluginUtils"
+  },
+  {
+    "name": "PythonAutomationTest",
+    "category": "Tests",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/PythonAutomationTest"
+  },
+  {
+    "name": "SignificanceManager",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/SignificanceManager"
+  },
+  {
+    "name": "SteamAudio",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Steam/SteamAudio"
+  },
+  {
+    "name": "SteamController",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Steam/SteamController"
+  },
+  {
+    "name": "VoiceChat",
+    "category": "Online",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Online/VoiceChat/VoiceChat"
+  },
+  {
+    "name": "WindowsDeviceProfileSelector",
+    "category": "Runtime",
+    "src_files": 3,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/WindowsDeviceProfileSelector"
+  },
+  {
+    "name": "ADOSupport",
+    "category": "Runtime",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Database/ADOSupport"
+  },
+  {
+    "name": "AESHandlerComponent",
+    "category": "Runtime",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/PacketHandlers/AESHandlerComponent"
+  },
+  {
+    "name": "AISupport",
+    "category": "AI",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/AI/AISupport"
+  },
+  {
+    "name": "AssetRegistryExport",
+    "category": "Editor",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/AssetRegistryExport"
+  },
+  {
+    "name": "AudioCQTests",
+    "category": "Tests",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/AudioCQTests"
+  },
+  {
+    "name": "BlankPlugin",
+    "category": "Developer",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Developer/BlankPlugin"
+  },
+  {
+    "name": "CmdLinkServer",
+    "category": "CmdLinkServer",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/CmdLinkServer"
+  },
+  {
+    "name": "DMXModularFeatures",
+    "category": "VirtualProduction",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/DMX/DMXModularFeatures"
+  },
+  {
+    "name": "HPMotionController",
+    "category": "Runtime",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/HPMotionController"
+  },
+  {
+    "name": "IOSDeviceProfileSelector",
+    "category": "Runtime",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/IOSDeviceProfileSelector"
+  },
+  {
+    "name": "LauncherChunkInstaller",
+    "category": "Portal",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Portal/LauncherChunkInstaller"
+  },
+  {
+    "name": "MicroSoftSpatialSound",
+    "category": "Runtime",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/MicrosoftSpatialAudio"
+  },
+  {
+    "name": "OpenXRMsftHandInteraction",
+    "category": "Runtime",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/OpenXRMsftHandInteraction"
+  },
+  {
+    "name": "PackedAttributes",
+    "category": "Experimental",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/Animation/PackedAttributes"
+  },
+  {
+    "name": "PerformanceMonitor",
+    "category": "Performance",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Performance/PerformanceMonitor"
+  },
+  {
+    "name": "PortableObjectFileDataSource",
+    "category": "Editor",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/Localization/PortableObjectFileDataSource"
+  },
+  {
+    "name": "SkeletalMerging",
+    "category": "Runtime",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/SkeletalMerging"
+  },
+  {
+    "name": "TestSamples",
+    "category": "Tests",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Tests/TestSamples"
+  },
+  {
+    "name": "WebBrowserNativeProxy",
+    "category": "Runtime",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/WebBrowserNativeProxy"
+  },
+  {
+    "name": "XGEController",
+    "category": "XGEController",
+    "src_files": 2,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/XGEController"
+  },
+  {
+    "name": "CameraCalibrationML",
+    "category": "VirtualProduction",
+    "src_files": 1,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/CameraCalibrationML"
+  },
+  {
+    "name": "IOSTapJoy",
+    "category": "Runtime",
+    "src_files": 1,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Advertising/IOSTapJoy"
+  },
+  {
+    "name": "WinVirtualKeyboard",
+    "category": "Runtime",
+    "src_files": 1,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/Windows/WinVirtualKeyboard"
+  },
+  {
+    "name": "BaseMaterial",
+    "category": "BaseMaterial",
+    "src_files": 0,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/BaseMaterial"
+  },
+  {
+    "name": "ControlRigModules",
+    "category": "Animation",
+    "src_files": 0,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Animation/ControlRigModules"
+  },
+  {
+    "name": "HoldoutComposite",
+    "category": "Compositing",
+    "src_files": 0,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Compositing/HoldoutComposite"
+  },
+  {
+    "name": "ICVFX",
+    "category": "VirtualProduction",
+    "src_files": 0,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/VirtualProduction/ICVFX"
+  },
+  {
+    "name": "MakeCookedEditorAsDLC",
+    "category": "Editor",
+    "src_files": 0,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Editor/MakeCookedEditorAsDLC"
+  },
+  {
+    "name": "MassEntity",
+    "category": "Runtime",
+    "src_files": 0,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Runtime/MassEntity"
+  },
+  {
+    "name": "Optimus",
+    "category": "Experimental",
+    "src_files": 0,
+    "size": "small",
+    "status": "done",
+    "path": "Engine/Plugins/Experimental/Animation/Optimus"
+  },
+  {
+    "name": "Avalanche",
+    "category": "VirtualProduction",
+    "src_files": 1989,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/Avalanche"
+  },
+  {
+    "name": "USDCore",
+    "category": "Runtime",
+    "src_files": 1728,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/USDCore"
+  },
+  {
+    "name": "nDisplay",
+    "category": "Runtime",
+    "src_files": 1258,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/nDisplay"
+  },
+  {
+    "name": "PCG",
+    "category": "PCG",
+    "src_files": 1175,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/PCG"
+  },
+  {
+    "name": "Mutable",
+    "category": "Mutable",
+    "src_files": 1065,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Mutable"
+  },
+  {
+    "name": "ControlRig",
+    "category": "Animation",
+    "src_files": 756,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/ControlRig"
+  },
+  {
+    "name": "GeometryProcessing",
+    "category": "Runtime",
+    "src_files": 721,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/GeometryProcessing"
+  },
+  {
+    "name": "GameplayCameras",
+    "category": "Cameras",
+    "src_files": 695,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Cameras/GameplayCameras"
+  },
+  {
+    "name": "DynamicMaterial",
+    "category": "VirtualProduction",
+    "src_files": 651,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/DynamicMaterial"
+  },
+  {
+    "name": "TextureGraph",
+    "category": "TextureGraph",
+    "src_files": 552,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/TextureGraph"
+  },
+  {
+    "name": "MetaHumanCoreTech",
+    "category": "MetaHuman",
+    "src_files": 551,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/MetaHuman/MetaHumanCoreTechLib"
+  },
+  {
+    "name": "MetaHuman",
+    "category": "MetaHuman",
+    "src_files": 535,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/MetaHuman/MetaHumanAnimator"
+  },
+  {
+    "name": "Metasound",
+    "category": "Runtime",
+    "src_files": 527,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/Metasound"
+  },
+  {
+    "name": "RigLogic",
+    "category": "Animation",
+    "src_files": 516,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/RigLogic"
+  },
+  {
+    "name": "RigVM",
+    "category": "Runtime",
+    "src_files": 492,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/RigVM"
+  },
+  {
+    "name": "Harmonix",
+    "category": "Runtime",
+    "src_files": 490,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/Harmonix"
+  },
+  {
+    "name": "MeshModelingToolset",
+    "category": "Runtime",
+    "src_files": 484,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/MeshModelingToolset"
+  },
+  {
+    "name": "RemoteControl",
+    "category": "VirtualProduction",
+    "src_files": 459,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/RemoteControl"
+  },
+  {
+    "name": "SceneState",
+    "category": "VirtualProduction",
+    "src_files": 407,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/SceneState"
+  },
+  {
+    "name": "MovieRenderPipeline",
+    "category": "MovieScene",
+    "src_files": 371,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/MovieScene/MovieRenderPipeline"
+  },
+  {
+    "name": "MetaHumanCalibrationProcessing",
+    "category": "MetaHuman",
+    "src_files": 356,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/MetaHuman/MetaHumanCalibrationProcessing"
+  },
+  {
+    "name": "DMXEngine",
+    "category": "VirtualProduction",
+    "src_files": 341,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/DMX/DMXEngine"
+  },
+  {
+    "name": "GameplayAbilities",
+    "category": "Runtime",
+    "src_files": 332,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/GameplayAbilities"
+  },
+  {
+    "name": "MetaHumanCharacter",
+    "category": "MetaHuman",
+    "src_files": 324,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/MetaHuman/MetaHumanCharacter"
+  },
+  {
+    "name": "LevelSnapshots",
+    "category": "VirtualProduction",
+    "src_files": 317,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/LevelSnapshots"
+  },
+  {
+    "name": "StateTree",
+    "category": "Runtime",
+    "src_files": 305,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/StateTree"
+  },
+  {
+    "name": "ChaosVD",
+    "category": "ChaosVD",
+    "src_files": 299,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/ChaosVD"
+  },
+  {
+    "name": "DeformerGraph",
+    "category": "Animation",
+    "src_files": 278,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/DeformerGraph"
+  },
+  {
+    "name": "MultiUserClient",
+    "category": "Developer",
+    "src_files": 278,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/Concert/ConcertApp/MultiUserClient"
+  },
+  {
+    "name": "ChaosClothAssetEditor",
+    "category": "ChaosClothAssetEditor",
+    "src_files": 265,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/ChaosClothAssetEditor"
+  },
+  {
+    "name": "MassGameplay",
+    "category": "Runtime",
+    "src_files": 261,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/MassGameplay"
+  },
+  {
+    "name": "ModelViewViewModel",
+    "category": "Runtime",
+    "src_files": 259,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/ModelViewViewModel"
+  },
+  {
+    "name": "Paper2D",
+    "category": "2D",
+    "src_files": 258,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/2D/Paper2D"
+  },
+  {
+    "name": "ACLPlugin",
+    "category": "Animation",
+    "src_files": 235,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/ACLPlugin"
+  },
+  {
+    "name": "GeneSplicer",
+    "category": "Animation",
+    "src_files": 226,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/GeneSplicer"
+  },
+  {
+    "name": "VirtualCameraCore",
+    "category": "VirtualProduction",
+    "src_files": 225,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/VirtualCameraCore"
+  },
+  {
+    "name": "HairStrands",
+    "category": "Runtime",
+    "src_files": 223,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/HairStrands"
+  },
+  {
+    "name": "GLTFExporter",
+    "category": "Enterprise",
+    "src_files": 216,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Enterprise/GLTFExporter"
+  },
+  {
+    "name": "LiveLink",
+    "category": "Animation",
+    "src_files": 212,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/LiveLink"
+  },
+  {
+    "name": "IKRig",
+    "category": "Animation",
+    "src_files": 211,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/IKRig"
+  },
+  {
+    "name": "DataprepEditor",
+    "category": "Enterprise",
+    "src_files": 204,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Enterprise/DataprepEditor"
+  },
+  {
+    "name": "Takes",
+    "category": "VirtualProduction",
+    "src_files": 202,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/Takes"
+  },
+  {
+    "name": "DMXPixelMapping",
+    "category": "VirtualProduction",
+    "src_files": 201,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/DMX/DMXPixelMapping"
+  },
+  {
+    "name": "PoseSearch",
+    "category": "Animation",
+    "src_files": 193,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/PoseSearch"
+  },
+  {
+    "name": "OnlineSubsystemUtils",
+    "category": "Online",
+    "src_files": 190,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineSubsystemUtils"
+  },
+  {
+    "name": "DNACalib",
+    "category": "Animation",
+    "src_files": 186,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/DNACalib"
+  },
+  {
+    "name": "Chooser",
+    "category": "Chooser",
+    "src_files": 185,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Chooser"
+  },
+  {
+    "name": "ClonerEffector",
+    "category": "VirtualProduction",
+    "src_files": 179,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/ClonerEffector"
+  },
+  {
+    "name": "CaptureManagerApp",
+    "category": "VirtualProduction",
+    "src_files": 178,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/CaptureManager/CaptureManagerApp"
+  },
+  {
+    "name": "GameplayInsights",
+    "category": "Animation",
+    "src_files": 175,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/GameplayInsights"
+  },
+  {
+    "name": "MultiUserServer",
+    "category": "Developer",
+    "src_files": 174,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/Concert/ConcertApp/MultiUserServer"
+  },
+  {
+    "name": "DMXControlConsole",
+    "category": "VirtualProduction",
+    "src_files": 173,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/DMX/DMXControlConsole"
+  },
+  {
+    "name": "TextureShare",
+    "category": "VirtualProduction",
+    "src_files": 172,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/TextureShare"
+  },
+  {
+    "name": "ReplicationSystemTestPlugin",
+    "category": "Runtime",
+    "src_files": 163,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/ReplicationSystemTestPlugin"
+  },
+  {
+    "name": "DatasmithImporter",
+    "category": "Enterprise",
+    "src_files": 162,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Enterprise/DatasmithImporter"
+  },
+  {
+    "name": "DMXGDTF",
+    "category": "VirtualProduction",
+    "src_files": 156,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/DMX/DMXGDTF"
+  },
+  {
+    "name": "MassAI",
+    "category": "AI",
+    "src_files": 155,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/AI/MassAI"
+  },
+  {
+    "name": "CommonUI",
+    "category": "Runtime",
+    "src_files": 154,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/CommonUI"
+  },
+  {
+    "name": "DataLink",
+    "category": "VirtualProduction",
+    "src_files": 152,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/DataLink"
+  },
+  {
+    "name": "MLDeformerFramework",
+    "category": "Animation",
+    "src_files": 143,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/MLDeformer/MLDeformerFramework"
+  },
+  {
+    "name": "ConcertSharedSlate",
+    "category": "Developer",
+    "src_files": 139,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/Concert/ConcertUI/ConcertSharedSlate"
+  },
+  {
+    "name": "EngineAssetDefinitions",
+    "category": "Editor",
+    "src_files": 139,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/EngineAssetDefinitions"
+  },
+  {
+    "name": "ResonanceAudio",
+    "category": "Runtime",
+    "src_files": 139,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/ResonanceAudio"
+  },
+  {
+    "name": "AudioWidgets",
+    "category": "Runtime",
+    "src_files": 137,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/AudioWidgets"
+  },
+  {
+    "name": "Text3D",
+    "category": "VirtualProduction",
+    "src_files": 130,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/Text3D"
+  },
+  {
+    "name": "CaptureManagerCore",
+    "category": "VirtualProduction",
+    "src_files": 126,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/CaptureManager/CaptureManagerCore"
+  },
+  {
+    "name": "ConcertSyncCore",
+    "category": "Developer",
+    "src_files": 125,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Developer/Concert/ConcertSync/ConcertSyncCore"
+  },
+  {
+    "name": "LiveLinkHub",
+    "category": "Animation",
+    "src_files": 125,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Animation/LiveLinkHub"
+  },
+  {
+    "name": "Composure",
+    "category": "Compositing",
+    "src_files": 124,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Compositing/Composure"
+  },
+  {
+    "name": "StormSync",
+    "category": "VirtualProduction",
+    "src_files": 123,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/StormSync"
+  },
+  {
+    "name": "AVCodecsCore",
+    "category": "Experimental",
+    "src_files": 118,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Experimental/AVCodecs/AVCodecsCore"
+  },
+  {
+    "name": "OnlineFramework",
+    "category": "Online",
+    "src_files": 116,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineFramework"
+  },
+  {
+    "name": "MetaHumanLiveLink",
+    "category": "MetaHuman",
+    "src_files": 115,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/MetaHuman/MetaHumanLiveLink"
+  },
+  {
+    "name": "DatasmithCADImporter",
+    "category": "Enterprise",
+    "src_files": 114,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Enterprise/DatasmithCADImporter"
+  },
+  {
+    "name": "AudioInsights",
+    "category": "AudioInsights",
+    "src_files": 113,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/AudioInsights"
+  },
+  {
+    "name": "UVEditor",
+    "category": "Editor",
+    "src_files": 113,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/UVEditor"
+  },
+  {
+    "name": "SmartObjects",
+    "category": "Runtime",
+    "src_files": 112,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/SmartObjects"
+  },
+  {
+    "name": "OnlineServices",
+    "category": "Online",
+    "src_files": 109,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Online/OnlineServices"
+  },
+  {
+    "name": "CameraCalibration",
+    "category": "VirtualProduction",
+    "src_files": 108,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/CameraCalibration"
+  },
+  {
+    "name": "DMXProtocol",
+    "category": "VirtualProduction",
+    "src_files": 108,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/DMX/DMXProtocol"
+  },
+  {
+    "name": "GeometryCache",
+    "category": "Runtime",
+    "src_files": 106,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/GeometryCache"
+  },
+  {
+    "name": "PropertyAnimatorCore",
+    "category": "VirtualProduction",
+    "src_files": 102,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/VirtualProduction/PropertyAnimatorCore"
+  },
+  {
+    "name": "ProxyLODPlugin",
+    "category": "Editor",
+    "src_files": 101,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Editor/ProxyLODPlugin"
+  },
+  {
+    "name": "Synthesis",
+    "category": "Runtime",
+    "src_files": 101,
+    "size": "xlarge",
+    "status": "pending",
+    "path": "Engine/Plugins/Runtime/Synthesis"
+  }
+]

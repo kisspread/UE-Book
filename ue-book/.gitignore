@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+
+# Local config (contains API keys, local paths)
+pipeline/config_local.py
+
+# Runtime artifacts
+pipeline/last_run.json
+scripts/timing.log
+
+# Scanner intermediate files
+docs/*/context.md
+
+# Temp working files (contain local paths)
+*-remaining.json
+*-remaining2.json
+*-plugins.json
