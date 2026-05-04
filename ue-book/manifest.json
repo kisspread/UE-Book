@@ -3919,6 +3919,446 @@
       "size": "medium",
       "doc_path": "docs/5.8/medium/Terminal/",
       "forced": true
+    },
+    "StreamingADA": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/StreamingADA/"
+    },
+    "LiveLinkGenericRecordingDevice": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/LiveLinkGenericRecordingDevice/"
+    },
+    "AudioInsightsRuntime": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AudioInsightsRuntime/"
+    },
+    "AutomationControllerRpc": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AutomationControllerRpc/"
+    },
+    "ChaosClothAssetDataflowNodes": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/ChaosClothAssetDataflowNodes/"
+    },
+    "ChaosClothAssetEditorCore": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/ChaosClothAssetEditorCore/"
+    },
+    "ChaosClothAssetUsdDataflowNodes": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ChaosClothAssetUsdDataflowNodes/"
+    },
+    "ComposureShared": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ComposureShared/"
+    },
+    "DerivedDataBuildController": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/DerivedDataBuildController/"
+    },
+    "AudioModulationInsights": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AudioModulationInsights/"
+    },
+    "FileSandbox": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/FileSandbox/"
+    },
+    "SandboxedEditing": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/SandboxedEditing/"
+    },
+    "MaterialAssetWizard": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MaterialAssetWizard/"
+    },
+    "MaterialValidation": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/MaterialValidation/"
+    },
+    "AnimDatabase": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/AnimDatabase/"
+    },
+    "AnimationLayering": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AnimationLayering/"
+    },
+    "DirectMeshControl": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/DirectMeshControl/"
+    },
+    "Scribble": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/Scribble/"
+    },
+    "AudioProperties": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/AudioProperties/"
+    },
+    "ChaosDataflowSolver": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ChaosDataflowSolver/"
+    },
+    "ChaosRigidPhysicsAsync": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/ChaosRigidPhysicsAsync/"
+    },
+    "ControlRigDynamics": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/ControlRigDynamics/"
+    },
+    "DataflowVolumetricPlugin": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/DataflowVolumetricPlugin/"
+    },
+    "EditorTRSGizmo": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/EditorTRSGizmo/"
+    },
+    "HttpInsights": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/HttpInsights/"
+    },
+    "InterchangeAxfAssets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/InterchangeAxfAssets/"
+    },
+    "InterchangeAxF": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/InterchangeAxF/"
+    },
+    "LearningCore": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/LearningCore/"
+    },
+    "MeshPartition": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/MeshPartition/"
+    },
+    "MeshPartitionWater": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MeshPartitionWater/"
+    },
+    "MeshTerrainMode": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/MeshTerrainMode/"
+    },
+    "MessageBusTester": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/MessageBusTester/"
+    },
+    "GDKPlatformDLC": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/GDKPlatformDLC/"
+    },
+    "ModelContextProtocol": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/ModelContextProtocol/"
+    },
+    "MovieSceneMixedControlRig": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MovieSceneMixedControlRig/"
+    },
+    "MutableAssetUserData": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MutableAssetUserData/"
+    },
+    "MutableExtensionExample": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MutableExtensionExample/"
+    },
+    "NNEModelTests": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/NNEModelTests/"
+    },
+    "NetworkServiceDiscovery": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/NetworkServiceDiscovery/"
+    },
+    "PCGMeshPartitionInterop": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/PCGMeshPartitionInterop/"
+    },
+    "PlatformDLC": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/PlatformDLC/"
+    },
+    "PlayerInputDebugger": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/PlayerInputDebugger/"
+    },
+    "Subsonic": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/Subsonic/"
+    },
+    "ToolsetRegistry": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/ToolsetRegistry/"
+    },
+    "AIModuleToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AIModuleToolset/"
+    },
+    "AllToolsets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AllToolsets/"
+    },
+    "AnimationAssistantToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AnimationAssistantToolset/"
+    },
+    "AutomationTestToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AutomationTestToolset/"
+    },
+    "ConversationToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ConversationToolset/"
+    },
+    "DataflowAgent": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/DataflowAgent/"
+    },
+    "GASToolsets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/GASToolsets/"
+    },
+    "GameFeaturesToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/GameFeaturesToolset/"
+    },
+    "GameplayTagsToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/GameplayTagsToolset/"
+    },
+    "LiveCodingToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/LiveCodingToolset/"
+    },
+    "MCPClientToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MCPClientToolset/"
+    },
+    "NiagaraToolsets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/NiagaraToolsets/"
+    },
+    "PhysicsToolsets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/PhysicsToolsets/"
+    },
+    "SequencerAnimMixerToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/SequencerAnimMixerToolset/"
+    },
+    "SlateInspectorToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/SlateInspectorToolset/"
+    },
+    "StateTreeToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/StateTreeToolset/"
+    },
+    "UMGToolSet": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/UMGToolSet/"
+    },
+    "WorldConditionsToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/WorldConditionsToolset/"
+    },
+    "UAFAnimNode": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/UAFAnimNode/"
+    },
+    "UAFLayering": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/UAFLayering/"
+    },
+    "UAFMass": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/UAFMass/"
+    },
+    "UAFSharedAssets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/UAFSharedAssets/"
+    },
+    "UAFTestSuites": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/UAFTestSuites/"
+    },
+    "NiagaraInsights": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/NiagaraInsights/"
+    },
+    "NiagaraUIRenderer": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/NiagaraUIRenderer/"
+    },
+    "APVDecoderElectra": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/APVDecoderElectra/"
+    },
+    "AV1DecoderElectra": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AV1DecoderElectra/"
+    },
+    "MP4Utilities": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/MP4Utilities/"
+    },
+    "MediaProfile": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MediaProfile/"
+    },
+    "NVDECElectra": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/NVDECElectra/"
+    },
+    "RTSPMedia": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/RTSPMedia/"
+    },
+    "TmvMedia": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/TmvMedia/"
+    },
+    "TmvMediaUtils": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/TmvMediaUtils/"
+    },
+    "MessagingInsights": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MessagingInsights/"
+    },
+    "MetaHumanAnimationTools": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MetaHumanAnimationTools/"
+    },
+    "MetaHumanCoreML": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MetaHumanCoreML/"
+    },
+    "MetaHumanCrowd": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/MetaHumanCrowd/"
+    },
+    "GDKNetDriver": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/GDKNetDriver/"
+    },
+    "OnlineServicesXbl": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/OnlineServicesXbl/"
+    },
+    "OnlineSubsystemGDK": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/OnlineSubsystemGDK/"
+    },
+    "PlayFabParty": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/PlayFabParty/"
+    },
+    "AutomatedPerfTestTools": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AutomatedPerfTestTools/"
+    },
+    "RPCBase": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/RPCBase/"
+    },
+    "RenderTraceInsights": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/RenderTraceInsights/"
     }
   }
 }
