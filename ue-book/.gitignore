@@ -3,6 +3,7 @@ __pycache__/
 
 # Local config (contains API keys, local paths)
 pipeline/config_local.py
+v2/config_local.py
 
 # Runtime artifacts
 pipeline/last_run.json

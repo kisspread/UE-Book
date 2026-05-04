@@ -1,0 +1,59 @@
+name: Generate UE Plugin Docs
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'UE version (e.g. 5.8)'
+        required: true
+        type: string
+      force:
+        description: 'Force regenerate plugins (comma-separated names, or "all")'
+        required: false
+        type: string
+
+env:
+  LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+  LLM_MODEL: ${{ secrets.LLM_MODEL }}
+  LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r v2/requirements.txt
+
+      - name: Configure gh CLI
+        run: echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
+
+      - name: Run pipeline
+        run: |
+          ARGS="--version ${{ inputs.version }}"
+          if [ "${{ inputs.force }}" = "all" ]; then
+            ARGS="$ARGS --force-all"
+          elif [ -n "${{ inputs.force }}" ]; then
+            ARGS="$ARGS --force $(echo '${{ inputs.force }}' | tr ',' ' ')"
+          fi
+          python3 -m v2.run $ARGS
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/ manifest.json
+          git diff --cached --quiet || git commit -m "docs: update UE ${{ inputs.version }} plugin docs"
+          git push
