@@ -12,11 +12,6 @@ on:
         required: false
         type: string
 
-env:
-  LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-  LLM_MODEL: ${{ secrets.LLM_MODEL }}
-  LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -27,11 +22,15 @@ jobs:
       run:
         working-directory: ue-book
 
+    env:
+      GH_TOKEN: ${{ secrets.GH_PAT }}
+      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+      LLM_MODEL: ${{ secrets.LLM_MODEL }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_PAT }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -40,9 +39,6 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r v2/requirements.txt
-
-      - name: Configure gh CLI
-        run: echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
 
       - name: Run pipeline
         run: |
