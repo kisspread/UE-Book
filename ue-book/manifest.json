@@ -2637,9 +2637,10 @@
       "doc_path": "docs/5.7/ChaosNiagara/"
     },
     "ChaosOutfitAsset": {
-      "generated_in": "5.7",
-      "size": "small",
-      "doc_path": "docs/5.7/ChaosOutfitAsset/"
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/ChaosOutfitAsset/",
+      "forced": true
     },
     "ChaosRigidAsset": {
       "generated_in": "5.7",
@@ -3900,6 +3901,18 @@
       "generated_in": "5.7",
       "size": "small",
       "doc_path": "docs/5.7/DummyMeshReconstructor/"
+    },
+    "AnimGen": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/AnimGen/",
+      "forced": true
+    },
+    "SemanticSearch": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/SemanticSearch/",
+      "forced": true
     }
   }
 }
