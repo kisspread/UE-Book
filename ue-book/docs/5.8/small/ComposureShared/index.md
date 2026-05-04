@@ -62,15 +62,11 @@ static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaterialFinder(
 
 ### 近期更新
 
-- 2026-04-08 `e2f9d530` Composure: Add ComposureShared plugin and migrate generic assets from legacy Composure to be shared 
+- 2026-04-08 `e2f9d530` Composure: 新增 ComposureShared 插件，并将旧版 Composure 中的通用资产迁移至此，以便与新版 Composure 共享。
 
 ### 维护评价
 
-- **创建时间**：2026-04-08，极新的插件
-- **更新频率**：仅有 1 次提交，为初始创建和资产迁移
-- **维护状态**：🆕 刚刚创建，尚无后续维护记录
-- **已知限制**：`EnabledByDefault=false`，需要手动在插件管理器中启用
-- **推荐程度**：如果你使用 Composure 或 Composite 插件，此插件为必需依赖，应按需启用。作为纯内容插件，维护需求极低，风险较小。
+从提交记录来看，该插件仅有一次初始提交，内容是创建插件并进行资产迁移。这表明它可能是一个新创建的、或处于早期实验阶段的插件，旨在为新版 Composure 提供共享基础，目前尚未进入频繁的功能迭代期。
 
 ## 相关链接
 

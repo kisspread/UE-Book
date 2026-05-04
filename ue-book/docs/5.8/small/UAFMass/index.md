@@ -34,11 +34,15 @@
 
 ### 近期更新
 
-- 2026-04-23 `746b6abb` Move UAF-Mass trajectory bridge into engine UAFMass plugin
-- 2026-04-01 `58888966` [MassCore] Move headers to Public/Mass/ subdirectory, strip Mass prefix from filenames
-- 2026-03-30 `161605b0` [Mass] Extract MassCore module from MassEntity
-- 2026-03-11 `1d291fa1` [Mass] Multi-fragment observer support in UMassObserverProcessor
-- 2026-02-17 `baf983b4` [SubmitTool - UAF] Add validators to build and run LowLevelTests for UAF plugins
+- 2026-04-23 `746b6abb` 将UAF-Mass轨迹桥接功能移入引擎UAFMass插件
+- 2026-04-01 `58888966` [MassCore] 将头文件移至Public/Mass/子目录，并移除文件名中的Mass前缀
+- 2026-03-30 `161605b0` [Mass] 从MassEntity模块中提取出MassCore模块
+- 2026-03-11 `1d291fa1` [Mass] 为UMassObserverProcessor添加多片段观察者支持
+- 2026-02-17 `baf983b4` [提交工具 - UAF] 为UAF插件添加验证器，以构建和运行低级测试
+
+### 维护评价
+
+该插件近期维护状态活跃。在约两个月的时间内进行了五次提交，频率较高。提交内容涵盖了核心模块重构、功能增强和测试基础设施建设，表明插件正在经历积极的架构优化和功能完善。
 
 ## 相关链接
 

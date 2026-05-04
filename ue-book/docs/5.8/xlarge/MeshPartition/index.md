@@ -36,11 +36,15 @@ Mesh Partition 是一个用于处理超大规模网格（如开放世界地形�
 
 ### 近期更新
 
-- 2026-04-24 `44085aba` Mesh Partition: avoid passing hard-coded SM6 argument to GenerateMips. Fixes a crash on projects wit
-- 2026-04-24 `473e05b1` Mesh Terrain sculpt layer tools:
-- 2026-04-24 `bb6e1b38` Guard against empty UV-Layers and unset element triangles
-- 2026-04-23 `2a27739c` Add a path where the for-all-modifiers iteration allows null modifiers to be silently skipped, to av
-- 2026-04-23 `dbed6742` Fix broken handling of UV seams at mesh skirt vertices -- take care to copy the UVs from the vertice
+- 2026-04-24 `44085aba` 修复了在使用 DefaultGraphicsRHI 的项目中，向 GenerateMips 传递硬编码 SM6 参数导致的崩溃问题。
+- 2026-04-24 `473e05b1` 新增网格地形雕刻层工具。
+- 2026-04-24 `bb6e1b38` 增加了对空 UV 层和未设置元素三角形的防护。
+- 2026-04-23 `2a27739c` 新增一种路径，允许在遍历所有修改器时静默跳过空修改器，以避免在撤销操作时触发 ensure 断言。
+- 2026-04-23 `dbed6742` 修复了网格裙边顶点处 UV 接缝处理错误的问题——现在会正确地从实际源顶点复制 UV。
+
+### 维护评价
+
+该插件处于**活跃维护**状态。在短短两天内有5次提交，修复了关键崩溃和功能缺陷，并添加了新工具和防护逻辑，表明开发团队响应迅速且持续改进。提交内容均为实质性的功能增强与问题修复，而非实验性代码，体现了稳定且积极的维护节奏。
 
 ## 相关链接
 

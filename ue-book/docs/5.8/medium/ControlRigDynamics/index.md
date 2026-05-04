@@ -182,18 +182,15 @@ void AMyDynamicCharacter::Tick(float DeltaTime)
 
 ### 近期更新
 
-- 2026-04-24 `a0e35edd` Control Rig Dynamics - Debugging widget
-- 2026-04-23 `c20a96e5` Control Rig Dynamics - Add cvars for visualization and debugging
-- 2026-04-23 `f919acb2` Control rig dynamics - remove support for having colliders in the solver itself (an unnecessary comp
-- 2026-04-23 `f9267d2f` Control Rig Dynamics - add input to the spawn nodes so the user can specify the default name of comp
-- 2026-04-23 `a339e1e7` Control Rig Dynamics - Add support for confiners
+- 2026-04-24 `a0e35edd` Control Rig Dynamics - 调试控件
+- 2026-04-23 `c20a96e5` Control Rig Dynamics - 为可视化与调试添加控制台变量
+- 2026-04-23 `f919acb2` Control rig dynamics - 移除求解器自身包含碰撞体的支持（一项不必要的复杂性）
+- 2026-04-23 `f9267d2f` Control Rig Dynamics - 为生成节点添加输入，以便用户指定组件的默认名称
+- 2026-04-23 `a339e1e7` Control Rig Dynamics - 添加对约束器的支持
 
 ### 维护评价
 
-- **状态**：实验性（`IsExperimentalVersion=true`），且默认未启用（`Installed=false`）。
-- **活跃度**：作为新创建的实验性插件，预计在早期阶段会由 Epic 进行密集开发和调整。
-- **风险**：API 和功能可能在后续版本中发生重大变化，不建议在需要长期稳定性的生产项目中作为核心依赖。
-- **推荐**：适合用于原型开发、内部工具或学习 ControlRig 扩展开发。在生产环境中使用前，需密切关注其版本更新和废弃通知。
+该插件近期提交频率高，时间集中，表明处于**活跃开发**阶段。提交内容主要集中在功能增强（如添加约束器支持、自定义组件名称）和开发体验优化（调试工具、可视化变量），显示出明确的迭代方向。
 
 ## 相关链接
 

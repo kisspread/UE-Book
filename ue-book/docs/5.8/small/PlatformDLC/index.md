@@ -256,13 +256,15 @@ void UMyGameDLCManager::HandleDLCNotification(FName DLCName, IPlatformDLC::ENoti
 
 ### 近期更新
 
-- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF. (将日志宏迁移到新的 UE_LOGF 格式)
-- 2026-03-25 `5b63810e` Add extra IPlatformFile functions to PlatformDLCFile (为 PlatformDLCFile 添加额外的 IPlatformFile 函数)
-- 2026-03-25 `9977baae` Add a LexToString for IPlatformDLC ENotifications (为 IPlatformDLC::ENotification 添加 LexToString 转换函数)
+- 2026-04-14 `35e60df1` 将日志宏 `UE_LOG` 迁移至 `UE_LOGF`。
+- 2026-03-25 `5b63810e` 为 `PlatformDLCFile` 添加额外的 `IPlatformFile` 接口函数。
+- 2026-03-25 `9977baae` 为 `IPlatformDLC` 的 `ENotifications` 枚举添加 `LexToString` 转换函数。
+- 2026-03-18 `809c0a6a` 添加一个自定义的 `IPlatformFile` 以支持特定的 DLC 挂载路径。
+- 2026-03-17 `78217d03` 为 `GetDownloadSize` 添加桩函数（尚未实现）。
 
 ### 维护评价
 
-该插件创建于 2026 年 3 月，是一个非常新的实验性插件（`IsBetaVersion: true`）。从 git 历史看，在创建后的一个月内有多次功能性更新（如添加文件系统支持、枚举转换函数），表明它正处于**早期活跃开发阶段**。由于是实验性插件，其 API 明确声明“may be subject to change”，因此**不推荐在需要稳定性的生产项目中直接使用**。它非常适合用于技术预研、原型开发或作为学习跨平台 DLC 集成的参考。建议关注其后续版本，等待 API 趋于稳定。
+该插件在近期（约一个月内）保持了较高的更新频率，提交内容集中在功能扩展、接口完善和代码优化上，表明其处于活跃的开发迭代阶段。
 
 ## 相关链接
 

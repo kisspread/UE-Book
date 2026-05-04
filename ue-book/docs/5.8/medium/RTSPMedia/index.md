@@ -33,11 +33,15 @@
 
 ### 近期更新
 
-- 2026-04-20 `3ed2062b` ElectraDecoders: modernized the decoder factory to be more usable for other clients
-- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
-- 2026-04-10 `e18acf19` More unreachable code warning fixes
-- 2026-03-25 `160bc52a` [RTSPMedia] Enable bProvideCpuBuffer by default
-- 2026-03-20 `1330a56b` [RTSPMedia] Add Provide CPU buffer option
+- 2026-04-20 `3ed2062b` ElectraDecoders：现代化了译码器工厂，使其对其他客户端更易用。
+- 2026-04-14 `35e60df1` 将 UE_LOG 迁移至 UE_LOGF。
+- 2026-04-10 `e18acf19` 修复了更多未使用代码的警告。
+- 2026-03-25 `160bc52a` [RTSPMedia] 默认启用 bProvideCpuBuffer 选项。
+- 2026-03-20 `1330a56b` [RTSPMedia] 添加了提供 CPU 缓冲区的选项。
+
+### 维护评价
+
+该插件近期处于**活跃**维护状态。在约一个月的时间内有持续的提交，内容涵盖了新功能开发（CPU缓冲区）、核心组件现代化（译码器工厂）以及代码质量改进（日志迁移、警告修复），表明开发团队正在积极地进行功能增强和代码优化。
 
 ## 相关链接
 

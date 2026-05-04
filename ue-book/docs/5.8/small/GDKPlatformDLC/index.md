@@ -283,18 +283,15 @@ void AMyDLCManagerActor::TryMountDLC(FName DLCName)
 
 ### 近期更新
 
-- 2026-04-24 `101f2bf3` Enable GDK ARM64 support in plugins (requires April 2026 GDK & modern folder layout)
-- 2026-04-22 `c4a59235` Prioritize a DLC if the user requests to download it again while already downloading.
-- 2026-04-21 `9335740f` Remove a couple of unnecessary "is packaged process" checks
+- 2026-04-24 `101f2bf3` 在插件中启用 GDK ARM64 支持（需要 2026 年 4 月版 GDK 及现代文件夹布局）。
+- 2026-04-22 `c4a59235` 当用户请求重新下载一个已在下载中的 DLC 时，将其优先级提升。
+- 2026-04-21 `9335740f` 移除了几处不必要的“是否为打包进程”检查。
+- 2026-04-20 `8e8e104d` 修复 DLC 挂载路径与资产注册表加载逻辑，以统一控制台与 PC GDK 平台的行为。
+- 2026-04-17 `6c63b6ce` 在 GDK 平台 DLC 中添加购买功能。
 
 ### 维护评价
 
-该插件创建于 2026 年 4 月，非常新。从最近的提交记录看，它正处于**活跃开发**阶段，提交频率高（几乎每天），内容涉及功能增强（ARM64 支持、下载优先级）、代码优化和 Bug 修复。
-
-**综合评价**：
-- **状态**：实验性（`IsBetaVersion=true`）且默认禁用（`EnabledByDefault=false`），表明其 API 和功能可能还不稳定。
-- **活跃度**：非常高，由 Epic 官方团队在积极维护和迭代。
-- **推荐度**：**适合早期采用者和 Xbox 平台开发者**。如果你正在为 Xbox (GDK) 平台开发并急需 DLC 功能，可以尝试集成，但需注意其“实验性”标签，未来 API 可能有变动。对于非 GDK 平台或寻求稳定方案的项目，建议等待其正式发布或使用更成熟的第三方解决方案。
+该插件处于**活跃维护**状态。近一周内提交频繁，内容涵盖了新功能开发（ARM64支持、DLC购买）、用户体验优化（下载优先级）以及重要的平台一致性修复，表明团队正在积极迭代和完善此插件。
 
 ## 相关链接
 

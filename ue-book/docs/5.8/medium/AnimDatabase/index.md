@@ -33,11 +33,15 @@ AnimDatabase 是一个实验性插件，旨在提供一个用于管理和查询�
 
 ### 近期更新
 
-- 2026-04-24 `05f62ee5` AnimGen: Added support for debug drawing on the canvas
-- 2026-04-22 `2fc4ab35` AnimGen: No longer auto-refresh when changing frame ranges or frame attributes on the various editor
-- 2026-04-22 `e4a63951` AnimDatabase: Added a couple more frame attribute functions
-- 2026-04-10 `4f791a26` AnimDatabase: Adjusted how bone weights are computed to improve autoencoder accuracy on foot joints
-- 2026-04-10 `3f7370fe` AnimGen: Added attribute smoothing to help reduce the noise
+- 2026-04-24 `05f62ee5` AnimGen：新增了在画布上进行调试绘制的支持。
+- 2026-04-22 `2fc4ab35` AnimGen：在各编辑器中更改帧范围或帧属性时，不再自动刷新。
+- 2026-04-22 `e4a63951` AnimDatabase：新增了若干帧属性函数。
+- 2026-04-10 `4f791a26` AnimDatabase：调整了骨骼权重的计算方式，以提升自动编码器在足部关节上的准确性。
+- 2026-04-10 `3f7370fe` AnimGen：新增了属性平滑功能，以帮助减少噪声。
+
+### 维护评价
+
+该插件在近期（两周内）提交频率较高，更新内容涵盖功能新增、用户体验优化及核心算法改进，表明其处于**活跃开发与维护**状态。开发团队不仅在添加新特性，也在持续优化现有功能的性能和效果。
 
 ## 相关链接
 

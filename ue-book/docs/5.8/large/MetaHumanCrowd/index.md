@@ -33,11 +33,15 @@ MetaHuman Crowd 插件旨在解决在 Unreal Engine 场景中高效生成和管�
 
 ### 近期更新
 
-- 2026-04-24 `56296dcc` The MetaHuman Crowd pipeline now does most of its processing on Mesh Descriptions and builds skeleta
-- 2026-04-24 `8d3ed3d0` [MHCrowd] Add missing plugin dependencies
-- 2026-04-24 `16907471` [MHCrowd] Add in experimental UAF support example for MH Crowds
-- 2026-04-23 `a0e976cb` [MHCrowd] Fix for animation merging
-- 2026-04-21 `227124bc` [MHCrowd] Add MetaHuman Mass classes to the MHCrowd plugin
+- 2026-04-24 `56296dcc` MetaHuman Crowd 管线现已主要基于网格描述进行处理，并从中构建骨骼网格体。
+- 2026-04-24 `8d3ed3d0` [MHCrowd] 添加了缺失的插件依赖项。
+- 2026-04-24 `16907471` [MHCrowd] 为 MetaHuman 人群添加了实验性的 UAF 支持示例。
+- 2026-04-23 `a0e976cb` [MHCrowd] 修复了动画合并问题。
+- 2026-04-21 `227124bc` [MHCrowd] 将 MetaHuman Mass 类添加到 MHCrowd 插件中。
+
+### 维护评价
+
+该插件在四天内有五次提交，维护频率很高，处于**活跃开发**阶段。提交内容涵盖了核心功能优化、依赖修复、实验性功能引入及问题修复，表明团队正在快速迭代并扩展其功能。
 
 ## 相关链接
 

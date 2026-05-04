@@ -32,11 +32,15 @@ Direct Mesh Control 插件提供了一种直观的动画制作方式，允许用
 
 ### 近期更新
 
-- 2026-04-24 `7faab2ed` Direct Mesh Control: fixed library and proxies being GCd
-- 2026-04-16 `090ee041` Animation Mode: support for hovered state and colors for gizmo libraries
-- 2026-04-15 `f5734c77` Direct Mesh Control: documentation pass
-- 2026-04-14 `da21a789` Direct Mesh Control: remove useless logs
-- 2026-04-14 `331f0ab8` Direct Mesh Control: force DMC components animation updates in editor
+- 2026-04-24 `7faab2ed` Direct Mesh Control：修复了库和代理被垃圾回收的问题
+- 2026-04-16 `090ee041` 动画模式：支持悬停状态并为 Gizmo 库添加颜色支持
+- 2026-04-15 `f5734c77` Direct Mesh Control：文档更新
+- 2026-04-14 `da21a789` Direct Mesh Control：移除无用日志
+- 2026-04-14 `331f0ab8` Direct Mesh Control：在编辑器中强制更新 DMC 组件动画
+
+### 维护评价
+
+该插件近期维护非常活跃，在约10天内进行了5次提交，内容涵盖关键bug修复、功能增强、文档完善和代码优化。这些更新表明开发团队正在积极解决实际问题并持续改进插件，处于稳定且积极的维护状态。
 
 ## 相关链接
 

@@ -32,11 +32,15 @@
 
 ### 近期更新
 
-- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
-- 2026-04-13 `55407bce` Chaos API: Updated the scene api by splitting Tick into Start/End Tick. Also added WaitOnTick.
-- 2026-04-09 `c63a4c15` Chaos API: Updating shape instance to handle materials.
-- 2026-04-08 `6d6dbc44` Chaos API: Adding PhysicsService and removing the dependecy of the async plugin on dataflow.
-- 2026-03-31 `5f0e43c9` Chaos API: Updating shape instance to handle convex, triangle mesh, and height field geometry types.
+- 2026-04-14 `35e60df1` 将 UE_LOG 迁移至 UE_LOGF。
+- 2026-04-13 `55407bce` Chaos API：通过将 Tick 拆分为 Start/End Tick 来更新场景 API，并新增了 WaitOnTick。
+- 2026-04-09 `c63a4c15` Chaos API：更新形状实例以处理材质。
+- 2026-04-08 `6d6dbc44` Chaos API：添加 PhysicsService，并移除了异步插件对 Dataflow 的依赖。
+- 2026-03-31 `5f0e43c9` Chaos API：更新形状实例以处理凸体、三角网格和高度场几何类型。
+
+### 维护评价
+
+该插件近期处于**活跃维护**状态。在约两周内进行了五次提交，更新频率较高，内容集中于 Chaos 物理 API 的底层重构、功能解耦与接口优化，表明开发团队正在积极完善其核心架构与稳定性。
 
 ## 相关链接
 

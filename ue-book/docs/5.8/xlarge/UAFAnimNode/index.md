@@ -94,17 +94,15 @@ public:
 
 ### 近期更新
 
-- 2026-04-15 `8d8f8b4b` Implement blend overwrite and accumulate AnimOps
-- 2026-04-14 `64a20049` Add newly relevant hint to allow nodes to be re-used
-- 2026-04-14 `36403a6d` Add accessor to set the play rate
-- 2026-04-14 `afb293fa` Add construction variants to AnimOp ArrayView
-- 2026-04-14 `d1af965e` Add InputValue anim node/op
+- 2026-04-15 `8d8f8b4b` 实现混合覆盖与累积动画操作
+- 2026-04-14 `64a20049` 添加新相关提示以允许节点被重用
+- 2026-04-14 `36403a6d` 添加用于设置播放速率的访问器
+- 2026-04-14 `afb293fa` 为 AnimOp 数组视图添加构造变体
+- 2026-04-14 `d1af965e` 添加输入值动画节点/操作
 
 ### 维护评价
 
-- **实验性插件**：该插件在 `.uplugin` 中明确标记为 `IsExperimentalVersion: true` 且 `EnabledByDefault: false`。这意味着它处于早期开发阶段，API 和功能可能不稳定，不建议在生产项目中直接使用。
-- **依赖关系**：作为 UAF 插件的扩展，其维护状态与 UAF 主插件紧密相关。
-- **推荐**：仅建议用于学习、研究或对 UAF 框架进行原型开发。在生产环境中使用前，需密切关注 Epic 官方的更新公告和稳定性声明。
+该插件近期（2026年4月14-15日）有密集的提交记录，内容涵盖核心功能实现、接口扩展与优化，表明其维护状态非常**活跃**，正处于快速的功能迭代与完善阶段。
 
 ## 相关链接
 

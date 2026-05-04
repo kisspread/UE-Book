@@ -34,11 +34,15 @@ MP4Utilities 插件提供了一套底层工具，用于在 Unreal Engine 中直�
 
 ### 近期更新
 
-- 2026-04-23 `0cd64869` ElectraDecoders: Fixed an issue where mp4a audio is wrapped inside a wave box in a QuickTime file. T
-- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
-- 2026-03-04 `3fbcc0a3` Protron: Await one sample from each selected track (video and audio, if enabled) to be ready before 
-- 2026-03-03 `6ea9f319` MP4Utilities: fixed handling of encrypted tracks that have no senc box; only reading well-known root
-- 2026-02-25 `ecaf73c3` Electra: Added a new mp4 handler path to the DASH and HLS segment reader; added common encryption ha
+- 2026-04-23 `0cd64869` 修复了 ElectraDecoders 中 mp4a 音频在 QuickTime 文件内被包裹于 wave box 的问题。
+- 2026-04-14 `35e60df1` 将 UE_LOG 迁移至 UE_LOGF。
+- 2026-03-04 `3fbcc0a3` Protron：在将样本送入处理前，等待每个选定轨道（视频和音频，如已启用）的样本准备就绪。
+- 2026-03-03 `6ea9f319` MP4Utilities：修复了对没有 senc box 的加密轨道的处理；仅读取已知的根级 box。
+- 2026-02-25 `ecaf73c3` Electra：为 DASH 和 HLS 段读取器添加了新的 mp4 处理路径；为 mp4 box 添加了通用加密处理。
+
+### 维护评价
+
+该插件处于**活跃维护**状态。从提交记录看，近两个月内有多次更新，内容涵盖关键错误修复、日志系统迁移、流媒体同步优化以及加密功能增强，表明开发团队在持续改进其稳定性和功能完整性。维护重点集中在流媒体协议支持与内容加密处理上，适合需要这些特性的项目。
 
 ## 相关链接
 

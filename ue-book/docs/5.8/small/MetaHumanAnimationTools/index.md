@@ -32,8 +32,12 @@
 
 ### 近期更新
 
-- 2026-02-03 `f39fc2f9` Correct filename misspelling
-- 2026-02-02 `b1aae96f` Add new plugin to efficiently serialize facial animation curve data
+- 2026-02-03 `f39fc2f9` 修正文件名拼写错误
+- 2026-02-02 `b1aae96f` 新增插件，用于高效序列化面部动画曲线数据
+
+### 维护评价
+
+该插件近期有连续的提交记录，且内容包含错误修复与新功能开发，表明其处于**活跃维护**状态。从提交内容看，开发团队正在积极完善功能并优化代码质量，插件可能正处于功能扩展与稳定化阶段。
 
 ## 相关链接
 

@@ -143,13 +143,15 @@ void AMyPlayFabNetGameMode::InitGame(const FString& MapName, const FString& Opti
 
 ### 近期更新
 
-- 2026-04-24 `101f2bf3` Enable GDK ARM64 support in plugins (requires April 2026 GDK & modern folder layout)
-- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
-- 2026-03-09 `5eb8fada` [Backout] - CL51493025
+- 2026-04-24 `101f2bf3` 启用插件中的 GDK ARM64 支持（需要 2026 年 4 月版 GDK 及新版文件夹结构）
+- 2026-04-14 `35e60df1` 将 UE_LOG 迁移至 UE_LOGF。
+- 2026-03-09 `5eb8fada` [回退] - CL51493025
+- 2026-03-06 `923ad4b0` 修复 PlayFab 在 PC GDK 上使用新版文件夹结构时的构建问题
+- 2026-03-06 `21bccda6` 在插件中启用 arm64 支持
 
 ### 维护评价
 
-该插件创建于 2026 年 3 月，是一个非常新的插件。从 git 历史看，它在创建后的一个月内有多次更新，包括功能增强（ARM64 支持）和代码维护（日志迁移）。这表明它正处于**活跃维护**阶段。由于其明确依赖于特定的 GDK 版本和平台（Win64），它主要面向使用 PlayFab 和 Xbox 生态系统的项目。对于需要此特定网络解决方案的项目，推荐使用，但需注意其平台限制和对外部服务（PlayFab， Xbox Live）的依赖。
+该插件在近期两个月内有持续的提交记录，维护状态活跃。提交内容涵盖了新平台支持（ARM64）、构建问题修复、代码优化及必要的回退操作，表明开发团队正在积极适配新环境并维护代码质量。
 
 ## 相关链接
 

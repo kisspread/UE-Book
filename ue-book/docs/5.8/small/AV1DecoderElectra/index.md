@@ -120,18 +120,15 @@ IMPLEMENT_MODULE(FMyMediaModule, MyMedia)
 
 ### 近期更新
 
-- 2026-04-20 `3ed2062b` ElectraDecoders: modernized the decoder factory to be more usable for other clients
-- 2025-11-19 `514ccff4` ElectraCodecs: Add information about the decoder implementation being used for decoding.
-- 2025-11-04 `4d60ad68` ElectraCodec: Renamed AV1 decoder factory
-- 2025-11-04 `2d22420d` ElectraCodecs: added av1 software decoding to x64_64 Linux
-- 2025-11-03 `ca937255` ElectraCodecs: Added software AV1 decoder plugin
+- 2026-04-20 `3ed2062b` ElectraDecoders: 对解码器工厂进行了现代化改造，使其对其他客户端更加易用。
+- 2025-11-19 `514ccff4` ElectraCodecs: 添加了关于正在使用的解码器实现的信息。
+- 2025-11-04 `4d60ad68` ElectraCodec: 重命名了 AV1 解码器工厂。
+- 2025-11-04 `2d22420d` ElectraCodecs: 为 x86_64 Linux 平台添加了 AV1 软件解码支持。
+- 2025-11-03 `ca937255` ElectraCodecs: 添加了软件 AV1 解码器插件。
 
 ### 维护评价
 
-- **创建时间**：插件非常新，创建于 2025 年 11 月。
-- **更新频率**：在创建后的短时间内有密集的提交，包括功能添加、重构和平台支持扩展。最近一次更新在 2026 年 4 月，表明仍在积极维护和改进。
-- **实验性状态**：插件被明确标记为 `IsBetaVersion` 和 `IsExperimentalVersion`，且默认未启用 (`EnabledByDefault: false`)。这表明它可能尚未达到生产就绪状态，API 或行为未来可能发生变化。
-- **推荐**：**推荐在实验性项目或需要 AV1 软件解码的特定场景中使用**。由于其活跃的维护和明确的实验性标签，适合跟进 UE 的媒体技术发展。不建议在追求绝对稳定性的生产环境中无条件启用。
+该插件近期处于**稳定活跃**的维护状态。从2025年11月集中添加核心功能（AV1软件解码）到2026年4月进行架构优化，更新持续且目的明确，表明开发团队在积极完善其功能和可用性。
 
 ## 相关链接
 

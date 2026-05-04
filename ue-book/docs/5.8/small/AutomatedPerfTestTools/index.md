@@ -170,12 +170,12 @@ IMPLEMENT_MODULE(FMyCustomLaunchExtensionModule, MyCustomLaunchExtension);
 
 ### 近期更新
 
-- 2026-03-18 `bb23bd67` APT Launcher Extension Minor improvements and updates
-- 2026-02-06 `600e17a2` APT: Remove Editor and Engine dependencies from APT Launcher Extension
+- 2026-03-18 `bb23bd67` APT Launcher Extension 小幅改进与更新
+- 2026-02-06 `600e17a2` APT：从 APT Launcher Extension 中移除编辑器和引擎依赖
 
 ### 维护评价
 
-该插件创建于 **2026年2月**，是一个非常新的插件。从最近的提交记录看，它在创建后一个月内就有后续的改进和优化（移除不必要的依赖），表明其处于**活跃开发**阶段。由于其标记为 `IsExperimentalVersion=true`，说明 Epic 可能还在对其进行功能验证和接口调整，不建议在生产环境中作为稳定依赖使用，但非常适合用于内部测试和工具链开发。推荐关注其后续版本更新。
+该插件处于稳定维护状态。提交间隔约一个半月，频率适中，内容聚焦于特定扩展模块（APT Launcher Extension）的优化与依赖清理，表明维护工作持续且目标明确。
 
 ## 相关链接
 

@@ -106,14 +106,14 @@ IMPLEMENT_MODULE(FMyMediaModule, MyMedia)
 
 ### 近期更新
 
-- 2026-04-20 `3ed2062b` ElectraDecoders: modernized the decoder factory to be more usable for other clients
-- 2026-01-12 `611dda1f` Electra: Moved mp4 related utilities into dedicated plugin
-- 2026-01-08 `ccd8e12c` ElectraCodecs: Added APV bitstream parser and decoder configuration record
-- 2025-11-27 `52c2bc9e` ElectraCodecs: Added experimental APV decoder plugin
+- 2026-04-20 `3ed2062b` ElectraDecoders：现代化了解码器工厂，使其对其他客户端更易用。
+- 2026-01-12 `611dda1f` Electra：将MP4相关工具移至专用插件。
+- 2026-01-08 `ccd8e12c` ElectraCodecs：添加了APV比特流解析器和解码器配置记录。
+- 2025-11-27 `52c2bc9e` ElectraCodecs：添加了实验性的APV解码器插件。
 
 ### 维护评价
 
-该插件创建于 2025 年底，是一个非常新的项目。从提交历史看，它在创建后持续有功能更新（如添加比特流解析器、改进解码器工厂），表明它处于**活跃开发**阶段。然而，其 `.uplugin` 明确标记为 `IsBetaVersion` 和 `IsExperimentalVersion`，且默认未启用 (`EnabledByDefault: false`)，这强烈表明它仍处于**实验性阶段**，API 和功能可能不稳定，不建议在生产环境中使用。它主要面向希望提前集成或测试 APV 解码能力的开发者。
+该插件的维护状态为**活跃且持续优化**。从提交记录看，其在约5个月内有4次提交，频率稳定。内容从引入实验性解码器，到完善核心解析功能，再到优化架构以提升通用性，显示出清晰的功能演进和积极的维护投入。
 
 ## 相关链接
 

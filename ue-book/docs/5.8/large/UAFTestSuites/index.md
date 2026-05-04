@@ -97,13 +97,15 @@ bool FMyAnimNodeTest::RunTest(const FString& Parameters)
 
 ### 近期更新
 
-- 2026-03-30 `a1b2c3d` Initial commit of UAFTestSuites plugin with core test suites for AnimGraph, AnimNodes, and CQ.
+- 2026-04-14 `12eb7efc` 修复 FBindableXxx 在与 UAF 特性一同使用时的绑定序列化问题。
+- 2026-04-14 `35e60df1` 将 UE_LOG 迁移至 UE_LOGF。
+- 2026-04-10 `797a6da6` 将 GetComponent 重命名为 GetOrAddComponent 以更准确地反映其功能。
+- 2026-04-06 `4ba19be0` 为 FBindableValue 添加函数绑定支持。
+- 2026-03-30 `0df5eb4c` 添加 FBindableTransform 用于绑定 FTransform 值（相比使用 FBindableStruct 包装 FTransform，其开销更低）。
 
 ### 维护评价
 
-- **创建时间**：2026年3月，是一个非常新的插件。
-- **维护状态**：作为 UAF 系统的配套测试套件，其维护将与 UAF 核心模块的开发紧密同步。只要 UAF 系统仍在积极开发，此测试套件就会持续更新以覆盖新功能和修复。
-- **推荐使用**：对于 UAF 系统的开发者和贡献者，**强烈推荐**使用此插件来保证代码质量。对于普通游戏开发者，除非你需要深入调试或理解 UAF 内部机制，否则无需直接使用此插件。
+该插件处于**活跃维护**状态。在约两周的时间内有五次提交，频率较高，且内容集中于功能增强（如新增绑定类型、函数绑定支持）和问题修复，表明开发团队正在积极完善其核心功能。从提交内容看，插件正从基础功能向更稳定、更完善的API演进。
 
 ## 相关链接
 

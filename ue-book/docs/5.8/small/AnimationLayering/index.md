@@ -32,8 +32,12 @@
 
 ### 近期更新
 
-- 2026-04-23 `ee8f5281` Animation Layering: Add missing CopyBoneMotion AnimGraphNode
-- 2026-04-17 `1845d881` AnimationLayering: Add new public experimental Animation Layering plugin
+- 2026-04-23 `ee8f5281` 动画分层：添加缺失的CopyBoneMotion动画图节点
+- 2026-04-17 `1845d881` 动画分层：添加新的公共实验性动画分层插件
+
+### 维护评价
+
+该插件在近期一周内有两次密集的功能提交，表明其处于活跃开发阶段。由于明确标注为“实验性”且核心功能仍在添加中，建议用户谨慎用于生产环境。
 
 ## 相关链接
 

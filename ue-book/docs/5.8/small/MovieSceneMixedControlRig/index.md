@@ -32,11 +32,15 @@
 
 ### 近期更新
 
-- 2026-04-21 `eb0331ca` Anim Mixer: Bake To Control Rig and Anim Sequence support for anim mixer for binding, mixer track an
-- 2026-04-17 `62f614c6` Sequencer: Fix Control Rig gizmo drawing offset in Animation Mixer with multi-layer root motion
-- 2026-04-07 `8bf4fb4b` Sequencer: Restructure mixer evaluation around layers; new mask blend system
-- 2026-03-31 `b48e7f74` Fix shutdown issue with MovieScene
-- 2026-03-31 `c7aaaa03` Sequencer: Enable root motion extraction for control rig in Animation Mixer.
+- 2026-04-21 `eb0331ca` 动画混合器：为动画混合器的绑定、混合器轨道和混合器层添加了“烘焙到控制绑定”和“动画序列”支持。
+- 2026-04-17 `62f614c6` Sequencer：修复了在动画混合器中使用多层根运动时，控制绑定 Gizmo 绘制偏移的问题。
+- 2026-04-07 `8bf4fb4b` Sequencer：围绕层重构了混合器评估系统；引入了新的遮罩混合系统。
+- 2026-03-31 `b48e7f74` 修复了 MovieScene 的关闭问题。
+- 2026-03-31 `c7aaaa03` Sequencer：在动画混合器中为控制绑定启用了根运动提取功能。
+
+### 维护评价
+
+该插件处于**活跃开发**状态。在约三周的时间内有五次提交，更新频率较高。提交内容涵盖了新功能开发（动画混合器支持、根运动提取）、关键问题修复以及核心评估系统的重构，表明团队正在积极完善其功能并优化架构，很可能在为即将到来的引擎版本（如5.8）做准备。
 
 ## 相关链接
 

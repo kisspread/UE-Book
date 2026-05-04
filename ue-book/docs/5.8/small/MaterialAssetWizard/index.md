@@ -129,13 +129,15 @@ public:
 
 ### 近期更新
 
-- 2026-02-04 `0a79374b` Reworded plugin description
-- 2025-12-08 `b0e8a065` Ensure material resources and shaders are compiled when creating new material assets so their thumbnails render correctly.
-- 2025-10-29 `b8f9bca5` Fixed Material Async Wizard factories
+- 2026-02-04 `0a79374b` 重写了插件描述
+- 2025-12-08 `b0e8a065` 确保在创建新材质资产时编译材质资源和着色器，使其缩略图正确渲染
+- 2025-10-29 `b8f9bca5` 修复了材质异步向导工厂的问题
+- 2025-10-24 `4e7de009` 为 Niagara 和材质向导启用了异步工厂工作流
+- 2025-10-24 `08821bf2` 为标记资产浏览器窗口添加了异步支持
 
 ### 维护评价
 
-该插件创建于 2025 年 10 月，是一个相对较新的功能。从 git 历史看，它在创建后一个月内就进行了异步支持和 bug 修复，并在近期（2026年2月）更新了描述，表明它仍在被 Epic Games 积极维护和使用。它解决了材质创建流程中的一个实际痛点，功能明确且稳定。**推荐使用**，特别是对于需要高效管理材质资产的项目。
+该插件近期有持续的更新记录，时间跨度约四个月，提交内容涵盖功能增强、异步支持添加及问题修复。这表明插件处于活跃维护状态，开发者正在积极优化其功能和稳定性。
 
 ## 相关链接
 

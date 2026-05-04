@@ -88,14 +88,12 @@ public:
 
 ### 近期更新
 
-- 2026-04-14 `35e60df1` Migrate UE_LOG to UE_LOGF.
-- 2026-03-30 `6ab5ee4d` [NNE] NNEModelTests to experimental.
+- 2026-04-14 `35e60df1` 将UE_LOG迁移至UE_LOGF日志宏。
+- 2026-03-30 `6ab5ee4d` 将NNEModelTests插件标记为实验性状态。
 
 ### 维护评价
 
-- **实验性插件**：该插件在 `.uplugin` 中明确标记为 `IsExperimentalVersion: true` 且 `EnabledByDefault: false`，表明其处于早期开发阶段，API 和功能可能不稳定。
-- **工具性质**：作为测试基础设施，其维护状态与 NNE 核心模块的开发紧密相关。只要 NNE 在积极开发，此插件通常也会得到相应维护。
-- **推荐使用**：仅推荐给 NNE 框架的开发者和贡献者用于测试目的。不建议在正式的游戏项目中依赖此插件。
+该插件目前处于实验性阶段。近期提交均为维护性工作，表明开发团队仍在关注，但未进入积极的功能开发期。
 
 ## 相关链接
 

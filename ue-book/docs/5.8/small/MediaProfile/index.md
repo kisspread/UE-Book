@@ -182,17 +182,13 @@ UMediaProfile* UMediaProfileDemoManager::GetCurrentProfile() const
 
 ### 近期更新
 
-- 2026-04-24 `2f25a66f` MediaProfile: Fixed issues with migrating UMediaProfile to its own plugin
-- 2026-04-24 `6dbb0e93` [MediaProfile] - fix crash on loading startup media profile
-- 2026-04-23 `43d97726` MediaProfile: Moved UMediaProfile and related entities to its own plugin to avoid dependency on Open
+- 2026-04-24 `2f25a66f` MediaProfile：修复了将 UMediaProfile 迁移至独立插件时出现的问题
+- 2026-04-24 `6dbb0e93` [MediaProfile] - 修复了加载启动媒体配置文件时的崩溃问题
+- 2026-04-23 `43d97726` MediaProfile：将 UMediaProfile 及相关实体移至独立插件，以避免对 OpenCVDistortion 的依赖
 
 ### 维护评价
 
-该插件非常新（创建于 2026 年 4 月），目前处于**实验性**阶段（`IsExperimentalVersion=true`，且默认未启用）。从最近的提交记录看，它刚刚从其他模块（可能是 `Open` 相关插件）中独立出来，并正在修复迁移过程中引入的问题。这表明该功能正在积极开发和稳定化中。
-
-**优点**：由 Epic Games 官方维护，架构清晰（代理模式），解决了虚拟制片等场景下的实际痛点。
-**风险与限制**：作为实验性功能，API 和资产格式可能在未来版本中发生变化。目前文档和社区资源可能较少。
-**推荐**：如果你正在开发虚拟制片、广播或需要复杂媒体管理的项目，并且愿意承担实验性功能的风险，可以尝试使用。对于生产环境，建议密切关注其版本更新和稳定性改进。
+该插件近期维护非常活跃，在短短两天内进行了三次提交，内容集中于关键的架构重构（独立化）和稳定性修复。这表明插件正处于快速迭代和优化阶段，维护团队响应及时，致力于解决依赖和崩溃问题。
 
 ## 相关链接
 
