@@ -1,81 +1,118 @@
 # UE5 Plugin Documentation Pipeline
 
-批量生成 UE5 插件使用文档的自动化流水线。
+批量生成 UE5 插件使用文档的自动化流水线。通过 LLM 分析源码，生成中文使用文档。
+
+## 版本
+
+| | V1 (本地) | V2 (GitHub Actions) |
+|---|---|---|
+| 源码来源 | 本地 clone | GitHub API |
+| 执行方式 | `python3 run.py` | Actions workflow_dispatch |
+| 版本管理 | 无 | `docs/{version}/` |
+| 增量策略 | 全量 | 按版本增量（只生成新增 plugin） |
 
 ## 快速开始
 
+### V2 (推荐)
+
 ```bash
-# 1. 复制本地配置模板并填入你的路径和 API 信息
-cp pipeline/config_local.example.py pipeline/config_local.py
-vim pipeline/config_local.py
+# 1. 配置
+cp v2/config_local.example.py v2/config_local.py
+# 编辑 v2/config_local.py 填入 LLM 配置
 
-# 2. 设置 API Key（环境变量）
-export LLM_API_KEY="your-api-key-here"
+# 2. 设置 GitHub Token
+export GH_PAT="ghp_你的token"
 
-# 3. 生成单个 plugin
-python3 run.py -p PluginName
+# 3. 查看会生成哪些 plugin
+python3 -m v2.run --version 5.8 --dry-run
 
-# 批量生成指定 plugin
-python3 run.py -p PluginA PluginB PluginC -b 3
+# 4. 增量生成（只生成 5.8 新增的 plugin）
+python3 -m v2.run --version 5.8
 
-# 按规模批量生成
-python3 run.py -c xlarge -b 4      # 100+ 文件的 plugin
-python3 run.py -c medium -n 10      # 前 10 个 medium
+# 5. 强制重新生成指定 plugin
+python3 -m v2.run --version 5.8 --force EnhancedInput MetaHuman
 
-# 生成所有未完成的 plugin
-python3 run.py
+# 6. 强制全量重新生成
+python3 -m v2.run --version 5.8 --force-all
 ```
 
-参数：
-- `-p, --plugins` — 指定 plugin 名称（空格分隔）
-- `-c, --category` — 按规模：small / medium / large / xlarge
-- `-n, --limit` — 最多处理几个
-- `-b, --batch-size` — 并发数（默认 3）
+### V1 (本地模式)
 
-## 配置
+需要本地 UE 源码 clone，配置 `pipeline/config_local.py`：
 
-### 本地配置（git-ignored）
+```bash
+cp pipeline/config_local.example.py pipeline/config_local.py
+export LLM_API_KEY="your-key"
+python3 run.py -p PluginName
+python3 run.py -c xlarge -b 4
+```
 
-复制 `pipeline/config_local.example.py` 为 `pipeline/config_local.py`，填入：
+## GitHub Actions
 
-- `UE_SOURCE` — UE 源码根目录
-- `GIT_MAIN_REPO` — Git 主仓库路径
-- `LLM_BASE_URL` — LLM API 端点
-- `LLM_MODEL` — 模型名称
+在仓库的 Actions 页面手动触发：
 
-`config_local.py` 会自动覆盖 `config.py` 中的默认值。
+- **version**: UE 版本（如 `5.8`）
+- **force**: 留空 = 增量生成；填 `all` = 全量；填 plugin 名（逗号分隔）= 指定 plugin
 
-### 环境变量
+### Secrets 配置
 
-- `LLM_API_KEY` — API 密钥（优先读取环境变量）
-- `LLM_BASE_URL` — 可选，覆盖 API 端点
-- `LLM_MODEL` — 可选，覆盖模型名
-
-切换其他 OpenAI 兼容的 LLM 只需改 `config_local.py` 中的三行。
+| Secret | 说明 |
+|--------|------|
+| `GH_PAT` | GitHub PAT（需 `repo` scope，用于访问 EpicGames/UnrealEngine） |
+| `LLM_BASE_URL` | LLM API 端点 |
+| `LLM_MODEL` | 模型名称 |
+| `LLM_API_KEY` | API 密钥 |
 
 ## 文件结构
 
 ```
 ue-book/
-├── run.py                      # CLI 入口
-├── pipeline/
-│   ├── config.py               # 默认配置（安全，可提交）
-│   ├── config_local.py         # 本地配置（git-ignored）
-│   ├── config_local.example.py # 配置模板
-│   ├── graph.py                # LangGraph 流水线（scan→generate→review→index）
-│   ├── scanner.py              # 源码扫描（git ls-files + Build.cs 解析）
-│   └── generator.py            # LLM 调用封装
-├── harness.md                  # 文档模板 + 生成规则（System Prompt）
-├── plugins-index.json          # 全局 plugin 索引（509 个）
+├── v2/                          # V2 pipeline (GitHub API)
+│   ├── config.py                # 配置
+│   ├── config_local.py          # 本地配置 (git-ignored)
+│   ├── scanner.py               # GitHub API 源码扫描
+│   ├── manifest.py              # manifest 管理
+│   ├── generator.py             # LLM 调用
+│   ├── graph.py                 # LangGraph 流水线
+│   ├── run.py                   # CLI 入口
+│   └── requirements.txt
+├── pipeline/                    # V1 pipeline (本地模式)
+│   ├── config.py
+│   ├── scanner.py
+│   ├── generator.py
+│   └── graph.py
+├── run.py                       # V1 CLI
+├── manifest.json                # 已生成 plugin 记录
+├── harness.md                   # 文档模板 + 生成规则
 ├── docs/
-│   ├── small/                  # 1-20 文件（270 个）
-│   ├── medium/                 # 21-50 文件（101 个）
-│   ├── large/                  # 51-100 文件（54 个）
-│   └── xlarge/                 # 100+ 文件（85 个）
-└── scripts/
-    ├── batch_doc.py            # 旧版进度管理脚本
-    └── monitor_xlarge.py       # 进度监控
+│   ├── small/                   # V1 文档 (5.7)
+│   ├── medium/
+│   ├── large/
+│   ├── xlarge/
+│   └── {version}/               # V2 文档 (按版本)
+│       └── {size}/
+├── plugins-index.json           # V1 plugin 索引
+└── .github/workflows/
+    └── generate.yml             # GitHub Actions
 ```
+
+## 增量策略
+
+`manifest.json` 记录所有已生成的 plugin：
+
+```json
+{
+  "versions": { "5.7": { "generated_at": "2026-05-01" } },
+  "plugins": {
+    "ADM": { "generated_in": "5.7", "size": "small", "doc_path": "docs/5.7/small/ADM/" }
+  }
+}
+```
+
+每次运行时：
+1. 从 GitHub API 获取目标版本的 plugin 列表
+2. 与 manifest 做 diff → 找出新增 plugin
+3. 只生成新增的，跳过已有的
 
 ## 流水线流程
 
@@ -87,25 +124,16 @@ scan → generate_modules → review → generate_index → finalize
               └── retry ─────┘ (review 不通过时，最多重试 2 次)
 ```
 
-- **scan**: git ls-files 定位 plugin 路径，解析 Build.cs 提取模块列表
+- **scan**: GitHub API 获取 .uplugin、模块列表、源码文件
 - **generate_modules**: 单模块生成 index.md，多模块每个模块一个 .md
 - **review**: 检查属性表、用途章节、模块完整性
 - **generate_index**: 多模块 plugin 生成汇总 index.md
-- **finalize**: 收集结果
-
-并发通过 `asyncio.Semaphore(batch_size)` 控制。
-
-## 已知限制
-
-- xlarge 中的 Avalanche 和 nDisplay 是巨型 plugin，各有 40+/7 模块，单个 plugin 需要 30-40 分钟
-- 100+ 模块的 plugin 会跳过模块完整性检查（review 只检查文档质量）
+- **finalize**: 移动到正确的 size 目录
 
 ## 文档模板
 
 生成规则定义在 `harness.md`，包括：
 - 属性表格式
-- 省略常见依赖（Core/Engine/Slate 等只列一次）
+- 省略常见依赖
 - 近期更新必须列出原始 commit
 - 不生成 Build.cs 代码块
-
-修改 `harness.md` 后重新生成即可生效。
