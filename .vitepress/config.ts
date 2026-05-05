@@ -71,7 +71,10 @@ export default defineConfig({
   rewrites,
 
   vite: {
-    plugins: [cppEscapePlugin()]
+    plugins: [cppEscapePlugin()],
+    resolve: {
+      preserveSymlinks: true,
+    },
   },
 
   ignoreDeadLinks: true,

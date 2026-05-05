@@ -1,0 +1,4365 @@
+{
+  "versions": {
+    "5.7": {
+      "generated_at": "2026-05-01"
+    }
+  },
+  "plugins": {
+    "ADM": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ADM/",
+      "forced": true
+    },
+    "ADOSupport": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ADOSupport/"
+    },
+    "AESGCMHandlerComponent": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AESGCMHandlerComponent/"
+    },
+    "AESHandlerComponent": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AESHandlerComponent/"
+    },
+    "AISupport": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AISupport/"
+    },
+    "AITestSuite": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AITestSuite/"
+    },
+    "AMFCodecs": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AMFCodecs/"
+    },
+    "ARUtilities": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ARUtilities/"
+    },
+    "AbilitySystemGameFeatureActions": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AbilitySystemGameFeatureActions/"
+    },
+    "ActorLayerUtilities": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ActorLayerUtilities/"
+    },
+    "ActorPalette": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ActorPalette/"
+    },
+    "ActorSequence": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ActorSequence/"
+    },
+    "Adjust": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/Adjust/"
+    },
+    "AnalyticsBlueprintLibrary": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AnalyticsBlueprintLibrary/"
+    },
+    "AnalyticsMulticast": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AnalyticsMulticast/"
+    },
+    "AndroidBackgroundService": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AndroidBackgroundService/"
+    },
+    "AndroidDeviceProfileSelector": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AndroidDeviceProfileSelector/"
+    },
+    "AndroidFetchBackgroundDownload": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AndroidFetchBackgroundDownload/"
+    },
+    "AndroidFileServer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AndroidFileServer/"
+    },
+    "AndroidMoviePlayer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AndroidMoviePlayer/"
+    },
+    "AndroidPermission": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AndroidPermission/"
+    },
+    "AnimToTexture": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AnimToTexture/"
+    },
+    "AnimationBudgetAllocator": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AnimationBudgetAllocator/"
+    },
+    "AnimationData": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AnimationData/"
+    },
+    "AnimationLocomotionLibrary": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AnimationLocomotionLibrary/"
+    },
+    "AnimationSharing": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AnimationSharing/"
+    },
+    "AnimatorKit": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AnimatorKit/"
+    },
+    "AppleARKitFaceSupport": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AppleARKitFaceSupport/"
+    },
+    "AppleImageUtils": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AppleImageUtils/"
+    },
+    "AppleMoviePlayer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AppleMoviePlayer/"
+    },
+    "ArchVisCharacter": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ArchVisCharacter/"
+    },
+    "AssetReferenceRestrictions": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AssetReferenceRestrictions/"
+    },
+    "AssetRegistryExport": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AssetRegistryExport/"
+    },
+    "AssetTags": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AssetTags/"
+    },
+    "AsyncMessageSystemTests": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AsyncMessageSystemTests/"
+    },
+    "AudioCQTests": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AudioCQTests/"
+    },
+    "AudioCapture": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AudioCapture/"
+    },
+    "AutomationDriverTests": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AutomationDriverTests/"
+    },
+    "AutomationUtils": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AutomationUtils/"
+    },
+    "AvalancheDisplayCluster": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AvalancheDisplayCluster/"
+    },
+    "AvalancheSequenceNavigator": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AvalancheSequenceNavigator/"
+    },
+    "AxFImporter": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/AxFImporter/"
+    },
+    "BaseMaterial": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/BaseMaterial/"
+    },
+    "BlankPlugin": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/BlankPlugin/"
+    },
+    "BlendSpaceMotionAnalysis": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/BlendSpaceMotionAnalysis/"
+    },
+    "BlueprintFileUtils": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/BlueprintFileUtils/"
+    },
+    "BlueprintHeaderView": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/BlueprintHeaderView/"
+    },
+    "BlueprintMaterialTextureNodes": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/BlueprintMaterialTextureNodes/"
+    },
+    "CLionSourceCodeAccess": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CLionSourceCodeAccess/"
+    },
+    "CQTest": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CQTest/"
+    },
+    "CQTestEnhancedInput": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CQTestEnhancedInput/"
+    },
+    "CQTestExperimental": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CQTestExperimental/"
+    },
+    "CableComponent": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CableComponent/"
+    },
+    "CameraCalibrationML": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CameraCalibrationML/"
+    },
+    "CameraShakePreviewer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CameraShakePreviewer/"
+    },
+    "ChangelistReview": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ChangelistReview/"
+    },
+    "ChaosClothGenerator": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ChaosClothGenerator/"
+    },
+    "ChaosFleshGenerator": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ChaosFleshGenerator/"
+    },
+    "ChaosInsights": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ChaosInsights/"
+    },
+    "ChunkDownloader": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ChunkDownloader/"
+    },
+    "CmdLinkServer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CmdLinkServer/"
+    },
+    "CodeLiteSourceCodeAccess": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CodeLiteSourceCodeAccess/"
+    },
+    "CompositeCore": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CompositeCore/"
+    },
+    "CompositePlane": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CompositePlane/"
+    },
+    "ConcertInsightsClient": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ConcertInsightsClient/"
+    },
+    "ConcertInsightsCore": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ConcertInsightsCore/"
+    },
+    "ConcertInsightsServer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ConcertInsightsServer/"
+    },
+    "ContentBrowserAliasDataSource": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ContentBrowserAliasDataSource/"
+    },
+    "ContentBrowserAssetDataSource": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ContentBrowserAssetDataSource/"
+    },
+    "ContentBrowserClassDataSource": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ContentBrowserClassDataSource/"
+    },
+    "ContentBrowserFileDataSource": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ContentBrowserFileDataSource/"
+    },
+    "ControlRigModules": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ControlRigModules/"
+    },
+    "ControlRigSpline": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ControlRigSpline/"
+    },
+    "CryptoKeys": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CryptoKeys/"
+    },
+    "CustomMeshComponent": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CustomMeshComponent/"
+    },
+    "CustomizableSequencerTracks": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/CustomizableSequencerTracks/"
+    },
+    "DMXDisplayCluster": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DMXDisplayCluster/"
+    },
+    "DMXFixtures": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DMXFixtures/"
+    },
+    "DMXModularFeatures": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DMXModularFeatures/"
+    },
+    "DTLSHandlerComponent": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DTLSHandlerComponent/"
+    },
+    "DataCharts": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DataCharts/"
+    },
+    "DatabaseSupport": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DatabaseSupport/"
+    },
+    "DatasmithC4DImporter": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DatasmithC4DImporter/"
+    },
+    "DatasmithMVR": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DatasmithMVR/"
+    },
+    "DetailPoseModel": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DetailPoseModel/"
+    },
+    "DirectoryPlaceholder": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DirectoryPlaceholder/"
+    },
+    "DisasterRecoveryClient": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DisasterRecoveryClient/"
+    },
+    "DiscoveryBeaconReceiver": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DiscoveryBeaconReceiver/"
+    },
+    "DisplayClusterLaunch": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DisplayClusterLaunch/"
+    },
+    "DumpGPUServices": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/DumpGPUServices/"
+    },
+    "EOSOverlayInputProvider": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/EOSOverlayInputProvider/"
+    },
+    "EOSShared": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/EOSShared/"
+    },
+    "EditorDebugTools": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/EditorDebugTools/"
+    },
+    "EditorScriptingUtilities": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/EditorScriptingUtilities/"
+    },
+    "EditorSysConfigAssistant": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/EditorSysConfigAssistant/"
+    },
+    "EpicStageApp": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/EpicStageApp/"
+    },
+    "ExampleDeviceProfileSelector": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ExampleDeviceProfileSelector/"
+    },
+    "ExternalGPUStatistics": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ExternalGPUStatistics/"
+    },
+    "FacialAnimation": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/FacialAnimation/"
+    },
+    "FbxAutomationTestBuilder": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/FbxAutomationTestBuilder/"
+    },
+    "FieldNotificationTrace": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/FieldNotificationTrace/"
+    },
+    "FileLogging": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/FileLogging/"
+    },
+    "Firebase": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/Firebase/"
+    },
+    "FunctionalTestingEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/FunctionalTestingEditor/"
+    },
+    "GPUReshape": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/GPUReshape/"
+    },
+    "GameInput": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/GameInput/"
+    },
+    "GameplayBehaviorSmartObjects": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/GameplayBehaviorSmartObjects/"
+    },
+    "GeForceNOWWrapper": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/GeForceNOWWrapper/"
+    },
+    "GitSourceControl": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/GitSourceControl/"
+    },
+    "GoogleARCoreServices": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/GoogleARCoreServices/"
+    },
+    "GoogleCloudMessaging": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/GoogleCloudMessaging/"
+    },
+    "GooglePAD": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/GooglePAD/"
+    },
+    "HDRIBackdrop": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/HDRIBackdrop/"
+    },
+    "HPMotionController": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/HPMotionController/"
+    },
+    "HTNPlanner": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/HTNPlanner/"
+    },
+    "HTTPChunkInstaller": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/HTTPChunkInstaller/"
+    },
+    "HoldoutComposite": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/HoldoutComposite/"
+    },
+    "HttpBlueprint": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/HttpBlueprint/"
+    },
+    "ICVFX": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ICVFX/"
+    },
+    "ICVFXTesting": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ICVFXTesting/"
+    },
+    "IOSDeviceProfileSelector": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/IOSDeviceProfileSelector/"
+    },
+    "IOSReplayKit": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/IOSReplayKit/"
+    },
+    "IOSTapJoy": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/IOSTapJoy/"
+    },
+    "InputDebugging": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/InputDebugging/"
+    },
+    "KDevelopSourceCodeAccess": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/KDevelopSourceCodeAccess/"
+    },
+    "LauncherChunkInstaller": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LauncherChunkInstaller/"
+    },
+    "LensComponent": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LensComponent/"
+    },
+    "LensDistortion": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LensDistortion/"
+    },
+    "LevelStreamingPersistence": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LevelStreamingPersistence/"
+    },
+    "LibVpxCodecs": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LibVpxCodecs/"
+    },
+    "LightMixer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LightMixer/"
+    },
+    "LinuxDeviceProfileSelector": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LinuxDeviceProfileSelector/"
+    },
+    "LiveLinkCamera": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkCamera/"
+    },
+    "LiveLinkCurveDebugUI": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkCurveDebugUI/"
+    },
+    "LiveLinkDevice": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkDevice/"
+    },
+    "LiveLinkExampleDevice": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkExampleDevice/"
+    },
+    "LiveLinkFreeD": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkFreeD/"
+    },
+    "LiveLinkInputDevice": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkInputDevice/"
+    },
+    "LiveLinkLens": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkLens/"
+    },
+    "LiveLinkMasterLockit": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkMasterLockit/"
+    },
+    "LiveLinkOverNDisplay": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkOverNDisplay/"
+    },
+    "LiveLinkPrestonMDR": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkPrestonMDR/"
+    },
+    "LiveLinkUnrealDevice": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkUnrealDevice/"
+    },
+    "LiveLinkVRPN": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkVRPN/"
+    },
+    "LiveLinkXR": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveLinkXR/"
+    },
+    "LiveUpdateForSlate": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LiveUpdateForSlate/"
+    },
+    "LocationServicesAndroidImpl": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LocationServicesAndroidImpl/"
+    },
+    "LocationServicesBPLibrary": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LocationServicesBPLibrary/"
+    },
+    "LocationServicesIOSImpl": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/LocationServicesIOSImpl/"
+    },
+    "Locomotor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/Locomotor/"
+    },
+    "MIDIDevice": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MIDIDevice/"
+    },
+    "MacGraphicsSwitching": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MacGraphicsSwitching/"
+    },
+    "MakeCookedEditorAsDLC": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MakeCookedEditorAsDLC/"
+    },
+    "MassEntity": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MassEntity/"
+    },
+    "MaterialAnalyzer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MaterialAnalyzer/"
+    },
+    "MemoryUsageQueries": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MemoryUsageQueries/"
+    },
+    "MeshLODToolset": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MeshLODToolset/"
+    },
+    "MicroSoftSpatialSound": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MicroSoftSpatialSound/"
+    },
+    "MobileLauncherProfileWizard": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MobileLauncherProfileWizard/"
+    },
+    "MobilePatchingUtils": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MobilePatchingUtils/"
+    },
+    "ModelViewViewModelPreview": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ModelViewViewModelPreview/"
+    },
+    "ModularGameplay": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ModularGameplay/"
+    },
+    "MotionTrajectory": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MotionTrajectory/"
+    },
+    "MoviePipelineMaskRenderPass": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MoviePipelineMaskRenderPass/"
+    },
+    "MovieSceneTextTrack": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MovieSceneTextTrack/"
+    },
+    "MsQuic": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MsQuic/"
+    },
+    "MultiUserTakes": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/MultiUserTakes/"
+    },
+    "N10XSourceCodeAccess": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/N10XSourceCodeAccess/"
+    },
+    "NUTUnrealEngine": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/NUTUnrealEngine/"
+    },
+    "NavCorridor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/NavCorridor/"
+    },
+    "NullSourceCodeAccess": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/NullSourceCodeAccess/"
+    },
+    "OneSkyLocalizationService": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OneSkyLocalizationService/"
+    },
+    "OnlineBase": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OnlineBase/"
+    },
+    "OnlineFrameworkCommon": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OnlineFrameworkCommon/"
+    },
+    "OnlineServicesEpicCommon": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OnlineServicesEpicCommon/"
+    },
+    "OnlineSubsystemAmazon": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OnlineSubsystemAmazon/"
+    },
+    "OnlineSubsystemApple": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OnlineSubsystemApple/"
+    },
+    "OodleNetwork": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OodleNetwork/"
+    },
+    "OpenCVLensDistortion": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OpenCVLensDistortion/"
+    },
+    "OpenXREyeTracker": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OpenXREyeTracker/"
+    },
+    "OpenXRHandTracking": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OpenXRHandTracking/"
+    },
+    "OpenXRMsftHandInteraction": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OpenXRMsftHandInteraction/"
+    },
+    "OpenXRViveTracker": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OpenXRViveTracker/"
+    },
+    "Optimus": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/Optimus/"
+    },
+    "OptionalMobileFeaturesBPLibrary": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/OptionalMobileFeaturesBPLibrary/"
+    },
+    "PCGExternalDataInterop": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PCGExternalDataInterop/"
+    },
+    "PCGPythonInterop": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PCGPythonInterop/"
+    },
+    "PackedAttributes": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PackedAttributes/"
+    },
+    "PerformanceCaptureCore": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PerformanceCaptureCore/"
+    },
+    "PerformanceMonitor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PerformanceMonitor/"
+    },
+    "PixWinPlugin": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PixWinPlugin/"
+    },
+    "PluginUtils": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PluginUtils/"
+    },
+    "PortableObjectFileDataSource": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PortableObjectFileDataSource/"
+    },
+    "PreLoadScreenMoviePlayer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PreLoadScreenMoviePlayer/"
+    },
+    "ProceduralMeshComponent": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ProceduralMeshComponent/"
+    },
+    "PropertyAccessEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PropertyAccessEditor/"
+    },
+    "PropertyAccessNode": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PropertyAccessNode/"
+    },
+    "PythonAutomationTest": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/PythonAutomationTest/"
+    },
+    "Reflex": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/Reflex/"
+    },
+    "RelativeIKOp": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RelativeIKOp/"
+    },
+    "RemoteControlInterception": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RemoteControlInterception/"
+    },
+    "RemoteControlProtocolMIDI": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RemoteControlProtocolMIDI/"
+    },
+    "RemoteControlProtocolOSC": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RemoteControlProtocolOSC/"
+    },
+    "RemoteControlWebInterface": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RemoteControlWebInterface/"
+    },
+    "RemoteDatabaseSupport": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RemoteDatabaseSupport/"
+    },
+    "RenderDocPlugin": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RenderDocPlugin/"
+    },
+    "RenderGraphInsights": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RenderGraphInsights/"
+    },
+    "RenderTrace": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RenderTrace/"
+    },
+    "ReplayTracks": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ReplayTracks/"
+    },
+    "ReplicationGraph": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ReplicationGraph/"
+    },
+    "RiderSourceCodeAccess": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RiderSourceCodeAccess/"
+    },
+    "RigMapperOp": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RigMapperOp/"
+    },
+    "RivermaxSync": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RivermaxSync/"
+    },
+    "RuntimeTests": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/RuntimeTests/"
+    },
+    "SQLiteCore": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SQLiteCore/"
+    },
+    "SQLiteSupport": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SQLiteSupport/"
+    },
+    "SampleToolsEditorMode": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SampleToolsEditorMode/"
+    },
+    "SceneStateDataLink": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SceneStateDataLink/"
+    },
+    "SequencerPlaylists": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SequencerPlaylists/"
+    },
+    "SignificanceManager": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SignificanceManager/"
+    },
+    "SkeletalMerging": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SkeletalMerging/"
+    },
+    "SkeletalMeshMorphTargetEditingTools": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SkeletalMeshMorphTargetEditingTools/"
+    },
+    "SlateScripting": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SlateScripting/"
+    },
+    "SocketSubsystemEOS": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SocketSubsystemEOS/"
+    },
+    "SocketSubsystemSteamIP": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SocketSubsystemSteamIP/"
+    },
+    "SoundCueTemplates": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SoundCueTemplates/"
+    },
+    "SoundFields": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SoundFields/"
+    },
+    "SoundMod": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SoundMod/"
+    },
+    "SoundUtilities": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SoundUtilities/"
+    },
+    "Spatialization": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/Spatialization/"
+    },
+    "SpeedTreeImporter": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SpeedTreeImporter/"
+    },
+    "StaticMeshEditorModeling": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/StaticMeshEditorModeling/"
+    },
+    "SteamAudio": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SteamAudio/"
+    },
+    "SteamController": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SteamController/"
+    },
+    "SteamShared": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SteamShared/"
+    },
+    "SteamSockets": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SteamSockets/"
+    },
+    "StormSyncAvalancheBridge": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/StormSyncAvalancheBridge/"
+    },
+    "SunPosition": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/SunPosition/"
+    },
+    "TcpMessaging": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/TcpMessaging/"
+    },
+    "TestFramework": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/TestFramework/"
+    },
+    "TestSamples": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/TestSamples/"
+    },
+    "TextureFormatOodle": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/TextureFormatOodle/"
+    },
+    "TraceUtilities": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/TraceUtilities/"
+    },
+    "TrajectoryTools": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/TrajectoryTools/"
+    },
+    "UObjectPlugin": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/UObjectPlugin/"
+    },
+    "UbaController": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/UbaController/"
+    },
+    "VertexDeltaModel": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/VertexDeltaModel/"
+    },
+    "VirtualScouting": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/VirtualScouting/"
+    },
+    "VisualStudioCodeSourceCodeAccess": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/VisualStudioCodeSourceCodeAccess/"
+    },
+    "VisualStudioSourceCodeAccess": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/VisualStudioSourceCodeAccess/"
+    },
+    "VoiceChat": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/VoiceChat/"
+    },
+    "WarpUtils": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/WarpUtils/"
+    },
+    "WebAuth": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/WebAuth/"
+    },
+    "WebBrowserNativeProxy": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/WebBrowserNativeProxy/"
+    },
+    "WebBrowserWidget": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/WebBrowserWidget/"
+    },
+    "WebMMoviePlayer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/WebMMoviePlayer/"
+    },
+    "WidgetAutomationTests": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/WidgetAutomationTests/"
+    },
+    "WinDualShock": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/WinDualShock/"
+    },
+    "WinVirtualKeyboard": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/WinVirtualKeyboard/"
+    },
+    "WindowsDeviceProfileSelector": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/WindowsDeviceProfileSelector/"
+    },
+    "WindowsMoviePlayer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/WindowsMoviePlayer/"
+    },
+    "WorldPartitionHLODUtilities": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/WorldPartitionHLODUtilities/"
+    },
+    "XCodeSourceCodeAccess": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/XCodeSourceCodeAccess/"
+    },
+    "XGEController": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/XGEController/"
+    },
+    "XInputDevice": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/XInputDevice/"
+    },
+    "XRScribe": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/XRScribe/"
+    },
+    "XRVisualization": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/XRVisualization/"
+    },
+    "XcodeGPUDebuggerPlugin": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/XcodeGPUDebuggerPlugin/"
+    },
+    "ZoneGraphAnnotations": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/ZoneGraphAnnotations/"
+    },
+    "nDisplayModularFeatures": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/small/nDisplayModularFeatures/"
+    },
+    "ActorModifierCore": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/ActorModifierCore/"
+    },
+    "AdvancedRenamer": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AdvancedRenamer/"
+    },
+    "AnimationModifierLibrary": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AnimationModifierLibrary/"
+    },
+    "AnimationWarping": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AnimationWarping/"
+    },
+    "ApexDestruction": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/ApexDestruction/"
+    },
+    "AppleARKit": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AppleARKit/"
+    },
+    "AssetManagerEditor": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AssetManagerEditor/"
+    },
+    "AssetSearch": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AssetSearch/"
+    },
+    "AsyncMessageSystem": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AsyncMessageSystem/"
+    },
+    "AudioGameplay": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AudioGameplay/"
+    },
+    "AudioGameplayVolume": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AudioGameplayVolume/"
+    },
+    "AudioMotorSim": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AudioMotorSim/"
+    },
+    "AutomatedPerfTesting": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AutomatedPerfTesting/"
+    },
+    "AvalancheDataLink": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AvalancheDataLink/"
+    },
+    "AvalancheSceneState": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/AvalancheSceneState/"
+    },
+    "BlendStack": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/BlendStack/"
+    },
+    "Bridge": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/Bridge/"
+    },
+    "CaptureData": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/CaptureData/"
+    },
+    "CaptureManagerDevices": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/CaptureManagerDevices/"
+    },
+    "CaptureManagerEditor": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/CaptureManagerEditor/"
+    },
+    "ColorGrading": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/ColorGrading/"
+    },
+    "ConcertClientSharedSlate": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/ConcertClientSharedSlate/"
+    },
+    "ConcertInsightsVisualizer": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/ConcertInsightsVisualizer/"
+    },
+    "ConcertReplicationScripting": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/ConcertReplicationScripting/"
+    },
+    "CurveExpression": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/CurveExpression/"
+    },
+    "CustomDetailsView": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/CustomDetailsView/"
+    },
+    "DataLinkOAuth": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/DataLinkOAuth/"
+    },
+    "DataRegistry": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/DataRegistry/"
+    },
+    "DataValidation": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/DataValidation/"
+    },
+    "EOSVoiceChat": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/EOSVoiceChat/"
+    },
+    "EditorTests": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/EditorTests/"
+    },
+    "EngineCameras": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/EngineCameras/"
+    },
+    "EnvironmentQueryEditor": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/EnvironmentQueryEditor/"
+    },
+    "EyeTracker": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/EyeTracker/"
+    },
+    "GameplayInteractions": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/GameplayInteractions/"
+    },
+    "GameplayStateTree": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/GameplayStateTree/"
+    },
+    "GeometryMode": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/GeometryMode/"
+    },
+    "GuidedTutorials": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/GuidedTutorials/"
+    },
+    "HierarchyTable": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/HierarchyTable/"
+    },
+    "HierarchyTableAnimation": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/HierarchyTableAnimation/"
+    },
+    "LandscapePatch": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/LandscapePatch/"
+    },
+    "LiveLinkOpenTrackIO": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/LiveLinkOpenTrackIO/"
+    },
+    "MQTT": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/MQTT/"
+    },
+    "MassCrowd": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/MassCrowd/"
+    },
+    "MeshPainting": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/MeshPainting/"
+    },
+    "MessagingDebugger": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/MessagingDebugger/"
+    },
+    "MixedRealityCaptureFramework": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/MixedRealityCaptureFramework/"
+    },
+    "ModelingToolsEditorMode": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/ModelingToolsEditorMode/"
+    },
+    "MotionWarping": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/MotionWarping/"
+    },
+    "MultiServerReplication": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/MultiServerReplication/"
+    },
+    "MusicEnvironment": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/MusicEnvironment/"
+    },
+    "NNERuntimeORT": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/NNERuntimeORT/"
+    },
+    "NVCodecs": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/NVCodecs/"
+    },
+    "NamingTokens": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/NamingTokens/"
+    },
+    "NearestNeighborModel": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/NearestNeighborModel/"
+    },
+    "NetworkPrediction": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/NetworkPrediction/"
+    },
+    "NetworkPredictionExtras": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/NetworkPredictionExtras/"
+    },
+    "NetworkPredictionInsights": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/NetworkPredictionInsights/"
+    },
+    "NeuralMorphModel": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/NeuralMorphModel/"
+    },
+    "OSC": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OSC/"
+    },
+    "ObjectMixer": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/ObjectMixer/"
+    },
+    "OnlineServicesEOS": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OnlineServicesEOS/"
+    },
+    "OnlineServicesEOSGS": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OnlineServicesEOSGS/"
+    },
+    "OnlineServicesNull": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OnlineServicesNull/"
+    },
+    "OnlineServicesOSSAdapter": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OnlineServicesOSSAdapter/"
+    },
+    "OnlineSubsystemEOS": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OnlineSubsystemEOS/"
+    },
+    "OnlineSubsystemGoogle": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OnlineSubsystemGoogle/"
+    },
+    "OnlineSubsystemGooglePlay": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OnlineSubsystemGooglePlay/"
+    },
+    "OnlineSubsystemIOS": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OnlineSubsystemIOS/"
+    },
+    "OnlineSubsystemNull": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OnlineSubsystemNull/"
+    },
+    "OnlineSubsystemTencent": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OnlineSubsystemTencent/"
+    },
+    "OpenXR": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OpenXR/"
+    },
+    "OperatorStack": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/OperatorStack/"
+    },
+    "PCGGeometryScriptInterop": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/PCGGeometryScriptInterop/"
+    },
+    "PerforceSourceControl": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/PerforceSourceControl/"
+    },
+    "PerformanceCaptureWorkflow": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/PerformanceCaptureWorkflow/"
+    },
+    "PluginBrowser": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/PluginBrowser/"
+    },
+    "PropertyBindingUtils": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/PropertyBindingUtils/"
+    },
+    "RHITests": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/RHITests/"
+    },
+    "RemoteControlProtocolDMX": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/RemoteControlProtocolDMX/"
+    },
+    "RigMapper": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/RigMapper/"
+    },
+    "RivermaxMedia": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/RivermaxMedia/"
+    },
+    "ScriptPlugin": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/ScriptPlugin/"
+    },
+    "ScriptableToolsEditorMode": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/ScriptableToolsEditorMode/"
+    },
+    "SequenceValidator": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/SequenceValidator/"
+    },
+    "SequencerAnimTools": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/SequencerAnimTools/"
+    },
+    "SequencerScripting": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/SequencerScripting/"
+    },
+    "SkeletalMeshModelingTools": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/SkeletalMeshModelingTools/"
+    },
+    "SlateInsights": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/SlateInsights/"
+    },
+    "Soundscape": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/Soundscape/"
+    },
+    "StageMonitoring": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/StageMonitoring/"
+    },
+    "SubversionSourceControl": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/SubversionSourceControl/"
+    },
+    "Switchboard": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/Switchboard/"
+    },
+    "TimedDataMonitor": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/TimedDataMonitor/"
+    },
+    "TweeningUtils": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/TweeningUtils/"
+    },
+    "UMGWidgetPreview": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/UMGWidgetPreview/"
+    },
+    "UdpMessaging": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/UdpMessaging/"
+    },
+    "VariantManagerContent": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/VariantManagerContent/"
+    },
+    "WaveTable": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/WaveTable/"
+    },
+    "WorldConditions": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/WorldConditions/"
+    },
+    "WorldMetrics": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/WorldMetrics/"
+    },
+    "XRBase": {
+      "generated_in": "5.7",
+      "size": "medium",
+      "doc_path": "docs/5.7/medium/XRBase/"
+    },
+    "AIAssistant": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/AIAssistant/"
+    },
+    "ActorModifier": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ActorModifier/"
+    },
+    "AudioModulation": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/AudioModulation/"
+    },
+    "AudioSynesthesia": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/AudioSynesthesia/"
+    },
+    "CameraCalibrationCore": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/CameraCalibrationCore/"
+    },
+    "ChaosCloth": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ChaosCloth/"
+    },
+    "ChaosClothAsset": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ChaosClothAsset/"
+    },
+    "CinematicAssemblyTools": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/CinematicAssemblyTools/"
+    },
+    "Composite": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/Composite/"
+    },
+    "ComputeFramework": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ComputeFramework/"
+    },
+    "ConcertMain": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ConcertMain/"
+    },
+    "ConcertSyncClient": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ConcertSyncClient/"
+    },
+    "ConcertSyncServer": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ConcertSyncServer/"
+    },
+    "ConcertSyncTest": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ConcertSyncTest/"
+    },
+    "ConsoleVariables": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ConsoleVariables/"
+    },
+    "ContextualAnimation": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ContextualAnimation/"
+    },
+    "CurveEditorTools": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/CurveEditorTools/"
+    },
+    "DatasmithContent": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/DatasmithContent/"
+    },
+    "DatasmithFBXImporter": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/DatasmithFBXImporter/"
+    },
+    "EaseCurveTool": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/EaseCurveTool/"
+    },
+    "EnhancedInput": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/EnhancedInput/"
+    },
+    "GameFeatures": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/GameFeatures/"
+    },
+    "GameplayTagsEditor": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/GameplayTagsEditor/"
+    },
+    "GeoReferencing": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/GeoReferencing/"
+    },
+    "GeometryMask": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/GeometryMask/"
+    },
+    "GeometryScripting": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/GeometryScripting/"
+    },
+    "GoogleARCore": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/GoogleARCore/"
+    },
+    "InstancedActors": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/InstancedActors/"
+    },
+    "InterchangeTests": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/InterchangeTests/"
+    },
+    "LevelSequenceEditor": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/LevelSequenceEditor/"
+    },
+    "LidarPointCloud": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/LidarPointCloud/"
+    },
+    "MDLImporter": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/MDLImporter/"
+    },
+    "MLAdapter": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/MLAdapter/"
+    },
+    "MetaHumanSDK": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/MetaHumanSDK/"
+    },
+    "NNEDenoiser": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/NNEDenoiser/"
+    },
+    "NetcodeUnitTest": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/NetcodeUnitTest/"
+    },
+    "OnlineSubsystem": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/OnlineSubsystem/"
+    },
+    "OnlineSubsystemFacebook": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/OnlineSubsystemFacebook/"
+    },
+    "OnlineSubsystemSteam": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/OnlineSubsystemSteam/"
+    },
+    "OpenCV": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/OpenCV/"
+    },
+    "OpenColorIO": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/OpenColorIO/"
+    },
+    "PlasticSourceControl": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/PlasticSourceControl/"
+    },
+    "ProjectLauncher": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ProjectLauncher/"
+    },
+    "PropertyAnimator": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/PropertyAnimator/"
+    },
+    "RivermaxCore": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/RivermaxCore/"
+    },
+    "SVGImporter": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/SVGImporter/"
+    },
+    "ScriptableToolsFramework": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ScriptableToolsFramework/"
+    },
+    "StylusInput": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/StylusInput/"
+    },
+    "TemplateSequence": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/TemplateSequence/"
+    },
+    "TraceSourceFilters": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/TraceSourceFilters/"
+    },
+    "VariantManager": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/VariantManager/"
+    },
+    "VirtualCamera": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/VirtualCamera/"
+    },
+    "WaveformEditor": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/WaveformEditor/"
+    },
+    "ZoneGraph": {
+      "generated_in": "5.7",
+      "size": "large",
+      "doc_path": "docs/5.7/large/ZoneGraph/"
+    },
+    "ACLPlugin": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/ACLPlugin/"
+    },
+    "AVCodecsCore": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/AVCodecsCore/"
+    },
+    "AudioInsights": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/AudioInsights/"
+    },
+    "AudioWidgets": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/AudioWidgets/"
+    },
+    "Avalanche": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/Avalanche/"
+    },
+    "CameraCalibration": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/CameraCalibration/"
+    },
+    "CaptureManagerApp": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/CaptureManagerApp/"
+    },
+    "CaptureManagerCore": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/CaptureManagerCore/"
+    },
+    "ChaosClothAssetEditor": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/ChaosClothAssetEditor/"
+    },
+    "ChaosVD": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/ChaosVD/"
+    },
+    "Chooser": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/Chooser/"
+    },
+    "ClonerEffector": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/ClonerEffector/"
+    },
+    "CommonUI": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/CommonUI/"
+    },
+    "Composure": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/Composure/"
+    },
+    "ConcertSharedSlate": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/ConcertSharedSlate/"
+    },
+    "ConcertSyncCore": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/ConcertSyncCore/"
+    },
+    "ControlRig": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/ControlRig/"
+    },
+    "DMXControlConsole": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DMXControlConsole/"
+    },
+    "DMXEngine": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DMXEngine/"
+    },
+    "DMXGDTF": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DMXGDTF/"
+    },
+    "DMXPixelMapping": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DMXPixelMapping/"
+    },
+    "DMXProtocol": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DMXProtocol/"
+    },
+    "DNACalib": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DNACalib/"
+    },
+    "DataLink": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DataLink/"
+    },
+    "DataprepEditor": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DataprepEditor/"
+    },
+    "DatasmithCADImporter": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DatasmithCADImporter/"
+    },
+    "DatasmithImporter": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DatasmithImporter/"
+    },
+    "DeformerGraph": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DeformerGraph/"
+    },
+    "DynamicMaterial": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/DynamicMaterial/"
+    },
+    "EngineAssetDefinitions": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/EngineAssetDefinitions/"
+    },
+    "GLTFExporter": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/GLTFExporter/"
+    },
+    "GameplayAbilities": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/GameplayAbilities/"
+    },
+    "GameplayCameras": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/GameplayCameras/"
+    },
+    "GameplayInsights": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/GameplayInsights/"
+    },
+    "GeneSplicer": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/GeneSplicer/"
+    },
+    "GeometryCache": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/GeometryCache/"
+    },
+    "GeometryProcessing": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/GeometryProcessing/"
+    },
+    "HairStrands": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/HairStrands/"
+    },
+    "Harmonix": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/Harmonix/"
+    },
+    "IKRig": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/IKRig/"
+    },
+    "LevelSnapshots": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/LevelSnapshots/"
+    },
+    "LiveLink": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/LiveLink/"
+    },
+    "LiveLinkHub": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/LiveLinkHub/"
+    },
+    "MLDeformerFramework": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MLDeformerFramework/"
+    },
+    "MassAI": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MassAI/"
+    },
+    "MassGameplay": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MassGameplay/"
+    },
+    "MeshModelingToolset": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MeshModelingToolset/"
+    },
+    "MetaHuman": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MetaHuman/"
+    },
+    "MetaHumanCalibrationProcessing": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MetaHumanCalibrationProcessing/"
+    },
+    "MetaHumanCharacter": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MetaHumanCharacter/"
+    },
+    "MetaHumanCoreTech": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MetaHumanCoreTech/"
+    },
+    "MetaHumanLiveLink": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MetaHumanLiveLink/"
+    },
+    "Metasound": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/Metasound/"
+    },
+    "ModelViewViewModel": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/ModelViewViewModel/"
+    },
+    "MovieRenderPipeline": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MovieRenderPipeline/"
+    },
+    "MultiUserClient": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MultiUserClient/"
+    },
+    "MultiUserServer": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/MultiUserServer/"
+    },
+    "Mutable": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/Mutable/"
+    },
+    "OnlineFramework": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/OnlineFramework/"
+    },
+    "OnlineServices": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/OnlineServices/"
+    },
+    "OnlineSubsystemUtils": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/OnlineSubsystemUtils/"
+    },
+    "PCG": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/PCG/"
+    },
+    "Paper2D": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/Paper2D/"
+    },
+    "PoseSearch": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/PoseSearch/"
+    },
+    "PropertyAnimatorCore": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/PropertyAnimatorCore/"
+    },
+    "ProxyLODPlugin": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/ProxyLODPlugin/"
+    },
+    "RemoteControl": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/RemoteControl/"
+    },
+    "ReplicationSystemTestPlugin": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/ReplicationSystemTestPlugin/"
+    },
+    "ResonanceAudio": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/ResonanceAudio/"
+    },
+    "RigLogic": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/RigLogic/"
+    },
+    "RigVM": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/RigVM/"
+    },
+    "SceneState": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/SceneState/"
+    },
+    "SmartObjects": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/SmartObjects/"
+    },
+    "StateTree": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/StateTree/"
+    },
+    "StormSync": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/StormSync/"
+    },
+    "Synthesis": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/Synthesis/"
+    },
+    "Takes": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/Takes/"
+    },
+    "Text3D": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/Text3D/"
+    },
+    "TextureGraph": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/TextureGraph/"
+    },
+    "TextureShare": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/TextureShare/"
+    },
+    "USDCore": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/USDCore/"
+    },
+    "UVEditor": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/UVEditor/"
+    },
+    "VirtualCameraCore": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/VirtualCameraCore/"
+    },
+    "nDisplay": {
+      "generated_in": "5.7",
+      "size": "xlarge",
+      "doc_path": "docs/5.7/xlarge/nDisplay/"
+    },
+    "VTCodecs": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/VTCodecs/"
+    },
+    "WMFCodecs": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/WMFCodecs/"
+    },
+    "BackChannel": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/BackChannel/"
+    },
+    "BlueprintSnapNodes": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/BlueprintSnapNodes/"
+    },
+    "BlueprintStats": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/BlueprintStats/"
+    },
+    "Buoyancy": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Buoyancy/"
+    },
+    "CelestialVault": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/CelestialVault/"
+    },
+    "ChaosCaching": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosCaching/"
+    },
+    "ChaosCachingUSD": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosCachingUSD/"
+    },
+    "ChaosClothEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosClothEditor/"
+    },
+    "ChaosEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosEditor/"
+    },
+    "ChaosFlesh": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosFlesh/"
+    },
+    "ChaosModularVehicle": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosModularVehicle/"
+    },
+    "ChaosModularVehicleExamples": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosModularVehicleExamples/"
+    },
+    "ChaosMover": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosMover/"
+    },
+    "ChaosNiagara": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosNiagara/"
+    },
+    "ChaosOutfitAsset": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/ChaosOutfitAsset/",
+      "forced": true
+    },
+    "ChaosRigidAsset": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosRigidAsset/"
+    },
+    "ChaosSolverPlugin": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosSolverPlugin/"
+    },
+    "ChaosUserDataPT": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosUserDataPT/"
+    },
+    "ChaosVehiclesPlugin": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ChaosVehiclesPlugin/"
+    },
+    "CharacterAI": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/CharacterAI/"
+    },
+    "BaseCharacterFXEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/BaseCharacterFXEditor/"
+    },
+    "ExampleCharacterFXEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ExampleCharacterFXEditor/"
+    },
+    "CineCameraRigs": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/CineCameraRigs/"
+    },
+    "CineCameraSceneCapture": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/CineCameraSceneCapture/"
+    },
+    "CinematicPrestreaming": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/CinematicPrestreaming/"
+    },
+    "CinematicSequenceNavigator": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/CinematicSequenceNavigator/"
+    },
+    "CodeEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/CodeEditor/"
+    },
+    "CodeView": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/CodeView/"
+    },
+    "ColorCorrectRegions": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ColorCorrectRegions/"
+    },
+    "CommonConversation": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/CommonConversation/"
+    },
+    "ControlFlows": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ControlFlows/"
+    },
+    "ControlRigPhysics": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ControlRigPhysics/"
+    },
+    "Dataflow": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Dataflow/"
+    },
+    "DaySequence": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/DaySequence/"
+    },
+    "DefaultInstallBundleManager": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/DefaultInstallBundleManager/"
+    },
+    "DrawDebugLibrary": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/DrawDebugLibrary/"
+    },
+    "DynamicMaterialMediaStreamBridge": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/DynamicMaterialMediaStreamBridge/"
+    },
+    "DynamicWind": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/DynamicWind/"
+    },
+    "EditorDataStorage": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/EditorDataStorage/"
+    },
+    "EditorDataStorageFeatures": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/EditorDataStorageFeatures/"
+    },
+    "EditorPerformance": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/EditorPerformance/"
+    },
+    "EditorTelemetry": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/EditorTelemetry/"
+    },
+    "DataprepGeometryOperations": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/DataprepGeometryOperations/"
+    },
+    "DatasmithInterchange": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/DatasmithInterchange/"
+    },
+    "DatasmithRuntime": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/DatasmithRuntime/"
+    },
+    "EvaluationNotifies": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/EvaluationNotifies/"
+    },
+    "FastGeoStreaming": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/FastGeoStreaming/"
+    },
+    "FieldSystemPlugin": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/FieldSystemPlugin/"
+    },
+    "FloatingProperties": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/FloatingProperties/"
+    },
+    "Fracture": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Fracture/"
+    },
+    "FullBodyIK": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/FullBodyIK/"
+    },
+    "GPULightmass": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GPULightmass/"
+    },
+    "GameInputWindows": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GameInputWindows/"
+    },
+    "GameplayBehaviors": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GameplayBehaviors/"
+    },
+    "GameplayGraph": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GameplayGraph/"
+    },
+    "TargetingSystem": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/TargetingSystem/"
+    },
+    "Gauntlet": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Gauntlet/"
+    },
+    "GeometryCacheAbcFile": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GeometryCacheAbcFile/"
+    },
+    "GeometryCacheLevelSequenceBaker": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GeometryCacheLevelSequenceBaker/"
+    },
+    "GeometryCollectionPlugin": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GeometryCollectionPlugin/"
+    },
+    "GeometryDataflow": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GeometryDataflow/"
+    },
+    "GeometryFlow": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GeometryFlow/"
+    },
+    "GizmoEdMode": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GizmoEdMode/"
+    },
+    "GizmoFramework": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GizmoFramework/"
+    },
+    "GlobalConfigurationData": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/GlobalConfigurationData/"
+    },
+    "HairCardGenerator": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/HairCardGenerator/"
+    },
+    "HairModelingToolset": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/HairModelingToolset/"
+    },
+    "HairStrandsMutable": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/HairStrandsMutable/"
+    },
+    "ImagePlate": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ImagePlate/"
+    },
+    "ImageWidgets": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ImageWidgets/"
+    },
+    "ImpostorBaker": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ImpostorBaker/"
+    },
+    "InEditorDocumentation": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/InEditorDocumentation/"
+    },
+    "InlineMaterialInstance": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/InlineMaterialInstance/"
+    },
+    "InstanceDataObjectFixupTool": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/InstanceDataObjectFixupTool/"
+    },
+    "InteractionInterface": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/InteractionInterface/"
+    },
+    "Iris": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Iris/"
+    },
+    "JWT": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/JWT/"
+    },
+    "Landmass": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Landmass/"
+    },
+    "LearningAgents": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/LearningAgents/"
+    },
+    "LevelSequenceNavigatorBridge": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/LevelSequenceNavigatorBridge/"
+    },
+    "LiveLinkControlRig": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/LiveLinkControlRig/"
+    },
+    "LiveLinkFaceImporter": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/LiveLinkFaceImporter/"
+    },
+    "LiveLinkOpenVR": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/LiveLinkOpenVR/"
+    },
+    "LocalizableMessage": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/LocalizableMessage/"
+    },
+    "LowLevelNetTrace": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/LowLevelNetTrace/"
+    },
+    "MLflow": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MLflow/"
+    },
+    "MediaStream": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MediaStream/"
+    },
+    "MeshModelingToolsetExp": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MeshModelingToolsetExp/"
+    },
+    "MeshResizing": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MeshResizing/"
+    },
+    "MetaHumanCalibrationDiagnostics": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MetaHumanCalibrationDiagnostics/"
+    },
+    "MetaHumanCharacterUAF": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MetaHumanCharacterUAF/"
+    },
+    "MetaHumanRuntime": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MetaHumanRuntime/"
+    },
+    "MetasoundExperimental": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MetasoundExperimental/"
+    },
+    "MotoSynth": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MotoSynth/"
+    },
+    "MotorSimOutputMotoSynth": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MotorSimOutputMotoSynth/"
+    },
+    "Mover": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Mover/"
+    },
+    "MoverAnimNext": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MoverAnimNext/"
+    },
+    "MoverExamples": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MoverExamples/"
+    },
+    "MoverIntegrations": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MoverIntegrations/"
+    },
+    "MoverTests": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MoverTests/"
+    },
+    "MovieSceneAnimMixer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MovieSceneAnimMixer/"
+    },
+    "MovieScenePoseSearchTracks": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MovieScenePoseSearchTracks/"
+    },
+    "MutableClothing": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MutableClothing/"
+    },
+    "MutableDataflow": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MutableDataflow/"
+    },
+    "MutablePopulation": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MutablePopulation/"
+    },
+    "NFORDenoise": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NFORDenoise/"
+    },
+    "NNERuntimeBasicCpu": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NNERuntimeBasicCpu/"
+    },
+    "NNERuntimeCoreML": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NNERuntimeCoreML/"
+    },
+    "NNERuntimeIREE": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NNERuntimeIREE/"
+    },
+    "NNERuntimeRDG": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NNERuntimeRDG/"
+    },
+    "NaniteAssemblyEditorUtils": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NaniteAssemblyEditorUtils/"
+    },
+    "NaniteDisplacedMesh": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NaniteDisplacedMesh/"
+    },
+    "NeuralRendering": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NeuralRendering/"
+    },
+    "OpenImageDenoise": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/OpenImageDenoise/"
+    },
+    "OptiXDenoise": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/OptiXDenoise/"
+    },
+    "PCGBiomeCore": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PCGBiomeCore/"
+    },
+    "PCGBiomeSample": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PCGBiomeSample/"
+    },
+    "PCGFastGeoInterop": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PCGFastGeoInterop/"
+    },
+    "PCGInstancedActorsInterop": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PCGInstancedActorsInterop/"
+    },
+    "PCGNaniteAssembliesInterop": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PCGNaniteAssembliesInterop/"
+    },
+    "PCGNiagaraInterop": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PCGNiagaraInterop/"
+    },
+    "PCGWaterInterop": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PCGWaterInterop/"
+    },
+    "PSDImporter": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PSDImporter/"
+    },
+    "PSDImporterMaterialDesignerBridge": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PSDImporterMaterialDesignerBridge/"
+    },
+    "PanoramicCapture": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PanoramicCapture/"
+    },
+    "PhysicsControl": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PhysicsControl/"
+    },
+    "PixelStreamingPlayer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PixelStreamingPlayer/"
+    },
+    "PlainProps": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PlainProps/"
+    },
+    "PlainPropsEngine": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PlainPropsEngine/"
+    },
+    "PlainPropsUObject": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PlainPropsUObject/"
+    },
+    "PlanarCut": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PlanarCut/"
+    },
+    "PlatformCrypto": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PlatformCrypto/"
+    },
+    "PluginAudit": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PluginAudit/"
+    },
+    "PluginReferenceViewer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PluginReferenceViewer/"
+    },
+    "PluginTemplateTool": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PluginTemplateTool/"
+    },
+    "PostProcessMaterialChainGraph": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PostProcessMaterialChainGraph/"
+    },
+    "ProceduralVegetationEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ProceduralVegetationEditor/"
+    },
+    "PythonFoundationPackages": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PythonFoundationPackages/"
+    },
+    "PythonMLPackages": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PythonMLPackages/"
+    },
+    "PythonScriptPlugin": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PythonScriptPlugin/"
+    },
+    "QuicMessaging": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/QuicMessaging/"
+    },
+    "RawInput": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/RawInput/"
+    },
+    "RazerChromaDevices": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/RazerChromaDevices/"
+    },
+    "RemoteControlActorModifierBridge": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/RemoteControlActorModifierBridge/"
+    },
+    "RemoteControlComponents": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/RemoteControlComponents/"
+    },
+    "RemoteSession": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/RemoteSession/"
+    },
+    "RenderGrid": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/RenderGrid/"
+    },
+    "RigLogicMutable": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/RigLogicMutable/"
+    },
+    "RigLogicUAF": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/RigLogicUAF/"
+    },
+    "RuntimeTelemetry": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/RuntimeTelemetry/"
+    },
+    "ScreenReader": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ScreenReader/"
+    },
+    "SecuritySandbox": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SecuritySandbox/"
+    },
+    "SequenceNavigator": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SequenceNavigator/"
+    },
+    "SerializationUtils": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SerializationUtils/"
+    },
+    "Shotgrid": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Shotgrid/"
+    },
+    "SimpleHMD": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SimpleHMD/"
+    },
+    "SkeletalReduction": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SkeletalReduction/"
+    },
+    "SlateIM": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SlateIM/"
+    },
+    "SlateModelViewViewModel": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SlateModelViewViewModel/"
+    },
+    "SlateScreenReader": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SlateScreenReader/"
+    },
+    "SpatialReadiness": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SpatialReadiness/"
+    },
+    "StateGraph": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/StateGraph/"
+    },
+    "StructUtils": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/StructUtils/"
+    },
+    "SubmitToolEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SubmitToolEditor/"
+    },
+    "SubtitlesAndClosedCaptions": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SubtitlesAndClosedCaptions/"
+    },
+    "SurfaceEffects": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/SurfaceEffects/"
+    },
+    "TargetDeviceServicesScripting": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/TargetDeviceServicesScripting/"
+    },
+    "TechAudioTools": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/TechAudioTools/"
+    },
+    "Tensorboard": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Tensorboard/"
+    },
+    "TetMeshing": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/TetMeshing/"
+    },
+    "TextToSpeech": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/TextToSpeech/"
+    },
+    "ToolPresets": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ToolPresets/"
+    },
+    "UAF": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UAF/"
+    },
+    "UAFAnimGraph": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UAFAnimGraph/"
+    },
+    "UAFChooser": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UAFChooser/"
+    },
+    "UAFControlRig": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UAFControlRig/"
+    },
+    "UAFMirroring": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UAFMirroring/"
+    },
+    "UAFPoseSearch": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UAFPoseSearch/"
+    },
+    "UAFStateTree": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UAFStateTree/"
+    },
+    "UAFTests": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UAFTests/"
+    },
+    "UAFWarping": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UAFWarping/"
+    },
+    "UIFramework": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UIFramework/"
+    },
+    "UserToolBoxBasicCommand": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UserToolBoxBasicCommand/"
+    },
+    "UserToolBoxCore": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/UserToolBoxCore/"
+    },
+    "VirtualHeightfieldMesh": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/VirtualHeightfieldMesh/"
+    },
+    "LedWallCalibration": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/LedWallCalibration/"
+    },
+    "VPRoles": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/VPRoles/"
+    },
+    "VPSettings": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/VPSettings/"
+    },
+    "VirtualProductionUtilities": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/VirtualProductionUtilities/"
+    },
+    "Volumetrics": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Volumetrics/"
+    },
+    "Water": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Water/"
+    },
+    "WaterAdvanced": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/WaterAdvanced/"
+    },
+    "WaterExtras": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/WaterExtras/"
+    },
+    "WaveFunctionCollapse": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/WaveFunctionCollapse/"
+    },
+    "WebAPI": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/WebAPI/"
+    },
+    "WebSocketMessaging": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/WebSocketMessaging/"
+    },
+    "WebSocketNetworking": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/WebSocketNetworking/"
+    },
+    "WidgetEditorToolPalette": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/WidgetEditorToolPalette/"
+    },
+    "Workspace": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Workspace/"
+    },
+    "XRCreativeFramework": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/XRCreativeFramework/"
+    },
+    "Cascade": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Cascade/"
+    },
+    "CascadeToNiagaraConverter": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/CascadeToNiagaraConverter/"
+    },
+    "ExampleCustomDataInterface": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ExampleCustomDataInterface/"
+    },
+    "Niagara": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Niagara/"
+    },
+    "NiagaraFluids": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NiagaraFluids/"
+    },
+    "NiagaraMRQ": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NiagaraMRQ/"
+    },
+    "NiagaraNanite": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NiagaraNanite/"
+    },
+    "NiagaraPreviewContent": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NiagaraPreviewContent/"
+    },
+    "NiagaraSimCaching": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NiagaraSimCaching/"
+    },
+    "Fab": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Fab/"
+    },
+    "FastBuildController": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/FastBuildController/"
+    },
+    "AlembicHairImporter": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/AlembicHairImporter/"
+    },
+    "AlembicImporter": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/AlembicImporter/"
+    },
+    "USDImporter": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/USDImporter/"
+    },
+    "USDImporterMDL": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/USDImporterMDL/"
+    },
+    "USDMultiUser": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/USDMultiUser/"
+    },
+    "InterchangeAssets": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/InterchangeAssets/"
+    },
+    "InterchangeEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/InterchangeEditor/"
+    },
+    "InterchangeOpenUSD": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/InterchangeOpenUSD/"
+    },
+    "InterchangeOpenVDB": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/InterchangeOpenVDB/"
+    },
+    "Interchange": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/Interchange/"
+    },
+    "IoStoreInsights": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/IoStoreInsights/"
+    },
+    "JsonBlueprintUtilities": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/JsonBlueprintUtilities/"
+    },
+    "LightWeightInstancesEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/LightWeightInstancesEditor/"
+    },
+    "MassInsights": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MassInsights/"
+    },
+    "AjaMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/AjaMedia/"
+    },
+    "AndroidCamera": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/AndroidCamera/"
+    },
+    "AndroidMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/AndroidMedia/"
+    },
+    "AppleProResDecoderElectra": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/AppleProResDecoderElectra/"
+    },
+    "AppleProResMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/AppleProResMedia/"
+    },
+    "AudioCaptureTimecodeProvider": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/AudioCaptureTimecodeProvider/"
+    },
+    "AvfMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/AvfMedia/"
+    },
+    "AvidDNxHDDecoderElectra": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/AvidDNxHDDecoderElectra/"
+    },
+    "AvidDNxMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/AvidDNxMedia/"
+    },
+    "BinkMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/BinkMedia/"
+    },
+    "BlackmagicMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/BlackmagicMedia/"
+    },
+    "D3D12VideoDecodersElectra": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/D3D12VideoDecodersElectra/"
+    },
+    "ElectraCDM": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ElectraCDM/"
+    },
+    "ElectraCodecs": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ElectraCodecs/"
+    },
+    "ElectraPlayer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ElectraPlayer/"
+    },
+    "ElectraSubtitles": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ElectraSubtitles/"
+    },
+    "ElectraUtil": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ElectraUtil/"
+    },
+    "FlacDecoderElectra": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/FlacDecoderElectra/"
+    },
+    "HAPDecoderElectra": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/HAPDecoderElectra/"
+    },
+    "HAPMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/HAPMedia/"
+    },
+    "HardwareEncoders": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/HardwareEncoders/"
+    },
+    "ImgMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/ImgMedia/"
+    },
+    "LinearTimecode": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/LinearTimecode/"
+    },
+    "MJPEGDecoderElectra": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MJPEGDecoderElectra/"
+    },
+    "MediaCompositing": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MediaCompositing/"
+    },
+    "MediaFrameworkUtilities": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MediaFrameworkUtilities/"
+    },
+    "MediaIOFramework": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MediaIOFramework/"
+    },
+    "MediaMovieStreamer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MediaMovieStreamer/"
+    },
+    "MediaPlate": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MediaPlate/"
+    },
+    "MediaPlayerEditor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MediaPlayerEditor/"
+    },
+    "MediaViewer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MediaViewer/"
+    },
+    "MfMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/MfMedia/"
+    },
+    "NDIMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/NDIMedia/"
+    },
+    "OpusDecoderElectra": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/OpusDecoderElectra/"
+    },
+    "PixelCapture": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PixelCapture/"
+    },
+    "PixelStreaming": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PixelStreaming/"
+    },
+    "PixelStreaming2": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/PixelStreaming2/"
+    },
+    "TimecodeSynchronizer": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/TimecodeSynchronizer/"
+    },
+    "VPxDecoderElectra": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/VPxDecoderElectra/"
+    },
+    "WebMMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/WebMMedia/"
+    },
+    "WmfMedia": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/WmfMedia/"
+    },
+    "DummyMeshReconstructor": {
+      "generated_in": "5.7",
+      "size": "small",
+      "doc_path": "docs/5.7/DummyMeshReconstructor/"
+    },
+    "AnimGen": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/AnimGen/",
+      "forced": true
+    },
+    "SemanticSearch": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/SemanticSearch/",
+      "forced": true
+    },
+    "Terminal": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/Terminal/",
+      "forced": true
+    },
+    "StreamingADA": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/StreamingADA/"
+    },
+    "LiveLinkGenericRecordingDevice": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/LiveLinkGenericRecordingDevice/"
+    },
+    "AudioInsightsRuntime": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AudioInsightsRuntime/"
+    },
+    "AutomationControllerRpc": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AutomationControllerRpc/"
+    },
+    "ChaosClothAssetDataflowNodes": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/ChaosClothAssetDataflowNodes/"
+    },
+    "ChaosClothAssetEditorCore": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/ChaosClothAssetEditorCore/"
+    },
+    "ChaosClothAssetUsdDataflowNodes": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ChaosClothAssetUsdDataflowNodes/"
+    },
+    "ComposureShared": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ComposureShared/"
+    },
+    "DerivedDataBuildController": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/DerivedDataBuildController/"
+    },
+    "AudioModulationInsights": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AudioModulationInsights/"
+    },
+    "FileSandbox": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/FileSandbox/"
+    },
+    "SandboxedEditing": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/SandboxedEditing/"
+    },
+    "MaterialAssetWizard": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MaterialAssetWizard/"
+    },
+    "MaterialValidation": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/MaterialValidation/"
+    },
+    "AnimDatabase": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/AnimDatabase/"
+    },
+    "AnimationLayering": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AnimationLayering/"
+    },
+    "DirectMeshControl": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/DirectMeshControl/"
+    },
+    "Scribble": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/Scribble/"
+    },
+    "AudioProperties": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/AudioProperties/"
+    },
+    "ChaosDataflowSolver": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ChaosDataflowSolver/"
+    },
+    "ChaosRigidPhysicsAsync": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/ChaosRigidPhysicsAsync/"
+    },
+    "ControlRigDynamics": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/ControlRigDynamics/"
+    },
+    "DataflowVolumetricPlugin": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/DataflowVolumetricPlugin/"
+    },
+    "EditorTRSGizmo": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/EditorTRSGizmo/"
+    },
+    "HttpInsights": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/HttpInsights/"
+    },
+    "InterchangeAxfAssets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/InterchangeAxfAssets/"
+    },
+    "InterchangeAxF": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/InterchangeAxF/"
+    },
+    "LearningCore": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/LearningCore/"
+    },
+    "MeshPartition": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/MeshPartition/"
+    },
+    "MeshPartitionWater": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MeshPartitionWater/"
+    },
+    "MeshTerrainMode": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/MeshTerrainMode/"
+    },
+    "MessageBusTester": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/MessageBusTester/"
+    },
+    "GDKPlatformDLC": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/GDKPlatformDLC/"
+    },
+    "ModelContextProtocol": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/ModelContextProtocol/"
+    },
+    "MovieSceneMixedControlRig": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MovieSceneMixedControlRig/"
+    },
+    "MutableAssetUserData": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MutableAssetUserData/"
+    },
+    "MutableExtensionExample": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MutableExtensionExample/"
+    },
+    "NNEModelTests": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/NNEModelTests/"
+    },
+    "NetworkServiceDiscovery": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/NetworkServiceDiscovery/"
+    },
+    "PCGMeshPartitionInterop": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/PCGMeshPartitionInterop/"
+    },
+    "PlatformDLC": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/PlatformDLC/"
+    },
+    "PlayerInputDebugger": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/PlayerInputDebugger/"
+    },
+    "Subsonic": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/Subsonic/"
+    },
+    "ToolsetRegistry": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/ToolsetRegistry/"
+    },
+    "AIModuleToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AIModuleToolset/"
+    },
+    "AllToolsets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AllToolsets/",
+      "forced": true
+    },
+    "AnimationAssistantToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AnimationAssistantToolset/"
+    },
+    "AutomationTestToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AutomationTestToolset/"
+    },
+    "ConversationToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ConversationToolset/"
+    },
+    "DataflowAgent": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/DataflowAgent/"
+    },
+    "GASToolsets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/GASToolsets/"
+    },
+    "GameFeaturesToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/GameFeaturesToolset/"
+    },
+    "GameplayTagsToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/GameplayTagsToolset/"
+    },
+    "LiveCodingToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/LiveCodingToolset/"
+    },
+    "MCPClientToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MCPClientToolset/"
+    },
+    "NiagaraToolsets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/NiagaraToolsets/"
+    },
+    "PhysicsToolsets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/PhysicsToolsets/"
+    },
+    "SequencerAnimMixerToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/SequencerAnimMixerToolset/"
+    },
+    "SlateInspectorToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/SlateInspectorToolset/"
+    },
+    "StateTreeToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/StateTreeToolset/"
+    },
+    "UMGToolSet": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/UMGToolSet/"
+    },
+    "WorldConditionsToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/WorldConditionsToolset/"
+    },
+    "UAFAnimNode": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/UAFAnimNode/"
+    },
+    "UAFLayering": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/UAFLayering/"
+    },
+    "UAFMass": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/UAFMass/"
+    },
+    "UAFSharedAssets": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/UAFSharedAssets/"
+    },
+    "UAFTestSuites": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/UAFTestSuites/"
+    },
+    "NiagaraInsights": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/NiagaraInsights/"
+    },
+    "NiagaraUIRenderer": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/NiagaraUIRenderer/"
+    },
+    "APVDecoderElectra": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/APVDecoderElectra/"
+    },
+    "AV1DecoderElectra": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AV1DecoderElectra/"
+    },
+    "MP4Utilities": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/MP4Utilities/"
+    },
+    "MediaProfile": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MediaProfile/"
+    },
+    "NVDECElectra": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/NVDECElectra/"
+    },
+    "RTSPMedia": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/RTSPMedia/"
+    },
+    "TmvMedia": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/TmvMedia/"
+    },
+    "TmvMediaUtils": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/TmvMediaUtils/"
+    },
+    "MessagingInsights": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MessagingInsights/"
+    },
+    "MetaHumanAnimationTools": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MetaHumanAnimationTools/"
+    },
+    "MetaHumanCoreML": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MetaHumanCoreML/"
+    },
+    "MetaHumanCrowd": {
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/MetaHumanCrowd/"
+    },
+    "GDKNetDriver": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/GDKNetDriver/"
+    },
+    "OnlineServicesXbl": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/OnlineServicesXbl/"
+    },
+    "OnlineSubsystemGDK": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/OnlineSubsystemGDK/"
+    },
+    "PlayFabParty": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/PlayFabParty/"
+    },
+    "AutomatedPerfTestTools": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/AutomatedPerfTestTools/"
+    },
+    "RPCBase": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/RPCBase/"
+    },
+    "RenderTraceInsights": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/RenderTraceInsights/"
+    }
+  }
+}
