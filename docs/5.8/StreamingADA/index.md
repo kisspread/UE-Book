@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-02-07 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Animation/AudioDrivenAnimation/StreamingADA) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Animation/AudioDrivenAnimation/StreamingADA) | |
 
 ## 用途
 
@@ -232,5 +232,5 @@ const TArray<float>& UMyAudioDrivenAnimComponent::GetLatestCurveValues() const
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Animation/AudioDrivenAnimation/StreamingADA)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Animation/AudioDrivenAnimation/StreamingADA/Tests) （如果存在）
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Animation/AudioDrivenAnimation/StreamingADA)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Animation/AudioDrivenAnimation/StreamingADA/Tests) （如果存在）

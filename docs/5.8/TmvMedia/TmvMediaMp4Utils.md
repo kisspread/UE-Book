@@ -12,7 +12,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-18 |
 | 年龄标签 | 🆕（约 -1 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Media/TmvMedia) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Media/TmvMedia) | |
 
 ## 用途
 
@@ -272,6 +272,6 @@ void FTmvMediaDemo::PrintMp4Info(const FString& FilePath)
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Media/TmvMedia)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Media/TmvMedia)
 - 官方文档：暂无
 - 测试用例：未在提供的路径中发现，可能位于 `Engine/Tests/` 目录下或尚未公开。

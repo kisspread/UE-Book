@@ -12,7 +12,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-11-13 |
 | 年龄标签 | 🆕（约 1 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Media/NVDECElectra) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Media/NVDECElectra) | |
 
 ## 用途
 
@@ -120,4 +120,4 @@ void FNVDECIntegrationDemo::Deinitialize()
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Media/NVDECElectra)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Media/NVDECElectra)

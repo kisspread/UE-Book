@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-03-17 |
 | 年龄标签 | 🆕（约 1 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/PlatformDLC) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PlatformDLC) | |
 
 ## 用途
 
@@ -268,5 +268,5 @@ void UMyGameDLCManager::HandleDLCNotification(FName DLCName, IPlatformDLC::ENoti
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/PlatformDLC)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/PlatformDLC/Tests) (如果存在)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PlatformDLC)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PlatformDLC/Tests) (如果存在)

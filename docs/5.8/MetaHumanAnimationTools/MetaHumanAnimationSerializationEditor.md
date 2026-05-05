@@ -11,7 +11,7 @@
 | 实验性 | 否 |
 | 创建时间 | 2026-02-02 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/MetaHuman/MetaHumanAnimationTools) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimationTools) | |
 
 ## 用途
 
@@ -136,6 +136,6 @@ void FMyMetaHumanAnimProcessor::ProcessAnimationData()
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/MetaHuman/MetaHumanAnimationTools)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimationTools)
 - [MetaHuman 官方文档](https://docs.unrealengine.com/5.7/en-US/metahuman-in-unreal-engine/)
 - [MetaHuman Animator 文档](https://docs.unrealengine.com/5.7/en-US/metahuman-animator-in-unreal-engine/)

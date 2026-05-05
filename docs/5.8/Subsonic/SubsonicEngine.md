@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-02 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Subsonic) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic) | |
 
 ## 用途
 
@@ -289,6 +289,6 @@ void AMyAudioManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Subsonic)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic)
 - 官方文档：暂无（DocsURL 为空）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Subsonic/Source/SubsonicEngineTest)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic/Source/SubsonicEngineTest)

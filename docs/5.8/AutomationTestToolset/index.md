@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-13 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset) | |
 
 ## 用途
 
@@ -40,6 +40,6 @@
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset)
 - [模块文档：AutomationTestToolset](AutomationTestToolset.md)
 - [模块文档：AutomationTestToolsetTests](AutomationTestToolsetTests.md)

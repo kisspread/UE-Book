@@ -12,7 +12,7 @@
 | 实验性 | 否 |
 | 创建时间 | 2025-10-24 |
 | 年龄标签 | 🆕（约 1 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Editor/MaterialAssetWizard) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/MaterialAssetWizard) | |
 
 ## 用途
 
@@ -141,5 +141,5 @@ public:
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Editor/MaterialAssetWizard)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/MaterialAssetWizard)
 - [测试用例]（未在提供的源码路径中找到独立的测试文件，可能集成在引擎的自动化测试中）

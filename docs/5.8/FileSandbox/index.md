@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-16 |
 | 年龄标签 | 🆕（约 -2 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Developer/Sandbox/FileSandbox) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/Sandbox/FileSandbox) | |
 
 ## 用途
 
@@ -65,6 +65,6 @@ File Sandbox 插件为 Unreal Editor 提供了一个文件操作沙盒环境。�
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Developer/Sandbox/FileSandbox)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/Sandbox/FileSandbox)
 - [FileSandboxCore 模块文档](FileSandboxCore.md)
 - [FileSandboxUI 模块文档](FileSandboxUI.md)

@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-11-03 |
 | 年龄标签 | 🆕（约 1 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Media/AV1DecoderElectra) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Media/AV1DecoderElectra) | |
 
 ## 用途
 
@@ -132,5 +132,5 @@ IMPLEMENT_MODULE(FMyMediaModule, MyMedia)
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Media/AV1DecoderElectra)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Tests/Media/Electra)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Media/AV1DecoderElectra)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Tests/Media/Electra)

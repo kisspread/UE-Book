@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-01-14 |
 | 年龄标签 | 🆕（约 1 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/AudioProperties) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AudioProperties) | |
 
 ## 用途
 
@@ -198,6 +198,6 @@ bool UMyCustomAudioParser::ParseProperties(TObjectPtr<UObject> TargetObject, con
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/AudioProperties)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AudioProperties)
 - 官方文档：暂无
 - 测试用例：暂未发现公开的测试用例文件。

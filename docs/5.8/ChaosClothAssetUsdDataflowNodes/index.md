@@ -11,7 +11,7 @@
 | 实验性 | 否 |
 | 创建时间 | 2026-01-27 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/ChaosClothAssetUsdDataflowNodes) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetUsdDataflowNodes) | |
 
 ## 用途
 
@@ -206,4 +206,4 @@ void FMyCustomClothImportNode::Evaluate(UE::Dataflow::FContext& Context, const F
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/ChaosClothAssetUsdDataflowNodes)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetUsdDataflowNodes)

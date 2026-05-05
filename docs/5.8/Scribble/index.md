@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-10-29 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Animation/Scribble) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Animation/Scribble) | |
 
 ## 用途
 
@@ -61,6 +61,6 @@ Scribble 是一个实验性的 UI 插件，旨在为 Unreal Engine 的用户界�
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Animation/Scribble)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Animation/Scribble)
 - [Scribble 模块文档](Scribble.md)
 - [ScribbleEditor 模块文档](ScribbleEditor.md)

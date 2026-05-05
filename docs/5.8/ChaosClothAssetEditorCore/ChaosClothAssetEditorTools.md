@@ -11,7 +11,7 @@
 | 实验性 | 否 |
 | 创建时间 | 2026-04-07 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/ChaosClothAssetEditorCore) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetEditorCore) | |
 
 ## 用途
 

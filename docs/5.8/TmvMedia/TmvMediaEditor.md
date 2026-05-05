@@ -12,7 +12,7 @@ Implemented using Advanced Professional Video (APV) codec.
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-18 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Media/TmvMedia) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Media/TmvMedia) | |
 
 ## 用途
 
@@ -224,5 +224,5 @@ TmvMediaEditor 模块的 Build.cs 依赖信息未完整提供，但根据源码�
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Media/TmvMedia)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Media/TmvMedia)
 - [官方文档]()（暂无）

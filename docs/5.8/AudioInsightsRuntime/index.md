@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-10-22 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/AudioInsightsRuntime) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/AudioInsightsRuntime) | |
 
 ## 用途
 
@@ -238,5 +238,5 @@ void AMyAudioInsightsDemoActor::OnSoundFinished()
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/AudioInsightsRuntime)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/AudioInsightsRuntime/Tests) (如果存在)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/AudioInsightsRuntime)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/AudioInsightsRuntime/Tests) (如果存在)

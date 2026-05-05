@@ -11,7 +11,7 @@
 | 实验性 | 否 |
 | 创建时间 | 2026-02-25 |
 | 年龄标签 | 🆕（约 -1 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Media/MP4Utilities) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Media/MP4Utilities) | |
 
 ## 用途
 
@@ -46,4 +46,4 @@ MP4Utilities 插件提供了一套底层工具，用于在 Unreal Engine 中直�
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Media/MP4Utilities)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Media/MP4Utilities)

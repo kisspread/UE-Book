@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-03-27 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/PlayerInputDebugger) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PlayerInputDebugger) | |
 
 ## 用途
 
@@ -226,6 +226,6 @@ void SMyCustomInputTab::Construct(const FArguments& InArgs)
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/PlayerInputDebugger)
-- [Enhanced Input 插件](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/EnhancedInput)（依赖项）
-- [CommonUI 插件](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/CommonUI)（依赖项）
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PlayerInputDebugger)
+- [Enhanced Input 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/EnhancedInput)（依赖项）
+- [CommonUI 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/CommonUI)（依赖项）

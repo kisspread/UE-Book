@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-09 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/NetworkServiceDiscovery) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/NetworkServiceDiscovery) | |
 
 ## 用途
 
@@ -341,6 +341,6 @@ TArray<FNetworkServiceInfo> FServiceBrowser::GetResolvedEndpoints() const
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/NetworkServiceDiscovery)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/NetworkServiceDiscovery)
 - 官方文档（无）
 - 测试用例（未发现）

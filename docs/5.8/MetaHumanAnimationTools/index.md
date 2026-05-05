@@ -11,7 +11,7 @@
 | 实验性 | 否 |
 | 创建时间 | 2026-02-02 |
 | 年龄标签 | 🆕（未来） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/MetaHuman/MetaHumanAnimationTools) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimationTools) | |
 
 ## 用途
 
@@ -41,4 +41,4 @@
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/MetaHuman/MetaHumanAnimationTools)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimationTools)

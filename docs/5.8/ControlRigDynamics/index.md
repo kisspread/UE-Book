@@ -11,7 +11,7 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-23 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/ControlRigDynamics) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ControlRigDynamics) | |
 
 ## 用途
 
@@ -194,6 +194,6 @@ void AMyDynamicCharacter::Tick(float DeltaTime)
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/ControlRigDynamics)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ControlRigDynamics)
 - [ControlRig 官方文档](https://docs.unrealengine.com/5.7/en-US/control-rig-in-unreal-engine/)（父框架文档）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/ControlRigDynamics/Tests)（如果存在）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ControlRigDynamics/Tests)（如果存在）

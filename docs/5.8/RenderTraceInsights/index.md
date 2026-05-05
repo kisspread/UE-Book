@@ -11,7 +11,7 @@
 | 实验性 | 否 |
 | 创建时间 | 2026-03-19 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/RenderTraceInsights) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/RenderTraceInsights) | |
 
 ## 用途
 
@@ -158,6 +158,6 @@ public:
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/RenderTraceInsights)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/RenderTraceInsights)
 - [官方文档]() (暂无)
 - [测试用例]() (未在提供的路径中发现)
