@@ -49,6 +49,8 @@ jobs:
         run: node scripts/sync-manifest.mjs
 
       - name: Build VitePress
+        env:
+          NODE_OPTIONS: '--max-old-space-size=6144'
         run: pnpm vitepress build
 
       - name: Upload artifact
