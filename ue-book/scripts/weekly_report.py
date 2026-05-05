@@ -152,28 +152,31 @@ def main():
         print(f"Output: {output_path}")
         return
 
-    prompt_template = PROMPT_PATH.read_text(encoding="utf-8")
-    commit_data = build_commit_data(commits)
+    commits_text = build_commit_data(commits)
 
-    system_prompt = f"""你是 Unreal Engine 技术文档专家。根据提供的提交信息，生成中文周报。
+    system_prompt = f"""你是 Unreal Engine 技术文档专家。根据提供的 Engine/Plugins 提交信息，生成中文周报。
 
-{prompt_template}
+## 输出规范
 
-## 🔥 最大亮点
-从所有提交中挑选 2-3 个最重要的变更，放在报告最前面，用一段话解释为什么重要。
+1. 筛选提交：忽略琐碎变更，只选取有实质影响的
+2. 分组归类：将相关提交合并为一条摘要，解释改了什么、影响范围
+3. 技术术语保持英文原文
+4. 不要列出 Commit SHA 或 GitHub 链接
 
-## 剩余内容
-按以下二级标题顺序输出，不得额外添加英文括号：
+按以下二级标题顺序输出（无提交的章节可省略），不得额外添加英文括号：
 - `## ✨ 新功能`
 - `## 🚀 重大变更`
 - `## ⚡ 性能优化`
 - `## 🐛 Bug 修复`
 - `## 🔧 API 变更`
 - `## ⚠️ 废弃预告`
-给报告加上 YAML frontmatter: title '{week_label} 引擎插件周报', date '{datetime.now().date()}'"""
+
+给报告加上 YAML frontmatter: title '{week_label} 引擎插件周报', date '{datetime.now().date()}'
+
+只输出 Markdown，不要多余解释。"""
 
     print(f"\nGenerating {week_label} report ({len(commits)} commits)...")
-    report = call_llm(system_prompt, commit_data)
+    report = call_llm(system_prompt, commits_text)
 
     UPDATES_DIR.mkdir(parents=True, exist_ok=True)
     output_path.write_text(report, encoding="utf-8")
