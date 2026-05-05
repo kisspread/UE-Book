@@ -33,11 +33,13 @@ def generate_doc(harness: str, context: str, branch: str = "") -> tuple[str, flo
 
 重要规则：
 1. 严格按照上面模板的格式输出，不要遗漏任何章节
-2. 属性表必须严格遵循格式模板
-3. 用途说明必须基于源码分析，不要照抄 .uplugin 的 Description
-4. 蓝图用法和 C++ 用法必须从源码中提取真实的 API
-5. {branch_hint}
-6. 只输出 markdown 文档内容，不要有多余的解释"""
+2. 属性表必须严格遵循格式模板，包括新增的「中文名」字段
+3. 中文名：是新增字段，不是为了替换原有的英文名（共存），而是根据插件的实际用途翻译为简洁中文名称（2-6字），
+   不要直接翻译英文插件名。如 ADOSupport → "ADO数据库支持"
+4. 用途说明必须基于源码分析，不要照抄 .uplugin 的 Description
+5. 蓝图用法和 C++ 用法必须从源码中提取真实的 API
+6. {branch_hint} 
+7. 只输出 markdown 文档内容，不要有多余的解释"""
 
     user_prompt = f"请为以下 UE5 插件生成完整文档：\n\n{context}"
 
