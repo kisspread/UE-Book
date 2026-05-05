@@ -37,6 +37,8 @@ jobs:
         run: node scripts/sync-manifest.mjs
 
       - name: Commit changes
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -47,4 +49,5 @@ jobs:
           fi
           git commit -m "docs: weekly plugin report"
           git pull --rebase origin master
+          git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/kisspread/UE-Book.git"
           git push

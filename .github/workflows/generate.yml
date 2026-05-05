@@ -74,6 +74,8 @@ jobs:
 
       - name: Commit and push
         if: steps.pipeline.outputs.exit_code == '0'
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           cd ..
           git config user.name "github-actions[bot]"
@@ -85,6 +87,7 @@ jobs:
           fi
           git commit -m "docs: update UE ${{ inputs.version }} plugin docs"
           git pull --rebase origin master
+          git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/kisspread/UE-Book.git"
           git push
 
       - name: Notify result
