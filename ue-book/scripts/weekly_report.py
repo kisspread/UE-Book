@@ -163,7 +163,13 @@ def main():
 从所有提交中挑选 2-3 个最重要的变更，放在报告最前面，用一段话解释为什么重要。
 
 ## 剩余内容
-按分类输出（新功能、重大变更、性能优化、Bug 修复、API 变更、废弃预告）。
+按以下二级标题顺序输出，不得额外添加英文括号：
+- `## ✨ 新功能`
+- `## 🚀 重大变更`
+- `## ⚡ 性能优化`
+- `## 🐛 Bug 修复`
+- `## 🔧 API 变更`
+- `## ⚠️ 废弃预告`
 给报告加上 YAML frontmatter: title '{week_label} 引擎插件周报', date '{datetime.now().date()}'"""
 
     print(f"\nGenerating {week_label} report ({len(commits)} commits)...")

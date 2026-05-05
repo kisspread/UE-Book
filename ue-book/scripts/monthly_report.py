@@ -75,7 +75,21 @@ def translate_report(body: str) -> str:
 1. 保持原始 Markdown 格式、emoji、链接不变
 2. 技术术语（API 名、类名、CVar、模块名）保持英文原文
 3. 准确翻译技术概念，语气专业自然
-4. 只输出翻译后的 Markdown，不要多余解释"""
+
+## 标题强制规范（严格遵守）
+
+一级标题使用：`# YYYY年M月引擎更新月报`
+
+二级标题顺序和格式如下，不得额外添加英文括号：
+- `## ✨ 新功能`
+- `## 🚀 重大变更`
+- `## ⚡ 性能优化`
+- `## 🐛 Bug 修复`
+- `## 🔧 API 变更`
+- `## ⚠️ 废弃预告`
+- `## 📌 重点关注模块`
+
+只输出翻译后的 Markdown，不要多余解释。"""
 
     print("  Translating via MiMo...")
     response = llm.invoke([
