@@ -137,7 +137,7 @@ def generate_modules_node(state: PluginState) -> PluginState:
 
     info = state["info"]
     modules = state["modules"]
-    out_dir = os.path.join(config.PROJECT_DIR, "docs", state["category"], state["plugin_name"])
+    out_dir = os.path.join(config.PROJECT_DIR, "docs", "5.7", state["category"], state["plugin_name"])
     os.makedirs(out_dir, exist_ok=True)
 
     if len(modules) <= 1:
@@ -173,7 +173,7 @@ def review_node(state: PluginState) -> PluginState:
         return state
 
     state["attempts"] = state.get("attempts", 0) + 1
-    out_dir = os.path.join(config.PROJECT_DIR, "docs", state["category"], state["plugin_name"])
+    out_dir = os.path.join(config.PROJECT_DIR, "docs", "5.7", state["category"], state["plugin_name"])
 
     # Collect doc summaries for review
     doc_summaries = []
@@ -233,7 +233,7 @@ def generate_index_node(state: PluginState) -> PluginState:
     ctx = build_summary_context(info, state["module_docs"], config.UE_SOURCE)
     doc, elapsed = _call_llm(f"请为以下 UE5 插件生成汇总 index.md：\n\n{ctx}")
 
-    out_dir = os.path.join(config.PROJECT_DIR, "docs", state["category"], state["plugin_name"])
+    out_dir = os.path.join(config.PROJECT_DIR, "docs", "5.7", state["category"], state["plugin_name"])
     path = os.path.join(out_dir, "index.md")
     with open(path, "w") as f:
         f.write(doc)
@@ -249,7 +249,7 @@ def finalize_node(state: PluginState) -> dict:
         "result_success": not bool(state.get("error")),
         "result_error": state.get("error"),
         "result_duration": time.time() - start,
-        "result_doc_path": os.path.join("docs", state["category"], state["plugin_name"]),
+        "result_doc_path": os.path.join("docs", "5.7", state["category"], state["plugin_name"]),
     }
 
 

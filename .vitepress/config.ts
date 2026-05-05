@@ -21,44 +21,55 @@ function cppEscapePlugin(): Plugin {
   }
 }
 
-// ── Rewrites: file path → clean URL ──
+// ── Rewrites: scan filesystem for all plugin dirs ──
+// docs/5.7/small/Name/:path* → 5.7/Name/:path*
+// Dedup: manifest size wins when same plugin exists in multiple sizes
+const DOCS_DIR = path.resolve(__dirname, '../ue-book/docs')
 const MANIFEST_PATH = path.resolve(__dirname, '../ue-book/manifest.json')
-const SRC_DOCS = path.resolve(__dirname, '../ue-book/docs')
+const SIZE_DIRS = ['small', 'medium', 'large', 'xlarge']
 const rewrites: Record<string, string> = {}
 
-// Track which names already have a 5.7 entry from manifest (to avoid FS dup)
-const has5_7 = new Set<string>()
-
+// Build (ver, name) → size priority map from raw manifest
+const manifestSizeMap = new Map<string, string>()
 if (fs.existsSync(MANIFEST_PATH)) {
-  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'))
-  const plugins = manifest.plugins || {}
-
+  const rawManifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'))
+  const plugins = rawManifest.plugins || {}
   for (const [name, info] of Object.entries(plugins)) {
-    const docPath = (info as any).doc_path || ''
-    const version = (info as any).generated_in || ''
-    let srcBase = docPath.replace(/^docs\//, '').replace(/\/$/, '')
-    if (version === '5.7') {
-      srcBase = srcBase.replace(/^5\.7\//, '')
-      has5_7.add(name)
+    const v = (info as any).generated_in
+    const s = (info as any).size
+    if (v && s) manifestSizeMap.set(v + '/' + name, s as string)
+  }
+}
+
+const seenRewrite = new Set<string>()  // "ver/name"
+for (const ver of ['5.7', '5.8']) {
+  for (const size of SIZE_DIRS) {
+    const sizeDir = path.join(DOCS_DIR, ver, size)
+    if (!fs.existsSync(sizeDir)) continue
+    for (const name of fs.readdirSync(sizeDir)) {
+      const pluginDir = path.join(sizeDir, name)
+      if (!fs.statSync(pluginDir).isDirectory()) continue
+      const key = ver + '/' + name
+      // Manifest-defined size wins; for others, first-seen
+      const expectedSize = manifestSizeMap.get(key)
+      if (expectedSize && size !== expectedSize) continue  // wrong size, skip
+      if (seenRewrite.has(key)) continue  // already got this (ver,name) from a better size
+      seenRewrite.add(key)
+      const srcBase = [ver, size, name].join('/')
+      rewrites[srcBase + '/:path*'] = key + '/:path*'
     }
-    rewrites[`${srcBase}/:path*`] = `${version}/${name}/:path*`
   }
 }
 
-// FS leftovers: V1 dirs whose name is NOT already registered as 5.7 in manifest
-const SIZE_DIRS = ['small', 'medium', 'large', 'xlarge']
-for (const sd of SIZE_DIRS) {
-  const dir = path.join(SRC_DOCS, sd)
-  if (!fs.existsSync(dir)) continue
-  for (const name of fs.readdirSync(dir)) {
-    if (has5_7.has(name)) continue
-    const key = `${sd}/${name}/:path*`
-    if (rewrites[key]) continue
-    rewrites[key] = `5.7/${name}/:path*`
-  }
+// ── Sidebar: auto-generated for multi-module plugins ──
+const SIDEBAR_PATH = path.resolve(__dirname, '../ue-book/docs/public/sidebar.json')
+let sidebar: any = false
+if (fs.existsSync(SIDEBAR_PATH)) {
+  sidebar = JSON.parse(fs.readFileSync(SIDEBAR_PATH, 'utf-8'))
 }
 
-console.log(`[config] Generated ${Object.keys(rewrites).length} rewrites`)
+console.log('[config] Generated ' + Object.keys(rewrites).length + ' rewrites')
+console.log('[config] Sidebar entries: ' + (typeof sidebar === 'object' ? Object.keys(sidebar).length : 0))
 
 export default defineConfig({
   title: 'UE-Book',
@@ -88,6 +99,6 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/kisspread/UE-Book' },
     ],
     search: { provider: 'local' },
-    sidebar: false,
+    sidebar,
   },
 })

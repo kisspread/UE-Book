@@ -3,3 +3,6 @@ dist/
 .vitepress/cache/
 .vitepress/dist/
 *.timestamp-*.mjs
+
+Plan.md
+.vitepress/.vitepress/cache

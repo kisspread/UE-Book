@@ -2565,7 +2565,7 @@
     "DummyMeshReconstructor": {
       "generated_in": "5.7",
       "size": "small",
-      "doc_path": "docs/5.7/DummyMeshReconstructor/"
+      "doc_path": "docs/5.7/small/DummyMeshReconstructor/"
     },
     "AnimGen": {
       "generated_in": "5.8",

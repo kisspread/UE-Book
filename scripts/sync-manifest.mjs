@@ -20,32 +20,12 @@ const MANIFEST_PATH = path.join(ROOT, 'ue-book', 'manifest.json');
 const SRC_DOCS = path.join(ROOT, 'ue-book', 'docs');
 const OUT_MANIFEST = path.join(ROOT, 'ue-book', 'docs', 'public', 'manifest.json');
 
-const SIZE_DIRS = ['small', 'medium', 'large', 'xlarge'];
-
 // ── Source path resolution ──
-function resolveSourcePath(docPath, version) {
-  const relative = docPath.replace(/^docs\//, '');
-  if (version === '5.7') {
-    const withoutVersion = relative.replace(/^5\.7\//, '');
-    const directPath = path.join(SRC_DOCS, withoutVersion);
-    if (fs.existsSync(directPath)) return directPath;
-    const pluginName = withoutVersion.replace(/\/$/, '');
-    if (!pluginName.includes('/')) {
-      for (const sizeDir of SIZE_DIRS) {
-        const probe = path.join(SRC_DOCS, sizeDir, pluginName);
-        if (fs.existsSync(probe)) return probe;
-      }
-    }
-    return directPath;
-  }
-  const directPath = path.join(SRC_DOCS, relative);
-  if (fs.existsSync(directPath)) return directPath;
-  const pluginName = relative.replace(/^5\.8\/[^/]+\//, '').replace(/\/$/, '');
-  for (const sizeDir of SIZE_DIRS) {
-    const probe = path.join(SRC_DOCS, version, sizeDir, pluginName);
-    if (fs.existsSync(probe)) return probe;
-  }
-  return directPath;
+// Manifest doc_path: "docs/5.7/small/Name/" or "docs/5.8/medium/Name/"
+// Actual file: ue-book/docs/5.7/small/Name/ or ue-book/docs/5.8/medium/Name/
+function resolveSourcePath(docPath) {
+  const relative = docPath.replace(/^docs\//, '').replace(/\/$/, '');
+  return path.join(SRC_DOCS, relative);
 }
 
 // ── Metadata extraction ──
@@ -107,7 +87,7 @@ function buildEntry(rawMeta, pluginName, version, size, content) {
     name: pluginName,
     name_cn: rawMeta['中文名'] || null,
     version, size,
-    link: `/${version}/${pluginName}/`,
+    link: '/' + version + '/' + pluginName + '/',
     description: rawMeta.description || null,
     description_cn: extractDescriptionCN(content),
   };
@@ -127,11 +107,33 @@ function buildEntry(rawMeta, pluginName, version, size, content) {
   return entry;
 }
 
+// ── Scan filesystem for V1 leftovers ──
+const SIZE_DIRS = ['small', 'medium', 'large', 'xlarge'];
+function scanFilesystemExtras(has5_7) {
+  const extras = [];
+  for (const sd of SIZE_DIRS) {
+    const dir = path.join(SRC_DOCS, '5.7', sd);
+    if (!fs.existsSync(dir)) continue;
+    for (const name of fs.readdirSync(dir)) {
+      if (has5_7.has(name)) continue;
+      const pluginDir = path.join(dir, name);
+      if (!fs.statSync(pluginDir).isDirectory()) continue;
+      const indexFile = path.join(pluginDir, 'index.md');
+      if (fs.existsSync(indexFile)) {
+        const content = fs.readFileSync(indexFile, 'utf-8');
+        extras.push({ name, size: sd, content });
+        has5_7.add(name);
+      }
+    }
+  }
+  return extras;
+}
+
 // ── Main ──
 console.log('Sync-manifest — reading manifest...');
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
 const plugins = manifest.plugins;
-console.log(`  ${Object.keys(plugins).length} plugins in manifest`);
+console.log('  ' + Object.keys(plugins).length + ' plugins in manifest');
 
 // Load existing translations
 let existingNames = {};
@@ -141,16 +143,19 @@ if (fs.existsSync(OUT_MANIFEST)) {
     for (const p of (old.plugins || [])) {
       if (p.name_cn) existingNames[p.name] = p.name_cn;
     }
-    console.log(`  Loaded ${Object.keys(existingNames).length} existing name_cn`);
+    console.log('  Loaded ' + Object.keys(existingNames).length + ' existing name_cn');
   } catch (e) { /* ignore */ }
 }
 
 const allPlugins = [];
 let withCN = 0, withDescCN = 0, errors = 0;
+const has5_7 = new Set();
 
 for (const [pluginName, info] of Object.entries(plugins)) {
   const { generated_in: version, size, doc_path: docPath } = info;
-  const srcDir = resolveSourcePath(docPath, version);
+  const srcDir = resolveSourcePath(docPath);
+  if (version === '5.7') has5_7.add(pluginName);
+
   if (!fs.existsSync(srcDir)) { errors++; continue; }
 
   const indexFile = path.join(srcDir, 'index.md');
@@ -162,34 +167,20 @@ for (const [pluginName, info] of Object.entries(plugins)) {
     if (entry.description_cn) withDescCN++;
     allPlugins.push(entry);
   } else {
-    allPlugins.push({ name: pluginName, name_cn: existingNames[pluginName] || null, version, size, link: `/${version}/${pluginName}/` });
+    allPlugins.push({ name: pluginName, name_cn: existingNames[pluginName] || null, version, size, link: '/' + version + '/' + pluginName + '/' });
   }
 }
 
-// ── Step: Scan filesystem for V1 leftovers not in manifest as 5.7 ──
-const has5_7 = new Set(
-  allPlugins.filter(p => p.version === '5.7').map(p => p.name)
-)
-let fsExtra = 0
-for (const sd of SIZE_DIRS) {
-  const dir = path.join(SRC_DOCS, sd)
-  if (!fs.existsSync(dir)) continue
-  for (const name of fs.readdirSync(dir)) {
-    if (has5_7.has(name)) continue
-    const pluginDir = path.join(dir, name)
-    if (!fs.statSync(pluginDir).isDirectory()) continue
-    const indexFile = path.join(pluginDir, 'index.md')
-    if (fs.existsSync(indexFile)) {
-      const content = fs.readFileSync(indexFile, 'utf-8')
-      const entry = buildEntry(parseAttributeTable(content), name, '5.7', sd, content)
-      if (!entry.name_cn && existingNames[name]) entry.name_cn = existingNames[name]
-      if (entry.name_cn) withCN++
-      if (entry.description_cn) withDescCN++
-      allPlugins.push(entry)
-      has5_7.add(name)
-      fsExtra++
-    }
-  }
+// FS leftovers (V1 dirs not in manifest, like ADM 5.7)
+let fsExtra = 0;
+const extras = scanFilesystemExtras(has5_7);
+for (const { name, size, content } of extras) {
+  const entry = buildEntry(parseAttributeTable(content), name, '5.7', size, content);
+  if (existingNames[name]) entry.name_cn = existingNames[name];
+  if (entry.name_cn) withCN++;
+  if (entry.description_cn) withDescCN++;
+  allPlugins.push(entry);
+  fsExtra++;
 }
 
 allPlugins.sort((a, b) => a.name.localeCompare(b.name));
@@ -202,8 +193,40 @@ const tiers = { relic: 0, old: 0, fresh: 0 };
 allPlugins.forEach(p => { if (p.age_tier) tiers[p.age_tier]++; });
 const cats = new Set(allPlugins.map(p => p.category).filter(Boolean));
 
-console.log(`\n=== Sync Complete ===`);
-console.log(`  Total: ${allPlugins.length} plugins  Errors: ${errors}  FS extras: ${fsExtra}`);
-console.log(`  name_cn: ${withCN}  description_cn: ${withDescCN}`);
-console.log(`  Categories: ${cats.size}  Age: 🏛️${tiers.relic} 👴${tiers.old} 🥩${tiers.fresh}`);
-console.log(`  Output: ${OUT_MANIFEST}`);
+
+// ── Generate sidebar: multi-module always; single-module only if multi-version ──
+const sidebar = {};
+const OUT_SIDEBAR = path.join(ROOT, 'ue-book', 'docs', 'public', 'sidebar.json');
+
+// Pre-compute which plugins exist in multiple versions
+const versionCount = new Map();  // name → count of versions
+for (const entry of allPlugins) {
+  const prev = versionCount.get(entry.name) || new Set();
+  prev.add(entry.version);
+  versionCount.set(entry.name, prev);
+}
+
+for (const entry of allPlugins) {
+  const pluginDir = path.join(SRC_DOCS, entry.version, entry.size, entry.name);
+  if (!fs.existsSync(pluginDir)) continue;
+  const mds = fs.readdirSync(pluginDir).filter(f => f.endsWith('.md') && f !== 'index.md');
+  // Single-module & single-version → skip sidebar
+  if (mds.length === 0 && (versionCount.get(entry.name)?.size || 1) <= 1) continue;
+  const prefix = '/' + entry.version + '/' + entry.name + '/';
+  const items = [{ text: '概述', link: prefix }];
+  for (const md of mds.sort()) {
+    const name = md.replace('.md', '');
+    items.push({ text: name, link: prefix + name });
+  }
+  sidebar[prefix] = items;
+}
+
+fs.writeFileSync(OUT_SIDEBAR, JSON.stringify(sidebar, null, 2), 'utf-8');
+console.log('  Sidebar: ' + Object.keys(sidebar).length + ' plugins');
+
+
+console.log('\n=== Sync Complete ===');
+console.log('  Total: ' + allPlugins.length + ' plugins  Errors: ' + errors + '  FS extras: ' + fsExtra);
+console.log('  name_cn: ' + withCN + '  description_cn: ' + withDescCN);
+console.log('  Categories: ' + cats.size + '  Age: 🏛️' + tiers.relic + ' 👴' + tiers.old + ' 🥩' + tiers.fresh);
+console.log('  Output: ' + OUT_MANIFEST);
