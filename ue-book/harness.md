@@ -33,7 +33,7 @@
 3. **模块**：用反引号包裹模块名，格式为 `` `Name` (Type) ``，多个用逗号分隔。Type 只写 Runtime/Editor/UncookedOnly/DeveloperTool，不写 LoadingPhase。如果没有模块写 `无（纯内容插件）`
 4. **实验性**：如果 `IsBetaVersion=true` 或 `IsExperimentalVersion=true` 写 `⚠️ 是`，否则写 `否`。**必须有这一行**
 5. **年龄标签**：格式固定为 `🏛️ 文物（约 N 年）` / `👴 老古董（约 N 年）` / `🆕（约 N 年）`，N 取整数
-6. **源码链接**：目录用 `tree/5.7`，文件用 `blob/5.7`
+6. **源码链接**：目录用 `tree/{branch}`，文件用 `blob/{branch}`
 
 **示例（CableComponent）**：
 
@@ -52,7 +52,7 @@
 | 实验性 | 否 |
 | 创建时间 | 2014-03-14 |
 | 年龄标签 | 🏛️ 文物（约 12 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Runtime/CableComponent) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/{branch}/Engine/Plugins/Runtime/CableComponent) | |
 ```
 
 ## 用途
@@ -248,11 +248,11 @@ docs/large/SOMEPlugin/
 └── ModuleB.md
 ```
 
-- 分支: 5.7
-- 格式: `https://github.com/EpicGames/UnrealEngine/blob/5.7/{相对路径}`
+- 分支: {branch}
+- 格式: `https://github.com/EpicGames/UnrealEngine/blob/{branch}/{相对路径}`
 - 相对路径以 Engine/ 开头，例如: Engine/Plugins/2D/Paper2D/Paper2D.uplugin
-- .uplugin 链接指向 plugin 根目录（用 tree/5.7）
-- 源码链接指向具体文件（用 blob/5.7）
+- .uplugin 链接指向 plugin 根目录（用 tree/{branch}）
+- 源码链接指向具体文件（用 blob/{branch}）
 
 ## 常见错误
 

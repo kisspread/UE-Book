@@ -26,10 +26,11 @@ def generate_doc(harness: str, context: str, branch: str = "") -> tuple[str, flo
     llm = get_llm()
 
     branch_hint = f"GitHub 链接使用 {branch} 分支格式" if branch else "GitHub 链接使用对应分支格式"
+    formatted_harness = harness.format(branch=branch) if branch else harness
 
     system_prompt = f"""你是一个 UE5 插件文档生成专家。根据提供的插件源码信息，生成完整的中文使用文档。
 
-{harness}
+{formatted_harness}
 
 重要规则：
 1. 严格按照上面模板的格式输出，不要遗漏任何章节

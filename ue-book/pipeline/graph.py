@@ -96,13 +96,13 @@ SYSTEM_PROMPT = """你是一个 UE5 插件文档生成专家。根据提供的�
 2. 属性表必须严格遵循格式模板
 3. 用途说明必须基于源码分析，不要照抄 .uplugin 的 Description
 4. 蓝图用法和 C++ 用法必须从源码中提取真实的 API
-5. GitHub 链接使用 5.7 分支格式
+5. GitHub 链接使用对应分支格式
 6. 只输出 markdown 文档内容，不要有多余的解释"""
 
 
 def _call_llm(user_prompt: str) -> tuple[str, float]:
     llm = get_llm()
-    harness = _get_harness()
+    harness = _get_harness().format(branch="5.7")
     start = time.time()
     response = llm.invoke([
         SystemMessage(content=SYSTEM_PROMPT.format(harness=harness)),
