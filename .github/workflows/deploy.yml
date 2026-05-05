@@ -15,6 +15,10 @@ on:
 #   act -W .github/workflows/deploy.yml --container-architecture linux/amd64
 # Note: act runs as root; CI runs as non-root. pnpm install may need --no-frozen-lockfile in act.
 
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
