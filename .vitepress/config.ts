@@ -63,9 +63,23 @@ for (const ver of ['5.7', '5.8']) {
 
 // ── Sidebar: auto-generated for multi-module plugins ──
 const SIDEBAR_PATH = path.resolve(__dirname, '../ue-book/docs/public/sidebar.json')
-let sidebar: any = false
+let sidebar: any = {}
 if (fs.existsSync(SIDEBAR_PATH)) {
   sidebar = JSON.parse(fs.readFileSync(SIDEBAR_PATH, 'utf-8'))
+}
+
+// ── Updates sidebar: all monthly reports ──
+const UPDATES_DIR = path.resolve(__dirname, '../ue-book/docs/updates')
+const updateFiles = fs.readdirSync(UPDATES_DIR)
+  .filter(f => f.match(/^\d{4}-\d{2}\.md$/))
+  .sort()
+  .reverse()
+if (updateFiles.length > 0) {
+  sidebar['/updates/'] = updateFiles.map(f => {
+    const slug = f.replace('.md', '')
+    const [y, m] = slug.split('-')
+    return { text: `${y}年${m}月`, link: `/updates/${slug}` }
+  })
 }
 
 console.log('[config] Generated ' + Object.keys(rewrites).length + ' rewrites')

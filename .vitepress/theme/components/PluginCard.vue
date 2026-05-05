@@ -3,12 +3,13 @@ defineProps({
   plugin: { type: Object, required: true }
 })
 
+const base = import.meta.env.BASE_URL
 const sizeLabels = { small: '小型', medium: '中型', large: '大型', xlarge: '超大型' }
 const ageLabels = { relic: '🏛️ 文物', old: '👴 老古董', fresh: '🥩 鲜肉' }
 </script>
 
 <template>
-  <a :href="import.meta.env.BASE_URL + plugin.link.substring(1)" class="plugin-card">
+  <a :href="base + plugin.link.substring(1)" class="plugin-card">
     <div class="card-header">
       <div class="card-title-group">
         <span class="card-name">{{ plugin.name }}</span>

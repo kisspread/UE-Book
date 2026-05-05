@@ -236,6 +236,22 @@ for (const entry of allPlugins) {
 fs.writeFileSync(OUT_SIDEBAR, JSON.stringify(sidebar, null, 2), 'utf-8');
 console.log('  Sidebar: ' + Object.keys(sidebar).length + ' plugins');
 
+// ── Latest update: find newest report slug ──
+const UPDATES_DIR = path.join(ROOT, 'ue-book', 'docs', 'updates');
+const reportFiles = fs.readdirSync(UPDATES_DIR)
+  .filter(f => /^\d{4}-\d{2}\.md$/.test(f))
+  .sort()
+  .reverse();
+if (reportFiles.length > 0) {
+  const latestSlug = reportFiles[0].replace('.md', '');
+  fs.writeFileSync(
+    path.join(UPDATES_DIR, 'latest.json'),
+    JSON.stringify({ slug: latestSlug }),
+    'utf-8',
+  );
+  console.log('  Latest update: ' + latestSlug);
+}
+
 
 console.log('\n=== Sync Complete ===');
 console.log('  Total: ' + allPlugins.length + ' plugins  Errors: ' + errors + '  FS extras: ' + fsExtra);
