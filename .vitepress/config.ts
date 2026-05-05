@@ -41,7 +41,6 @@ if (fs.existsSync(MANIFEST_PATH)) {
       srcBase = srcBase.replace(/^5\.7\//, '')
       has5_7.add(name)
     }
-
     rewrites[`${srcBase}/:path*`] = `${version}/${name}/:path*`
   }
 }
@@ -52,7 +51,7 @@ for (const sd of SIZE_DIRS) {
   const dir = path.join(SRC_DOCS, sd)
   if (!fs.existsSync(dir)) continue
   for (const name of fs.readdirSync(dir)) {
-    if (has5_7.has(name)) continue  // already a 5.7 entry, skip
+    if (has5_7.has(name)) continue
     const key = `${sd}/${name}/:path*`
     if (rewrites[key]) continue
     rewrites[key] = `5.7/${name}/:path*`
@@ -63,7 +62,7 @@ console.log(`[config] Generated ${Object.keys(rewrites).length} rewrites`)
 
 export default defineConfig({
   title: 'UE-Book',
-  description: 'UE5 Plugin Documentation',
+  description: 'Unreal Engine 开发者知识库',
   srcDir: 'ue-book/docs',
 
   rewrites,
@@ -80,9 +79,9 @@ export default defineConfig({
 
   themeConfig: {
     nav: [
-      { text: 'Home', link: '/' },
-      { text: '5.8', link: '/5.8/' },
-      { text: '5.7', link: '/5.7/' },
+      { text: '内置插件', link: '/plugins/' },
+      { text: '开源库', link: '/libraries/' },
+      { text: '最近更新', link: '/updates/' },
       { text: 'GitHub', link: 'https://github.com/kisspread/UE-Book' },
     ],
     socialLinks: [
