@@ -254,6 +254,22 @@
     },
     {
       "name": "AISupport",
+      "name_cn": "AI支持",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/AISupport/",
+      "description": "A simple plugin that makes sure your project loads AIModule and NavigationSystem at runtime",
+      "description_cn": "AISupport 插件本身不提供任何AI功能。它的唯一作用是作为一个轻量级的依赖项，确保 AIModule 和 NavigationSystem 这两个核心AI模块在项目启动时（PostConfigInit 阶段）被加载。",
+      "category": "AI",
+      "enabled_by_default": true,
+      "has_content": false,
+      "modules": "`AISupportModule` (Runtime)",
+      "experimental": false,
+      "created_at": "2019-12-27",
+      "age_tier": "old"
+    },
+    {
+      "name": "AISupport",
       "name_cn": "AI模块加载器",
       "version": "5.7",
       "size": "small",

@@ -1,0 +1,54 @@
+name: Deploy VitePress to Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'ue-book/docs/**'
+      - 'ue-book/docs/public/**'
+      - '.vitepress/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+
+# ── Act local test ──
+#   act -W .github/workflows/deploy.yml --container-architecture linux/amd64
+# Note: act runs as root; CI runs as non-root. pnpm install may need --no-frozen-lockfile in act.
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync manifest
+        run: node scripts/sync-manifest.mjs
+
+      - name: Build VitePress
+        run: pnpm vitepress build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .vitepress/dist
+          force_orphan: true
+          commit_message: 'deploy: ${{ github.sha }} [skip ci]'

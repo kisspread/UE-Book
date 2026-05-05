@@ -65,7 +65,7 @@ SYSTEM_PROMPT = """你是一个 UE5 插件文档生成专家。根据提供的�
 
 def _call_llm(user_prompt: str, branch: str) -> tuple[str, float]:
     llm = get_llm()
-    harness = _get_harness().format(branch=branch)
+    harness = _get_harness().replace('{branch}', branch)
     start = time.time()
     response = llm.invoke([
         SystemMessage(content=SYSTEM_PROMPT.format(harness=harness, branch=branch)),

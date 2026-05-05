@@ -33,6 +33,26 @@
       "link": "/5.8/ADM/"
     }
   ],
+  "/5.8/AISupport/": [
+    {
+      "text": "5.7 (默认)",
+      "link": "/5.7/AISupport/"
+    },
+    {
+      "text": "5.8",
+      "link": "/5.8/AISupport/"
+    }
+  ],
+  "/5.7/AISupport/": [
+    {
+      "text": "5.7 (默认)",
+      "link": "/5.7/AISupport/"
+    },
+    {
+      "text": "5.8",
+      "link": "/5.8/AISupport/"
+    }
+  ],
   "/5.8/AnimationLayering/": [
     {
       "text": "概述",

@@ -126,7 +126,7 @@ Including open source and non-open source, commercial and non-commercial.
 
 
 - [ImGuiPlugin](https://github.com/amuTBKT/ImGuiPlugin) A simple plugin for integrating Dear ImGui in Unreal Engine 5.
-  <video controls src="../assets/images/amutbk_imgui3.mp4" title="Title"></video>
+  <!-- <video controls src="../assets/images/amutbk_imgui3.mp4" title="Title"></video> -->
   - 来自 [amu_mhr](https://x.com/amu_mhr) 的 UE5 ImGui 集成
   - 和其他 ImGui Plugin 不同的是，它通过套了一层 Slate Widget 来实现类型原生widget的dock效果
   - 更好看的UIShader

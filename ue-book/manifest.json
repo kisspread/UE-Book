@@ -27,9 +27,10 @@
       "doc_path": "docs/5.7/small/AESHandlerComponent/"
     },
     "AISupport": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AISupport/"
+      "doc_path": "docs/5.8/small/AISupport/",
+      "forced": true
     },
     "AITestSuite": {
       "generated_in": "5.7",

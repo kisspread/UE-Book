@@ -25,7 +25,7 @@ def generate_doc(harness: str, context: str) -> tuple[str, float]:
     """
     llm = get_llm()
     
-    formatted_harness = harness.format(branch="5.7")
+    formatted_harness = harness.replace('{branch}', "5.7")
     
     system_prompt = f"""你是一个 UE5 插件文档生成专家。根据提供的插件源码信息，生成完整的中文使用文档。
 
