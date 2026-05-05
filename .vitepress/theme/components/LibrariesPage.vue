@@ -4,8 +4,6 @@ import { ref, computed, onMounted } from 'vue'
 const allItems = ref([])
 const search = ref('')
 const activeCategories = ref([])
-const lang = ref('cn')  // 'cn' or 'en'
-const slideMap = ref({}) // { index: slideNumber }
 
 onMounted(async () => {
   try {
@@ -33,8 +31,7 @@ const filtered = computed(() => {
     const q = search.value.toLowerCase()
     list = list.filter(item =>
       item.name.toLowerCase().includes(q) ||
-      item.desc_en.toLowerCase().includes(q) ||
-      item.desc_cn.toLowerCase().includes(q)
+      item.content.toLowerCase().includes(q)
     )
   }
   return list
@@ -46,120 +43,59 @@ function toggleCategory(cat) {
   else activeCategories.value.push(cat)
 }
 
-function getSlide(index) {
-  return slideMap.value[index] || 0
-}
-
-function setSlide(index, val, max) {
-  slideMap.value = { ...slideMap.value, [index]: Math.max(0, Math.min(val, max - 1)) }
-}
-
-function nextSlide(index, max) {
-  setSlide(index, getSlide(index) + 1, max)
-}
-
-function prevSlide(index, max) {
-  setSlide(index, getSlide(index) - 1, max)
-}
-
-function desc(item) {
-  return lang.value === 'cn' ? (item.desc_cn || item.desc_en) : item.desc_en
+function renderMd(text) {
+  if (!text) return ''
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    // Images (with optional {width=...})
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)(?:\{[^}]*\})?/g, '<img src="$2" alt="$1" loading="lazy" />')
+    // Links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic
+    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
+    // Inline code
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // H3
+    .replace(/^###\s+(.+)$/gm, '<h4>$1</h4>')
+    // Line breaks
+    .replace(/\n/g, '<br/>')
+  return html
 }
 </script>
 
 <template>
   <div class="libs-page">
-    <!-- Search + Filters -->
+    <!-- Toolbar -->
     <div class="libs-toolbar">
-      <input
-        class="libs-search"
-        type="text"
-        placeholder="搜索开源库..."
-        v-model="search"
-      />
+      <input class="libs-search" type="text" placeholder="搜索开源库..." v-model="search" />
       <div class="libs-filters">
-        <button
-          class="chip"
-          :class="{ on: activeCategories.length === 0 }"
-          @click="activeCategories = []"
-        >全部 <span class="n">{{ allItems.length }}</span></button>
-        <button
-          v-for="[cat, count] in categories"
-          :key="cat"
-          class="chip"
-          :class="{ on: activeCategories.includes(cat) }"
-          @click="toggleCategory(cat)"
-        >{{ cat }} <span class="n">{{ count }}</span></button>
+        <button class="chip" :class="{ on: activeCategories.length === 0 }" @click="activeCategories = []">
+          全部 <span class="n">{{ allItems.length }}</span>
+        </button>
+        <button v-for="[cat, count] in categories" :key="cat" class="chip"
+          :class="{ on: activeCategories.includes(cat) }" @click="toggleCategory(cat)">
+          {{ cat }} <span class="n">{{ count }}</span>
+        </button>
       </div>
       <div class="libs-meta">
         <span class="libs-count">显示 {{ filtered.length }} / {{ allItems.length }} 个</span>
-        <button class="lang-toggle" @click="lang = lang === 'cn' ? 'en' : 'cn'">
-          {{ lang === 'cn' ? 'EN' : '中' }}
-        </button>
       </div>
     </div>
 
-    <!-- Cards Grid -->
-    <div v-if="filtered.length === 0" class="empty-state">
-      没有匹配的项目
-    </div>
-    <div v-else class="libs-grid">
-      <div
-        v-for="(item, index) in filtered"
-        :key="item.name"
-        class="lib-card"
-      >
-        <!-- Image carousel or placeholder -->
-        <div class="lib-visual">
-          <div
-            v-if="item.images.length > 0"
-            class="carousel"
-          >
-            <div
-              class="carousel-track"
-              :style="{ transform: `translateX(-${getSlide(index) * 100}%)` }"
-            >
-              <div
-                v-for="(img, i) in item.images"
-                :key="i"
-                class="carousel-slide"
-              >
-                <img :src="img" :alt="item.name + ' screenshot ' + (i+1)" loading="lazy" />
-              </div>
-            </div>
-            <!-- Controls -->
-            <button
-              v-if="item.images.length > 1 && getSlide(index) > 0"
-              class="carousel-btn prev"
-              @click="prevSlide(index, item.images.length)"
-            >‹</button>
-            <button
-              v-if="item.images.length > 1 && getSlide(index) < item.images.length - 1"
-              class="carousel-btn next"
-              @click="nextSlide(index, item.images.length)"
-            >›</button>
-            <div v-if="item.images.length > 1" class="carousel-dots">
-              <span
-                v-for="(_, i) in item.images"
-                :key="i"
-                class="dot"
-                :class="{ active: getSlide(index) === i }"
-                @click="setSlide(index, i, item.images.length)"
-              ></span>
-            </div>
-          </div>
-          <div v-else class="lib-visual-placeholder">
-            <span class="placeholder-name">{{ item.name }}</span>
-          </div>
-        </div>
-
-        <!-- Info -->
-        <div class="lib-info">
+    <!-- Masonry -->
+    <div v-if="filtered.length === 0" class="empty-state">没有匹配的项目</div>
+    <div v-else class="masonry">
+      <div v-for="item in filtered" :key="item.name" class="lib-card">
+        <div class="lib-body">
           <div class="lib-header">
-            <a :href="item.github" target="_blank" class="lib-name">{{ item.name }}</a>
+            <a :href="item.github" target="_blank" rel="noopener" class="lib-name">{{ item.name }}</a>
             <span class="lib-cat">{{ item.category }}</span>
           </div>
-          <p class="lib-desc">{{ desc(item) }}</p>
+          <div class="lib-content" v-html="renderMd(item.content)"></div>
         </div>
       </div>
     </div>
@@ -167,9 +103,7 @@ function desc(item) {
 </template>
 
 <style scoped>
-.libs-page {
-  max-width: 100%;
-}
+.libs-page { max-width: 100%; }
 
 .libs-toolbar {
   position: sticky;
@@ -219,37 +153,21 @@ function desc(item) {
 .chip.on { background: var(--vp-c-brand-1); color: var(--vp-c-white); border-color: var(--vp-c-brand-1); }
 .chip .n { font-size: 0.65rem; opacity: 0.65; }
 
-.libs-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+.libs-meta { display: flex; align-items: center; justify-content: flex-end; }
 .libs-count { font-size: 0.78rem; color: var(--vp-c-text-3); }
 
-.lang-toggle {
-  padding: 3px 12px;
-  border-radius: 4px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  border: 1px solid var(--vp-c-divider);
-  background: var(--vp-c-bg-soft);
-  color: var(--vp-c-text-2);
-  cursor: pointer;
-}
-.lang-toggle:hover { border-color: var(--vp-c-brand-1); color: var(--vp-c-brand-1); }
-
-/* Grid */
-.libs-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
+/* Masonry */
+.masonry {
+  columns: 2;
+  column-gap: 1.25rem;
 }
 @media (max-width: 768px) {
-  .libs-grid { grid-template-columns: 1fr; }
+  .masonry { columns: 1; }
 }
 
-/* Card */
 .lib-card {
+  break-inside: avoid;
+  margin-bottom: 1.25rem;
   border: 1px solid var(--vp-c-divider);
   border-radius: 10px;
   overflow: hidden;
@@ -261,129 +179,67 @@ function desc(item) {
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
-/* Visual area */
-.lib-visual {
-  width: 100%;
-  height: 220px;
-  overflow: hidden;
-  position: relative;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-}
+.lib-body { padding: 1rem 1.25rem; }
 
-.lib-visual-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-.placeholder-name {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: rgba(255,255,255,0.15);
-  letter-spacing: 0.05em;
-  text-transform: capitalize;
-}
-
-/* Carousel */
-.carousel {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-.carousel-track {
-  display: flex;
-  height: 100%;
-  transition: transform 0.35s ease;
-}
-.carousel-slide {
-  flex-shrink: 0;
-  width: 100%;
-  height: 100%;
-}
-.carousel-slide img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.carousel-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(0,0,0,0.5);
-  color: #fff;
-  font-size: 1.2rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s;
-  z-index: 2;
-}
-.lib-card:hover .carousel-btn { opacity: 1; }
-.carousel-btn.prev { left: 8px; }
-.carousel-btn.next { right: 8px; }
-
-.carousel-dots {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 5px;
-  z-index: 2;
-}
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.4);
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.dot.active { background: #fff; }
-
-/* Info */
-.lib-info {
-  padding: 1rem 1.25rem;
-}
 .lib-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
 }
 .lib-name {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--vp-c-text-1);
   text-decoration: none;
 }
 .lib-name:hover { color: var(--vp-c-brand-1); }
 .lib-cat {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   padding: 2px 8px;
   border-radius: 4px;
   background: var(--vp-c-bg-alt);
   color: var(--vp-c-text-2);
   white-space: nowrap;
+  flex-shrink: 0;
 }
-.lib-desc {
+
+/* Content */
+.lib-content {
   font-size: 0.85rem;
   color: var(--vp-c-text-2);
-  line-height: 1.55;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  line-height: 1.65;
+  word-break: break-word;
+}
+.lib-content :deep(img) {
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin: 0.5rem 0;
+  display: block;
+}
+.lib-content :deep(a) {
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+}
+.lib-content :deep(a:hover) { text-decoration: underline; }
+.lib-content :deep(code) {
+  font-size: 0.8rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--vp-c-bg-alt);
+}
+.lib-content :deep(h4) {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  margin: 0.8rem 0 0.3rem;
+}
+.lib-content :deep(strong) {
+  color: var(--vp-c-text-1);
+  font-weight: 600;
 }
 
 .empty-state {
