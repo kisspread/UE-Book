@@ -88,10 +88,6 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/kisspread/UE-Book' },
     ],
     search: { provider: 'local' },
-    sidebar: {
-      '/libraries/': 'auto',
-      '/plugins/': false,
-      '/updates/': false,
-    },
+    sidebar: false,
   },
 })
