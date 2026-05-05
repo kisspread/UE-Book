@@ -1,6 +1,5 @@
-﻿Plan.md
-
-# VitePress
+node_modules/
+dist/
 .vitepress/cache/
 .vitepress/dist/
-node_modules/
+*.timestamp-*.mjs
