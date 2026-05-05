@@ -83,7 +83,7 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "docs: update UE ${{ inputs.version }} plugin docs [skip ci]"
+          git commit -m "docs: update UE ${{ inputs.version }} plugin docs"
           git pull --rebase origin master
           git push
 

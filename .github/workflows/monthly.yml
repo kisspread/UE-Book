@@ -47,6 +47,6 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "docs: sync monthly report [skip ci]"
+          git commit -m "docs: sync monthly report"
           git pull --rebase origin master
           git push
