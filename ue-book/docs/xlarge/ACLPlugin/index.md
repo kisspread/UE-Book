@@ -141,7 +141,7 @@ bool FMyAnimUtils::IsAnimSequenceUsingACL(const UAnimSequence* AnimSequence)
 
 ### 近期更新
 
-由于无法直接访问 `/mnt/x/UnrealEngine-5.6` 的 git 历史，无法提供具体的最近 3 次 commit。但根据插件创建于 2023 年 4 月，且作为 Epic Games 官方维护的插件，可以推断其处于**活跃维护**状态，会随着引擎版本更新而持续迭代。
+ 
 
 ### 维护评价
 
