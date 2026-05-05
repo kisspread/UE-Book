@@ -211,9 +211,21 @@ for (const entry of allPlugins) {
   if (!fs.existsSync(pluginDir)) continue;
   const mds = fs.readdirSync(pluginDir).filter(f => f.endsWith('.md') && f !== 'index.md');
   // Single-module & single-version → skip sidebar
-  if (mds.length === 0 && (versionCount.get(entry.name)?.size || 1) <= 1) continue;
+  const versions = versionCount.get(entry.name);
+  if (mds.length === 0 && (!versions || versions.size <= 1)) continue;
   const prefix = '/' + entry.version + '/' + entry.name + '/';
-  const items = [{ text: '概述', link: prefix }];
+  const items = [];
+  // Multi-version: add version switch links at top
+  if (versions && versions.size > 1) {
+    for (const v of [...versions].sort()) {
+      items.push({
+        text: v === '5.7' ? '5.7 (默认)' : v,
+        link: '/' + v + '/' + entry.name + '/',
+      });
+    }
+  } else {
+    items.push({ text: '概述', link: prefix });
+  }
   for (const md of mds.sort()) {
     const name = md.replace('.md', '');
     items.push({ text: name, link: prefix + name });
