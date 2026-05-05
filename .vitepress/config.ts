@@ -88,6 +88,9 @@ export default defineConfig({
   ignoreDeadLinks: true,
   markdown: { html: true },
 
+  // 限制并发渲染，降低内存峰值（604 页）
+  concurrency: 1,
+
   themeConfig: {
     nav: [
       { text: '内置插件', link: '/plugins/' },
