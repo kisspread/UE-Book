@@ -14,7 +14,7 @@ const filters = ref({
 
 onMounted(async () => {
   try {
-    const res = await fetch('/manifest.json')
+    const res = await fetch(import.meta.env.BASE_URL + 'manifest.json')
     const data = await res.json()
     allPlugins.value = data.plugins || data
   } catch (e) {

@@ -8,7 +8,7 @@ const ageLabels = { relic: '🏛️ 文物', old: '👴 老古董', fresh: '🥩
 </script>
 
 <template>
-  <a :href="plugin.link" class="plugin-card">
+  <a :href="import.meta.env.BASE_URL + plugin.link.substring(1)" class="plugin-card">
     <div class="card-header">
       <div class="card-title-group">
         <span class="card-name">{{ plugin.name }}</span>
