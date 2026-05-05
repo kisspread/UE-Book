@@ -62,7 +62,7 @@ function clearAll() {
     <div class="sidebar-section">
       <div class="sidebar-section-title">版本</div>
       <div class="sidebar-chips">
-        <button class="sc" :class="{ on: isActive('versions', '5.7') }" @click="toggle('versions', '5.7')">5.7 默认 <span class="n">{{ counts.versions['5.7'] || 0 }}</span></button>
+        <button class="sc" :class="{ on: isActive('versions', '5.7') }" @click="toggle('versions', '5.7')">默认（5.7） <span class="n">{{ counts.versions['5.7'] || 0 }}</span></button>
         <button class="sc" :class="{ on: isActive('versions', '5.8') }" @click="toggle('versions', '5.8')">5.8 <span class="n">{{ counts.versions['5.8'] || 0 }}</span></button>
       </div>
     </div>
@@ -70,9 +70,9 @@ function clearAll() {
     <div class="sidebar-section">
       <div class="sidebar-section-title">年代</div>
       <div class="sidebar-chips">
-        <button class="sc" :class="{ on: isActive('ageTiers', 'relic') }" @click="toggle('ageTiers', 'relic')">🏛️ <span class="n">{{ counts.ages.relic || 0 }}</span></button>
-        <button class="sc" :class="{ on: isActive('ageTiers', 'old') }" @click="toggle('ageTiers', 'old')">👴 <span class="n">{{ counts.ages.old || 0 }}</span></button>
-        <button class="sc" :class="{ on: isActive('ageTiers', 'fresh') }" @click="toggle('ageTiers', 'fresh')">🥩 <span class="n">{{ counts.ages.fresh || 0 }}</span></button>
+        <button class="sc" :class="{ on: isActive('ageTiers', 'relic') }" @click="toggle('ageTiers', 'relic')">🏛️上古文物<span class="n">{{ counts.ages.relic || 0 }}</span></button>
+        <button class="sc" :class="{ on: isActive('ageTiers', 'old') }" @click="toggle('ageTiers', 'old')">👴 老古董<span class="n">{{ counts.ages.old || 0 }}</span></button>
+        <button class="sc" :class="{ on: isActive('ageTiers', 'fresh') }" @click="toggle('ageTiers', 'fresh')">🥩 小鲜肉<span class="n">{{ counts.ages.fresh || 0 }}</span></button>
       </div>
     </div>
 
