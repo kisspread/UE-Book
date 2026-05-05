@@ -1,5 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import MarkdownIt from 'markdown-it'
+
+const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
 
 const allItems = ref([])
 const search = ref('')
@@ -45,25 +48,7 @@ function toggleCategory(cat) {
 
 function renderMd(text) {
   if (!text) return ''
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    // Images (with optional {width=...})
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)(?:\{[^}]*\})?/g, '<img src="$2" alt="$1" loading="lazy" />')
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-    // Bold
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Italic
-    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
-    // Inline code
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    // H3
-    .replace(/^###\s+(.+)$/gm, '<h4>$1</h4>')
-    // Line breaks
-    .replace(/\n/g, '<br/>')
-  return html
+  return md.render(text)
 }
 </script>
 
