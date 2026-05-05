@@ -145,6 +145,21 @@
       "age_tier": "fresh"
     },
     {
+      "name": "ADM",
+      "name_cn": "ADM空间音频",
+      "version": "5.7",
+      "size": "small",
+      "link": "/5.7/ADM/",
+      "description": "Currently only supports output spatialized using WASAPI aggregate output channels and spatial ADM information transmitted using Open Sound Control (OSC).",
+      "description_cn": null,
+      "category": "Audio",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "ADMSpatialization (Runtime, Win64 only)",
+      "created_at": "2024-11-19",
+      "age_tier": "fresh"
+    },
+    {
       "name": "ADOSupport",
       "name_cn": "ADO数据库支持",
       "version": "5.7",

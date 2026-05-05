@@ -166,6 +166,32 @@ for (const [pluginName, info] of Object.entries(plugins)) {
   }
 }
 
+// ── Step: Scan filesystem for V1 leftovers not in manifest as 5.7 ──
+const has5_7 = new Set(
+  allPlugins.filter(p => p.version === '5.7').map(p => p.name)
+)
+let fsExtra = 0
+for (const sd of SIZE_DIRS) {
+  const dir = path.join(SRC_DOCS, sd)
+  if (!fs.existsSync(dir)) continue
+  for (const name of fs.readdirSync(dir)) {
+    if (has5_7.has(name)) continue
+    const pluginDir = path.join(dir, name)
+    if (!fs.statSync(pluginDir).isDirectory()) continue
+    const indexFile = path.join(pluginDir, 'index.md')
+    if (fs.existsSync(indexFile)) {
+      const content = fs.readFileSync(indexFile, 'utf-8')
+      const entry = buildEntry(parseAttributeTable(content), name, '5.7', sd, content)
+      if (!entry.name_cn && existingNames[name]) entry.name_cn = existingNames[name]
+      if (entry.name_cn) withCN++
+      if (entry.description_cn) withDescCN++
+      allPlugins.push(entry)
+      has5_7.add(name)
+      fsExtra++
+    }
+  }
+}
+
 allPlugins.sort((a, b) => a.name.localeCompare(b.name));
 
 const output = { versions: manifest.versions, plugins: allPlugins };
@@ -177,7 +203,7 @@ allPlugins.forEach(p => { if (p.age_tier) tiers[p.age_tier]++; });
 const cats = new Set(allPlugins.map(p => p.category).filter(Boolean));
 
 console.log(`\n=== Sync Complete ===`);
-console.log(`  Total: ${allPlugins.length} plugins  Errors: ${errors}`);
+console.log(`  Total: ${allPlugins.length} plugins  Errors: ${errors}  FS extras: ${fsExtra}`);
 console.log(`  name_cn: ${withCN}  description_cn: ${withDescCN}`);
 console.log(`  Categories: ${cats.size}  Age: 🏛️${tiers.relic} 👴${tiers.old} 🥩${tiers.fresh}`);
 console.log(`  Output: ${OUT_MANIFEST}`);
