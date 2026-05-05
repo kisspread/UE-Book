@@ -11,7 +11,6 @@ Including open source and non-open source, commercial and non-commercial.
 ## Editor Tools
 
 - [NanoGaussianSplatting](https://github.com/TimChen1383/NanoGaussianSplatting)  Nanite-Style Gaussian Splatting Render
-  ![](https://private-user-images.githubusercontent.com/37008451/563741191-83ae3ba1-9414-4cb5-8703-19a15abddd21.gif?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzYwODU1MzUsIm5iZiI6MTc3NjA4NTIzNSwicGF0aCI6Ii8zNzAwODQ1MS81NjM3NDExOTEtODNhZTNiYTEtOTQxNC00Y2I1LTg3MDMtMTlhMTVhYmRkZDIxLmdpZj9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA0MTMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNDEzVDEzMDAzNVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdhNWU0YWE0YmNjYzBhZWQ3M2U2OGI1ZTUwZWViMmI0NjRiYTVmODg0NThlZWU4ZGE5MmQxNmM5NzFlNzM4ZTcmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRmdpZiJ9.osgTx0ouvp8KUTm5Qy0dC-L4bwBj4ZNxyDJklulflKE)
   - 在 Unreal Engine 中实现实时大规模 3D Gaussian Splatting（类似 Nanite 风格），适合游戏、模拟和交互演示，支持大场景粒子光照渲染。
 
 - [BlenderTools](https://github.com/poly-hammer/BlenderTools) Blender Tools for Unreal Engine
@@ -23,11 +22,11 @@ Including open source and non-open source, commercial and non-commercial.
   - 一键把 Blender 中的资产导出到 Unreal Engine，极大简化游戏开发 pipeline，节省大量时间
 
 - [K2PostIt](https://github.com/HomerJohnston/K2PostIt) This is a fairly small plugin which is intended to look down upon Unreal's very annoying "Comment" node. Don't get me wrong, the "Comment" node is great for wrapping/labelling blocks of blueprint graph, but it's hardly a comment node!
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-80.webp)
+  ![alt text](/libraries/images/00_image-80.webp)
   - 一个更加强大，好看的注释工具，支持Markdown
 
 - [Yap](https://github.com/HomerJohnston/Yap) Yap is a project-agnostic dialogue engine running on FlowGraph. It is being built by studying games like Monkey Island to try and recreate their capabilties. It is usable via any combination of blueprint or C++, although you will need a C++ project to build this plugin.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-83.webp)
+  ![alt text](/libraries/images/00_image-83.webp)
   - 一个基于FlowGraph的对话引擎，支持蓝图和C++
 
 
@@ -35,32 +34,32 @@ Including open source and non-open source, commercial and non-commercial.
 
 
 - [CustomShortcuts](https://github.com/Adrien-Lucas/CustomShortcuts)Custom Shortcuts is a plugin initially released to UE5 to allow designers to make their own editor shortcuts by executing blueprint editor code.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-84.webp)
+  ![alt text](/libraries/images/00_image-84.webp)
 
 
 - [EnhancedPalettePlugin](https://github.com/aquanox/EnhancedPalettePlugin) Enhanced Palette Plugin for Unreal Engine extends capabilities of Place Actors panel
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-82.webp)
+  ![alt text](/libraries/images/00_image-82.webp)
   - 该插件扩展了虚幻编辑器 Place Actors 面板的功能，允许从编辑器设置中进行自定义，并授予动态生成类别内容的能力。
 
 
 
 - [MDViewModel](https://github.com/DoubleDeez/MDViewModel) An Unreal Engine 5 Model-View-ViewModel Plugin with automatic data binding to use in UMG Widget, Actor, and Object Blueprints
   - 另一个UE的MVVM框架，支持actor、blueprint、UMG、object blueprints
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-77.webp){width=60%}
+  ![alt text](/libraries/images/00_image-77.webp)
 
 - [SubsystemBrowserPlugin](https://github.com/aquanox/SubsystemBrowserPlugin) Plugin that adds a Subsystem Browser panel for Unreal Engine Editor to explore running subsystems and edit their properties.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-79.webp){width=20%}
+  ![alt text](/libraries/images/00_image-79.webp)
   - 一个查看 Subsystem 的工具,用于探索正在运行的子系统并编辑其属性
 
 
 
 - [BlueprintComponentReferencePlugin](https://github.com/aquanox/BlueprintComponentReferencePlugin) Blueprint Component Reference Plugin provides a struct and set of accessors that allow referencing actor components from blueprint editor details view with a component picker, it automatically identifies context and builds list of components for selection menu.
   - 在编辑器里，当你有一个 UPROPERTY 要保存某个组件引用时，这个插件能自动列出目标 Actor 的组件选项供你选择，而不是手动输入或硬编码
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-75.webp)
+  ![alt text](/libraries/images/00_image-75.webp)
 
 
 - [QuickActions](https://github.com/outoftheboxplugins/QuickActions) Find Anything Inside Unreal Editor Quick
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-74.webp){width=60%}
+  ![alt text](/libraries/images/00_image-74.webp)
   - :::details 作者赠言
     If you want to:
     Find and execute actions within Unreal in seconds without using your mouse
@@ -118,11 +117,11 @@ Including open source and non-open source, commercial and non-commercial.
 
 - [SlateStyleBrowser](https://github.com/sirjofri/SlateStyleBrowser) This small tool lets you browse Unreal Engine's Slate styles easily, search for specific ones and copy slate code for the selected style or brush.
   - 这个小工具可以让你轻松浏览虚幻引擎的Slate样式，搜索特定的样式，并复制选定样式或笔刷的Slate代码。
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-73.webp){width=60%}
+  - ![alt text](/libraries/images/00_image-73.webp)
 
 - [PropertyWatcher](https://github.com/guitarfreak/PropertyWatcher) A runtime variable watch window for Unreal Engine using ImGui.
   - 不是插件，是一个Imgui使用的代码案例
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-76.webp){width=30%}
+  ![alt text](/libraries/images/00_image-76.webp)
 
 
 
@@ -135,7 +134,7 @@ Including open source and non-open source, commercial and non-commercial.
  
 
 - [ImGui](https://github.com/VesCodes/ImGui) Supercharge your Unreal Engine development with Dear ImGui. This plugin is designed to be as frictionless and easy to use as possible while seamlessly integrating all of ImGui's features into UE's ecosystem.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-78.webp)
+  ![alt text](/libraries/images/00_image-78.webp)
   - 另一个imgui，支持Multiple Viewports, Docking, Editor Support, Play-in-Editor, Remote Drawing
   - 这里的docking是指 `Dear ImGui` 的 原生的 docking 功能，而不是通过 Slate Widget 来实现的 dock 效果
   - 多视口功能允许您将 Dear ImGui 窗口无缝地从主渲染上下文中提取出来 。在传统的游戏编程中，您的引擎/游戏通常会创建一个与图形上下文（例如使用 DirectX、OpenGL）关联的操作系统窗口，并且所有渲染都必须在此图形上下文中进行。除此之外，多视口还方便在多个显示器上使用 Dear ImGui。
@@ -162,12 +161,12 @@ Including open source and non-open source, commercial and non-commercial.
 
   
 - [PropertyHistory](https://github.com/VoxelPlugin/PropertyHistory) Property History allows you to quickly see the history of a property. It works with most objects in Unreal: actors, material nodes, material instances... More advanced properties like arrays, map, sets and instanced structs are also supported.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-67.webp){width=50%}
+  ![alt text](/libraries/images/00_image-67.webp)
   - VoxelPlugin出品，必属精品，用于查看属性的历史记录
 
 - [ProjectCleaner](https://github.com/ashe23/ProjectCleaner) Unreal engine plugin for managing all unused assets and empty folders in project.
   - 用于清理未使用的资源和空文件夹
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-60.webp)
+  ![alt text](/libraries/images/00_image-60.webp)
 
 
 - [UEToolboxPlugin_Dev](https://github.com/gradientspace/UEToolboxPlugin_Dev) This repository contains a development setup for the Gradientspace UEToolbox plugin. The repo for that plugin only contains the plugin code, which must be built inside a UE5 project. So, this repo contains such a project, configured with some test levels and assets that are useful for checking that (eg) building and packaging works properly. Scripts for packaging the plugin for distribution on the FAB marketplace are also included.
@@ -176,7 +175,7 @@ Including open source and non-open source, commercial and non-commercial.
   - 该插件从闭源到开源的心路历程，值得细品：https://www.gradientspace.com/tutorials/2025/8/3/uetoolbox-parametric-assets-and-opensource
   - >不幸的是，就我个人的抱负而言，Epic Games Inc 对“运行时工具”方面并不特别感兴趣。虚幻是用于游戏的游戏引擎，让世界上一些最优秀的游戏引擎开发者也关心如何将其打造成一个用于创作工具的实时引擎，这……很有挑战性。我一直主张，这就是我们将在《堡垒之夜》创意版中构建更高级编辑工具的方式，但当 Epic 转向专注于 UEFN（堡垒之夜虚幻编辑器）时，这个方向就夭折了。这就是为什么“如何在运行时使用 ITF”只能在本网站的文章（附件 A和附件 B）中了解，而你很难在 Epic 找到任何人承认这是可能的。
   - > 在 Epic 的 Lyra 项目中，我们拼凑了一个系统，用于追踪程序化 DynamicMeshActor (DMA) 与烘焙的 StaticMesh 以及放置的 StaticMeshActors 之间的关系，并且可以“交换” DMA 来代替 StaticMesh 进行实时编辑。但 DMA 必须存在于关卡中——我们的“交换”操作将它们隐藏在地平面以下很远的地方。完全是黑客行为。此外，追踪系统存在于关卡中，不支持多用户编辑，导致了大量问题。在 Epic 内部，我发现另一种方法变得流行起来，即使用纯编辑器的 ChildActorComponent 和程序化生成器，该生成器会烘焙到父 Actor 的 StasticMesh 中。但这只适用于单个实例，并且存在自身的问题。
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-56.webp)
+  - ![alt text](/libraries/images/00_image-56.webp)
 
 
 - [NodeToCode](https://github.com/protospatial/NodeToCode) Translate Unreal Engine Blueprints to C++ in seconds. Not hours.
@@ -188,11 +187,11 @@ Including open source and non-open source, commercial and non-commercial.
 - [RVisualNarrative](https://github.com/Srkmn/RVisualNarrative) RVisualNarrative 是一款为虚幻引擎(Unreal Engine)开发的跨版本对话状态机编辑器插件，旨在提供可视化、灵活且高效的剧情对话编辑或者状态机解决方案。
 
 - [CrystalNodes](https://github.com/SkylakeOfficial/CrystalNodes/wiki) Crystal Nodes contains a simple module that changes your blueprint graph style. It uses custom material as slate brush and is compatible with blueprint wiring plugins. This may have little performance impact, but it's acceptable. The plugin does not tick when playing in editor or simulating.
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-68.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-68.webp)
 
 - [UE_TAPython](https://github.com/cgerchenhp/UE_TAPython_Plugin_Release) TAPython is an editor plugin for Unreal Engine. It provides a framework for creating python editor tools in Unreal Engine, and live Slate editing for developers, which makes creating menus and UE native Slate UI much easier and faster(without any compiling time or restart editor). The plugin also provides 200+ editor tool interfaces to use, making developing UE editor tools very simple and efficient.
   - 并非开源项目，但免费使用，看着很多增强的编辑器插件，我还没有尝试
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-7.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-7.webp)
 
 
 - [BPCorruptionFix](https://github.com/rweber89/BPCorruptionFix) Sometimes BPs get corrupted, due to Actor Component changes. Their type, their name, declaring them with the wrong properties, saving information about them inside of BPs … there are a number of ways this can happen.
@@ -202,22 +201,22 @@ Including open source and non-open source, commercial and non-commercial.
   - 目前只有保存缩放比例的这一个功能。
 
 - [UE-ProgramBrowser](https://github.com/SkecisAI/UE-ProgramBrowser)  Create, Build, Pakcage an Unreal Engine Standalone Program Application. 使用虚幻引擎（Unreal Engine）提供的资源创建独立应用程序（Standalone Program）而非游戏（Not Game），本插件实现了对独立应用程序从创建到打包的一键式流程管理
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-8.webp){width=50%}
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-9.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-8.webp)
+  - ![alt text](/libraries/images/00_image-9.webp)
   - 更多参考 [https://zhuanlan.zhihu.com/p/391228179](https://zhuanlan.zhihu.com/p/391228179)
 
 - [UEGitPlugin](https://github.com/ProjectBorealis/UEGitPlugin) Unreal Engine Git Source Control Plugin (refactored)
 
 - [PCG Assets](https://github.com/TimChen1383/PCGAsset.git) 大量PCG C++自定义节点资产
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-11.webp)
+  - ![alt text](/libraries/images/00_image-11.webp)
 
 - [WFCLevelCreator](https://github.com/alwayswinder/WFCLevelCreator) UE5 WFC 算法生成地图
   - https://www.bilibili.com/video/BV1jz421C7bS/ 还可以参考他自定义slate ui 的实现，作者很有干货
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-10.webp){width=40%}
+  - ![alt text](/libraries/images/00_image-10.webp)
 
 
 - [动画纹理](https://github.com/neil3d/UAnimatedTexture4) 直接把GIF作为为一种资产 This plugin allows you to import animated GIF into your Unreal Engine 4 project as a new AnimatedTexture asset type.
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-12.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-12.webp)
 
 - [Renom](https://github.com/UnrealisticDev/Renom) UE5改名工具 A simple tool to rename Unreal Engine projects.
   - (实测不是很好用, 可能是项目自身原因)
@@ -229,11 +228,11 @@ Including open source and non-open source, commercial and non-commercial.
 
 - [Cog](https://github.com/arnaud-jamin/Cog) 基于Dear ImGui的UE调试工具集合。Cog is a set of debug tools for Unreal Engine built on top of Dear ImGui
   - 提供比UE原版更好用的GAS、EnhancedInput、行为树、CheatMenu等调试工具。
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-13.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-13.webp)
 
 - [Minesweeper](https://github.com/GapingPixel/Minesweeper) Minesweeper Editor Tool. Fully made with Slate
   - Slate 实现的扫雷游戏
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-4.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-4.webp)
 
 
 
@@ -241,36 +240,36 @@ Including open source and non-open source, commercial and non-commercial.
 ## Animation
 
 - [TurboSequence](https://github.com/LukasFratzl/TurboSequence) 用GPU加速骨骼动画 Skeletal Based GPU Crowds for UE5 🚀
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-14.webp)
+  - ![alt text](/libraries/images/00_image-14.webp)
 
 - [mixamo_converter](https://github.com/enziop/mixamo_converter) mixamo 根动画转换神器。 Blender addon for converting mixamo animations to Unreal 4 rootmotion
 
 - [ALSXT](https://github.com/Voidware-Prohibited/ALSXT) Advanced Locomotion System Refactored with expanded Character States, Improved Foot Print system, Sliding, Vaulting and Wallrunning(XT)
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-16.webp)
+  - ![alt text](/libraries/images/00_image-16.webp)
 
 - [风动骨骼布料物理](https://github.com/SPARK-inc/SPCRJointDynamicsUE4) Real looking cloth physics engine for Unreal.
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-15.webp)
+  - ![alt text](/libraries/images/00_image-15.webp)
 
 - [KawaiiPhysics ](https://github.com/pafuhana1213/KawaiiPhysics) 低计算成本物理动画模拟。Kawaii Physics is a pseudo-physics plugin for Unreal Engine 4 and 5. It allows you to create simple and cute animations for objects like hair, skirts, and breasts.
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-17.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-17.webp)
 
 - [ThreepeatAnimTools](https://github.com/threepeatgames/ThreepeatAnimTools) 该存储库包含 Unreal 5.4+ 曲线编辑器过滤器和经过大量修改的 MetaHuman 角色选择器，适用于 Metahuman 和基于 UE5-Mannequin 的控制装置。 This repository contains Unreal 5.4+ curve editor filters and a heavily-modified MetaHuman character picker that works for both Metahuman and UE5-Mannequin-based control rigs.
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-18.webp){width=30%}
+  - ![alt text](/libraries/images/00_image-18.webp)
 
 - [ProceduraAnim](https://github.com/alwayswinder/ProceduraAnim) UE5程序化动画例子，四足机器人演示
   - https://www.bilibili.com/video/BV1xY2NYUEau/ 林佬作品，干货很多
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-19.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-19.webp)
 
 - [SimpleRideControl](https://github.com/alwayswinder/SimpleRideControl) 仿老头环上马动画和镜头控制
   - https://www.bilibili.com/video/BV1nw411s7fU/ 
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-20.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-20.webp)
 
 
 
 ## Niagara
 - [Niagara Destruction Driver](https://github.com/eanticev/niagara-destruction-driver) Turn CHAOS destructibles (Geometry Collection assets) into very performant GPU simulated destructible static meshes driven by Niagara particles.
   - 使用Niagara驱动chaos破坏的网格体，用GPU提高性能，非常好的学习资源
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-21.webp)
+  - ![alt text](/libraries/images/00_image-21.webp)
 
 - [SpawnToNiagara](https://github.com/aggressivemastery/SpawnToNiagara) This sample provides blueprint code and levels examples on how to spawn specific textured (selected by per particle random value) particles to a single niagara system.
   - 相关项目：https://github.com/aggressivemastery/NaniteMaterialUnification 演示如何使用 PerInstanceCustomData 和 CustomPrimititiveData 在单个主材质中驱动纹理选择。这使得 Nanite 网格及其上的所有材质能够通过一次DrawCall进行渲染。
@@ -305,24 +304,24 @@ Including open source and non-open source, commercial and non-commercial.
   
 
 - [UE-Portals](https://github.com/rchaucha/UE-Portals) This plugin has been developed for the study of visual properties only. Thus, although the teleportation aspect has been implemented, it is really secondary and not much work has been put into it. Main branch works for UE-5.1 thanks to @dirtydanisreal, and there is a dedicated branch for UE-4.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-65.webp)
+  ![alt text](/libraries/images/00_image-65.webp)
 
 
 - [Array-Utils](https://github.com/pyoneerC/Array-Utils) STL utilities for Unreal Engine Arrays.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-64.webp)
+  ![alt text](/libraries/images/00_image-64.webp)
 
 
 - [SharedCoolingAbility](https://github.com/hbdjzwl/SharedCoolingAbility) SharedCoolingAbility是一款简洁式开箱即用支持单机、联机的共享冷却插件，不需要你写一行代码，也不会耦合你的项目代码，只需要在自己的AbilitySystemComponent类继承一个接口和继承自共享冷却Ability即可实现公共CD。不管你是项目使用还是插件使用都非常的便捷。
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-63.webp)
+  ![alt text](/libraries/images/00_image-63.webp)
 
 
 - [ue-gameplay-work-balancer](https://github.com/eanticev/ue-gameplay-work-balancer ) Unreal Engine Plugin that helps you spread work (time slice it) across multiple frames so your game maintains a stable frame rate (FPS).
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-22.webp)
+  ![alt text](/libraries/images/00_image-22.webp)
 
 - [VoxelPlugin](https://github.com/VoxelPlugin/VoxelCore) Open-source plugin with the Core module of Voxel Plugin
   - 虚幻引擎5的voxel插件 https://voxelplugin.com/
   - 个人免费使用，目前只开源了1.0，2.0预览版需要付费
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-23.webp)
+  - ![alt text](/libraries/images/00_image-23.webp)
 
 
 - [FutureExtensions](https://github.com/splash-damage/future-extensions) Unreal Engine plugin for async task programming
@@ -354,23 +353,23 @@ Including open source and non-open source, commercial and non-commercial.
     ```
 
 - [GenericGraph](https://github.com/jinyuliao/GenericGraph) Generic graph data structure plugin for ue4
-  ![alt text](../assets/webp/00_image-2.webp){width=10%}
+  ![alt text](../assets/webp/00_image-2.webp)
   - VoxelPlugin作者推荐的通用图数据结构插件
 
 - [FlowGraph](https://github.com/MothCocoon/FlowGraph) 将其作为开源项目发布的目的是让人们能够更轻松地讲述精彩的故事并构建身临其境的世界。这使我们能够丰富视频游戏的故事叙述，从而激励人们并让我们的世界变得更美好。 Design-agnostic node system for scripting game’s flow in Unreal Engine
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-24.webp)
+  - ![alt text](/libraries/images/00_image-24.webp)
 
 - [Dialogue Plugin](https://github.com/NotYetGames/DlgSystem) Dialogue Plugin System for Unreal Engine
 
 - [SPUD](https://github.com/sinbad/SPUD) 易用存档系统。 SPUD is a save game and streaming level persistence solution for Unreal Engine 5.
 
 - [stream-chat-unreal](https://github.com/GetStream/stream-chat-unreal) 聊天框架，源码值得学习。该steam不是那个steam。The Stream Chat SDK is the official Unreal SDK for Stream Chat, a service for building chat and messaging games and applications.
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-25.webp){width=30%}
+  - ![alt text](/libraries/images/00_image-25.webp)
 
 ## Character
 
 - [Mutable](https://github.com/anticto/Mutable-Documentation/wiki/Use-Cases) 角色自定义系统 Mutable generates skeletal meshes at runtime in your game. If your project needs content that can change dynamically, then Mutable is a good candidate to do that for you. It is always referred to as a "Character customization system", however it can generate any kind of skeletal mesh, including animls, props and weapons.
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-26.webp)
+  - ![alt text](/libraries/images/00_image-26.webp)
 
 
 
@@ -400,12 +399,12 @@ Including open source and non-open source, commercial and non-commercial.
 
 - https://github.com/DoubleDeez/MDFastBinding A versatile and performant alternative to UMG property bindings for designer-friendly workflows. The goal was to build a tool that allows mutating raw data into a form that can drive visuals, all within the editor, while staying performant.
   - 一个多功能且高效的 UMG 属性绑定替代方案，适用于设计师友好的工作流程。目标是构建一个工具，允许将原始数据转换为可驱动视觉效果的形式，所有操作都在编辑器内完成，同时保持高性能。
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-72.webp)
+  - ![alt text](/libraries/images/00_image-72.webp)
 
 
 
 - [UIDatasource](https://github.com/Sharundaar/UIDatasource) Light MVVM plugin for UI development
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-71.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-71.webp)
 
 - [CowNodes](https://github.com/sleepCOW/CowNodes) Improved Version of Epic's CreateWidget and CreateWidgetAsync (from CommonGame)
   - 异步创建widget
@@ -414,7 +413,7 @@ Including open source and non-open source, commercial and non-commercial.
   - 可编辑的样条线绘制widget，发者可以轻松绘制 2D 线条，并且这些线条可以在 UMG 编辑器和运行时进行编辑
 
 - [NiagaraUIRenderer](https://github.com/SourySK/NiagaraUIRenderer) Niagara UI Renderer | Free Plugin for Unreal Engine 
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-27.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-27.webp)
 
 - [MeshWidgetExample](https://github.com/dantreble/MeshWidgetExample) SMeshWidget Example
 
@@ -436,7 +435,7 @@ Including open source and non-open source, commercial and non-commercial.
     | Blueprint code support		| :heavy_check_mark:	| :x:					|
 
 - [ElementUI-UMG-Kit](https://github.com/rdelian/ElementUI-UMG-Kit) An easy way to change the style of your elements that extends beyond the default ones the Common UI provides.
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-28.webp)
+  - ![alt text](/libraries/images/00_image-28.webp)
 
 - [UI Tweening Libary for UE4/UMG](https://github.com/benui-dev/UE-BUITween) UI 补间动画方便C++ 使用。 Unreal 4 UMG UI tweening plugin in C++
   ```C++
@@ -452,10 +451,10 @@ Including open source and non-open source, commercial and non-commercial.
   ```
 
 - [UEImgui](https://github.com/ZhuRong-HomoStation/UEImgui) IMGUI的使用，支持代码编辑器
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-29.webp)
+  ![alt text](/libraries/images/00_image-29.webp)
 
 - [运行时图片加载器](https://github.com/RaiaN/RuntimeImageLoader) 支持GIF，webp 格式。 Load images and GIFs into Unreal at runtime without hitches
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-30.webp)
+  ![alt text](/libraries/images/00_image-30.webp)
 
 
 ## Material
@@ -473,14 +472,14 @@ Including open source and non-open source, commercial and non-commercial.
 
 
 - [CompushadyUnreal](https://github.com/rdeioris/CompushadyUnreal) Compushady is an Unreal Engine 5 plugin aimed at easily (and quickly) executing GPU shaders.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image.png)
+  ![alt text](/libraries/images/00_image.png)
   - 简化HLSL绑定, 更容易使用的Compute Shader for UE5
   - 支持 GLSL, HLSL, 直接在蓝图使用，自带高亮
 
 
 
 - [RTMSDF](https://github.com/rtm223/RTMSDF) 2D signed distance field generators & importers for Unreal Engine 5
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-81.webp)
+  ![alt text](/libraries/images/00_image-81.webp)
   - An Unreal Engine 5 Plugin that provides importers for generating 2D SDFs from .svg source files and all Unreal-supported texture source files (.psd, .png, .tif etc). Uses MSDFGen for processing of SVG files. Currently supports UE5.4+
 
 
@@ -498,7 +497,7 @@ Including open source and non-open source, commercial and non-commercial.
 
 - [MaterialMaker](https://github.com/RodZill4/material-maker) A procedural textures authoring and 3D model painting tool based on the Godot game engine
   - 虽然说支持 Unreal Engine，但是测试发现生成的hlsl 依然代码存在很多报错 (2025.7.30)
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-58.webp)
+  - ![alt text](/libraries/images/00_image-58.webp)
 
 
 - [ProceduralDrawingMaterialSamples](https://github.com/EmbarrassingMoment/ProceduralDrawingMaterialSamples ) About
@@ -507,7 +506,7 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - ![alt text](https://github.com/EmbarrassingMoment/ProceduralDrawingMaterialSamples/raw/master/gif/Animation.gif)
 
 - [DarknessFX/UEMaterials](https://github.com/DarknessFX/UEMaterials ) DarknessFX Collection of Unreal Engine Materials
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-32.webp)
+  ![alt text](/libraries/images/00_image-32.webp)
 
 
 
@@ -515,7 +514,7 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 ## NetWork
 
 - [UE5.5-SteamSessionHelper](https://github.com/Sohel160202/UE5.5-SteamSessionHelper) Blueprint-friendly fix for Steam hosting/joining issues in Unreal Engine 5.5.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-85.webp)
+  ![alt text](/libraries/images/00_image-85.webp)
   - Unreal Engine 5.5 在 OnlineSubsystemSteam 中引入了一些怪癖，破坏了多人游戏的工作流程，👉 此插件修复了这些问题并恢复了可靠的 Steam 多人游戏工作流程。
 
 
@@ -530,38 +529,38 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 - [PCGExtendedToolkit](https://github.com/Nebukam/PCGExtendedToolkit) PCGEx is a free (libre) Unreal 5 plugin that expands PCG capabilities. It offers a variety of high-performance nodes; with an edge for building relational graphs (Freeform, Delaunay, Voronoi, MST etc), advanced pathfinding; and much more.
   - 比官方PCG更强大的PCG工具，带示例项目：https://github.com/Nebukam/PCGExExampleProject
   - 文档 https://nebukam.github.io/PCGExtendedToolkit/
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-33.webp)
+  - ![alt text](/libraries/images/00_image-33.webp)
 
 - [imgui](https://github.com/ocornut/imgui) 代码驱动的UI开发方式，无需可视化编辑器, 对程序员非常友好。 Dear ImGui: Bloat-free Graphical User interface for C++ with minimal dependencies
   - API简单直观，学习曲线平缓
   - 快速实现工具类UI，如调试面板、属性编辑器等
   - 非常适合做游戏内调试工具、编辑器扩展
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-34.webp)
+  - ![alt text](/libraries/images/00_image-34.webp)
 
 - [Taichi](https://github.com/taichi-dev/taichi) Taichi 是一个并行计算框架，适合计算密集型任务（例如写Shader、物理仿真和人工智能等任务）高度依托于并行计算 Productive, portable, and performant GPU programming in Python.
   - [相似框架对比](https://forum.taichi-lang.cn/t/topic/2621) 
   - Taichi Lang 提供了一组称为SNode (/ˈsnoʊd/) 的通用数据容器，这是一种组合分层、多维字段的有效机制。这可以涵盖数值模拟中的许多使用模式（例如空间稀疏计算）。
   - cgerchenhp表示将 Taichi 集成到虚幻引擎中非常容易。充分利用 Taichi 的高性能并行计算和 UE 对 Python 的支持（通过插件 [TAPython](https://github.com/cgerchenhp/TAPython_Taichi_StableFluid_UE5)）
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-35.webp)
+  - ![alt text](/libraries/images/00_image-35.webp)
 
 
 
 - [spine-runtimes](https://github.com/EsotericSoftware/spine-runtimes) Spine 是一款针对游戏开发的 2D 骨骼动画编辑工具, 支持虚幻。
 
 - [MassSample](https://github.com/Megafunk/MassSample) understanding of Unreal Engine 5's experimental ECS plugin with a small sample project.
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-36.webp)
+  - ![alt text](/libraries/images/00_image-36.webp)
 
 - [MassAIExample](https://github.com/Ji-Rath/MassAIExample) A project primarily used to experiment with Mass, an ECS Framework
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-37.webp)
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-38.webp)
+  - ![alt text](/libraries/images/00_image-37.webp)
+  - ![alt text](/libraries/images/00_image-38.webp)
 
 - [MaaassParticle](https://github.com/DevDingDangDong/MaaassParticle.git) A UE5 plugin that renders large-scale crowds through Niagara and can control them via state management. This is the Epic project deliverable from Krafton Game Tech Lab 1st Generation Team 2.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-39.webp)
+  ![alt text](/libraries/images/00_image-39.webp)
 
 
 - [UnrealLibretro](https://github.com/N7Alpha/UnrealLibretro) Libretro 游戏模拟器 UnrealLibretro is a Libretro Frontend for Unreal Engine. It is a Blueprint compatible library that lets you run emulators within Unreal Engine. More Technically it allows you to run Libretro Cores.
   - https://github.com/libretro/RetroArch
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-40.webp)
+  - ![alt text](/libraries/images/00_image-40.webp)
 
 ## Tools
 
@@ -584,7 +583,7 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 
 - [DreamTranslatePO](https://github.com/TypeDreamMoon/DreamTranslatePO) An automated translation tool for po localization files or csv localization files
   - 虚幻引擎本地化工具，支持PO文件和CSV文件的自动翻译 接入AI
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-66.webp)
+  ![alt text](/libraries/images/00_image-66.webp)
 
 
 - [UnrealHeightMap](https://github.com/manticorp/unrealheightmap) Unreal Engine 16 Bit Grayscale PNG Heightmap Generator
@@ -595,22 +594,22 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 
 - [DreamUnrealManager](https://github.com/TypeDreamMoon/DreamUnrealManager) WinUI3 Unreal Engine Project / Unreal Engine Manager
   - UE引擎/项目管理器 + 可视化预编译插件批量构建工具
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-55.webp)
+  ![alt text](/libraries/images/00_image-55.webp)
 
 
 
 - [KeywordGacha](https://github.com/neavo/KeywordGacha) 使用 AI 能力分析 小说、游戏、字幕 等文本内容并生成术语表的次世代翻译辅助工具
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-41.webp){width=70%}
+  ![alt text](/libraries/images/00_image-41.webp)
 
 
 - [ComfyTextures](https://github.com/AlexanderDzhoganov/ComfyTextures) 用扩散模型给3d模型场景自动生成贴图。 Unreal Engine ⚔️ ComfyUI - Automatic texturing using generative diffusion models
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-42.webp)
+  ![alt text](/libraries/images/00_image-42.webp)
 
 - [RGB↔X](https://github.com/zheng95z/rgbx) AI根据输入图片生成材质。 RGB↔X: Image Decomposition and Synthesis Using Material- and Lighting-aware Diffusion Models
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-43.webp)
+  ![alt text](/libraries/images/00_image-43.webp)
 
  - [Libretro Shader](https://github.com/libretro/glsl-shaders) 老电视机、老游戏 滤镜。 This repo is for glsl shaders converted by hand from libretro's common-shaders repo, since some don't play nicely with the cg2glsl script.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-44.webp)
+  ![alt text](/libraries/images/00_image-44.webp)
 
 - [glslViewer](https://github.com/patriciogonzalezvivo/glslViewer) Console-based GLSL Sandbox for 2D/3D shaders
   ![alt text](https://github.com/patriciogonzalezvivo/glslViewer/raw/main/.github/images/03.gif)
@@ -682,10 +681,10 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
 
 ## Python
 - [PythonSamples](https://github.com/ue4plugins/PythonSamples)  contains some python samples to script the editor in Unreal Engine.
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-5.webp){width=30%}
+  - ![alt text](/libraries/images/00_image-5.webp)
 
 - [UnrealEditorPythonScripts](https://github.com/mamoniem/UnrealEditorPythonScripts) Some of my personal scripts i made to use for my own projects
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-6.webp){width=30%}
+  - ![alt text](/libraries/images/00_image-6.webp)
 
 
 
@@ -695,48 +694,48 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
 ## Projects
 
 - [AstralShipwright](https://github.com/strangergwenn/AstralShipwright) ASTRAL SHIPWRIGHT / Full game sources for Astral Shipwright, a space sim made with Unreal Engine 5
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-62.webp)
+  ![alt text](/libraries/images/00_image-62.webp)
 
 
 - [HeliumRain](https://github.com/strangergwenn/HeliumRain) HELIUM RAIN / Full sources for Helium Rain, a realistic space opera using Unreal Engine 4
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-61.webp)
+  ![alt text](/libraries/images/00_image-61.webp)
 
 - [UE5RuntimeToolsFrameworkDemo](https://github.com/gradientspace/UE5RuntimeToolsFrameworkDemo) Sample project/code that uses the UE5 InteractiveToolsFramework to provide a small modeling app at Runtime
 
 - [StateTreeTest](https://github.com/haktan313/StateTreeTest) Advanced AI system using Unreal's State Tree. The enemy can cast magic, switch between passive and aggressive states, and search for health potions with EQS when low on health. Includes 3 different State Tree, several custom tasks, utility selectors, and some logics adapted from my HAIPro plugin, which will support State Tree integration in future.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-59.webp)
+  ![alt text](/libraries/images/00_image-59.webp)
 
 - [FlowField-RVO2](https://github.com/fukeryester/FlowField-RVO2) A FlowField+RVO2 source code finished with Cursor.
  
 
 - [MaxQ](https://github.com/Gamergenic1/MaxQ) 演示了如果使用NASA的航天规划和分析的行业标准航天工具集（如何引入第三方C语言库）。 spaceflight Toolkit for Unreal Engine 5 
   - https://www.fab.com/listings/8b599b16-39bf-41bd-9ea5-3d1f70d45d06
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-45.webp)
+  ![alt text](/libraries/images/00_image-45.webp)
 
 - [KittensMaze](https://github.com/ukustra/KittensMaze) 一个GAS项目。 A source code of "Kittens' Maze", a free to play game developed in Unreal Engine 4
 
 - [OnAllFronts-Public](https://github.com/HaywireInteractive/OnAllFronts-Public) Mass Entity (ECS) framework Demo 
   - 可以作为City Sample 项目的插件使用
   - https://github.com/Leroy231/ProjectMStarter 主项目
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-46.webp)
+  - ![alt text](/libraries/images/00_image-46.webp)
 
 - [ParagonUIPrototyping](https://github.com/roman-dzieciol/ParagonUIPrototyping) 8年前的UE4项目，可用于学习UI构建。 Paragon UI Prototyping using UE4.11 UMG
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-47.webp)
+  - ![alt text](/libraries/images/00_image-47.webp)
 
 - [ActionRPG_UE53](https://github.com/vahabahmadvand/ActionRPG_UE53) 官方GAS项目升级虚幻5的版本。Action RPG sample project upgraded to the latest Unreal Engine 5.5
   - https://github.com/mirchd/ActionRPG 相似的项目
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-48.webp)
+  - ![alt text](/libraries/images/00_image-48.webp)
 
 - [PixelSpiritDeck](https://github.com/patriciogonzalezvivo/PixelSpiritDeck) 大量Shader基础图形用例学习。 Each Pixel Spirit card presents a visual element together with the GLSL shader code that generates it. Ultimately, these elements can be reused and combined to compose an infinite visual language. This deck is a tool for learning, a library, and an oracle.
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-49.webp)
+  - ![alt text](/libraries/images/00_image-49.webp)
 
 - [MeshCuttingGunSample](https://github.com/HoussineMehnik/MeshCuttingGunSample) 演示物理抓取，和对模型的切割还原。Mesh-Cutting/Restoring mechanics
   - 作者还有更多的开源项目：https://unrealengineresources.com/samples
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-50.webp)
+  - ![alt text](/libraries/images/00_image-50.webp)
 
 - [XFXInfinityBladeEffects](https://github.com/OurGameOrg/XFXInfinityBladeEffects) Epic Games Infinity Blade Effects as a plugin
   - https://www.unrealengine.com/en-US/blog/free-infinity-blade-collection-marketplace-release
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-53.webp)
+  - ![alt text](/libraries/images/00_image-53.webp)
 
 
 
@@ -750,8 +749,8 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
 
 - [flecs](https://github.com/SanderMertens/flecs) A fast entity component system (ECS) for C & C++
   - Flecs 是一个快速轻量级的实体组件系统，可让您使用数百万个实体构建游戏和模拟。
-  - ![alt text](https://github.com/SanderMertens/flecs/raw/master/docs/img/explorer.webp){width=60%}
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-69.webp){width=60%}
+  - ![alt text](https://github.com/SanderMertens/flecs/raw/master/docs/img/explorer.webp)
+  - ![alt text](/libraries/images/00_image-69.webp)
   - 提供用于分析 ECS 性能的统计插件，以及用于监视和控制您的应用程序的基于 Web 的 UI
   - 使用 emscripten 无需修改即可在浏览器中运行
 
@@ -760,7 +759,7 @@ The perfect place for anyone new, to learn UE modding and start creating mods to
   - 虚幻引擎第三方魔改模组开发指南
 
 - [cheat-engine](https://github.com/cheat-engine/cheat-engine) Cheat Engine is a development environment focused on modding games and applications for personal use.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-57.webp)
+  ![alt text](/libraries/images/00_image-57.webp)
 
 - [lua-bytecode-parser-ce](https://github.com/std-microblock/lua-bytecode-parser-ce) A versatile Lua 5.3 bytecode parser that supports both standard Lua bytecode and Cheat Engine modified format.
 
@@ -775,14 +774,14 @@ The perfect place for anyone new, to learn UE modding and start creating mods to
 
 
 - [audivis-relay](https://github.com/std-microblock/audivis-relay) Audivis Relay 是一款轻量级的麦克风串流软件，能够将物理麦克风的音频实时传输到虚拟麦克风设备，适用于远程会议、直播、语音聊天等场景。
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-52.webp){width=50%}
+  ![alt text](/libraries/images/00_image-52.webp)
 
 - [Mesh2Motion](https://github.com/scottpetrovic/mesh2motion-app) Import a 3D Model and automatically assign and export animations with Mesh2Motion. This is kind of similar to a web application like Mixamo, but I would like it to be more flexible so it can support other model and skeleton types. Hopefully the open source nature means it can be expanded on and evolve more than than the closed tools have.
 
 - [Noclip.website](https://github.com/magcius/noclip.website) A digital museum of video game levels
   - https://noclip.website/
   - [load level](https://noclip.website/#mkwii/castle_course;ShareData=AFkg2UaBz~8hs}oUG8C!VdHbcQRDYPUiNfVTdmxYV+xla9Xs0J85XnoUnEj3WP)
-  - ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-51.webp){width=50%}
+  - ![alt text](/libraries/images/00_image-51.webp)
 
 
 - [awesome-unreal](https://github.com/insthync/awesome-unreal) Some Unreal Engine  Tools
@@ -794,7 +793,7 @@ The perfect place for anyone new, to learn UE modding and start creating mods to
 - [dify](https://github.com/langgenius/dify) Dify is an open-source LLM app development platform. Its intuitive interface combines agentic AI workflow, RAG pipeline, agent capabilities, model management, observability features and more, letting you quickly go from prototype to production.
 
 - [airi](https://github.com/moeru-ai/airi) 💖🧸 Self hosted, you owned Grok Companion, a container of souls of waifu, cyber livings to bring them into our worlds, wishing to achieve Neuro-sama's altitude. Capable of realtime voice chat, Minecraft, Factorio playing. Web / macOS / Windows supported.
-  ![alt text](https://raw.githubusercontent.com/kisspread/notes/main/docs/assets/images/00_image-54.webp)
+  ![alt text](/libraries/images/00_image-54.webp)
 
 
 
