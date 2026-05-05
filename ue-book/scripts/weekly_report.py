@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Weekly UE plugin update report.
 
-Fetches commits from EpicGames/UnrealEngine 5.8 branch touching Engine/Plugins/,
+Fetches commits from EpicGames/UnrealEngine ue5-main branch,
 filters noise, feeds to MiMo for analysis, generates updates/YYYY-Www.md.
 
 Usage:
@@ -30,12 +30,12 @@ NOISE_PATTERNS = [
 
 
 def fetch_commits(branch: str, since: str) -> list[dict]:
-    """Fetch commits touching Engine/Plugins/ via commits API. Parse JSON in Python."""
-    print(f"Fetching commits from {branch}, path=Engine/Plugins, since={since}...")
+    """Fetch all recent commits via commits API. Parse JSON in Python."""
+    print(f"Fetching commits from {branch}, since={since}...")
 
     url = (
         f"repos/EpicGames/UnrealEngine/commits"
-        f"?sha={branch}&path=Engine/Plugins&since={since}T00:00:00Z&per_page=100"
+        f"?sha={branch}&since={since}T00:00:00Z&per_page=100"
     )
     result = subprocess.run(
         ["gh", "api", url],
@@ -135,7 +135,7 @@ def main():
     args = parser.parse_args()
 
     since = (datetime.now(timezone.utc) - timedelta(days=args.days)).strftime("%Y-%m-%d")
-    commits = fetch_commits("5.8", since)
+    commits = fetch_commits("ue5-main", since)
     commits = filter_commits(commits)
 
     if not commits:
@@ -154,7 +154,7 @@ def main():
 
     commits_text = build_commit_data(commits)
 
-    system_prompt = f"""你是 Unreal Engine 技术文档专家。根据提供的 Engine/Plugins 提交信息，生成中文周报。
+    system_prompt = f"""你是 Unreal Engine 技术文档专家。根据提供的提交信息，生成中文周报。
 
 ## 输出规范
 
