@@ -75,6 +75,7 @@ export default defineConfig({
   title: 'UE-Book',
   description: 'Unreal Engine 开发者知识库',
   srcDir: 'ue-book/docs',
+  base: '/UE-Book/',
 
   rewrites,
 
