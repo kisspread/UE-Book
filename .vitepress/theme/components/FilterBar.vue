@@ -2,286 +2,164 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  modelValue: {
-    type: Object,
-    required: true
-  },
-  allPlugins: {
-    type: Array,
-    required: true
-  },
-  filteredCount: {
-    type: Number,
-    default: 0
-  }
+  modelValue: { type: Object, required: true },
+  allPlugins: { type: Array, required: true },
+  filteredCount: { type: Number, default: 0 }
 })
 
 const emit = defineEmits(['update:modelValue'])
+const f = computed(() => props.modelValue)
 
-const filters = computed(() => props.modelValue)
-
-function toggleSize(size) {
-  const cur = filters.value.sizes || []
-  const next = cur.includes(size) ? cur.filter(s => s !== size) : [...cur, size]
-  emit('update:modelValue', { ...filters.value, sizes: next })
-}
-function toggleVersion(version) {
-  const cur = filters.value.versions || []
-  const next = cur.includes(version) ? cur.filter(v => v !== version) : [...cur, version]
-  emit('update:modelValue', { ...filters.value, versions: next })
-}
-function toggleAge(age) {
-  const cur = filters.value.ageTiers || []
-  const next = cur.includes(age) ? cur.filter(a => a !== age) : [...cur, age]
-  emit('update:modelValue', { ...filters.value, ageTiers: next })
-}
-function toggleCategory(cat) {
-  const cur = filters.value.categories || []
-  const next = cur.includes(cat) ? cur.filter(c => c !== cat) : [...cur, cat]
-  emit('update:modelValue', { ...filters.value, categories: next })
+function toggle(field, val) {
+  const cur = f.value[field] || []
+  const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
+  emit('update:modelValue', { ...f.value, [field]: next })
 }
 
-// Counts are computed from ALL plugins, not filtered
-const sizeCounts = computed(() => {
-  const counts = {}
+function isActive(field, val) {
+  return (f.value[field] || []).includes(val)
+}
+
+const counts = computed(() => {
+  const c = { sizes: {}, versions: {}, ages: {}, categories: {} }
   for (const p of props.allPlugins) {
-    const s = p.size
-    counts[s] = (counts[s] || 0) + 1
+    c.sizes[p.size] = (c.sizes[p.size] || 0) + 1
+    c.versions[p.version] = (c.versions[p.version] || 0) + 1
+    c.ages[p.age_tier] = (c.ages[p.age_tier] || 0) + 1
+    const cat = p.category || '未分类'
+    c.categories[cat] = (c.categories[cat] || 0) + 1
   }
-  return counts
+  c.categories = Object.entries(c.categories).sort((a, b) => b[1] - a[1])
+  return c
 })
 
-const versionCounts = computed(() => {
-  const counts = {}
-  for (const p of props.allPlugins) {
-    const v = p.version
-    counts[v] = (counts[v] || 0) + 1
-  }
-  return counts
-})
-
-const ageCounts = computed(() => {
-  const counts = {}
-  for (const p of props.allPlugins) {
-    const a = p.age_tier
-    counts[a] = (counts[a] || 0) + 1
-  }
-  return counts
-})
-
-const categoryCounts = computed(() => {
-  const counts = {}
-  for (const p of props.allPlugins) {
-    const c = p.category
-    counts[c] = (counts[c] || 0) + 1
-  }
-  // sort by count desc
-  return Object.entries(counts).sort((a, b) => b[1] - a[1])
-})
-
-const sizeChips = [ { key: 'small',  label: 'S'  }, { key: 'medium', label: 'M' }, { key: 'large', label: 'L' }, { key: 'xlarge', label: 'XL' } ]
-const versionChips = [ { key: '5.7', label: '5.7' }, { key: '5.8', label: '5.8' } ]
-const ageChips = [ { key: 'relic', label: '🏛️文物' }, { key: 'old', label: '👴老古董' }, { key: 'fresh', label: '🥩鲜肉' } ]
-
-const hasFilters = computed(() => {
-  const f = filters.value
-  return (f.search && f.search.trim().length > 0) ||
-    (f.sizes && f.sizes.length > 0) ||
-    (f.versions && f.versions.length > 0) ||
-    (f.ageTiers && f.ageTiers.length > 0) ||
-    (f.categories && f.categories.length > 0)
-})
-
-function clearFilters() {
+function clearAll() {
   emit('update:modelValue', { search: '', sizes: [], versions: [], ageTiers: [], categories: [] })
-}
-
-function updateSearch(e) {
-  emit('update:modelValue', { ...filters.value, search: e.target.value })
-}
-
-function isActive(arr, key) {
-  return arr && arr.includes(key)
 }
 </script>
 
 <template>
-  <div class="filter-bar">
-    <div class="filter-search">
+  <div class="sidebar-filter">
+    <div class="sidebar-search">
       <input
         type="text"
-        class="filter-search-input"
-        placeholder="搜索插件名称或描述..."
-        :value="filters.search || ''"
-        @input="updateSearch"
+        class="sidebar-search-input"
+        placeholder="搜索..."
+        :value="f.search || ''"
+        @input="emit('update:modelValue', { ...f, search: $event.target.value })"
       />
     </div>
 
-    <div class="filter-row">
-      <span class="filter-label">Size</span>
-      <div class="chip-group">
-        <button
-          v-for="chip in sizeChips"
-          :key="chip.key"
-          class="chip"
-          :class="{ active: isActive(filters.sizes, chip.key) }"
-          @click="toggleSize(chip.key)"
-        >
-          {{ chip.label }} <span class="chip-count">{{ sizeCounts[chip.key] || 0 }}</span>
-        </button>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">插件体量</div>
+      <div class="sidebar-chips">
+        <button v-for="s in [{k:'small',l:'小型'},{k:'medium',l:'中型'},{k:'large',l:'大型'},{k:'xlarge',l:'超大型'}]"
+          :key="s.k" class="sc" :class="{ on: isActive('sizes', s.k) }"
+          @click="toggle('sizes', s.k)">{{ s.l }} <span class="n">{{ counts.sizes[s.k] || 0 }}</span></button>
       </div>
     </div>
 
-    <div class="filter-row">
-      <span class="filter-label">Version</span>
-      <div class="chip-group">
-        <button
-          v-for="chip in versionChips"
-          :key="chip.key"
-          class="chip"
-          :class="{ active: isActive(filters.versions, chip.key) }"
-          @click="toggleVersion(chip.key)"
-        >
-          {{ chip.label }} <span class="chip-count">{{ versionCounts[chip.key] || 0 }}</span>
-        </button>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">版本</div>
+      <div class="sidebar-chips">
+        <button class="sc" :class="{ on: isActive('versions', '5.7') }" @click="toggle('versions', '5.7')">5.7 默认 <span class="n">{{ counts.versions['5.7'] || 0 }}</span></button>
+        <button class="sc" :class="{ on: isActive('versions', '5.8') }" @click="toggle('versions', '5.8')">5.8 <span class="n">{{ counts.versions['5.8'] || 0 }}</span></button>
       </div>
     </div>
 
-    <div class="filter-row">
-      <span class="filter-label">Age</span>
-      <div class="chip-group">
-        <button
-          v-for="chip in ageChips"
-          :key="chip.key"
-          class="chip"
-          :class="{ active: isActive(filters.ageTiers, chip.key) }"
-          @click="toggleAge(chip.key)"
-        >
-          {{ chip.label }} <span class="chip-count">{{ ageCounts[chip.key] || 0 }}</span>
-        </button>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">年代</div>
+      <div class="sidebar-chips">
+        <button class="sc" :class="{ on: isActive('ageTiers', 'relic') }" @click="toggle('ageTiers', 'relic')">🏛️ <span class="n">{{ counts.ages.relic || 0 }}</span></button>
+        <button class="sc" :class="{ on: isActive('ageTiers', 'old') }" @click="toggle('ageTiers', 'old')">👴 <span class="n">{{ counts.ages.old || 0 }}</span></button>
+        <button class="sc" :class="{ on: isActive('ageTiers', 'fresh') }" @click="toggle('ageTiers', 'fresh')">🥩 <span class="n">{{ counts.ages.fresh || 0 }}</span></button>
       </div>
     </div>
 
-    <div class="filter-row">
-      <span class="filter-label">Category</span>
-      <div class="chip-group chip-group-categories">
-        <button
-          v-for="[cat, count] in categoryCounts"
-          :key="cat"
-          class="chip"
-          :class="{ active: isActive(filters.categories, cat) }"
-          @click="toggleCategory(cat)"
-        >
-          {{ cat }} <span class="chip-count">{{ count }}</span>
-        </button>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">分类</div>
+      <div class="sidebar-chips sidebar-cats">
+        <button v-for="[cat, n] in counts.categories" :key="cat"
+          class="sc" :class="{ on: isActive('categories', cat) }"
+          @click="toggle('categories', cat)">{{ cat }} <span class="n">{{ n }}</span></button>
       </div>
     </div>
 
-    <div class="filter-footer">
-      <span class="filter-result-count">显示 {{ filteredCount }} 个插件</span>
-      <a v-if="hasFilters" class="filter-clear" href="javascript:void(0)" @click="clearFilters">清除过滤</a>
+    <div class="sidebar-footer">
+      <span>共 {{ filteredCount }} 个</span>
+      <a v-if="f.search || f.sizes.length || f.versions.length || f.ageTiers.length || f.categories.length"
+        class="clear-link" @click.prevent="clearAll" href="#">清除</a>
     </div>
   </div>
 </template>
 
 <style scoped>
-.filter-bar {
-  position: sticky;
-  top: 64px;
-  z-index: 10;
-  background: var(--vp-c-bg);
-  padding: 0.75rem 0 0.5rem;
-  border-bottom: 1px solid var(--vp-c-divider);
-  margin-bottom: 1.5rem;
+.sidebar-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-
-.filter-search {
-  margin-bottom: 0.5rem;
-}
-.filter-search-input {
+.sidebar-search-input {
   width: 100%;
-  padding: 0.4rem 0.75rem;
+  padding: 6px 10px;
   border: 1px solid var(--vp-c-divider);
   border-radius: 6px;
   background: var(--vp-c-bg-soft);
   color: var(--vp-c-text-1);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   outline: none;
 }
-.filter-search-input:focus {
+.sidebar-search-input:focus {
   border-color: var(--vp-c-brand-1);
 }
-
-.filter-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 0.4rem;
-}
-.filter-label {
-  font-size: 0.75rem;
+.sidebar-section-title {
+  font-size: 0.7rem;
   font-weight: 600;
-  color: var(--vp-c-text-2);
-  white-space: nowrap;
-  padding-top: 0.2rem;
-  min-width: 4rem;
+  color: var(--vp-c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
 }
-
-.chip-group {
+.sidebar-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: 4px;
 }
-
-.chip {
+.sidebar-cats {
+  max-height: 280px;
+  overflow-y: auto;
+}
+.sc {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.15em 0.6em;
-  font-size: 0.72rem;
-  border-radius: 999px;
+  gap: 2px;
+  padding: 1px 7px;
+  font-size: 0.7rem;
+  border-radius: 4px;
   border: 1px solid var(--vp-c-divider);
-  background: var(--vp-c-bg-soft);
+  background: transparent;
   color: var(--vp-c-text-2);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition: all 0.15s;
   white-space: nowrap;
 }
-.chip:hover {
-  border-color: var(--vp-c-brand-1);
-  color: var(--vp-c-brand-1);
-}
-.chip.active {
-  background: var(--vp-c-brand-1);
-  color: var(--vp-c-white);
-  border-color: var(--vp-c-brand-1);
-}
-.chip.active .chip-count {
-  color: var(--vp-c-white);
-}
+.sc:hover { border-color: var(--vp-c-brand-1); color: var(--vp-c-brand-1); }
+.sc.on { background: var(--vp-c-brand-1); color: var(--vp-c-white); border-color: var(--vp-c-brand-1); }
+.n { font-size: 0.6rem; opacity: 0.65; }
 
-.chip-count {
-  font-size: 0.65rem;
-  opacity: 0.7;
-}
-
-.filter-footer {
+.sidebar-footer {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-}
-.filter-result-count {
+  align-items: center;
+  font-size: 0.75rem;
   color: var(--vp-c-text-2);
-  font-weight: 500;
+  padding-top: 8px;
+  border-top: 1px solid var(--vp-c-divider);
 }
-.filter-clear {
+.clear-link {
   color: var(--vp-c-brand-1);
   text-decoration: none;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
 }
-.filter-clear:hover {
-  text-decoration: underline;
-}
+.clear-link:hover { text-decoration: underline; }
 </style>

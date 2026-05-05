@@ -14,7 +14,7 @@ const sizeColors = {
 }
 
 const sizeLabels = {
-  small: 'S', medium: 'M', large: 'L', xlarge: 'XL'
+  small: '小型', medium: '中型', large: '大型', xlarge: '超大型'
 }
 
 const ageLabels = {
@@ -38,8 +38,8 @@ function versionBadgeClass(version) {
   <a :href="plugin.link" class="plugin-card">
     <div class="plugin-card-header">
       <div class="plugin-title-group">
-        <span class="plugin-name">{{ plugin.name_cn || plugin.name }}</span>
-        <span class="plugin-name-en" v-if="plugin.name_cn">{{ plugin.name }}</span>
+        <span class="plugin-name">{{ plugin.name }}</span>
+        <span class="plugin-name-cn">{{ plugin.name_cn }}</span>
       </div>
       <span :class="versionBadgeClass(plugin.version)">{{ plugin.version }}</span>
     </div>
@@ -99,10 +99,9 @@ function versionBadgeClass(version) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.plugin-name-en {
-  font-size: 0.7rem;
-  color: var(--vp-c-text-3);
-  font-family: monospace;
+.plugin-name-cn {
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
