@@ -9,7 +9,8 @@ function cppEscapePlugin(): Plugin {
     name: 'cpp-escape',
     enforce: 'pre',
     transform(code, id) {
-      if (!id.endsWith('.md')) return
+      if (!id.endsWith('.md')) return null
+      if (!code.includes('<')) return null
       code = code.replace(/<([A-Za-z_][\w:*&,\s<>]*?)>/g, (match, inner) => {
         if (/^<\/?(?:div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th|thead|tbody|br|hr|code|pre|strong|em|b|i|u|s|script|style|template|slot|component|section|header|footer|nav|main|aside|article|form|input|button|select|option|label|textarea|link|meta|head|body|html|iframe|svg|path|circle|rect|g|video|audio|source|canvas|v-[a-z-]+)[\s>/]/i.test(match)) {
           return match
@@ -20,6 +21,17 @@ function cppEscapePlugin(): Plugin {
     }
   }
 }
+
+// ----  读取脚本生成的分批排除黑名单 ----
+let srcExclude: string[] = []
+const excludeFilePath = path.resolve(__dirname, '../.batch-exclude.json')
+if (fs.existsSync(excludeFilePath)) {
+  console.log(`[config] 读取分批排除文件: ${excludeFilePath}`)
+  srcExclude = JSON.parse(fs.readFileSync(excludeFilePath, 'utf-8'))
+  console.log(`[config] 分批模式启动：忽略 ${srcExclude.length} 个文件不参与此次编译`)
+}
+
+
 
 // ── Rewrites: scan filesystem for all plugin dirs ──
 // docs/5.7/small/Name/:path* → 5.7/Name/:path*
@@ -118,18 +130,60 @@ export default defineConfig({
   description: 'Unreal Engine 开发者知识库',
   srcDir: 'ue-book/docs',
   base: '/UE-Book/',
+  srcExclude,
+
+  head: [
+    ['meta', { name: 'algolia-site-verification', content: '2A8BC67DA6BC61B3' }]
+  ],
 
   rewrites,
 
   vite: {
-    plugins: [cppEscapePlugin()],
+    //plugins: [cppEscapePlugin()],
     resolve: {
       preserveSymlinks: true,
     },
+  //  build: {
+  //     // 降低 chunk 警告阈值，避免控制台输出过多警告占用内存
+  //     chunkSizeWarningLimit: 2000,
+  //     rollupOptions: {
+  //       // 关键优化：关闭 Rollup 构建缓存，极大降低海量多页应用的内存峰值
+  //       cache: false,
+  //       // 限制并发文件操作数，缓解瞬间内存飙升
+  //       maxParallelFileOps: 2, 
+  //     }
+  //   }
   },
 
+
   ignoreDeadLinks: true,
-  markdown: { html: true },
+  markdown: {
+    html: true,
+    config: (md) => {
+      // 定义常见的合法 HTML 标签（你之前正则里的那些）
+      const htmlTags = /^\/?(?:div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th|thead|tbody|br|hr|code|pre|strong|em|b|i|u|s|script|style|template|slot|component|section|header|footer|nav|main|aside|article|form|input|button|select|option|label|textarea|link|meta|head|body|html|iframe|svg|path|circle|rect|g|video|audio|source|canvas|v-[a-z-]+)[\s>]/i;
+
+      // 注册一个底层的 AST 处理规则
+      md.core.ruler.push('escape_cpp_templates', (state) => {
+        // 遍历所有的 AST 节点
+        state.tokens.forEach((blockToken) => {
+          if (blockToken.type === 'inline' && blockToken.children) {
+            blockToken.children.forEach((token) => {
+              // Markdown-it 会把 <FString> 误认为是 html_inline
+              if (token.type === 'html_inline') {
+                // 如果这个标签不是标准的 HTML 标签
+                if (!htmlTags.test(token.content.replace(/^</, ''))) {
+                  // 将其强制降级为纯文本，并转义尖括号
+                  token.type = 'text';
+                  token.content = token.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                }
+              }
+            });
+          }
+        });
+      });
+    }
+  },
 
   // 限制并发渲染，降低内存峰值（604 页）
   concurrency: 1,
@@ -144,7 +198,15 @@ export default defineConfig({
     socialLinks: [
       { icon: 'github', link: 'https://github.com/kisspread/UE-Book' },
     ],
-    search: { provider: 'local' },
+    //search: { provider: 'local' },
+    search: {
+      provider: 'algolia',
+      options: {
+        appId: 'SG54SSJIT8',
+        apiKey: '00000000000000000000000000000000',
+        indexName: 'kisspread_ue_book'
+      }
+    },
     sidebar,
   },
 })

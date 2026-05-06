@@ -56,15 +56,14 @@ jobs:
       - name: Sync manifest
         run: node scripts/sync-manifest.mjs
 
-      - name: Build VitePress
-        env:
-          NODE_OPTIONS: '--max-old-space-size=6144'
-        run: pnpm vitepress build
+      - name: Build VitePress in Batches
+        run: node scripts/batch-build.mjs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .vitepress/dist
+          # 以前是 .vitepress/dist
+          path: dist-final
 
       - name: Deploy to GitHub Pages
         id: deploy

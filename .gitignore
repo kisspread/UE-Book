@@ -8,3 +8,6 @@ Plan.md
 .vitepress/.vitepress/cache
 ue-book/docs/updates/latest.json
 .vitepress/.temp/
+dist-final
+ue-book/docs/.batch-exclude.json
+.batch-exclude.json
