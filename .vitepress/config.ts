@@ -100,7 +100,8 @@ if (weeklyFiles.length > 0) {
     collapsed: true,
     items: weeklyFiles.map(f => {
       const slug = f.replace('.md', '')
-      return { text: slug, link: `/updates/${slug}` }
+      const [, m, d] = slug.split('-')
+      return { text: `${parseInt(m)}月${parseInt(d)}日`, link: `/updates/${slug}` }
     }),
   })
 }

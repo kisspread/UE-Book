@@ -2,7 +2,7 @@
 """Weekly UE plugin update report.
 
 Fetches commits from EpicGames/UnrealEngine ue5-main branch,
-filters noise, feeds to MiMo for analysis, generates updates/YYYY-Www.md.
+filters noise, feeds to MiMo for analysis.
 
 Usage:
   python3 ue-book/scripts/weekly_report.py                     # past 7 days
@@ -121,11 +121,9 @@ def build_commit_data(commits: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def get_week_label() -> str:
-    """Get ISO week label like '2026-W19'."""
-    now = datetime.now()
-    iso = now.isocalendar()
-    return f"{iso[0]}-W{iso[1]:02d}"
+def get_label() -> str:
+    """Get date label like '2026-05-06'."""
+    return datetime.now().strftime("%Y-%m-%d")
 
 
 def main():
@@ -142,11 +140,11 @@ def main():
         print("No meaningful commits this week.")
         return
 
-    week_label = get_week_label()
-    output_path = UPDATES_DIR / f"{week_label}.md"
+    label = get_label()
+    output_path = UPDATES_DIR / f"{label}.md"
 
     if args.dry_run:
-        print(f"\nDry run — {len(commits)} commits for {week_label}:")
+        print(f"\nDry run — {len(commits)} commits for {label}:")
         for c in commits:
             print(f"  {c['date']} {c['sha']} {c['author'][:20]}: {c['message'][:80]}")
         print(f"Output: {output_path}")
@@ -171,11 +169,12 @@ def main():
 - `## 🔧 API 变更`
 - `## ⚠️ 废弃预告`
 
-给报告加上 YAML frontmatter: title '{week_label} 引擎插件周报', date '{datetime.now().date()}'
+给报告加上 YAML frontmatter: title '{label} 引擎周报', date '{datetime.now().date()}'
+正文第一行必须是: # {label} 引擎周报
 
 只输出 Markdown，不要多余解释。"""
 
-    print(f"\nGenerating {week_label} report ({len(commits)} commits)...")
+    print(f"\nGenerating {label} report ({len(commits)} commits)...")
     report = call_llm(system_prompt, commits_text)
 
     UPDATES_DIR.mkdir(parents=True, exist_ok=True)
