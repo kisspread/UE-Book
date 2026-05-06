@@ -8,6 +8,8 @@ Including open source and non-open source, commercial and non-commercial.
 
 > 是否awesome，需要根据个人需求来判断。另外，第三方工具选择需要慎重~
 
+> 💡 **收录开源库**：[提交 Issue](https://github.com/kisspread/UE-Book/issues/new?template=library-submission.yml)，填写 GitHub 地址即可，AI 自动审核写入。
+
 ## Editor Tools
 
 - [NanoGaussianSplatting](https://github.com/TimChen1383/NanoGaussianSplatting)  Nanite-Style Gaussian Splatting Render
