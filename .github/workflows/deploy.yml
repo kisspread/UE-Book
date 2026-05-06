@@ -3,7 +3,7 @@ name: Deploy VitePress to Pages
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: [Weekly Report, Monthly Report Sync, "Generate UE Plugin Docs"]
+    workflows: [Weekly Report, Monthly Report Sync, "Generate UE Plugin Docs", "Library Submission"]
     types: [completed]
   push:
     branches: [master]

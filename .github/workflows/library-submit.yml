@@ -1,0 +1,57 @@
+name: Library Submission
+
+on:
+  issues:
+    types: [opened]
+    # Only process issues with the library-submission label
+    # (GitHub doesn't filter by label in the event trigger, we check in the job)
+
+jobs:
+  process-submission:
+    if: contains(github.event.issue.labels.*.name, 'library-submission')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    env:
+      GH_TOKEN: ${{ secrets.GH_PAT }}
+      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+      LLM_MODEL: ${{ secrets.LLM_MODEL }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      ISSUE_BODY: ${{ github.event.issue.body }}
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      ISSUE_URL: ${{ github.event.issue.html_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install langchain-openai langchain-core
+
+      - name: Process submission
+        id: process
+        run: python3 ue-book/scripts/library_submit.py
+
+      - name: Commit and push
+        if: steps.process.outputs.commit_msg != ''
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ue-book/docs/libraries/index.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "${{ steps.process.outputs.commit_msg }}"
+          git pull --rebase origin master
+          git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/kisspread/UE-Book.git"
+          git push

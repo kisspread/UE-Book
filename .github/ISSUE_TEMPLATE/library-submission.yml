@@ -1,0 +1,39 @@
+name: 开源库收录申请
+description: 提交一个 UE 开源库供站点收录
+title: "[收录] "
+labels: [library-submission]
+body:
+  - type: input
+    id: github_url
+    attributes:
+      label: GitHub 地址
+      placeholder: https://github.com/owner/repo
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: 一句话描述（可选）
+      placeholder: 高性能 C++ 行为树框架...
+  - type: dropdown
+    id: category
+    attributes:
+      label: 分类（可选，AI 会辅助判断）
+      options:
+        - 自动判断
+        - Editor Tools
+        - Animation
+        - Niagara
+        - Gameplay
+        - Character
+        - UI
+        - Material
+        - NetWork
+        - Framework
+        - Tools
+        - Plugins
+        - Engine
+        - Script
+        - Python
+        - Projects
+        - Other
