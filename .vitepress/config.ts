@@ -68,18 +68,45 @@ if (fs.existsSync(SIDEBAR_PATH)) {
   sidebar = JSON.parse(fs.readFileSync(SIDEBAR_PATH, 'utf-8'))
 }
 
-// ── Updates sidebar: all monthly reports ──
+// ── Updates sidebar: monthly + weekly reports, grouped ──
 const UPDATES_DIR = path.resolve(__dirname, '../ue-book/docs/updates')
-const updateFiles = fs.readdirSync(UPDATES_DIR)
-  .filter(f => f.match(/^\d{4}-\d{2}\.md$/))
-  .sort()
-  .reverse()
-if (updateFiles.length > 0) {
-  sidebar['/updates/'] = updateFiles.map(f => {
-    const slug = f.replace('.md', '')
-    const [y, m] = slug.split('-')
-    return { text: `${y}年${m}月`, link: `/updates/${slug}` }
+const allUpdateFiles = fs.readdirSync(UPDATES_DIR)
+  .filter(f => f.endsWith('.md'))
+
+const monthlyFiles = allUpdateFiles
+  .filter(f => /^\d{4}-\d{2}\.md$/.test(f))
+  .sort().reverse()
+const weeklyFiles = allUpdateFiles
+  .filter(f => /^\d{4}-W\d{2}\.md$/.test(f))
+  .sort().reverse()
+
+const updatesSidebar: any[] = []
+
+if (monthlyFiles.length > 0) {
+  updatesSidebar.push({
+    text: '月报',
+    collapsed: false,
+    items: monthlyFiles.map(f => {
+      const slug = f.replace('.md', '')
+      const [y, m] = slug.split('-')
+      return { text: `${y}年${m}月`, link: `/updates/${slug}` }
+    }),
   })
+}
+
+if (weeklyFiles.length > 0) {
+  updatesSidebar.push({
+    text: '周报',
+    collapsed: true,
+    items: weeklyFiles.map(f => {
+      const slug = f.replace('.md', '')
+      return { text: slug, link: `/updates/${slug}` }
+    }),
+  })
+}
+
+if (updatesSidebar.length > 0) {
+  sidebar['/updates/'] = updatesSidebar
 }
 
 console.log('[config] Generated ' + Object.keys(rewrites).length + ' rewrites')
