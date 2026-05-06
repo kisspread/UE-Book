@@ -239,7 +239,7 @@ console.log('  Sidebar: ' + Object.keys(sidebar).length + ' plugins');
 // ── Latest update: find newest report slug ──
 const UPDATES_DIR = path.join(ROOT, 'ue-book', 'docs', 'updates');
 const reportFiles = fs.readdirSync(UPDATES_DIR)
-  .filter(f => /^\d{4}-\d{2}\.md$/.test(f))
+  .filter(f => /^\d{4}-\d{2}(-\d{2})?\.md$/.test(f))
   .sort()
   .reverse();
 if (reportFiles.length > 0) {
