@@ -34,7 +34,12 @@ python3 -m v2.run --version 5.8 --force EnhancedInput MetaHuman
 
 # 6. 强制全量重新生成
 python3 -m v2.run --version 5.8 --force-all
+
+# 7. 同步
+node scripts/sync-manifest.mjs    # 更新 manifest + sidebar + latest.json
 ```
+
+
 
 ### V1 (本地模式)
 
