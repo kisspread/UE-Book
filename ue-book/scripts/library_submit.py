@@ -18,13 +18,9 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from urllib.parse import urlparse
-
-import requests
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent.parent  # ue-book/scripts → root
 LIBS_PATH = PROJECT_DIR / "ue-book" / "docs" / "libraries" / "index.md"
-IMAGES_DIR = PROJECT_DIR / "ue-book" / "docs" / "libraries" / "images"
 
 VALID_CATEGORIES = [
     "Editor Tools", "Animation", "Niagara", "Gameplay", "Character",
@@ -93,19 +89,23 @@ def fetch_file_tree(owner: str, repo: str, max_entries: int = 300) -> str:
 
 # ── Image handling ──
 
-def extract_image_urls(readme: str, owner: str, repo: str, default_branch: str = "master") -> list[tuple[str, str]]:
-    """Extract image references from markdown: [(alt_text, url), ...]"""
-    images = []
+def extract_image_urls(readme: str, owner: str, repo: str, default_branch: str = "master", max_images: int = 3) -> list[str]:
+    """Extract image URLs from README, resolve to raw URLs, skip badges. Max 3."""
+    SKIP_DOMAINS = [
+        'youtube.com', 'youtu.be', 'img.youtube.com',
+        'shields.io', 'img.shields.io', 'badge.fury.io',
+    ]
+    
+    urls = []
     for m in re.finditer(r'!\[([^\]]*)\]\(([^)]+)\)', readme):
-        alt = m.group(1).strip() or "image"
         url = m.group(2).strip()
-        # Skip YouTube thumbnails and other non-image URLs
-        if any(skip in url for skip in ['youtube.com', 'youtu.be', 'img.youtube.com']):
+        if any(skip in url for skip in SKIP_DOMAINS):
             continue
-        # Resolve relative URLs to absolute raw.githubusercontent.com URLs
         url = resolve_image_url(url, owner, repo, default_branch)
-        images.append((alt, url))
-    return images
+        urls.append(url)
+        if len(urls) >= max_images:
+            break
+    return urls
 
 
 def resolve_image_url(url: str, owner: str, repo: str, branch: str) -> str:
@@ -115,22 +115,6 @@ def resolve_image_url(url: str, owner: str, repo: str, branch: str) -> str:
     # Remove leading . or /
     path = re.sub(r'^\.?/', '', url)
     return f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
-
-
-def download_image(url: str, save_path: Path) -> bool:
-    """Download an image to a local path. Returns True on success."""
-    try:
-        resp = requests.get(url, timeout=30, headers={"User-Agent": "UE-Book/1.0"})
-        if resp.status_code == 200:
-            save_path.parent.mkdir(parents=True, exist_ok=True)
-            save_path.write_bytes(resp.content)
-            return True
-        else:
-            print(f"  [warn] HTTP {resp.status_code} downloading {url}")
-            return False
-    except Exception as e:
-        print(f"  [warn] Failed to download {url}: {e}")
-        return False
 
 
 def extract_user_description(issue_body: str) -> str:
@@ -251,7 +235,7 @@ UE 相关项目通常具有以下特征之一：
 
 # ── Insert ──
 
-def insert_library(info: dict, local_images: list[str]) -> str:
+def insert_library(info: dict, image_urls: list[str]) -> str:
     """Insert library entry into libraries/index.md. Returns commit message."""
     content = LIBS_PATH.read_text(encoding="utf-8")
     category = info["category"]
@@ -265,8 +249,8 @@ def insert_library(info: dict, local_images: list[str]) -> str:
 
     entry_lines = [f"- [{name}]({url})  {headline}"]
 
-    for img_path in local_images:
-        entry_lines.append(f"  ![{name} screenshot](/libraries/images/{img_path})")
+    for img_url in image_urls:
+        entry_lines.append(f"  ![{name} screenshot]({img_url})")
 
     if user_desc.strip():
         entry_lines.append(f"  - {user_desc.strip()}")
@@ -395,33 +379,17 @@ def main():
     if info.get('llm_comment'):
         print(f"     AI: {info['llm_comment'][:80]}")
 
-    # 4. Download images
-    images = extract_image_urls(readme, owner, repo, default_branch)
-    print(f"  Images found: {len(images)}")
+    # 5. Extract images from README (max 3, skip badges)
+    image_urls = extract_image_urls(readme, owner, repo, default_branch)
+    print(f"  Images: {len(image_urls)} (max 3)")
 
-    local_images = []
-    if images:
-        safe_name = re.sub(r'[^a-zA-Z0-9_-]', '', info['name'])[:40]
-        IMAGES_DIR.mkdir(parents=True, exist_ok=True)
-        for i, (alt, img_url) in enumerate(images[:5]):  # Max 5 images
-            ext = Path(urlparse(img_url).path).suffix or ".png"
-            if ext.lower() not in (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"):
-                ext = ".png"
-            filename = f"{safe_name}_image-{i + 1}{ext}"
-            save_path = IMAGES_DIR / filename
-            if download_image(img_url, save_path):
-                local_images.append(filename)
-                print(f"    Downloaded: {filename}")
-            else:
-                print(f"    Failed: {filename}")
-
-    # 5. Insert into libraries/index.md
-    msg = insert_library(info, local_images)
+    # 6. Insert into libraries/index.md
+    msg = insert_library(info, image_urls)
     if not msg:
         close_issue(issue_number, "无法定位库文件中的分类位置，请手动添加。")
         return
 
-    # 6. Post success comment
+    # 7. Post success comment
     comment = (
         f"✅ 已收录！\n\n"
         f"- **库名**: {info['name']}\n"
@@ -433,8 +401,8 @@ def main():
         comment += f"- **用户**: {info['user_desc']}\n"
     if info.get('llm_comment'):
         comment += f"- **锐评**: {info['llm_comment']}\n"
-    if local_images:
-        comment += f"- **图片**: {len(local_images)} 张已下载到本地\n"
+    if image_urls:
+        comment += f"- **图片**: {len(image_urls)} 张（引用原始链接）\n"
     comment += f"\n提交: {msg}"
     post_comment(issue_number, comment)
 
