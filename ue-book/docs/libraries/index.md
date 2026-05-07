@@ -662,6 +662,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   ![PiUE screenshot](https://raw.githubusercontent.com/Solessfir/PiUE/main/Resources/Screenshot.png)
   - 💬 这是一个为 Unreal Editor 设计的 Blender 风格饼图菜单插件，提供了快速操作功能，可能提升编辑器工作效率。但项目关注度较低，需注意兼容性和维护状态。
 
+- [PCGExElementsWatabou](https://github.com/PCGEx/PCGExElementsWatabou)  Import procedural maps from Watabou's generators into Unreal Engine's PCG framework
+  ![PCGExElementsWatabou screenshot](https://github.com/user-attachments/assets/b9cd1aa8-9f61-49b6-8428-5082f60bc295)
+  - 💬 这是一个 Unreal Engine 插件，专注于将 Watabou 的程序化地图数据导入 PCG 框架，适用于城市构建等游戏开发场景。项目处于实验阶段，依赖 PCGEx，适合需要快速集成程序化内容的开发者，但稳定性可能受限。
+  🔗 [PCGEx](https://github.com/Nebukam/PCGExtendedToolkit) · [Watabou's procedural generators](https://watabou.itch.io/) · [Medieval Fantasy City Generator](https://watabou.itch.io/medieval-fantasy-city-generator)
+
 
 
 ## Engine
