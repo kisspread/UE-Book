@@ -11,13 +11,14 @@ on:
   push:
     branches: [master]
     paths:
-      - 'ue-book/docs/**'
+      - 'ue-book/docs/5.*/**'
+      - 'ue-book/docs/plugins/**'
+      - 'ue-book/docs/updates/**'
+      - 'ue-book/docs/index.md'
       - 'ue-book/docs/public/**'
       - '.vitepress/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
-    paths-ignore:
-      - 'ue-book/docs/libraries/**'
 
 # ── Act local test ──
 #   act -W .github/workflows/deploy.yml --container-architecture linux/amd64

@@ -237,11 +237,6 @@ Including open source and non-open source, commercial and non-commercial.
   - ![alt text](/libraries/images/00_image-4.webp)
 
 
-- [QuickBaker](https://github.com/EmbarrassingMoment/QuickBaker)  A lightweight Material to Texture Baker for Unreal Engine 5.5+.
-  ![QuickBaker screenshot](https://raw.githubusercontent.com/EmbarrassingMoment/QuickBaker/master/Docs/images/window_en.jpg)
-  - QuickBaker 是一个轻量级的材质到纹理烘焙工具，专为 Unreal Engine 5.5+ 设计。它支持将 Emissive 输出直接烘焙为静态资产（.uasset）、PNG 或 EXR 文件，适用于程序化噪声和 SDF 等场景。
-  - 💬 该项目是一个 UE5 编辑器插件，专注于材质烘焙，功能简洁实用，适合需要快速生成纹理资产的开发者，但社区关注度较低。
-
 
 
 ## Animation
@@ -287,12 +282,6 @@ Including open source and non-open source, commercial and non-commercial.
 
 
  
-
-- [NiagaraLibrary](https://github.com/TimChen1383/NiagaraLibrary)  A collection of Niagara particle system effects and tutorials for Unreal Engine.
-  ![NiagaraLibrary screenshot](https://github.com/TimChen1383/NiagaraScrathPad/assets/37008451/69e354ed-dd11-4d9e-8862-923f5a2b2459)
-  ![NiagaraLibrary screenshot](https://github.com/TimChen1383/NiagaraScrathPad/assets/37008451/029542fd-abb7-441c-9088-0f8579c79f9b)
-  ![NiagaraLibrary screenshot](https://github.com/TimChen1383/NiagaraScrathPad/assets/37008451/e5fa5d9d-b4f3-45db-9af8-86a54a223f2e)
-  - 💬 这是一个 Niagara 粒子系统效果库，展示了多种粒子效果，适合 Unreal Engine 开发者学习和参考，但项目可能缺乏详细文档或完整代码。
 
 
 
@@ -661,11 +650,6 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 - [PiUE](https://github.com/Solessfir/PiUE)  Blender-style radial quick-action menu for the Unreal Engine level editor viewport.
   ![PiUE screenshot](https://raw.githubusercontent.com/Solessfir/PiUE/main/Resources/Screenshot.png)
   - 💬 这是一个为 Unreal Editor 设计的 Blender 风格饼图菜单插件，提供了快速操作功能，可能提升编辑器工作效率。但项目关注度较低，需注意兼容性和维护状态。
-
-- [PCGExElementsWatabou](https://github.com/PCGEx/PCGExElementsWatabou)  Import procedural maps from Watabou's generators into Unreal Engine's PCG framework
-  ![PCGExElementsWatabou screenshot](https://github.com/user-attachments/assets/b9cd1aa8-9f61-49b6-8428-5082f60bc295)
-  - 💬 这是一个 Unreal Engine 插件，专注于将 Watabou 的程序化地图数据导入 PCG 框架，适用于城市构建等游戏开发场景。项目处于实验阶段，依赖 PCGEx，适合需要快速集成程序化内容的开发者，但稳定性可能受限。
-  🔗 [PCGEx](https://github.com/Nebukam/PCGExtendedToolkit) · [Watabou's procedural generators](https://watabou.itch.io/) · [Medieval Fantasy City Generator](https://watabou.itch.io/medieval-fantasy-city-generator)
 
 
 
