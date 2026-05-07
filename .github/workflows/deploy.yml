@@ -38,6 +38,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      # 强行分配 10GB 的硬盘作为虚拟内存！
+      - name: Allocate Swap Space
+        run: |
+          sudo fallocate -l 10G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          echo "Swap memory created:"
+          free -h  
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -57,12 +66,14 @@ jobs:
         run: node scripts/sync-manifest.mjs
 
       - name: Build VitePress in Batches
+        env:
+          # 14GB 内存可以用
+          #NODE_OPTIONS: '--max-old-space-size=14336 --expose-gc'
         run: pnpm docs:build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # 以前是 .vitepress/dist
           path: vitepress/dist
 
       - name: Deploy to GitHub Pages
