@@ -133,6 +133,21 @@ def download_image(url: str, save_path: Path) -> bool:
         return False
 
 
+def extract_user_description(issue_body: str) -> str:
+    """Extract user's description from issue body template fields."""
+    # Match "### 一句话描述（可选）" section
+    m = re.search(r'###\s*一句话描述[^\n]*\n\n(.+?)(?:\n\n###|\Z)', issue_body, re.DOTALL)
+    if m:
+        desc = m.group(1).strip()
+        # Remove "_No response_" placeholder
+        desc = re.sub(r'^_No response_\s*', '', desc)
+        # Strip trailing noise like "请收录", "请审核" etc
+        desc = re.sub(r'\n*(?:请收录|请审核|谢谢|thanks).*$', '', desc, flags=re.IGNORECASE).strip()
+        if desc and desc != '_No response_':
+            return desc
+    return ""
+
+
 # ── LLM ──
 
 def call_llm(prompt: str) -> str:
@@ -154,12 +169,20 @@ def call_llm(prompt: str) -> str:
     return response.content
 
 
-def analyze_repo(repo_info: dict, readme: str, file_tree: str) -> dict:
+def analyze_repo(repo_info: dict, readme: str, file_tree: str, user_desc: str = "") -> dict:
     """LLM analysis: is this UE-related? Extract info if yes."""
     # Truncate README for prompt
     readme_preview = readme[:4000]
     if len(readme) > 4000:
         readme_preview += "\n\n... (README 被截断)"
+
+    user_section = ""
+    if user_desc:
+        user_section = f"""
+## 用户提交时的描述
+{user_desc}
+
+请润色用户描述：如果太短或含糊→补充具体信息；如果冗长→精简到2-3句；如果合适→保留原意优化措辞。不要丢失用户的观点和语气。"""
 
     prompt = f"""分析以下 GitHub 仓库，判断是否为 Unreal Engine 相关项目。
 
@@ -175,7 +198,7 @@ def analyze_repo(repo_info: dict, readme: str, file_tree: str) -> dict:
 
 ## 项目文件结构（前 {300 if '...' not in file_tree else '若干'} 个文件）
 {file_tree[:3000]}
-
+{user_section}
 ## 判断标准
 UE 相关项目通常具有以下特征之一：
 - README 明确提到 Unreal Engine / UE4 / UE5
@@ -189,7 +212,9 @@ UE 相关项目通常具有以下特征之一：
   "valid": true,
   "name": "库名（从 README 标题或仓库名提取）",
   "url": "{repo_info['html_url']}",
-  "description": "一句话中文描述（简洁说明用途，20-50字）",
+  "headline": "一行英文简述（从 README 提取，简洁）",
+  "user_desc": "润色后的用户描述（中文，2-3句。如果用户没提交描述，此为\"\"）",
+  "llm_comment": "AI 锐评（中文，1-2句。评价项目质量、亮点、适用场景。不要吹捧，客观）",
   "category": "分类（从以下选一个：{', '.join(VALID_CATEGORIES)}）"
 }}
 ```
@@ -231,14 +256,23 @@ def insert_library(info: dict, local_images: list[str]) -> str:
     content = LIBS_PATH.read_text(encoding="utf-8")
     category = info["category"]
 
-    # Build entry
+    # Build entry: headline + optional images + user_desc + llm_comment
     name = info["name"]
     url = info["url"]
-    desc = info.get("description", "")
+    headline = info.get("headline", "")
+    user_desc = info.get("user_desc", "")
+    llm_comment = info.get("llm_comment", "")
 
-    entry_lines = [f"- [{name}]({url})  {desc}"]
+    entry_lines = [f"- [{name}]({url})  {headline}"]
+
     for img_path in local_images:
         entry_lines.append(f"  ![{name} screenshot](/libraries/images/{img_path})")
+
+    if user_desc.strip():
+        entry_lines.append(f"  - {user_desc.strip()}")
+    if llm_comment.strip():
+        entry_lines.append(f"  - 💬 {llm_comment.strip()}")
+
     entry = "\n".join(entry_lines) + "\n"
 
     # Find the category section header
@@ -339,9 +373,14 @@ def main():
         file_tree = "(无法获取文件树)"
         default_branch = "master"
 
-    # 3. LLM analysis
+    # 3. Extract user description from issue
+    user_desc = extract_user_description(issue_body)
+    if user_desc:
+        print(f"  User desc: {user_desc[:80]}...")
+
+    # 4. LLM analysis
     print("  Analyzing with LLM...")
-    info = analyze_repo(repo_info, readme, file_tree)
+    info = analyze_repo(repo_info, readme, file_tree, user_desc)
 
     if not info.get("valid"):
         reason = info.get("reason", "未知原因")
@@ -350,7 +389,11 @@ def main():
         return
 
     print(f"  ✅ Valid: {info['name']} → {info['category']}")
-    print(f"     Description: {info.get('description', '')[:80]}")
+    print(f"     Headline: {info.get('headline', '')[:80]}")
+    if info.get('user_desc'):
+        print(f"     User: {info['user_desc'][:80]}")
+    if info.get('llm_comment'):
+        print(f"     AI: {info['llm_comment'][:80]}")
 
     # 4. Download images
     images = extract_image_urls(readme, owner, repo, default_branch)
@@ -384,8 +427,12 @@ def main():
         f"- **库名**: {info['name']}\n"
         f"- **地址**: {info['url']}\n"
         f"- **分类**: {info['category']}\n"
-        f"- **描述**: {info.get('description', '')}\n"
+        f"- **简述**: {info.get('headline', '')}\n"
     )
+    if info.get('user_desc'):
+        comment += f"- **用户**: {info['user_desc']}\n"
+    if info.get('llm_comment'):
+        comment += f"- **锐评**: {info['llm_comment']}\n"
     if local_images:
         comment += f"- **图片**: {len(local_images)} 张已下载到本地\n"
     comment += f"\n提交: {msg}"
