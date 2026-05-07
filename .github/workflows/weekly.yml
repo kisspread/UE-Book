@@ -3,8 +3,8 @@ name: Weekly Report
 on:
   workflow_dispatch:
   schedule:
-    # Every Monday 02:00 UTC
-    - cron: '0 2 * * 1'
+    # Daily 02:00 UTC
+    - cron: '0 2 * * *'
 
 jobs:
   weekly:
