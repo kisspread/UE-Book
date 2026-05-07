@@ -511,6 +511,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   ![alt text](/libraries/images/00_image-32.webp)
 
 
+- [DreamShader](https://github.com/TypeDreamMoon/DreamShader)  Unreal Engine Material DSL for generating materials via text-based language.
+  - DreamShader 是一个基于 DSL 的 Unreal Engine 材质生成工具，通过文本化方式简化材质创建流程，近年来文本化工作流广受欢迎，有效解决了手动连节点的痛点。
+  - 💬 该项目通过 DSL 文本化材质生成，提升了开发效率，但作为新工具，生态和稳定性可能需要时间验证。
+
 
 
 ## NetWork
