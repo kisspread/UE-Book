@@ -11,3 +11,4 @@ ue-book/docs/updates/latest.json
 dist-final
 ue-book/docs/.batch-exclude.json
 .batch-exclude.json
+scripts/__pycache__
