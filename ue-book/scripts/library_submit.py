@@ -108,6 +108,48 @@ def extract_image_urls(readme: str, owner: str, repo: str, default_branch: str =
     return urls
 
 
+def extract_links(readme: str, repo_url: str, max_links: int = 3) -> list[tuple[str, str]]:
+    """Extract relevant links from README (not images, not repo itself). Max 3.
+    Returns [(label, url), ...]"""
+    SKIP_DOMAINS = [
+        'youtube.com', 'youtu.be', 'shields.io', 'img.shields.io',
+        'badge.fury.io', 'patreon.com', 'buymeacoffee.com',
+    ]
+    
+    links = []
+    seen = set()
+    
+    for m in re.finditer(r'(?<!!)\[([^\]]+)\]\(([^)]+)\)', readme):
+        label = m.group(1).strip()
+        url = m.group(2).strip()
+        
+        # Skip anchors, email, empty, relative links
+        if url.startswith('#') or url.startswith('mailto:') or not url:
+            continue
+        # Only external links (http/https), not relative repo files
+        if not url.startswith('http'):
+            continue
+        # Skip the repo URL itself
+        if repo_url in url:
+            continue
+        # Skip badge domains
+        if any(skip in url for skip in SKIP_DOMAINS):
+            continue
+        # Skip generic labels
+        if label.lower() in ('license', 'build', 'status', 'coverage', 'stars', 'forks'):
+            continue
+        # Deduplicate
+        if url in seen:
+            continue
+        seen.add(url)
+        
+        links.append((label, url))
+        if len(links) >= max_links:
+            break
+    
+    return links
+
+
 def resolve_image_url(url: str, owner: str, repo: str, branch: str) -> str:
     """Resolve relative/absolute image URLs to raw.githubusercontent.com."""
     if url.startswith("http"):
@@ -235,12 +277,12 @@ UE 相关项目通常具有以下特征之一：
 
 # ── Insert ──
 
-def insert_library(info: dict, image_urls: list[str]) -> str:
+def insert_library(info: dict, image_urls: list[str], links: list[tuple[str, str]]) -> str:
     """Insert library entry into libraries/index.md. Returns commit message."""
     content = LIBS_PATH.read_text(encoding="utf-8")
     category = info["category"]
 
-    # Build entry: headline + optional images + user_desc + llm_comment
+    # Build entry: headline + images + user_desc + llm_comment + links
     name = info["name"]
     url = info["url"]
     headline = info.get("headline", "")
@@ -256,6 +298,10 @@ def insert_library(info: dict, image_urls: list[str]) -> str:
         entry_lines.append(f"  - {user_desc.strip()}")
     if llm_comment.strip():
         entry_lines.append(f"  - 💬 {llm_comment.strip()}")
+
+    if links:
+        link_parts = [f"[{label}]({link_url})" for label, link_url in links]
+        entry_lines.append(f"  🔗 {' · '.join(link_parts)}")
 
     entry = "\n".join(entry_lines) + "\n"
 
@@ -379,12 +425,13 @@ def main():
     if info.get('llm_comment'):
         print(f"     AI: {info['llm_comment'][:80]}")
 
-    # 5. Extract images from README (max 3, skip badges)
+    # 5. Extract images and links from README
     image_urls = extract_image_urls(readme, owner, repo, default_branch)
-    print(f"  Images: {len(image_urls)} (max 3)")
+    links = extract_links(readme, repo_info["html_url"])
+    print(f"  Images: {len(image_urls)}, Links: {len(links)} (max 3 each)")
 
     # 6. Insert into libraries/index.md
-    msg = insert_library(info, image_urls)
+    msg = insert_library(info, image_urls, links)
     if not msg:
         close_issue(issue_number, "无法定位库文件中的分类位置，请手动添加。")
         return
