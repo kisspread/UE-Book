@@ -138,20 +138,39 @@ export default defineConfig({
   rewrites,
 
   vite: {
-    //plugins: [cppEscapePlugin()],
+    // 之前解决 C++ 解析报错的高性能插件保留
+    // plugins: [cppEscapePlugin()],
     resolve: {
       preserveSymlinks: true,
     },
-  //  build: {
-  //     // 降低 chunk 警告阈值，避免控制台输出过多警告占用内存
-  //     chunkSizeWarningLimit: 2000,
-  //     rollupOptions: {
-  //       // 关键优化：关闭 Rollup 构建缓存，极大降低海量多页应用的内存峰值
-  //       cache: false,
-  //       // 限制并发文件操作数，缓解瞬间内存飙升
-  //       maxParallelFileOps: 2, 
-  //     }
-  //   }
+    build: {
+      // 🚨 优化 3：关闭所有的缓存和 SourceMap，榨干每一滴内存
+      cache: false,
+      sourcemap: false,
+      // 如果内存依然爆，可以临时关闭 minify 测试是否是压缩器导致的（先保持默认注释掉）
+      // minify: false, 
+      
+      rollupOptions: {
+        // 🚨 优化 4：限制底层的 Rollup 文件读写并发
+        maxParallelFileOps: 1,
+        
+        output: {
+          // 🚨 优化 5：强制拆包。把巨大的 chunk 拆碎，避免 V8 引擎分配超大块内存失败
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              return 'vendor';
+            }
+            // 将 5.7 和 5.8 的文档分到不同的 js 块中，极大缓解打包压力
+            if (id.includes('/ue-book/docs/5.7/')) {
+              return 'docs-57';
+            }
+            if (id.includes('/ue-book/docs/5.8/')) {
+              return 'docs-58';
+            }
+          }
+        }
+      }
+    }
   },
 
 

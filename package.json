@@ -2,11 +2,14 @@
   "type": "module",
   "scripts": {
     "docs:dev": "vitepress dev",
-    "docs:build": "vitepress build",
+    "docs:build2": "NODE_OPTIONS='--max-old-space-size=6144' vitepress build",
+    "docs:build": "NODE_OPTIONS='--max-old-space-size=8192' vitepress build",
     "docs:preview": "vitepress preview",
-    "sync": "node scripts/sync-manifest.mjs"
+    "sync": "node scripts/sync-manifest.mjs",
+    "deploy": "gh-pages -d .vitepress/dist"
   },
   "devDependencies": {
-    "vitepress": "^1.6.4"
+    "gh-pages": "^6.3.0",
+    "vitepress": "2.0.0-alpha.17"
   }
 }

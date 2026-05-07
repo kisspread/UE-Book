@@ -57,13 +57,13 @@ jobs:
         run: node scripts/sync-manifest.mjs
 
       - name: Build VitePress in Batches
-        run: node scripts/batch-build.mjs
+        run: pnpm docs:build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           # 以前是 .vitepress/dist
-          path: dist-final
+          path: vitepress/dist
 
       - name: Deploy to GitHub Pages
         id: deploy
