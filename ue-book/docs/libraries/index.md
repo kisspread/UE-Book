@@ -647,6 +647,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 这是一个 Unreal Engine 5 插件，用于原生 Markdown 资产，提供实时 HTML 预览编辑器和蓝图访问功能。
   - 💬 该插件功能全面，集成 md4c 库支持实时预览和多种 Markdown 扩展，适合在 UE 项目中集成文档编辑功能，但仅限 Windows 平台。
 
+- [PiUE](https://github.com/Solessfir/PiUE)  Blender-style radial quick-action menu for the Unreal Engine level editor viewport.
+  ![PiUE screenshot](https://raw.githubusercontent.com/Solessfir/PiUE/main/Resources/Screenshot.png)
+  - 💬 这是一个为 Unreal Editor 设计的 Blender 风格饼图菜单插件，提供了快速操作功能，可能提升编辑器工作效率。但项目关注度较低，需注意兼容性和维护状态。
+
 
 
 ## Engine
