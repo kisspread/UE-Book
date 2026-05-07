@@ -6,9 +6,7 @@ on:
 
 jobs:
   process-submission:
-    if: |
-      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'library-submission')) ||
-      (github.event.action == 'labeled' && github.event.label.name == 'library-submission')
+    if: ${{ (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'library-submission')) || (github.event.action == 'labeled' && github.event.label.name == 'library-submission') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

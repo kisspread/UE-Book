@@ -1,6 +1,6 @@
 name: 开源库收录申请
 description: 提交一个 UE 开源库供站点收录
-title: "[收录] "
+title: "[请收录] "
 labels: [library-submission]
 body:
   - type: input
