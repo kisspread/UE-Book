@@ -639,6 +639,13 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 - [RTXGI-UE-5.7-Plugin](https://github.com/kpitikaris/RTXGI-UE-5.7-Plugin) Porting RTXGI to 5.7 and SM6
   - UE 5.7 专用的 RTX Global Illumination 插件（原版有 artifact 问题，这个 fork 修复了）。为了让尽可能多的开发者享受到 RTXGI 的优势，所有 RTXGI 1.1 的功能现在都可以通过 RTXGI UE 插件在虚幻引擎中使用。
 
+- [Monolith](https://github.com/tumourlove/monolith)  An Unreal Engine 5.7+ plugin that provides AI assistants with full read/write access via MCP.
+  ![Monolith screenshot](/libraries/images/Monolith_image-1.png)
+  ![Monolith screenshot](/libraries/images/Monolith_image-2.svg)
+  ![Monolith screenshot](/libraries/images/Monolith_image-3.png)
+  - 这是一个 Unreal Engine 5.7 的 MCP 插件，为 AI 助手提供对蓝图、材质、Niagara VFX、动画、网格、AI（行为树/状态树/EQS/智能对象）、GAS、逻辑驱动器、ComboGraph、UI、音频（Sound Cues 和 MetaSounds）等的完全读写访问。包含 1,226 个操作，跨 16 个模块，零 Python 依赖。
+  - 💬 项目功能全面，覆盖 UE 多个核心领域，通过 MCP 协议实现 AI 集成，适合需要自动化或 AI 辅助开发的 UE 项目，但作为大型插件可能需要一定学习成本。
+
 
 
 ## Engine
