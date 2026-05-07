@@ -2,8 +2,11 @@ name: Deploy VitePress to Pages
 
 on:
   workflow_dispatch:
+  schedule:
+    # Deploy twice daily: 02:00 and 14:00 UTC
+    - cron: '0 2,14 * * *'
   workflow_run:
-    workflows: [Weekly Report, Monthly Report Sync, "Generate UE Plugin Docs", "Library Submission"]
+    workflows: [Weekly Report, Monthly Report Sync, "Generate UE Plugin Docs"]
     types: [completed]
   push:
     branches: [master]
@@ -13,6 +16,8 @@ on:
       - '.vitepress/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
+    paths-ignore:
+      - 'ue-book/docs/libraries/**'
 
 # ── Act local test ──
 #   act -W .github/workflows/deploy.yml --container-architecture linux/amd64
