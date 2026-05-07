@@ -68,6 +68,9 @@ jobs:
       - name: Build VitePress
         run: pnpm docs:build
 
+      - name: Build search index
+        run: node scripts/build-search-index.mjs
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

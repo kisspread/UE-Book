@@ -17,7 +17,7 @@ hero:
 features:
   - icon: 🔌
     title: 内置插件
-    details: 600+ UE5 官方插件的中文使用文档，由 LLM 从源码分析生成
+    details: 870+ UE5 官方插件的中文使用文档，由 LLM 从源码分析生成
     link: /plugins/
     linkText: 浏览插件
   - icon: 📦
@@ -30,4 +30,9 @@ features:
     details: 每周自动分析 UE 引擎最新改动，追踪技术趋势
     link: /updates/
     linkText: 查看更新
+  - icon: 🤖
+    title: AI Agent 可用
+    details: 内置搜索索引，Agent 一句话安装即可在对话中查询 UE 知识库。试试问 "AI 能操作 Niagara 吗？"
+    link: https://raw.githubusercontent.com/kisspread/UE-Book/master/install.md
+    linkText: 安装到 Agent
 ---
