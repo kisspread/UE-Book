@@ -237,6 +237,11 @@ Including open source and non-open source, commercial and non-commercial.
   - ![alt text](/libraries/images/00_image-4.webp)
 
 
+- [QuickBaker](https://github.com/EmbarrassingMoment/QuickBaker)  A lightweight Material to Texture Baker for Unreal Engine 5.5+.
+  ![QuickBaker screenshot](https://raw.githubusercontent.com/EmbarrassingMoment/QuickBaker/master/Docs/images/window_en.jpg)
+  - QuickBaker 是一个轻量级的材质到纹理烘焙工具，专为 Unreal Engine 5.5+ 设计。它支持将 Emissive 输出直接烘焙为静态资产（.uasset）、PNG 或 EXR 文件，适用于程序化噪声和 SDF 等场景。
+  - 💬 该项目是一个 UE5 编辑器插件，专注于材质烘焙，功能简洁实用，适合需要快速生成纹理资产的开发者，但社区关注度较低。
+
 
 
 ## Animation
