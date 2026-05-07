@@ -33,7 +33,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install langchain-openai langchain-core
+        run: pip install langchain-openai langchain-core requests
 
       - name: Process submission
         id: process
@@ -46,7 +46,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add ue-book/docs/libraries/index.md
+          git add ue-book/docs/libraries/index.md ue-book/docs/libraries/images/
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
