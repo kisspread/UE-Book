@@ -1,16 +1,25 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import FilterBar from './FilterBar.vue'
 import PluginCard from './PluginCard.vue'
 
+const STORAGE_KEY = 'ue-book-filters'
+
+function loadFilters() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return { search: '', sizes: [], versions: [], ageTiers: [], categories: [] }
+}
+
+const filters = ref(loadFilters())
+
+watch(filters, (val) => {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(val))
+}, { deep: true })
+
 const allPlugins = ref([])
-const filters = ref({
-  search: '',
-  sizes: [],
-  versions: [],
-  ageTiers: [],
-  categories: []
-})
 
 onMounted(async () => {
   try {
