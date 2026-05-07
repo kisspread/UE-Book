@@ -288,6 +288,12 @@ Including open source and non-open source, commercial and non-commercial.
 
  
 
+- [NiagaraLibrary](https://github.com/TimChen1383/NiagaraLibrary)  A collection of Niagara particle system effects and tutorials for Unreal Engine.
+  ![NiagaraLibrary screenshot](https://github.com/TimChen1383/NiagaraScrathPad/assets/37008451/69e354ed-dd11-4d9e-8862-923f5a2b2459)
+  ![NiagaraLibrary screenshot](https://github.com/TimChen1383/NiagaraScrathPad/assets/37008451/029542fd-abb7-441c-9088-0f8579c79f9b)
+  ![NiagaraLibrary screenshot](https://github.com/TimChen1383/NiagaraScrathPad/assets/37008451/e5fa5d9d-b4f3-45db-9af8-86a54a223f2e)
+  - 💬 这是一个 Niagara 粒子系统效果库，展示了多种粒子效果，适合 Unreal Engine 开发者学习和参考，但项目可能缺乏详细文档或完整代码。
+
 
 
 ## Gameplay
