@@ -4,29 +4,28 @@ import path from 'node:path'
 import type { Plugin } from 'vite'
 
 // ── Vite plugin: escape C++ template syntax to avoid Vue SFC parsing ──
-function cppEscapePlugin(): Plugin {
-  return {
-    name: 'cpp-escape',
-    enforce: 'pre',
-    transform(code, id) {
-      if (!id.endsWith('.md')) return null
-      if (!code.includes('<')) return null
-      code = code.replace(/<([A-Za-z_][\w:*&,\s<>]*?)>/g, (match, inner) => {
-        if (/^<\/?(?:div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th|thead|tbody|br|hr|code|pre|strong|em|b|i|u|s|script|style|template|slot|component|section|header|footer|nav|main|aside|article|form|input|button|select|option|label|textarea|link|meta|head|body|html|iframe|svg|path|circle|rect|g|video|audio|source|canvas|v-[a-z-]+)[\s>/]/i.test(match)) {
-          return match
-        }
-        return '&lt;' + inner + '&gt;'
-      })
-      return code
-    }
-  }
-}
+// function cppEscapePlugin(): Plugin {
+//   return {
+//     name: 'cpp-escape',
+//     enforce: 'pre',
+//     transform(code, id) {
+//       if (!id.endsWith('.md')) return null
+//       if (!code.includes('<')) return null
+//       code = code.replace(/<([A-Za-z_][\w:*&,\s<>]*?)>/g, (match, inner) => {
+//         if (/^<\/?(?:div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th|thead|tbody|br|hr|code|pre|strong|em|b|i|u|s|script|style|template|slot|component|section|header|footer|nav|main|aside|article|form|input|button|select|option|label|textarea|link|meta|head|body|html|iframe|svg|path|circle|rect|g|video|audio|source|canvas|v-[a-z-]+)[\s>/]/i.test(match)) {
+//           return match
+//         }
+//         return '&lt;' + inner + '&gt;'
+//       })
+//       return code
+//     }
+//   }
+// }
 
 // ----  读取脚本生成的分批排除黑名单 ----
 let srcExclude: string[] = []
 const excludeFilePath = path.resolve(__dirname, '../.batch-exclude.json')
 if (fs.existsSync(excludeFilePath)) {
-  console.log(`[config] 读取分批排除文件: ${excludeFilePath}`)
   srcExclude = JSON.parse(fs.readFileSync(excludeFilePath, 'utf-8'))
   console.log(`[config] 分批模式启动：忽略 ${srcExclude.length} 个文件不参与此次编译`)
 }
@@ -131,7 +130,7 @@ export default defineConfig({
   srcDir: 'ue-book/docs',
   base: '/UE-Book/',
   srcExclude,
-
+  cleanUrls: true, // 👈 开启干净链接
   head: [
     ['meta', { name: 'algolia-site-verification', content: '2A8BC67DA6BC61B3' }]
   ],

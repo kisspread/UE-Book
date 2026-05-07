@@ -39,7 +39,8 @@ function clearAll() {
 </script>
 
 <template>
-  <div class="sidebar-filter">
+  <!-- 1. 最外层换成一个全宇宙唯一的 class 名字 -->
+  <div class="ue-book-sidebar-filter">
     <div class="sidebar-search">
       <input
         type="text"
@@ -93,13 +94,15 @@ function clearAll() {
   </div>
 </template>
 
-<style scoped>
-.sidebar-filter {
+<!-- 2. 去掉 scoped 属性 -->
+<style>
+/* 3. 在所有选择器前面加上 .ue-book-sidebar-filter 前缀 */
+.ue-book-sidebar-filter {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.sidebar-search-input {
+.ue-book-sidebar-filter .sidebar-search-input {
   width: 100%;
   padding: 6px 10px;
   border: 1px solid var(--vp-c-divider);
@@ -109,10 +112,10 @@ function clearAll() {
   font-size: 0.8rem;
   outline: none;
 }
-.sidebar-search-input:focus {
+.ue-book-sidebar-filter .sidebar-search-input:focus {
   border-color: var(--vp-c-brand-1);
 }
-.sidebar-section-title {
+.ue-book-sidebar-filter .sidebar-section-title {
   font-size: 0.7rem;
   font-weight: 600;
   color: var(--vp-c-text-3);
@@ -120,16 +123,16 @@ function clearAll() {
   letter-spacing: 0.5px;
   margin-bottom: 4px;
 }
-.sidebar-chips {
+.ue-book-sidebar-filter .sidebar-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
-.sidebar-cats {
+.ue-book-sidebar-filter .sidebar-cats {
   max-height: 280px;
   overflow-y: auto;
 }
-.sc {
+.ue-book-sidebar-filter .sc {
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -143,11 +146,20 @@ function clearAll() {
   transition: all 0.15s;
   white-space: nowrap;
 }
-.sc:hover { border-color: var(--vp-c-brand-1); color: var(--vp-c-brand-1); }
-.sc.on { background: var(--vp-c-brand-1); color: var(--vp-c-white); border-color: var(--vp-c-brand-1); }
-.n { font-size: 0.6rem; opacity: 0.65; }
-
-.sidebar-footer {
+.ue-book-sidebar-filter .sc:hover { 
+  border-color: var(--vp-c-brand-1); 
+  color: var(--vp-c-brand-1); 
+}
+.ue-book-sidebar-filter .sc.on { 
+  background: var(--vp-c-brand-1); 
+  color: var(--vp-c-white); 
+  border-color: var(--vp-c-brand-1); 
+}
+.ue-book-sidebar-filter .n { 
+  font-size: 0.6rem; 
+  opacity: 0.65; 
+}
+.ue-book-sidebar-filter .sidebar-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -156,10 +168,12 @@ function clearAll() {
   padding-top: 8px;
   border-top: 1px solid var(--vp-c-divider);
 }
-.clear-link {
+.ue-book-sidebar-filter .clear-link {
   color: var(--vp-c-brand-1);
   text-decoration: none;
   font-size: 0.72rem;
 }
-.clear-link:hover { text-decoration: underline; }
+.ue-book-sidebar-filter .clear-link:hover { 
+  text-decoration: underline; 
+}
 </style>
