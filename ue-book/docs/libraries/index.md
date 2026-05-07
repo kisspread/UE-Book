@@ -750,6 +750,14 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
   - https://www.unrealengine.com/en-US/blog/free-infinity-blade-collection-marketplace-release
   - ![alt text](/libraries/images/00_image-53.webp)
 
+- [PCGExperiments](https://github.com/proceduralit/PCGExperiments)  A collection of Unreal Engine experiments exploring Procedural Content Generation techniques using PCG graphs and custom tools.
+  ![PCGExperiments screenshot](/libraries/images/PCGExperiments_image-1.png)
+  ![PCGExperiments screenshot](/libraries/images/PCGExperiments_image-2.png)
+  ![PCGExperiments screenshot](/libraries/images/PCGExperiments_image-3.png)
+  ![PCGExperiments screenshot](/libraries/images/PCGExperiments_image-4.jpg)
+  - 这是一个 Unreal Engine 实验集合，专注于使用 PCG 图和自定义工具探索程序化内容生成技术，包括 GPU 纹理采样、书籍生成和曼陀罗图案等应用。
+  - 💬 项目展示了 PCG 在 UE 中的多种实用场景，如 GPU 优化和程序化生成，适合学习 PCG 功能，但作为实验集合，代码结构可能不够系统化。
+
 
 
 ## Other
