@@ -646,6 +646,15 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 这是一个 Unreal Engine 5.7 的 MCP 插件，为 AI 助手提供对蓝图、材质、Niagara VFX、动画、网格、AI（行为树/状态树/EQS/智能对象）、GAS、逻辑驱动器、ComboGraph、UI、音频（Sound Cues 和 MetaSounds）等的完全读写访问。包含 1,226 个操作，跨 16 个模块，零 Python 依赖。
   - 💬 项目功能全面，覆盖 UE 多个核心领域，通过 MCP 协议实现 AI 集成，适合需要自动化或 AI 辅助开发的 UE 项目，但作为大型插件可能需要一定学习成本。
 
+- [MarkdownAssetProject](https://github.com/EmbarrassingMoment/MarkdownAssetProject)  An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-preview editor.
+  ![MarkdownAssetProject screenshot](/libraries/images/MarkdownAssetProject_image-1.png)
+  ![MarkdownAssetProject screenshot](/libraries/images/MarkdownAssetProject_image-2.png)
+  ![MarkdownAssetProject screenshot](/libraries/images/MarkdownAssetProject_image-3.png)
+  ![MarkdownAssetProject screenshot](/libraries/images/MarkdownAssetProject_image-4.png)
+  ![MarkdownAssetProject screenshot](/libraries/images/MarkdownAssetProject_image-5.png)
+  - 这是一个 Unreal Engine 5 插件，用于原生 Markdown 资产，提供实时 HTML 预览编辑器和蓝图访问功能。
+  - 💬 该插件功能全面，集成 md4c 库支持实时预览和多种 Markdown 扩展，适合在 UE 项目中集成文档编辑功能，但仅限 Windows 平台。
+
 
 
 ## Engine
