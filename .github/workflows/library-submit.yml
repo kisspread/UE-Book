@@ -6,7 +6,7 @@ on:
 
 jobs:
   process-submission:
-    if: ${{ (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'library-submission')) || (github.event.action == 'labeled' && github.event.label.name == 'library-submission') }}
+    #if: ${{ (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'library-submission')) || (github.event.action == 'labeled' && github.event.label.name == 'library-submission') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -22,6 +22,9 @@ jobs:
       ISSUE_URL: ${{ github.event.issue.html_url }}
 
     steps:
+      - name: Print Labels for Debugging
+        run: echo "Labels are ${{ toJSON(github.event.issue.labels) }}"
+
       - name: Checkout
         uses: actions/checkout@v4
 
