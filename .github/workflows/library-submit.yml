@@ -2,13 +2,13 @@ name: Library Submission
 
 on:
   issues:
-    types: [opened]
-    # Only process issues with the library-submission label
-    # (GitHub doesn't filter by label in the event trigger, we check in the job)
+    types: [opened, labeled]
 
 jobs:
   process-submission:
-    if: contains(github.event.issue.labels.*.name, 'library-submission')
+    if: |
+      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'library-submission')) ||
+      (github.event.action == 'labeled' && github.event.label.name == 'library-submission')
     runs-on: ubuntu-latest
     permissions:
       contents: write
