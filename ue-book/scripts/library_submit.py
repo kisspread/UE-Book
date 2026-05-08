@@ -333,17 +333,43 @@ def insert_library(info: dict, image_urls: list[str], links: list[tuple[str, str
 
 # ── GitHub Issue actions ──
 
-def post_comment(issue_number: str, body: str):
-    subprocess.run(["gh", "issue", "comment", issue_number, "--body", body], timeout=30)
+def check_duplicate(url: str) -> bool:
+    """Check if a URL already exists in libraries/index.md."""
+    if not LIBS_PATH.exists():
+        return False
+    content = LIBS_PATH.read_text(encoding="utf-8").lower()
+    # Normalize: strip protocol, trailing slash, .git
+    normalized = re.sub(r'^https?://', '', url.lower()).rstrip('/').removesuffix('.git')
+    return normalized in content
 
 
-def close_issue(issue_number: str, reason: str, completed: bool = False):
-    args = ["gh", "issue", "close", issue_number]
-    if completed:
-        args += ["--reason", "completed"]
-    else:
-        args += ["--reason", "not planned", "--comment", f"❌ 未通过收录审核\n\n{reason}"]
-    subprocess.run(args, timeout=30)
+def build_comment(info: dict, image_urls: list, links: list, duplicate: bool = False) -> str:
+    """Build the issue comment text."""
+    prefix = "⚠️ 此库已收录，无需重复提交。以下是 AI 分析结果供参考：\n\n" if duplicate else "✅ 已收录！\n\n"
+    parts = [
+        prefix,
+        f"- **库名**: {info['name']}",
+        f"- **地址**: {info['url']}",
+        f"- **分类**: {info.get('category', '')}",
+        f"- **简述**: {info.get('headline', '')}",
+    ]
+    if info.get('user_desc'):
+        parts.append(f"- **用户**: {info['user_desc']}")
+    if info.get('llm_comment'):
+        parts.append(f"- **锐评**: {info['llm_comment']}")
+    if image_urls:
+        parts.append(f"- **图片**: {len(image_urls)} 张")
+    if links:
+        link_parts = [f"[{l}]({u})" for l, u in links[:3]]
+        parts.append(f"- **链接**: {' · '.join(link_parts)}")
+    return "\n".join(parts)
+
+
+def output_env(key: str, value: str):
+    """Write a key=value line to GITHUB_OUTPUT, escaping newlines."""
+    escaped = value.replace("%", "%25").replace("\n", "%0A").replace("\r", "%0D")
+    with open(os.environ.get("GITHUB_OUTPUT", "/dev/null"), "a") as f:
+        f.write(f"{key}={escaped}\n")
 
 
 # ── Main ──
@@ -362,26 +388,32 @@ def main():
     # 1. Parse GitHub URL from issue body
     urls = re.findall(r'https?://github\.com/[\w.-]+/[\w.-]+', issue_body)
     if not urls:
-        close_issue(issue_number, "未找到 GitHub 链接，请提供有效的 GitHub 仓库地址。")
+        output_env("comment_body", "❌ 未通过收录审核\n\n未找到 GitHub 链接，请提供有效的 GitHub 仓库地址。")
+        output_env("should_close", "true")
         return
 
     gh_url = urls[0].rstrip(')').rstrip('.')
     parsed = parse_github_url(gh_url)
     if not parsed:
-        close_issue(issue_number, f"无法解析 GitHub 链接：{gh_url}")
+        output_env("comment_body", f"❌ 未通过收录审核\n\n无法解析 GitHub 链接：{gh_url}")
+        output_env("should_close", "true")
         return
 
     owner, repo = parsed
     print(f"  Repo: {owner}/{repo}")
 
-    # 2. Fetch repo data
+    # 2. Check duplicate before fetching
+    duplicate = check_duplicate(gh_url)
+    if duplicate:
+        print(f"  ⚠️ Duplicate detected: {gh_url}")
+
+    # 3. Fetch repo data
     try:
         repo_info = fetch_repo_info(owner, repo)
         print(f"  Description: {repo_info['description'][:80]}")
-        print(f"  Topics: {repo_info['topics']}")
-        print(f"  Language: {repo_info['language']}")
     except Exception as e:
-        close_issue(issue_number, f"无法访问仓库信息：{e}")
+        output_env("comment_body", f"❌ 未通过收录审核\n\n无法访问仓库信息：{e}")
+        output_env("should_close", "true")
         return
 
     try:
@@ -392,10 +424,8 @@ def main():
         readme = "(README 无法获取)"
 
     try:
-        # Get default branch from repo info
         branch_data = gh_api(f"repos/{owner}/{repo}")
         default_branch = branch_data.get("default_branch", "master")
-        
         file_tree = fetch_file_tree(owner, repo)
         print(f"  File tree: {len(file_tree.split(chr(10)))} entries")
     except Exception as e:
@@ -403,67 +433,57 @@ def main():
         file_tree = "(无法获取文件树)"
         default_branch = "master"
 
-    # 3. Extract user description from issue
+    # 4. Extract user description
     user_desc = extract_user_description(issue_body)
     if user_desc:
         print(f"  User desc: {user_desc[:80]}...")
 
-    # 4. LLM analysis
+    # 5. LLM analysis
     print("  Analyzing with LLM...")
     info = analyze_repo(repo_info, readme, file_tree, user_desc)
 
     if not info.get("valid"):
         reason = info.get("reason", "未知原因")
         print(f"  ❌ Rejected: {reason}")
-        close_issue(issue_number, reason)
+        output_env("comment_body", f"❌ 未通过收录审核\n\n{reason}")
+        output_env("should_close", "true")
         return
 
     print(f"  ✅ Valid: {info['name']} → {info['category']}")
-    print(f"     Headline: {info.get('headline', '')[:80]}")
-    if info.get('user_desc'):
-        print(f"     User: {info['user_desc'][:80]}")
-    if info.get('llm_comment'):
-        print(f"     AI: {info['llm_comment'][:80]}")
 
-    # 5. Extract images and links from README
+    # 6. Extract images and links
     image_urls = extract_image_urls(readme, owner, repo, default_branch)
     links = extract_links(readme, repo_info["html_url"])
-    print(f"  Images: {len(image_urls)}, Links: {len(links)} (max 3 each)")
+    print(f"  Images: {len(image_urls)}, Links: {len(links)}")
 
-    # 6. Insert into libraries/index.md
-    msg = insert_library(info, image_urls, links)
-    if not msg:
-        close_issue(issue_number, "无法定位库文件中的分类位置，请手动添加。")
+    # 7. Build comment (always, even for duplicates)
+    comment_body = build_comment(info, image_urls, links, duplicate=duplicate)
+
+    if duplicate:
+        # Already exists: output comment, close, skip insertion
+        output_env("commit_msg", "")
+        output_env("comment_body", comment_body)
+        output_env("should_close", "true")
+        print(f"  ⚠️ Skipped insert (duplicate)")
         return
 
-    # 7. Post success comment
-    comment = (
-        f"✅ 已收录！\n\n"
-        f"- **库名**: {info['name']}\n"
-        f"- **地址**: {info['url']}\n"
-        f"- **分类**: {info['category']}\n"
-        f"- **简述**: {info.get('headline', '')}\n"
-    )
-    if info.get('user_desc'):
-        comment += f"- **用户**: {info['user_desc']}\n"
-    if info.get('llm_comment'):
-        comment += f"- **锐评**: {info['llm_comment']}\n"
-    if image_urls:
-        comment += f"- **图片**: {len(image_urls)} 张（引用原始链接）\n"
-    comment += f"\n提交: {msg}"
-    post_comment(issue_number, comment)
+    # 8. Insert into libraries/index.md
+    msg = insert_library(info, image_urls, links)
+    if not msg:
+        output_env("comment_body", "❌ 无法定位库文件中的分类位置，请手动添加。")
+        output_env("should_close", "true")
+        return
 
-    # 7. Close issue
-    close_issue(issue_number, "", completed=True)
     print(f"  ✅ Done: {msg}")
 
-    # 8. Output for GitHub Actions
-    with open(os.environ.get("GITHUB_OUTPUT", "/dev/null"), "a") as f:
-        f.write(f"commit_msg={msg}\n")
-        f.write(f"library_name={info.get('name', '')}\n")
-        f.write(f"library_url={info.get('url', '')}\n")
-        f.write(f"library_category={info.get('category', '')}\n")
-        f.write(f"library_headline={info.get('headline', '')}\n")
+    # 9. Output for GitHub Actions
+    output_env("commit_msg", msg)
+    output_env("comment_body", comment_body)
+    output_env("should_close", "true")
+    output_env("library_name", info.get("name", ""))
+    output_env("library_url", info.get("url", ""))
+    output_env("library_category", info.get("category", ""))
+    output_env("library_headline", info.get("headline", ""))
 
 
 if __name__ == "__main__":

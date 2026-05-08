@@ -83,3 +83,19 @@ jobs:
           🔗 ${{ steps.process.outputs.library_url }}
           📂 ${{ steps.process.outputs.library_category }}
           📝 ${{ steps.process.outputs.library_headline }}" || true
+
+      - name: Post comment (bot)
+        if: steps.process.outputs.comment_body != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" \
+            --body "${{ steps.process.outputs.comment_body }}"
+
+      - name: Close issue (bot)
+        if: steps.process.outputs.should_close == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue close "${{ github.event.issue.number }}" \
+            --reason "${{ steps.process.outputs.commit_msg != '' && 'completed' || 'not planned' }}"
