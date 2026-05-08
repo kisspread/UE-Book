@@ -460,6 +460,10 @@ def main():
     # 8. Output for GitHub Actions
     with open(os.environ.get("GITHUB_OUTPUT", "/dev/null"), "a") as f:
         f.write(f"commit_msg={msg}\n")
+        f.write(f"library_name={info.get('name', '')}\n")
+        f.write(f"library_url={info.get('url', '')}\n")
+        f.write(f"library_category={info.get('category', '')}\n")
+        f.write(f"library_headline={info.get('headline', '')}\n")
 
 
 if __name__ == "__main__":

@@ -19,6 +19,8 @@ jobs:
       LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
       LLM_MODEL: ${{ secrets.LLM_MODEL }}
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+      TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
 
     steps:
       - name: Checkout
@@ -33,6 +35,7 @@ jobs:
         run: pip install langchain-openai langchain-core
 
       - name: Run monthly report
+        id: report
         run: python3 ue-book/scripts/monthly_report.py
 
       - name: Sync manifest
@@ -51,5 +54,13 @@ jobs:
           fi
           git commit -m "docs: sync monthly report"
           git pull --rebase origin master
-          git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/kisspread/UE-Book.git"
+          git remote set-url origin "https://x-access-token:***@github.com/kisspread/UE-Book.git"
           git push
+
+      - name: Notify Telegram
+        if: success()
+        run: |
+          curl -s "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TG_CHAT_ID}" \
+            -d text="📅 月报已同步
+          🔗 https://kisspread.github.io/UE-Book/updates/" || true
