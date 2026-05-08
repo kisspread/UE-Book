@@ -521,6 +521,12 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - DreamShader 是一个基于 DSL 的 Unreal Engine 材质生成工具，通过文本化方式简化材质创建流程，近年来文本化工作流广受欢迎，有效解决了手动连节点的痛点。
   - 💬 该项目通过 DSL 文本化材质生成，提升了开发效率，但作为新工具，生态和稳定性可能需要时间验证。
 
+- [Texture Sets](https://github.com/electronicarts/texturesets)  A UE5 plugin providing an opt-in framework for advanced, streamlined texture pipelines.
+  ![Texture Sets screenshot](https://raw.githubusercontent.com/electronicarts/texturesets/main/Docs/Img/tiltshift_textureset_01.png)
+  - Texture Sets 是由 EA 的 SEED 团队为 Unreal Engine 5 开发的插件，提供了一个可选框架，用于构建高级、精简的纹理管线。它简化了纹理打包和材质设置，提升了工作流程的标准化和优化。
+  - 💬 该项目由 EA 专业团队开发，专注于 UE5 纹理管线优化，适合中大型项目提升美术工作流效率。但作为框架，可能需要额外配置和学习。
+  🔗 [Martin Palko](https://www.martinpalko.com/) · [EA Motive](https://www.ea.com/ea-studios/motive) · [SEED](https://www.ea.com/seed)
+
 
 
 ## NetWork
