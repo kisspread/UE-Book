@@ -4,10 +4,10 @@ on:
   issues:
     types: [labeled]
 
-# Prevent concurrent runs on the same file
+# Per-issue concurrency: same issue won't run twice, different issues run in parallel
 concurrency:
-  group: library-submit
-  cancel-in-progress: false
+  group: library-submit-${{ github.event.issue.number }}
+  cancel-in-progress: true
 
 jobs:
   process-submission:
@@ -58,6 +58,16 @@ jobs:
             exit 0
           fi
           git commit -m "${{ steps.process.outputs.commit_msg }}"
-          git pull --rebase origin master
           git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/kisspread/UE-Book.git"
-          git push
+          # Retry up to 3 times with merge strategy for conflicts
+          for i in 1 2 3; do
+            if git pull --rebase origin master 2>/dev/null; then
+              git push && break
+            else
+              echo "[retry $i] rebase failed, trying merge..."
+              git rebase --abort 2>/dev/null
+              git pull --no-rebase -X theirs origin master
+              git push && break
+            fi
+            sleep 3
+          done
