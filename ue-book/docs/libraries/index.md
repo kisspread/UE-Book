@@ -463,6 +463,11 @@ Including open source and non-open source, commercial and non-commercial.
 
 - [运行时图片加载器](https://github.com/RaiaN/RuntimeImageLoader) 支持GIF，webp 格式。 Load images and GIFs into Unreal at runtime without hitches
   ![alt text](/libraries/images/00_image-30.webp)
+- [VirtualFlowLayout](https://github.com/MikeShatterwell/VirtualFlowLayout)  A virtualized scrollable list widget for Unreal Engine 5.
+  ![VirtualFlowLayout screenshot](https://raw.githubusercontent.com/MikeShatterwell/VirtualFlowLayout/main/Docs/main.gif)
+  - 💬 这是一个功能全面的 UE5 UI 插件，专注于虚拟化滚动列表布局，支持层次结构和多种布局引擎，适合处理复杂列表场景，但项目 stars 数较低，社区关注度有限，需评估其稳定性和维护状态。
+  🔗 [InputFlowDebugger](https://github.com/MikeShatterwell/InputFlowDebugger)
+
 
 
 ## Material
