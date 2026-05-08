@@ -673,6 +673,12 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 项目模块化设计清晰，提供了丰富的 UE5 插件功能，适合需要自定义工具和系统的开发者，但使用可能需要一定的引擎知识基础。
   🔗 [here](https://open.codecks.io/starfire)
 
+- [glTFRuntime](https://github.com/rdeioris/glTFRuntime)  Unreal Engine Plugin for loading glTF files at runtime
+  ![glTFRuntime screenshot](https://raw.githubusercontent.com/rdeioris/glTFRuntime-docs/master/Epic_MegaGrants_Recipient_logo_horizontal_black.png?raw=true#gh-light-mode-only "Megagrant")
+  ![glTFRuntime screenshot](https://raw.githubusercontent.com/rdeioris/glTFRuntime-docs/master/Epic_MegaGrants_Recipient_logo_horizontal_white.png?raw=true#gh-dark-mode-only "Megagrant")
+  - 💬 这是一个成熟的 Unreal Engine 插件，专注于运行时加载 glTF 文件，支持多种扩展格式和版本，适用于需要动态资产加载的游戏开发场景。
+  🔗 [our Discord Channel](https://discord.gg/DzS7MHy) · [Instructions](https://github.com/rdeioris/gltfruntime-docs#notes-when-packaging-a-game) · [buy glTFRuntime](https://www.unrealengine.com/marketplace/en-US/product/gltfruntime)
+
 
 
 ## Engine
