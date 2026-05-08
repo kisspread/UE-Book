@@ -237,6 +237,12 @@ Including open source and non-open source, commercial and non-commercial.
   - ![alt text](/libraries/images/00_image-4.webp)
 
 
+- [EnhancedAsyncActionPlugin](https://github.com/aquanox/EnhancedAsyncActionPlugin)  Experimental plugin featuring lambda-like capture of data for blueprint async nodes
+  ![EnhancedAsyncActionPlugin screenshot](https://raw.githubusercontent.com/aquanox/EnhancedAsyncActionPlugin/main/Images/EAA-CaptureProblem.png)
+  ![EnhancedAsyncActionPlugin screenshot](https://raw.githubusercontent.com/aquanox/EnhancedAsyncActionPlugin/main/Images/EAA-CaptureProblemOut.png)
+  ![EnhancedAsyncActionPlugin screenshot](https://raw.githubusercontent.com/aquanox/EnhancedAsyncActionPlugin/main/Images/EAA-ImitationWithStructs.png)
+  - 💬 这是一个针对 Unreal Engine 5 蓝图异步节点的实验性插件，通过自定义 K2Node 和 FInstancedPropertyBag 简化了数据捕获过程，适用于需要处理复杂异步逻辑的蓝图开发者，但实验性质意味着可能需要进一步测试和优化。
+
 
 
 ## Animation
