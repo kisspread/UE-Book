@@ -366,10 +366,17 @@ def build_comment(info: dict, image_urls: list, links: list, duplicate: bool = F
 
 
 def output_env(key: str, value: str):
-    """Write a key=value line to GITHUB_OUTPUT, escaping newlines."""
+    """Write a key=value line to GITHUB_OUTPUT."""
     escaped = value.replace("%", "%25").replace("\n", "%0A").replace("\r", "%0D")
     with open(os.environ.get("GITHUB_OUTPUT", "/dev/null"), "a") as f:
         f.write(f"{key}={escaped}\n")
+
+def write_comment_file(text: str):
+    """Write comment body to a temp file for gh CLI --body-file."""
+    path = "/tmp/comment-body.md"
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return path
 
 
 # ── Main ──
@@ -388,15 +395,19 @@ def main():
     # 1. Parse GitHub URL from issue body
     urls = re.findall(r'https?://github\.com/[\w.-]+/[\w.-]+', issue_body)
     if not urls:
-        output_env("comment_body", "❌ 未通过收录审核\n\n未找到 GitHub 链接，请提供有效的 GitHub 仓库地址。")
+        msg = "❌ 未通过收录审核\n\n未找到 GitHub 链接，请提供有效的 GitHub 仓库地址。"
+        output_env("comment_body", msg)
         output_env("should_close", "true")
+        write_comment_file(msg)
         return
 
     gh_url = urls[0].rstrip(')').rstrip('.')
     parsed = parse_github_url(gh_url)
     if not parsed:
-        output_env("comment_body", f"❌ 未通过收录审核\n\n无法解析 GitHub 链接：{gh_url}")
+        msg = f"❌ 未通过收录审核\n\n无法解析 GitHub 链接：{gh_url}"
+        output_env("comment_body", msg)
         output_env("should_close", "true")
+        write_comment_file(msg)
         return
 
     owner, repo = parsed
@@ -412,8 +423,10 @@ def main():
         repo_info = fetch_repo_info(owner, repo)
         print(f"  Description: {repo_info['description'][:80]}")
     except Exception as e:
-        output_env("comment_body", f"❌ 未通过收录审核\n\n无法访问仓库信息：{e}")
+        msg = f"❌ 未通过收录审核\n\n无法访问仓库信息：{e}"
+        output_env("comment_body", msg)
         output_env("should_close", "true")
+        write_comment_file(msg)
         return
 
     try:
@@ -445,8 +458,10 @@ def main():
     if not info.get("valid"):
         reason = info.get("reason", "未知原因")
         print(f"  ❌ Rejected: {reason}")
-        output_env("comment_body", f"❌ 未通过收录审核\n\n{reason}")
+        msg = f"❌ 未通过收录审核\n\n{reason}"
+        output_env("comment_body", msg)
         output_env("should_close", "true")
+        write_comment_file(msg)
         return
 
     print(f"  ✅ Valid: {info['name']} → {info['category']}")
@@ -458,6 +473,7 @@ def main():
 
     # 7. Build comment (always, even for duplicates)
     comment_body = build_comment(info, image_urls, links, duplicate=duplicate)
+    write_comment_file(comment_body)
 
     if duplicate:
         # Already exists: output comment, close, skip insertion
@@ -470,8 +486,10 @@ def main():
     # 8. Insert into libraries/index.md
     msg = insert_library(info, image_urls, links)
     if not msg:
-        output_env("comment_body", "❌ 无法定位库文件中的分类位置，请手动添加。")
+        msg_err = "❌ 无法定位库文件中的分类位置，请手动添加。"
+        output_env("comment_body", msg_err)
         output_env("should_close", "true")
+        write_comment_file(msg_err)
         return
 
     print(f"  ✅ Done: {msg}")

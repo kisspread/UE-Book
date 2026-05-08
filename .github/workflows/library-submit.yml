@@ -90,7 +90,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue comment "${{ github.event.issue.number }}" \
-            --body "${{ steps.process.outputs.comment_body }}"
+            --body-file /tmp/comment-body.md
 
       - name: Close issue (bot)
         if: steps.process.outputs.should_close == 'true'
