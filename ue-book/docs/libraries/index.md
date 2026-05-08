@@ -668,6 +668,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   ![PiUE screenshot](https://raw.githubusercontent.com/Solessfir/PiUE/main/Resources/Screenshot.png)
   - 💬 这是一个为 Unreal Editor 设计的 Blender 风格饼图菜单插件，提供了快速操作功能，可能提升编辑器工作效率。但项目关注度较低，需注意兼容性和维护状态。
 
+- [Starfire](https://github.com/MagForceSeven/Starfire)  A collection of UE5 plugins for hobby game development.
+  - 这是一个用于个人业余游戏开发的 UE5 插件集合，包含多个实用工具和系统，如资产管理和消息总线，旨在扩展引擎功能。
+  - 💬 项目模块化设计清晰，提供了丰富的 UE5 插件功能，适合需要自定义工具和系统的开发者，但使用可能需要一定的引擎知识基础。
+  🔗 [here](https://open.codecks.io/starfire)
+
 
 
 ## Engine
