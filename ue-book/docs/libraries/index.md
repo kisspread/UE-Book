@@ -785,6 +785,13 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
   - 这是一个 Unreal Engine 实验集合，专注于使用 PCG 图和自定义工具探索程序化内容生成技术，包括 GPU 纹理采样、书籍生成和曼陀罗图案等应用。
   - 💬 项目展示了 PCG 在 UE 中的多种实用场景，如 GPU 优化和程序化生成，适合学习 PCG 功能，但作为实验集合，代码结构可能不够系统化。
 
+- [PCG DemoRoom](https://github.com/kisspread/DemoRoom)  Unreal Engine 5 PCG DemoRoom for procedural room generation.
+  ![PCG DemoRoom screenshot](https://raw.githubusercontent.com/kisspread/DemoRoom/master/Image/img.webp)
+  ![PCG DemoRoom screenshot](https://raw.githubusercontent.com/kisspread/DemoRoom/master/Image/1.webp)
+  ![PCG DemoRoom screenshot](https://raw.githubusercontent.com/kisspread/DemoRoom/master/Image/2.webp)
+  - 这是一个基于 Unreal Engine 5 的 PCG 演示项目，旨在探索使用程序化内容生成技术来精细控制房间生成。项目对比了传统蓝图方法，评估了 PCG 的开发效率和调试优势。
+  - 💬 项目展示了 PCG 在精细控制方面的实验性应用，对学习程序化生成有参考价值，但可能需要一定的 UE 和 PCG 基础。
+
 
 
 ## Other
