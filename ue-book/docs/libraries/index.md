@@ -473,6 +473,10 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 这是一个功能全面的 UE5 UI 插件，专注于虚拟化滚动列表布局，支持层次结构和多种布局引擎，适合处理复杂列表场景，但项目 stars 数较低，社区关注度有限，需评估其稳定性和维护状态。
   🔗 [InputFlowDebugger](https://github.com/MikeShatterwell/InputFlowDebugger)
 
+- [DreamUMG](https://github.com/TypeDreamMoon/DreamUMG)  A plugin extending Unreal Engine UMG/Slate with text animations and pseudo-3D transforms.
+  - 一个为 Unreal Engine 的 UMG/Slate UI 框架设计的扩展插件。它主要提供动态文本动画、在2D UI中实现伪3D透视效果以及可由蓝图动态组装的UI树结构等功能。
+  - 💬 一个功能聚焦的UE插件，文档详尽，为UMG/Slate提供了文本动画和2D伪3D变换等常用视觉增强。其Stars数表明社区关注度有限，更适合作为特定UI效果的工具库集成到项目中。
+
 
 
 ## Material
