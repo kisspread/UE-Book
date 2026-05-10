@@ -243,6 +243,11 @@ Including open source and non-open source, commercial and non-commercial.
   ![EnhancedAsyncActionPlugin screenshot](https://raw.githubusercontent.com/aquanox/EnhancedAsyncActionPlugin/main/Images/EAA-ImitationWithStructs.png)
   - 💬 这是一个针对 Unreal Engine 5 蓝图异步节点的实验性插件，通过自定义 K2Node 和 FInstancedPropertyBag 简化了数据捕获过程，适用于需要处理复杂异步逻辑的蓝图开发者，但实验性质意味着可能需要进一步测试和优化。
 
+- [UnrealBridge](https://github.com/TornLux/UnrealBridge)  Typed control surface for Unreal Engine that lets AI agents introspect assets, author Blueprints/AnimBPs, and edit levels — with reactive events and undoable writes.
+  - UnrealBridge 是一个为 Unreal Engine 设计的类型化控制表面，专为 AI 代理打造。它允许 AI 代理检查资产、创建蓝图和动画蓝图，并编辑关卡，同时支持反应式事件订阅和可撤销的写入操作。
+  - 💬 该项目针对 AI 代理与 Unreal Engine 的交互提供了结构化接口，AST 预检查机制能有效减少幻觉错误，适合自动化内容创作和编辑场景，但依赖特定 UE 版本且主要面向 Windows 平台。
+  🔗 [Agent Skills open standard](https://www.agensi.io/learn/agent-skills-open-standard)
+
 
 
 ## Animation
