@@ -2298,9 +2298,10 @@
       "doc_path": "docs/5.7/xlarge/GameplayAbilities/"
     },
     "GameplayCameras": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/GameplayCameras/"
+      "doc_path": "docs/5.8/xlarge/GameplayCameras/",
+      "forced": true
     },
     "GameplayInsights": {
       "generated_in": "5.7",
