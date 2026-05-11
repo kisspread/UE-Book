@@ -722,6 +722,14 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 项目专注于 UE5 的程序化内容管理，集成了多种程序化工具，适合技术美术师和开发者进行自动化内容生成，但代码质量和实际效果需结合具体实现评估。
   🔗 [程序化（Procedural）](https://en.wikipedia.org/wiki/Procedural_generation) · [**程序化内容生成**](https://docs.unrealengine.com/5.2/en-US/procedural-content-generation-overview/) · [**程序化建模**](https://en.wikipedia.org/wiki/Procedural_modeling)
 
+- [PulldownBuilder](https://github.com/Naotsun19B/PulldownBuilder)  Easily create pull-down menus from data tables or string tables in Unreal Engine.
+  ![PulldownBuilder screenshot](https://user-images.githubusercontent.com/51815450/173223798-f60374a1-1d14-4ac2-93c1-bdbab9fe5278.PNG)
+  ![PulldownBuilder screenshot](https://user-images.githubusercontent.com/51815450/173223818-c8297c9c-6a0d-4e4a-938d-a15f55df9c49.PNG)
+  ![PulldownBuilder screenshot](https://user-images.githubusercontent.com/51815450/173223842-a5356544-b7ee-4979-9864-36986ee358ec.PNG)
+  - 该插件通过创建 PulldownContents 资产，可以轻松添加基于数据表、字符串表等显示下拉菜单的结构。适用于 Unreal Engine 4.27 至 5.7 版本，支持多平台，简化了编辑器中下拉菜单的创建流程。
+  - 💬 这是一个针对 Unreal Engine 的编辑器插件，功能聚焦且实用，适合需要数据驱动下拉菜单的 UI 开发场景，但插件较为专用，通用性有限。
+  🔗 [marketplace](https://www.unrealengine.com/marketplace/en-US/product/pulldown-builder) · [MIT License](https://en.wikipedia.org/wiki/MIT_License) · [Fab Standard License (Fab EULA)](https://www.fab.com/eula)
+
 
 
 ## Engine
