@@ -757,6 +757,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 这是一个将 Unreal Engine 4.27 的 Nvidia Ansel 插件移植到 UE5 的项目，支持 UE5.0 到 5.7 版本，提供普通和自动抓取两种模式，用于生成 360 度或立体 360 度影片。
   - 💬 该项目为 UE5 开发者提供了便捷的 Nvidia Ansel 集成，适合需要高分辨率截图和 360 度视频的场景，但依赖特定驱动版本，使用前需配置环境。
 
+- [JsonAsAsset](https://github.com/JsonAsAsset/JsonAsAsset)  A powerful Unreal Engine plugin that imports assets from FModel using JSON files.
+  - 一个功能强大的 Unreal Engine 插件，专门用于从 FModel 导入资产，支持材质、数据表和物理资产等多种类型，简化游戏资产移植工作流。
+  - 💬 项目聚焦于资产导入的逆向工程，实用性强，适合模组制作者和需要批量处理游戏资产的开发者，但依赖 FModel 工具，使用范围相对专业。
+  🔗 [Unreal Engine](https://www.unrealengine.com/en-US) · [JSON](https://www.json.org/json-en.html) · [(UEParse)](https://github.com/FabianFG/CUE4Parse)
+
 
 
 ## Engine
