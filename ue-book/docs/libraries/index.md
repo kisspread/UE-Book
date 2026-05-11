@@ -255,6 +255,12 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 这是一个将前沿的3D高斯溅射技术深度集成到虚幻引擎工作流中的插件，提供了从场景捕获、模型训练到在UE内实时渲染的完整解决方案。亮点在于其提供的深度修剪和LOD策略，试图解决3DGS在工业应用中的常见痛点。主要面向对实时渲染和视觉代理有较高要求的技术美术或图形程序员。
   🔗 [此处](https://drive.google.com/file/d/1gyKlCQacUsZUX6rXSKW1joyVxIYsBnHM/view?usp=drive_link) · [此处](https://www.bilibili.com/video/BV1GUwNeYE6c) · [colmap](https://github.com/colmap/colmap)
 
+- [Blueprint_C](https://github.com/Italink/Blueprint_C)  Unreal Engine plugin for generating C++ code proxies from blueprints.
+  ![Blueprint_C screenshot](https://raw.githubusercontent.com/Italink/Blueprint_C/main/Resources/93187154-e3f7-4db8-8672-cb497d3a31b4.png)
+  ![Blueprint_C screenshot](https://raw.githubusercontent.com/Italink/Blueprint_C/main/Resources/image-20250408185302805.png)
+  ![Blueprint_C screenshot](https://raw.githubusercontent.com/Italink/Blueprint_C/main/Resources/image-20250408185731888.png)
+  - 💬 该项目为Unreal Engine开发者提供了一个实用的工具，通过自动生成C++代码代理来简化蓝图与C++之间的交互，适用于需要高性能或频繁跨语言调用的场景。但生成的代码可能需要手动调整以适应项目需求。
+
 
 
 ## Animation
