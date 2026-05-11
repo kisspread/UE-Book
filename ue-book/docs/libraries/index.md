@@ -267,6 +267,14 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 这是一个针对 Unreal Engine 蓝图编辑器的增强插件，通过强制电路板式布局和语义标记来优化蓝图代码可读性，适合需要整洁蓝图的 UE 开发者。但项目仍处于早期版本，功能完整性和社区采用度有待观察。
   🔗 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg) · [Discord support](https://discord.gg/nqYQ5mtmHb) · [This repository deals with advanced bypasses of standard Unreal C++, Level Editor & Blueprint bottlenecks. 🟢 Currently available for B2B consulting and remote contract/Co-Dev integration (CET Timezone). [Contact form.](https://gregorigin.com/contact.html)
 
+- [ImGuiWidgets](https://github.com/amuTBKT/ImGuiWidgets)  A collection of tools and widgets using ImGui plugin for Unreal Engine
+  ![ImGuiWidgets screenshot](https://raw.githubusercontent.com/amuTBKT/ImGuiWidgets/master/Gallery/tool_texture_visualizer.png)
+  ![ImGuiWidgets screenshot](https://raw.githubusercontent.com/amuTBKT/ImGuiWidgets/master/Gallery/tool_material_stats.png)
+  ![ImGuiWidgets screenshot](https://raw.githubusercontent.com/amuTBKT/ImGuiWidgets/master/Gallery/tool_stats_visualizer.png)
+  - 基于ImGui的Unreal Engine插件扩展，提供纹理可视化器、材质统计、状态可视化器、Niagara GPU分析器等开发调试工具，以及资产选择器、类选择器等编辑器控件。
+  - 💬 实用的UE开发调试工具集，封装了多个常用调试功能到ImGui界面中，对图形程序员和性能优化工作有实际价值，但项目规模较小且依赖另一个ImGuiPlugin。
+  🔗 [ImGui](https://github.com/amuTBKT/ImGuiPlugin) · [steps](https://github.com/amuTBKT/ImGuiPlugin#installation)
+
 
 
 ## Animation
