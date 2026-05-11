@@ -688,6 +688,14 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 这是一个成熟的 Unreal Engine 插件，专注于运行时加载 glTF 文件，支持多种扩展格式和版本，适用于需要动态资产加载的游戏开发场景。
   🔗 [our Discord Channel](https://discord.gg/DzS7MHy) · [Instructions](https://github.com/rdeioris/gltfruntime-docs#notes-when-packaging-a-game) · [buy glTFRuntime](https://www.unrealengine.com/marketplace/en-US/product/gltfruntime)
 
+- [ProceduralContentProcessor](https://github.com/Italink/ProceduralContentProcessor)  Unreal Engine Plugin providing procedural methods to manage objects, assets, and worlds.
+  ![ProceduralContentProcessor screenshot](https://raw.githubusercontent.com/Italink/ProceduralContentProcessor/main/Resources/pcg-graph-editor.png)
+  ![ProceduralContentProcessor screenshot](https://raw.githubusercontent.com/Italink/ProceduralContentProcessor/main/Resources/image-20240205111218033-1741055387931-5.png)
+  ![ProceduralContentProcessor screenshot](https://raw.githubusercontent.com/Italink/ProceduralContentProcessor/main/Resources/f94d82fa-2f03-4cd2-9f0c-db710c6a91cb.png)
+  - 这是一个 Unreal Engine 插件，提供程序化方法来管理对象、资产和世界。它旨在通过程序化技术提升游戏内容生产的效率和质量，适用于 Unreal Engine 5 开发。
+  - 💬 项目专注于 UE5 的程序化内容管理，集成了多种程序化工具，适合技术美术师和开发者进行自动化内容生成，但代码质量和实际效果需结合具体实现评估。
+  🔗 [程序化（Procedural）](https://en.wikipedia.org/wiki/Procedural_generation) · [**程序化内容生成**](https://docs.unrealengine.com/5.2/en-US/procedural-content-generation-overview/) · [**程序化建模**](https://en.wikipedia.org/wiki/Procedural_modeling)
+
 
 
 ## Engine
