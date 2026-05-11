@@ -579,6 +579,14 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 - [VaRest](https://github.com/ufna/VaRest) REST API plugin for Unreal Engine 4 - we love restfull backend and JSON communications!
   - 该项目作者已经停止维护， 作者推荐自己fork后使用。
   - 但fab 版本依然在更新，且免费：https://www.fab.com/listings/5b751595-fe3e-4e85-b217-9b5496ab6d3f
+- [TurboLink](https://github.com/thejinchao/turbolink)  An Unreal Engine plugin for integrating Google gRPC with C++ and Blueprint.
+  ![TurboLink screenshot](https://github.com/thejinchao/turbolink/wiki/image/TurboLink.png)
+  ![TurboLink screenshot](https://github.com/thejinchao/turbolink/wiki/image/turbolink_example.png)
+  ![TurboLink screenshot](https://github.com/thejinchao/turbolink/wiki/image/project-config.png)
+  - TurboLink 是一个 Unreal Engine 插件，允许使用 C++ 和 Blueprint 将 Google gRPC 集成到 Unreal Engine 中。它支持跨平台、异步调用、流式 gRPC 等功能，适用于需要高效网络通信的项目。
+  - 💬 项目专注于 Unreal Engine 与 gRPC 的集成，提供了 Blueprint 支持和跨平台兼容性，适合需要在 UE 项目中实现复杂网络通信的开发者。但需注意 gRPC 的复杂性可能对新手不友好。
+  🔗 [Google gRPC](https://grpc.io/) · [Unreal Engine](https://www.unrealengine.com/) · [protoc-plugin code generation tool](https://github.com/thejinchao/protoc-gen-turbolink)
+
 
 
 ## Framework
