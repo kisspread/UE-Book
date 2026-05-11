@@ -261,6 +261,12 @@ Including open source and non-open source, commercial and non-commercial.
   ![Blueprint_C screenshot](https://raw.githubusercontent.com/Italink/Blueprint_C/main/Resources/image-20250408185731888.png)
   - 💬 该项目为Unreal Engine开发者提供了一个实用的工具，通过自动生成C++代码代理来简化蓝图与C++之间的交互，适用于需要高性能或频繁跨语言调用的场景。但生成的代码可能需要手动调整以适应项目需求。
 
+- [BlueLine](https://github.com/gregorik/BlueLine)  A comprehensive Blueprints plugin for UE5.6+
+  ![BlueLine screenshot](https://ko-fi.com/img/githubbutton_sm.svg)
+  ![BlueLine screenshot](https://github.com/user-attachments/assets/c565216f-c9fe-44dc-96c7-b1bb658e218e)
+  - 💬 这是一个针对 Unreal Engine 蓝图编辑器的增强插件，通过强制电路板式布局和语义标记来优化蓝图代码可读性，适合需要整洁蓝图的 UE 开发者。但项目仍处于早期版本，功能完整性和社区采用度有待观察。
+  🔗 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg) · [Discord support](https://discord.gg/nqYQ5mtmHb) · [This repository deals with advanced bypasses of standard Unreal C++, Level Editor & Blueprint bottlenecks. 🟢 Currently available for B2B consulting and remote contract/Co-Dev integration (CET Timezone). [Contact form.](https://gregorigin.com/contact.html)
+
 
 
 ## Animation
