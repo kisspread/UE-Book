@@ -841,6 +841,11 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
   - 这是一个基于 Unreal Engine 5 的 PCG 演示项目，旨在探索使用程序化内容生成技术来精细控制房间生成。项目对比了传统蓝图方法，评估了 PCG 的开发效率和调试优势。
   - 💬 项目展示了 PCG 在精细控制方面的实验性应用，对学习程序化生成有参考价值，但可能需要一定的 UE 和 PCG 基础。
 
+- [Unify](https://github.com/imnazake/Unify)  Demo project demonstrating integration of plugins with Unreal Engine.
+  - 这个演示项目展示了如何将我的插件与 Unreal Engine 集成，包括游戏玩法能力系统（Gameplay Ability System）和通用 UI（Common UI）等功能，为开发者提供了一个坚实的基础。
+  - 💬 这是一个示例项目，展示了 UE 中 GAS 和 Common UI 的集成，适合作为学习模板，但缺乏独特功能。
+  🔗 [here](https://imnazake.github.io/imnazake/docs/unify/features)
+
 
 
 ## Other
