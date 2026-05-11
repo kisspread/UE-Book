@@ -770,6 +770,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 项目聚焦于资产导入的逆向工程，实用性强，适合模组制作者和需要批量处理游戏资产的开发者，但依赖 FModel 工具，使用范围相对专业。
   🔗 [Unreal Engine](https://www.unrealengine.com/en-US) · [JSON](https://www.json.org/json-en.html) · [(UEParse)](https://github.com/FabianFG/CUE4Parse)
 
+- [RemRanges](https://github.com/RemRemRemRe/RemRanges)  A plugin bringing transrangers to Unreal Engine for efficient range transformations.
+  - 该插件将 transrangers 引入 Unreal Engine，基于回调（push-based）设计模式优化范围变换性能，避免了传统 pull-based 方法中冗余的范围检查。
+  - 💬 这是一个将外部 C++ 库移植为 Unreal Engine 插件的轻量级项目，专注于通过回调机制提升范围操作效率，适合性能敏感场景，但知名度较低。
+  🔗 [transrangers](https://github.com/joaquintides/transrangers)
+
 
 
 ## Engine
