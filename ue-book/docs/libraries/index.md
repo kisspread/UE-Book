@@ -730,6 +730,12 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 这是一个针对 Unreal Engine 的编辑器插件，功能聚焦且实用，适合需要数据驱动下拉菜单的 UI 开发场景，但插件较为专用，通用性有限。
   🔗 [marketplace](https://www.unrealengine.com/marketplace/en-US/product/pulldown-builder) · [MIT License](https://en.wikipedia.org/wiki/MIT_License) · [Fab Standard License (Fab EULA)](https://www.fab.com/eula)
 
+- [HotPatcher](https://github.com/hxhb/HotPatcher)  Unreal Engine hot update manage and package plugin.
+  ![HotPatcher screenshot](https://img.imzlp.com/imgs/zlp/picgo/2021/20220526194731.png)
+  - HotPatcher 是一个专注于虚幻引擎热更新管理、资源打包和包体优化的插件，支持从 UE4.21 到 UE5 的全平台开发。它提供了版本控制、差异打包、命令行集成等功能，简化了热更新流程。
+  - 💬 项目成熟度高，功能全面且文档完善，适用于需要高效热更新方案的 Unreal Engine 项目，但作为工具插件，可能需要一定的学习成本。
+  🔗 [UE资源热更打包工具HotPatcher](https://imzlp.com/posts/17590/) · [UE4热更新：HotPatcher插件使用教程](https://www.bilibili.com/video/BV1Tz4y197tR/) · [Unreal Open Day2022 UE热更新的原理与实现 | 查利鹏](https://www.bilibili.com/video/BV1d841187Pt/?zw)
+
 
 
 ## Engine
