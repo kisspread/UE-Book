@@ -750,6 +750,13 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 项目成熟度高，功能全面且文档完善，适用于需要高效热更新方案的 Unreal Engine 项目，但作为工具插件，可能需要一定的学习成本。
   🔗 [UE资源热更打包工具HotPatcher](https://imzlp.com/posts/17590/) · [UE4热更新：HotPatcher插件使用教程](https://www.bilibili.com/video/BV1Tz4y197tR/) · [Unreal Open Day2022 UE热更新的原理与实现 | 查利鹏](https://www.bilibili.com/video/BV1d841187Pt/?zw)
 
+- [UE5_NvidiaAnsel](https://github.com/MonsterGuo/UE5_NvidiaAnsel)  An Unreal Engine 5 plugin for Nvidia Ansel capture.
+  ![UE5_NvidiaAnsel screenshot](https://github.com/MonsterGuo/UE5_NvidiaAnsel/assets/39860733/303d32df-57e9-492a-a3e2-a93c438cc1b6)
+  ![UE5_NvidiaAnsel screenshot](https://user-images.githubusercontent.com/39860733/159846088-18804c78-c19a-47ca-8edc-ea44e3d7a3af.png)
+  ![UE5_NvidiaAnsel screenshot](https://user-images.githubusercontent.com/39860733/159846137-8b6e1ee7-57e3-4cb8-b1bb-c78f52e559b2.png)
+  - 这是一个将 Unreal Engine 4.27 的 Nvidia Ansel 插件移植到 UE5 的项目，支持 UE5.0 到 5.7 版本，提供普通和自动抓取两种模式，用于生成 360 度或立体 360 度影片。
+  - 💬 该项目为 UE5 开发者提供了便捷的 Nvidia Ansel 集成，适合需要高分辨率截图和 360 度视频的场景，但依赖特定驱动版本，使用前需配置环境。
+
 
 
 ## Engine
