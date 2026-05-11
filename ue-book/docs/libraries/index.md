@@ -248,6 +248,13 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 该项目针对 AI 代理与 Unreal Engine 的交互提供了结构化接口，AST 预检查机制能有效减少幻觉错误，适合自动化内容创作和编辑场景，但依赖特定 UE 版本且主要面向 Windows 平台。
   🔗 [Agent Skills open standard](https://www.agensi.io/learn/agent-skills-open-standard)
 
+- [GaussianSplattingForUnrealEngine](https://github.com/Italink/GaussianSplattingForUnrealEngine)  A Unreal Engine plugin to convert primitives into high-quality 3D Gaussian point clouds.
+  ![GaussianSplattingForUnrealEngine screenshot](https://raw.githubusercontent.com/Italink/GaussianSplattingForUnrealEngine/main/Resources/3dgs.gif)
+  ![GaussianSplattingForUnrealEngine screenshot](https://raw.githubusercontent.com/Italink/GaussianSplattingForUnrealEngine/main/Resources/image-20250425144116238.png)
+  ![GaussianSplattingForUnrealEngine screenshot](https://raw.githubusercontent.com/Italink/GaussianSplattingForUnrealEngine/main/Resources/image-20250125114152866.png)
+  - 💬 这是一个将前沿的3D高斯溅射技术深度集成到虚幻引擎工作流中的插件，提供了从场景捕获、模型训练到在UE内实时渲染的完整解决方案。亮点在于其提供的深度修剪和LOD策略，试图解决3DGS在工业应用中的常见痛点。主要面向对实时渲染和视觉代理有较高要求的技术美术或图形程序员。
+  🔗 [此处](https://drive.google.com/file/d/1gyKlCQacUsZUX6rXSKW1joyVxIYsBnHM/view?usp=drive_link) · [此处](https://www.bilibili.com/video/BV1GUwNeYE6c) · [colmap](https://github.com/colmap/colmap)
+
 
 
 ## Animation
