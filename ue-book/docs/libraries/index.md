@@ -296,6 +296,12 @@ Including open source and non-open source, commercial and non-commercial.
   - https://www.bilibili.com/video/BV1nw411s7fU/ 
   - ![alt text](/libraries/images/00_image-20.webp)
 
+- [UAnimatedTexture5](https://github.com/neil3d/UAnimatedTexture5)  A plugin that lets you import animated GIF and WebP images into Unreal Engine 5 as a new AnimatedTexture asset type.
+  ![UAnimatedTexture5 screenshot](https://raw.githubusercontent.com/neil3d/UAnimatedTexture5/master/Docs/images/demo.png)
+  ![UAnimatedTexture5 screenshot](https://raw.githubusercontent.com/neil3d/UAnimatedTexture5/master/Docs/images/mtl.png)
+  ![UAnimatedTexture5 screenshot](https://raw.githubusercontent.com/neil3d/UAnimatedTexture5/master/Docs/images/umg.png)
+  - 💬 针对 UE5 的动画纹理插件，填补了引擎原生不支持导入动态 GIF/WebP 作为纹理资产的空白。功能较为完整，支持编辑器导入和运行时加载，具有一定的实用价值，适用于需要动态纹理表现的 UI 或材质效果场景。
+
 
 
 ## Niagara
