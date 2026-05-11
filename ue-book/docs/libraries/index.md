@@ -664,6 +664,13 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 
 - [glslViewer](https://github.com/patriciogonzalezvivo/glslViewer) Console-based GLSL Sandbox for 2D/3D shaders
   ![alt text](https://github.com/patriciogonzalezvivo/glslViewer/raw/main/.github/images/03.gif)
+- [UnrealPakViewer](https://github.com/jashking/UnrealPakViewer)  A graphical tool for viewing UE4 Pak files, supporting pak and ucas files.
+  ![UnrealPakViewer screenshot](https://raw.githubusercontent.com/jashking/UnrealPakViewer/master/Resources/Images/OpenPak.png)
+  ![UnrealPakViewer screenshot](https://raw.githubusercontent.com/jashking/UnrealPakViewer/master/Resources/Images/AESKey.png)
+  ![UnrealPakViewer screenshot](https://raw.githubusercontent.com/jashking/UnrealPakViewer/master/Resources/Images/PakSummary.png)
+  - 一个用于可视化查看 UE4 Pak 文件的图形化工具，支持 UE4 pak 和 ucas 文件格式，提供树形视图、列表视图和详细资源分析功能。
+  - 💬 该项目功能全面，支持多线程解压、资源注册表加载和加密处理，适用于 UE4 开发者管理和分析打包资源；Stars 数较高，表明社区认可度不错。
+
 
 - [UnrealGPUSwarm](https://github.com/timdecode/UnrealGPUSwarm) 学习compute shaders的例子。 This project is a good starting point for learning how to write compute shaders in Unreal. It implements a boid simulation the GPU. It achieves 0.5 million boids at 45 fps on a GTX 1080.
   <video src="https://user-images.githubusercontent.com/980432/132757577-500416e4-5f27-4add-9c50-641889336d69.mp4" controls autoplay loop> 
