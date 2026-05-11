@@ -806,6 +806,11 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
 
 
 
+- [UnrealSpecifiers](https://github.com/fjz13/UnrealSpecifiers)  Detailed explanation of over 100 UE5 specifiers and 300+ meta tags.
+  - 这是一个针对 Unreal Engine 5 标识符和元数据的全面参考文档，系统性地整理和解释了上百个核心标识符及超过300个meta标签的用法。项目包含详细的说明文档、配套的示例工程（C++与蓝图），以及相关的演讲资料，旨在弥补官方文档在解释深度上的不足。
+  - 💬 项目聚焦于UE开发中频繁使用但官方文档解释不足的‘标识符’和‘meta’，内容组织清晰，兼具实用性和教学价值，是UE5 C++开发者和进阶用户的重要参考工具。
+  🔗 [UE5(标识符, meta=(详解, 史上最全)) | 大钊 Epic Games 虚幻社区经理](https://www.bilibili.com/video/BV1152LYrECW/) · [UE5标识符详解 | 史上最全](https://zhuanlan.zhihu.com/p/717920216)
+
 
 
 ## Python
