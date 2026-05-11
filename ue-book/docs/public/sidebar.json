@@ -1631,10 +1631,36 @@
       "link": "/5.7/GameplayBehaviors/GameplayBehaviorsTestSuite"
     }
   ],
+  "/5.8/GameplayCameras/": [
+    {
+      "text": "5.7 (默认)",
+      "link": "/5.7/GameplayCameras/"
+    },
+    {
+      "text": "5.8",
+      "link": "/5.8/GameplayCameras/"
+    },
+    {
+      "text": "GameplayCameras",
+      "link": "/5.8/GameplayCameras/GameplayCameras"
+    },
+    {
+      "text": "GameplayCamerasEditor",
+      "link": "/5.8/GameplayCameras/GameplayCamerasEditor"
+    },
+    {
+      "text": "GameplayCamerasUncookedOnly",
+      "link": "/5.8/GameplayCameras/GameplayCamerasUncookedOnly"
+    }
+  ],
   "/5.7/GameplayCameras/": [
     {
-      "text": "概述",
+      "text": "5.7 (默认)",
       "link": "/5.7/GameplayCameras/"
+    },
+    {
+      "text": "5.8",
+      "link": "/5.8/GameplayCameras/"
     },
     {
       "text": "GameplayCameras",

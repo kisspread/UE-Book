@@ -4737,6 +4737,22 @@
     },
     {
       "name": "GameplayCameras",
+      "name_cn": "游戏相机系统",
+      "version": "5.8",
+      "size": "xlarge",
+      "link": "/5.8/GameplayCameras/",
+      "description": "A modular and data-driven camera system for Unreal",
+      "description_cn": "GameplayCameras 插件的核心是提供一个 基于节点的相机行为图 (Camera Behavior Graph) 系统。它并非一个简单的相机切换或混合器，而是一个用于构建复杂的、数据驱动的相机逻辑的底层框架。",
+      "category": "Cameras",
+      "enabled_by_default": true,
+      "has_content": true,
+      "modules": "`GameplayCameras` (Runtime), `GameplayCamerasEditor` (Runtime), `GameplayCamerasUncookedOnly` (Runtime)",
+      "experimental": true,
+      "created_at": "2026-03-03",
+      "age_tier": "fresh"
+    },
+    {
+      "name": "GameplayCameras",
       "name_cn": "游戏相机",
       "version": "5.7",
       "size": "xlarge",
