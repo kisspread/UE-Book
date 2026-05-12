@@ -601,6 +601,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 项目专注于 Unreal Engine 与 gRPC 的集成，提供了 Blueprint 支持和跨平台兼容性，适合需要在 UE 项目中实现复杂网络通信的开发者。但需注意 gRPC 的复杂性可能对新手不友好。
   🔗 [Google gRPC](https://grpc.io/) · [Unreal Engine](https://www.unrealengine.com/) · [protoc-plugin code generation tool](https://github.com/thejinchao/protoc-gen-turbolink)
 
+- [EOS Getting Started Guide](https://github.com/EpicGames/EOS-Getting-Started)  Guide and code samples for integrating Epic Online Services (EOS) with Unreal Engine and C#.
+  - 💬 由Epic Games官方维护的入门教程与示例代码库，覆盖了EOS在UE中的核心功能集成。代码组织清晰，以教学为目的，适合开发者学习网络功能的快速实现，但部分示例代码可能较为基础。
+  🔗 [Epic Online Services blog](https://dev.epicgames.com/news) · [Epic Developer Community](https://dev.epicgames.com/community/) · [Introduction to Epic Online Services (EOS)](https://dev.epicgames.com/news/introduction-to-epic-online-services-eos#series-reference)
+
 
 
 ## Framework
