@@ -796,6 +796,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 一个功能相当完整且设计思路清晰的任务系统插件，其可视化编辑器和实时调试功能是亮点，适合中大型项目采用，但作为插件集成时需评估与项目自身任务系统的融合成本。
   🔗 [Simple Quest Discord server](https://discord.gg/PN9kzPypeS)
 
+- [Viewport Manager](https://github.com/jackcayc924/ViewportManager)  Professional viewport management system for Unreal Engine 5.7+
+  - 这是一个基于 C++ 的 Unreal Engine 插件，专为突破引擎默认的 4 玩家分屏限制而设计，支持创建多达 32 个可自定义视口。插件提供了完整的相机系统和布局工具，方便开发者实现多视角应用。
+  - 💬 项目文档详尽、功能聚焦，支持高并发视口和布局自定义，适合需要复杂多视角管理的 UE 项目；但依赖 EnhancedInput 插件，可能增加配置步骤。
+  🔗 [Fab Marketplace listing](https://www.fab.com/listings/6bc8b467-2ef5-4848-8c26-170893b0998c?tab=%3Ar1e%3A)
+
 
 
 ## Engine
