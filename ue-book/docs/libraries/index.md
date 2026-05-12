@@ -790,6 +790,12 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 这是一个将外部 C++ 库移植为 Unreal Engine 插件的轻量级项目，专注于通过回调机制提升范围操作效率，适合性能敏感场景，但知名度较低。
   🔗 [transrangers](https://github.com/joaquintides/transrangers)
 
+- [SimpleQuest](https://github.com/TheGeebus/SimpleQuest)  Goal state management authored in an intuitive visual graph for any Unreal Engine game.
+  ![SimpleQuest screenshot](https://github.com/user-attachments/assets/9cc8e4f9-ee60-46fc-881a-5c45e38ff9d4)
+  - 用于Unreal Engine 5.6的可视化图形化任务系统插件，支持设计师通过节点图进行非线性任务设计，具备嵌套前提表达式、命名结果、实时检查和诊断等高级功能。
+  - 💬 一个功能相当完整且设计思路清晰的任务系统插件，其可视化编辑器和实时调试功能是亮点，适合中大型项目采用，但作为插件集成时需评估与项目自身任务系统的融合成本。
+  🔗 [Simple Quest Discord server](https://discord.gg/PN9kzPypeS)
+
 
 
 ## Engine
