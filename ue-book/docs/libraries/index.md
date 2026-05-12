@@ -580,6 +580,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 功能聚焦的UE插件，解决了游戏中常见的ORM纹理打包需求，自动化程度高，但作为‘简单工具’可能功能深度有限。
   🔗 [**Get it on Fab**](https://www.fab.com/listings/7b231ecc-079f-45dc-9b8e-45dacc6b0771)
 
+- [Urban Myth Post Process](https://github.com/n-ln/ue-urban-myth-pp)  An Unreal Engine post process effect inspired by Urban Myth Dissolution Center.
+  - 这是一个 Unreal Engine 后处理效果插件，灵感来源于游戏《都市传说解体中心》。提供了明亮和暗场景的示例关卡，适用于 UE 5.3 及以上版本。
+  - 💬 项目结构清晰，提供了详细的使用说明和兼容性信息，适合学习或应用自定义后处理效果，但功能较为基础，可能需进一步扩展。
+  🔗 [Urban Myth Dissolution Center (『都市伝説解体センター』)](https://umdc.shueisha-games.com/) · [Link to blog](https://zenn.dev/nlnnn/articles/2c33ea89605559)
+
 
 
 ## NetWork
