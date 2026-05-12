@@ -574,6 +574,12 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 该项目由 EA 专业团队开发，专注于 UE5 纹理管线优化，适合中大型项目提升美术工作流效率。但作为框架，可能需要额外配置和学习。
   🔗 [Martin Palko](https://www.martinpalko.com/) · [EA Motive](https://www.ea.com/ea-studios/motive) · [SEED](https://www.ea.com/seed)
 
+- [TextureChannelPacker](https://github.com/EmbarrassingMoment/RGBPackingTool)  An Unreal Engine plugin for packing grayscale textures into RGBA channels.
+  ![TextureChannelPacker screenshot](https://raw.githubusercontent.com/EmbarrassingMoment/RGBPackingTool/main/Docs/Images/ui_overview.png)
+  - 一个用于UE5的纹理通道打包工具，能够自动调整输入纹理尺寸并将其打包到单个RGBA资产中，优化了纹理加载与性能。
+  - 💬 功能聚焦的UE插件，解决了游戏中常见的ORM纹理打包需求，自动化程度高，但作为‘简单工具’可能功能深度有限。
+  🔗 [**Get it on Fab**](https://www.fab.com/listings/7b231ecc-079f-45dc-9b8e-45dacc6b0771)
+
 
 
 ## NetWork
