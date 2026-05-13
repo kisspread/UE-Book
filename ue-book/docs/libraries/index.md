@@ -842,6 +842,12 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 该项目实用地解决了 UObjects 缺乏世界上下文的限制，适合需要简化游戏对象逻辑的场景。但作为小型项目，用户基数较小，功能可能较基础。
   🔗 [discord](https://discord.gg/bDfZd2Chg5)
 
+- [Cesium for Unreal](https://github.com/CesiumGS/cesium-unreal)  Cesium for Unreal brings the 3D geospatial ecosystem to Unreal Engine.
+  ![Cesium for Unreal screenshot](https://raw.githubusercontent.com/CesiumGS/cesium-unreal/main/Content/Cesium-for-Unreal-Logo-WhiteBGH.jpg)
+  ![Cesium for Unreal screenshot](https://prismic-io.s3.amazonaws.com/cesium/b1505fbc-5769-4032-9233-364a4f52acf6_unreal-pipeline-ice-blue-background.png)
+  - 💬 这是一个成熟的 Unreal Engine 插件，专注于将高精度 3D 地理空间数据（如地形、影像和建筑）流式传输到 Unreal Engine 中，适用于构建全球尺度的可视化应用。
+  🔗 [Cesium ion](https://cesium.com/cesium-ion) · [Cesium for Unreal Homepage](https://cesium.com/cesium-for-unreal?utm_source=github&utm_medium=github&utm_campaign=unreal) · [Download Cesium for Unreal from Unreal Engine Marketplace](https://cesium.com/unreal-marketplace?utm_source=cesium-unreal&utm_medium=github&utm_campaign=unreal)
+
 
 
 ## Engine
