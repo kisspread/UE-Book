@@ -645,6 +645,13 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 - [MaaassParticle](https://github.com/DevDingDangDong/MaaassParticle.git) A UE5 plugin that renders large-scale crowds through Niagara and can control them via state management. This is the Epic project deliverable from Krafton Game Tech Lab 1st Generation Team 2.
   ![alt text](/libraries/images/00_image-39.webp)
 
+- [OmegaGameFramework](https://github.com/StudioSyndiCatCaius/OmegaGameFramework)  A free, open-source high-level plugin for Unreal Engine that streamlines game development with many common features out of the box.
+  ![OmegaGameFramework screenshot](https://raw.githubusercontent.com/StudioSyndiCatCaius/OmegaGameFramework/main/docs/images/Screenshots/OGF_0.png)
+  ![OmegaGameFramework screenshot](https://raw.githubusercontent.com/StudioSyndiCatCaius/OmegaGameFramework/main/docs/images/Screenshots/OGF_1_abilities.png)
+  ![OmegaGameFramework screenshot](https://raw.githubusercontent.com/StudioSyndiCatCaius/OmegaGameFramework/main/docs/images/Screenshots/OGF_2_attributes.png)
+  - 💬 这是一个面向 Unreal Engine 开发者的大型游戏框架插件，集成了能力、属性、模块化系统等常见玩法系统，旨在简化开发流程、快速构建原型，适合希望避免重复造轮子的团队或个人开发者。
+  🔗 [Website](https://www.studiosyndicat.com/omegagameframework) · [Unreal Engine Marketplace](https://www.unrealengine.com/marketplace/en-US/product/2ca6202e55f44cfd82659fbca6591603) · [Subreddit: Discussion & Support](https://www.reddit.com/r/OmegaGameFramework/)
+
 
 - [UnrealLibretro](https://github.com/N7Alpha/UnrealLibretro) Libretro 游戏模拟器 UnrealLibretro is a Libretro Frontend for Unreal Engine. It is a Blueprint compatible library that lets you run emulators within Unreal Engine. More Technically it allows you to run Libretro Cores.
   - https://github.com/libretro/RetroArch
