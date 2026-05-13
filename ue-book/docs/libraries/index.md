@@ -1010,6 +1010,11 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
   - 💬 这是一个针对 Unreal Engine 5.6 MASS 框架的学习示例，结构清晰，适合初学者理解数据导向编程。但作为示例项目，代码可能不够完整，不适合直接用于生产。
   🔗 [![Understand MASS with Unreal Engine](https://i9.ytimg.com/vi_webp/eJR82WyIl_U/maxresdefault.webp?v=68bf8389&sqp=CIyf1cgG&rs=AOn4CLCanCP1YJQHEIWRxkUPKFsHXsoYJg) · [![Understand MASS with Unreal Engine](https://i9.ytimg.com/vi_webp/CnftkJcLYxs/sddefault.webp?v=6912e51a&sqp=CLih1cgG&rs=AOn4CLCtKiVaoLANcmj1qNMHPDqm67SNeg)
 
+- [MetaSounds Synth Repo](https://github.com/msp/MetaSoundsSynthRepo)  A repository for collecting MetaSound synth engines and presets for use in games and interactive experiences.
+  - 这是 Unreal Engine 5 MetaSound 合成器的主仓库，用于收集合成引擎和预设，适用于游戏和交互体验项目。它包含了一个功能完整的多音色合成器实现，支持与 UMG 集成进行用户界面控制。
+  - 💬 该项目提供了 UE5 MetaSounds 的实用参考实现，亮点在于多音色合成和 UMG 集成，适合音频设计师快速原型设计，但 Haskell 语言标签可能与主要 Blueprint/资产结构不符。
+  🔗 [AudioKit Synth One](https://audiokitpro.com/synth/) · ["Unreal Engine MetaSounds"](https://dev.epicgames.com/community/learning/tutorials/Kw7l/unreal-engine-metasounds) · [code samples](https://github.com/msp/6070-intro-to-metasounds?tab=readme-ov-file)
+
 
 
 ## Other
