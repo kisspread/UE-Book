@@ -408,6 +408,9 @@ Including open source and non-open source, commercial and non-commercial.
 - [Dialogue Plugin](https://github.com/NotYetGames/DlgSystem) Dialogue Plugin System for Unreal Engine
 
 - [SPUD](https://github.com/sinbad/SPUD) 易用存档系统。 SPUD is a save game and streaming level persistence solution for Unreal Engine 5.
+- [UE5-ApparatusECS-CrowdBattlePlugin](https://github.com/LeroyMackerl/UE5-ApparatusECS-CrowdBattlePlugin)  A crowd battle plugin for Unreal Engine based on Apparatus ECS.
+  - 💬 插件基于 ECS 架构实现高性能群体战斗，支持大规模实体模拟，但处于测试阶段且依赖付费组件，适合有特定需求的 UE5 项目。
+
 
 - [stream-chat-unreal](https://github.com/GetStream/stream-chat-unreal) 聊天框架，源码值得学习。该steam不是那个steam。The Stream Chat SDK is the official Unreal SDK for Stream Chat, a service for building chat and messaging games and applications.
   - ![alt text](/libraries/images/00_image-25.webp)
