@@ -851,6 +851,13 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 - [Deduplicate-Plugin](https://github.com/SoulofAO/Deduplicate-Plugin)  Plugin for Removing Duplicates in Unreal Engine Project
   - 💬 该项目提供了一个用于Unreal Engine资产去重的插件，支持多种算法（如基于名称、哈希、SSIM等）进行重复对象检测与合并，适用于优化项目存储和资产管理。星星数较少，可能社区使用范围有限，适合有特定需求的开发者。
 
+- [BDC_LevelSelector](https://github.com/BDCPatrick/BDC_LevelSelector)  A free plugin to add a level selector combobox above the Viewport in Unreal Engine.
+  ![BDC_LevelSelector screenshot](https://github.com/BDCPatrick/BDC_LevelSelector/blob/main/Resources/Thumb.png?raw=true)
+  ![BDC_LevelSelector screenshot](https://github.com/BDCPatrick/BDC_LevelSelector/blob/main/Resources/Level_Selector_Preview.png?raw=true)
+  - 一个免费的 Unreal Engine 编辑器插件，可在视口上方添加一个关卡选择器组合框，递归列出内容浏览器中的所有关卡，方便开发者快速切换。
+  - 💬 专注于解决编辑器内快速切换关卡的痛点，功能明确且实用，界面预览看起来比较直观。是一个典型的工具型插件，适合需要频繁测试和跳转多个关卡的开发者。
+  🔗 [Level Selector Discord](https://discord.gg/sQmBKETDAm)
+
 
 
 ## Engine
