@@ -820,6 +820,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 项目文档详尽、功能聚焦，支持高并发视口和布局自定义，适合需要复杂多视角管理的 UE 项目；但依赖 EnhancedInput 插件，可能增加配置步骤。
   🔗 [Fab Marketplace listing](https://www.fab.com/listings/6bc8b467-2ef5-4848-8c26-170893b0998c?tab=%3Ar1e%3A)
 
+- [Houdini Engine for Unreal](https://github.com/sideeffects/HoudiniEngineForUnreal)  Houdini Engine plugin that brings Houdini's procedural workflow into Unreal Engine via Digital Assets.
+  - 💬 SideFX官方维护的核心UE插件，将Houdini强大的程序化工作流无缝集成到UE中，是影视特效和程序化内容生成领域的关键工具链。
+  🔗 [Website](https://www.sidefx.com/docs/unreal/) · [Side FX's support](https://www.sidefx.com/bugs/submit/) · [Assets documentation.](https://www.sidefx.com/docs/unreal/_assets.html)
+
 
 
 ## Engine
