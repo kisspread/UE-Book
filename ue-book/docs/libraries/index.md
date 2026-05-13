@@ -837,6 +837,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 这是一个基于Unreal Engine 5.6新特性的可配置MetaSound混音器插件。它允许用户指定输入数量，利用可配置节点功能，增强音频工作流程。
   - 💬 该项目展示了UE5.6新功能的实用应用，适用于需要灵活音频混合的开发者。代码结构清晰，但作为新项目，社区影响力有限。
 
+- [World Aware Object](https://github.com/aMustachedPotato/WorldAwareObject)  A UE plugin that adds world context to UObjects for gameplay functionality.
+  - World Aware Object 是一个 UE 插件，它为 UObjects 实现了 GetWorld() 功能，使得 SpawnActor、GetGameMode 等节点可以在 UObjects 中使用。支持蓝图和 C++，适用于添加游戏逻辑代码而无需创建完整的 Actor。
+  - 💬 该项目实用地解决了 UObjects 缺乏世界上下文的限制，适合需要简化游戏对象逻辑的场景。但作为小型项目，用户基数较小，功能可能较基础。
+  🔗 [discord](https://discord.gg/bDfZd2Chg5)
+
 
 
 ## Engine
