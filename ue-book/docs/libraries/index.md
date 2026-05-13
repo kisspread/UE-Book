@@ -828,6 +828,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 SideFX官方维护的核心UE插件，将Houdini强大的程序化工作流无缝集成到UE中，是影视特效和程序化内容生成领域的关键工具链。
   🔗 [Website](https://www.sidefx.com/docs/unreal/) · [Side FX's support](https://www.sidefx.com/bugs/submit/) · [Assets documentation.](https://www.sidefx.com/docs/unreal/_assets.html)
 
+- [UnicodeBrowser](https://github.com/ntystudio/UnicodeBrowser)  Unreal Engine Editor Plugin for viewing all supported Unicode Characters.
+  - 💬 这是一个针对 Unreal Engine 的 Unicode 字符浏览器插件，功能齐全，解决了编辑器中 Unicode 字符显示异常的痛点，但插件仍处于初期阶段，用户体验有待改进。
+  🔗 [UnicodeBlockRange.inl](https://github.com/EpicGames/UnrealEngine/blob/585df42eb3a391efd295abd231333df20cddbcf3/Engine/Source/Runtime/SlateCore/Public/Fonts/UnicodeBlockRange.inl) · [u_charname](https://github.com/unicode-org/icu/blob/f8aa68b0c1c9584633e7a61157185f1a2c275f58/icu4c/source/common/unames.cpp#L1450) · [see this example](https://www.compart.com/en/unicode/search?q=cross#characters)
+
 
 
 ## Engine
