@@ -832,6 +832,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 这是一个针对 Unreal Engine 的 Unicode 字符浏览器插件，功能齐全，解决了编辑器中 Unicode 字符显示异常的痛点，但插件仍处于初期阶段，用户体验有待改进。
   🔗 [UnicodeBlockRange.inl](https://github.com/EpicGames/UnrealEngine/blob/585df42eb3a391efd295abd231333df20cddbcf3/Engine/Source/Runtime/SlateCore/Public/Fonts/UnicodeBlockRange.inl) · [u_charname](https://github.com/unicode-org/icu/blob/f8aa68b0c1c9584633e7a61157185f1a2c275f58/icu4c/source/common/unames.cpp#L1450) · [see this example](https://www.compart.com/en/unicode/search?q=cross#characters)
 
+- [ConfigurableMetasoundMixer](https://github.com/Amir-BK/ConfigurableMetasoundMixer)  A MetaSound mixer with configurable inputs for Unreal Engine 5.6.
+  ![ConfigurableMetasoundMixer screenshot](https://github.com/user-attachments/assets/89148099-c0df-4161-8b1d-83e32add8e00)
+  - 这是一个基于Unreal Engine 5.6新特性的可配置MetaSound混音器插件。它允许用户指定输入数量，利用可配置节点功能，增强音频工作流程。
+  - 💬 该项目展示了UE5.6新功能的实用应用，适用于需要灵活音频混合的开发者。代码结构清晰，但作为新项目，社区影响力有限。
+
 
 
 ## Engine
