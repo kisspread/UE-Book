@@ -848,6 +848,9 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 这是一个成熟的 Unreal Engine 插件，专注于将高精度 3D 地理空间数据（如地形、影像和建筑）流式传输到 Unreal Engine 中，适用于构建全球尺度的可视化应用。
   🔗 [Cesium ion](https://cesium.com/cesium-ion) · [Cesium for Unreal Homepage](https://cesium.com/cesium-for-unreal?utm_source=github&utm_medium=github&utm_campaign=unreal) · [Download Cesium for Unreal from Unreal Engine Marketplace](https://cesium.com/unreal-marketplace?utm_source=cesium-unreal&utm_medium=github&utm_campaign=unreal)
 
+- [Deduplicate-Plugin](https://github.com/SoulofAO/Deduplicate-Plugin)  Plugin for Removing Duplicates in Unreal Engine Project
+  - 💬 该项目提供了一个用于Unreal Engine资产去重的插件，支持多种算法（如基于名称、哈希、SSIM等）进行重复对象检测与合并，适用于优化项目存储和资产管理。星星数较少，可能社区使用范围有限，适合有特定需求的开发者。
+
 
 
 ## Engine
