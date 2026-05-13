@@ -310,6 +310,11 @@ Including open source and non-open source, commercial and non-commercial.
   ![UAnimatedTexture5 screenshot](https://raw.githubusercontent.com/neil3d/UAnimatedTexture5/master/Docs/images/umg.png)
   - 💬 针对 UE5 的动画纹理插件，填补了引擎原生不支持导入动态 GIF/WebP 作为纹理资产的空白。功能较为完整，支持编辑器导入和运行时加载，具有一定的实用价值，适用于需要动态纹理表现的 UI 或材质效果场景。
 
+- [GASPALS](https://github.com/PolygonHive/GASPALS)  Integration of ALS Overlay Layering System into Unreal Engine 5 Game Animation Sample.
+  - 该项目将高级运动系统（ALS）的覆盖层叠系统集成到 Unreal Engine 5 的游戏动画样本中。它提供了基于动画图和链接层的覆盖系统，允许通过简单的覆盖姿态改变整个运动动画，并包含基础武器附着系统和切换器。
+  - 💬 项目基于 UE5 动画样本，集成了 ALS 的覆盖层叠系统，适合需要增强运动动画控制的开发者。提供详细的迁移指南，但作为完整插件，可能对新手有一定学习成本。
+  🔗 [UE-Only Content - Licensed for Use Only with Unreal Engine-based Products](https://www.unrealengine.com/en-US/eula/content) · [Polygon Hive Discord](https://discord.gg/8KK5WnDp3D)
+
 
 
 ## Niagara
