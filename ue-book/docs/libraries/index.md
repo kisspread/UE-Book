@@ -727,6 +727,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 该项目提供了 UE 生态中稀缺的包管理工具，支持多种源和依赖解析，适合团队协作开发。但仅限 Windows 平台，且作为新兴工具，生态成熟度有待观察。
   🔗 [Verdaccio](https://verdaccio.org/) · [Nexus](https://www.sonatype.com/products/sonatype-nexus-repository)
 
+- [PSOCacheBuster](https://github.com/Flassari/PSOCacheBuster)  Clears the PSO driver cache for non-shipping and non-editor builds for easier testing and profiling of first-run-like experience.
+  - 💬 一个非常聚焦的小工具，解决了UE项目中测试‘首次运行’体验时因PSO缓存而导致性能数据不准确的特定痛点。项目结构清晰，功能单一，适合有相关需求的开发者。
+  🔗 [The Unlicense](https://unlicense.org/)
+
 
 - [UnrealGPUSwarm](https://github.com/timdecode/UnrealGPUSwarm) 学习compute shaders的例子。 This project is a good starting point for learning how to write compute shaders in Unreal. It implements a boid simulation the GPU. It achieves 0.5 million boids at 45 fps on a GTX 1080.
   <video src="https://user-images.githubusercontent.com/980432/132757577-500416e4-5f27-4add-9c50-641889336d69.mp4" controls autoplay loop> 
