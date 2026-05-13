@@ -275,6 +275,11 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 实用的UE开发调试工具集，封装了多个常用调试功能到ImGui界面中，对图形程序员和性能优化工作有实际价值，但项目规模较小且依赖另一个ImGuiPlugin。
   🔗 [ImGui](https://github.com/amuTBKT/ImGuiPlugin) · [steps](https://github.com/amuTBKT/ImGuiPlugin#installation)
 
+- [unDAW](https://github.com/Amir-BK/unDAW)  Editor and Runtime modules that aim to add some Digital Audio Workstation capabilities to Unreal Engine 5.
+  - unDAW 是一个为 Unreal Engine 5 开发的插件，旨在为其添加数字音频工作站（DAW）的核心功能。它利用 Metasound 和 Harmonix 插件，允许用户通过简单的操作动态创建能播放 MIDI 文件的 Metasound，并支持实时编辑 MIDI 和为不同音轨分配不同的音频补丁。
+  - 💬 这是一个概念明确且具有扩展潜力的 UE5 音频工具，其亮点在于将 DAW 工作流（如钢琴卷帘、混音器）集成到编辑器中，并借助 Metasound 系统实现。不过，从 README 可以看出项目仍在积极开发中，部分功能尚未完成或维护，稳定性有待观察。
+  🔗 [SMUFL Fonts - Bravura](https://github.com/steinbergmedia/bravura)
+
 
 
 ## Animation
