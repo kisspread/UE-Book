@@ -878,6 +878,10 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
   - 💬 项目目标明确，针对 UE5 在主流主机上的性能痛点提出了激进的优化方案，理念有其价值。但作为大型引擎的分支，其长期维护的复杂度和与上游版本的兼容性将是巨大挑战。
   🔗 [Project files](https://drive.google.com/file/d/1Ya7_Q_HaHfLIs_xAUSr85tjbjY9aMsXy/view?usp=sharing) · [Packaged runnable demo](https://drive.google.com/file/d/1DIwPosfmTZU9uPWi-9JVHWx_75pe40Lz/view?usp=sharing) · [Project files](https://drive.google.com/file/d/1JSl4dASv5SEk4jx_TjEKDEJFBuIscBIn/view?usp=sharing)
 
+- [MassSimple](https://github.com/XistGG/MassSimple)  A simple UE5 Mass C++ example project demonstrating entity registry, creation, destruction, and data management.
+  - 💬 这是一个结构清晰、专注于教学的 UE5 Mass 框架入门示例，通过简单的 C++ 代码演示了实体注册、生命周期管理和数据读写等核心概念。代码刻意追求简洁易懂，避免了复杂优化，非常适合作为学习 Mass 框架原理的起点，但直接用于生产环境需要自行进行性能优化。
+  🔗 [XistGame-Template](https://github.com/XistGG/XistGame-Template) · [UE5 Git Repository Setup](https://github.com/XistGG/UE5-Git-Init)
+
 
 - [Unreal-NvRTX5.0-PhysX-ViteStudio](https://github.com/GapingPixel/Unreal-NvRTX5.0-PhysX-ViteStudio)Fork of NvRTX-5.0 (DDGI Optimized) With PhysX, Tessellation (WIP) and Clang 13 compliance
   - 该 Engine Fork 的目标是提供性能最高的虚幻引擎 5 迭代。基于UE NvRTX 5.0版本，之所以不用最新的UE（目前是5.7）是因为新版本的UE性能下降了很多，比如与虚幻引擎 5.6 相比，5.0 版本的移动和碰撞计算速度提高了 2.2 至 2.7 倍，
