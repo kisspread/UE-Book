@@ -863,6 +863,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 专注于解决编辑器内快速切换关卡的痛点，功能明确且实用，界面预览看起来比较直观。是一个典型的工具型插件，适合需要频繁测试和跳转多个关卡的开发者。
   🔗 [Level Selector Discord](https://discord.gg/sQmBKETDAm)
 
+- [Metasounds Audio Math Utils](https://github.com/Chris-TopherW/MetasoundsAudioMathUtils)  A collection of audio processing utilities for Metasounds.
+  ![Metasounds Audio Math Utils screenshot](https://github.com/Chris-TopherW/MetasoundsAudioMathUtils/assets/11866314/3c56d392-a4f5-4246-ab35-d858daf23569)
+  - 这是一个为 Unreal Engine 的 Metasounds 音频系统实现的音频处理工具集，包括包装、幂运算、平方根、门控等功能，旨在扩展音频节点的实用性。
+  - 💬 项目提供了实用的音频处理节点，扩展了 Metasounds 的功能，但部分算法如 VCF 可能较重，需注意性能。
+
 
 
 ## Engine
