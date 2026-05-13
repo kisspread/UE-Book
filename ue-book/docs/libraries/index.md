@@ -989,6 +989,12 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
   - 💬 这是一个示例项目，展示了 UE 中 GAS 和 Common UI 的集成，适合作为学习模板，但缺乏独特功能。
   🔗 [here](https://imnazake.github.io/imnazake/docs/unify/features)
 
+- [RogueMassExample](https://github.com/suitsy/RogueMassExample)  A compact UE5.6 sample demonstrating data-oriented simulation with MASS framework.
+  ![RogueMassExample screenshot](https://i9.ytimg.com/vi_webp/eJR82WyIl_U/maxresdefault.webp?v=68bf8389&sqp=CIyf1cgG&rs=AOn4CLCanCP1YJQHEIWRxkUPKFsHXsoYJg)
+  ![RogueMassExample screenshot](https://i9.ytimg.com/vi_webp/CnftkJcLYxs/sddefault.webp?v=6912e51a&sqp=CLih1cgG&rs=AOn4CLCtKiVaoLANcmj1qNMHPDqm67SNeg)
+  - 💬 这是一个针对 Unreal Engine 5.6 MASS 框架的学习示例，结构清晰，适合初学者理解数据导向编程。但作为示例项目，代码可能不够完整，不适合直接用于生产。
+  🔗 [![Understand MASS with Unreal Engine](https://i9.ytimg.com/vi_webp/eJR82WyIl_U/maxresdefault.webp?v=68bf8389&sqp=CIyf1cgG&rs=AOn4CLCanCP1YJQHEIWRxkUPKFsHXsoYJg) · [![Understand MASS with Unreal Engine](https://i9.ytimg.com/vi_webp/CnftkJcLYxs/sddefault.webp?v=6912e51a&sqp=CLih1cgG&rs=AOn4CLCtKiVaoLANcmj1qNMHPDqm67SNeg)
+
 
 
 ## Other
