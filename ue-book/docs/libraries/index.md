@@ -655,6 +655,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 这是一个面向 Unreal Engine 开发者的大型游戏框架插件，集成了能力、属性、模块化系统等常见玩法系统，旨在简化开发流程、快速构建原型，适合希望避免重复造轮子的团队或个人开发者。
   🔗 [Website](https://www.studiosyndicat.com/omegagameframework) · [Unreal Engine Marketplace](https://www.unrealengine.com/marketplace/en-US/product/2ca6202e55f44cfd82659fbca6591603) · [Subreddit: Discussion & Support](https://www.reddit.com/r/OmegaGameFramework/)
 
+- [MassAPI](https://github.com/LeroyMackerl/MassAPI)  User friendly C++ and Blueprint API for Unreal Engine's Mass Entity system.
+  - MassAPI 是一个为 Unreal Engine 的 Mass Entity 框架设计的开源插件，提供了用户友好的 C++ 和蓝图接口。它简化了 Mass Entity 系统的使用，支持动态标志系统和延迟操作，并兼容 UE5.6 及以上版本。
+  - 💬 该项目通过封装 Mass Entity 的复杂 API，降低了使用门槛，但文档由 AI 生成可能存在错误，适合需要快速集成 Mass Entity 功能的开发者。
+
 
 - [UnrealLibretro](https://github.com/N7Alpha/UnrealLibretro) Libretro 游戏模拟器 UnrealLibretro is a Libretro Frontend for Unreal Engine. It is a Blueprint compatible library that lets you run emulators within Unreal Engine. More Technically it allows you to run Libretro Cores.
   - https://github.com/libretro/RetroArch
