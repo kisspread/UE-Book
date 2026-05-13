@@ -841,6 +841,14 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
  
 - [Moon-Engine](https://github.com/TypeDreamMoon/Moon-Engine) Angel Script & Toon Rendering & NvRTX Unreal Engine
   - 合并了三大上游： AngelScript, Toon Rendering, NvRTX
+- [UE-Vite Fork](https://github.com/GapingPixel/UnrealEngineVite-PhysX)  Hyper performant UE Fork with Full-Suite 9th Gen Rendering features distinct to Epic's UE5.
+  ![UE-Vite Fork screenshot](https://raw.githubusercontent.com/GapingPixel/UnrealEngineVite-PhysX/ueVite26-release/Images/povray_glasses_s.jpg)
+  ![UE-Vite Fork screenshot](https://raw.githubusercontent.com/GapingPixel/UnrealEngineVite-PhysX/ueVite26-release/Images/prism_dispersion_s.jpg)
+  ![UE-Vite Fork screenshot](https://raw.githubusercontent.com/GapingPixel/UnrealEngineVite-PhysX/ueVite26-release/Images/swimming_pool_s.jpg)
+  - 这是一个对 Unreal Engine 的深度定制分支，旨在提供比 Epic 原版 UE5 更高性能的渲染解决方案。它集成了包括 PhysX、DDGI、TressFX 等在内的一系列经过验证的 AAA 技术，以优化针对当代主机硬件（如 RDNA/Ampere 架构）的帧率和画质表现。
+  - 💬 项目目标明确，针对 UE5 在主流主机上的性能痛点提出了激进的优化方案，理念有其价值。但作为大型引擎的分支，其长期维护的复杂度和与上游版本的兼容性将是巨大挑战。
+  🔗 [Project files](https://drive.google.com/file/d/1Ya7_Q_HaHfLIs_xAUSr85tjbjY9aMsXy/view?usp=sharing) · [Packaged runnable demo](https://drive.google.com/file/d/1DIwPosfmTZU9uPWi-9JVHWx_75pe40Lz/view?usp=sharing) · [Project files](https://drive.google.com/file/d/1JSl4dASv5SEk4jx_TjEKDEJFBuIscBIn/view?usp=sharing)
+
 
 - [Unreal-NvRTX5.0-PhysX-ViteStudio](https://github.com/GapingPixel/Unreal-NvRTX5.0-PhysX-ViteStudio)Fork of NvRTX-5.0 (DDGI Optimized) With PhysX, Tessellation (WIP) and Clang 13 compliance
   - 该 Engine Fork 的目标是提供性能最高的虚幻引擎 5 迭代。基于UE NvRTX 5.0版本，之所以不用最新的UE（目前是5.7）是因为新版本的UE性能下降了很多，比如与虚幻引擎 5.6 相比，5.0 版本的移动和碰撞计算速度提高了 2.2 至 2.7 倍，
