@@ -851,6 +851,14 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 - [Deduplicate-Plugin](https://github.com/SoulofAO/Deduplicate-Plugin)  Plugin for Removing Duplicates in Unreal Engine Project
   - 💬 该项目提供了一个用于Unreal Engine资产去重的插件，支持多种算法（如基于名称、哈希、SSIM等）进行重复对象检测与合并，适用于优化项目存储和资产管理。星星数较少，可能社区使用范围有限，适合有特定需求的开发者。
 
+- [Markdown Asset](https://github.com/gwaredd/MarkdownAsset)  A plugin for the Unreal game engine that adds Markdown as a new asset type.
+  ![Markdown Asset screenshot](https://raw.githubusercontent.com/gwaredd/MarkdownAsset/main/Docs/NewAsset.png)
+  ![Markdown Asset screenshot](https://raw.githubusercontent.com/gwaredd/MarkdownAsset/main/Docs/Editing.png)
+  ![Markdown Asset screenshot](https://raw.githubusercontent.com/gwaredd/MarkdownAsset/main/Docs/LinksVariations.png)
+  - 一个 Unreal Engine 插件，将 Markdown 添加为资产类型，允许您直接在项目中嵌入文档。
+  - 💬 该插件提供了在 Unreal Engine 中管理 Markdown 文档的便捷方式，支持语法高亮、任务列表和链接集成等扩展功能，适用于个人项目和原型开发中的文档集成。
+  🔗 [Hermes](https://github.com/jorgenpt/Hermes) · [RedTalaria](https://github.com/cdpred/RedTalaria) · [markdown-it](https://github.com/markdown-it/markdown-it)
+
 
 
 ## Engine
