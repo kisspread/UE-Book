@@ -708,6 +708,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 一个用于可视化查看 UE4 Pak 文件的图形化工具，支持 UE4 pak 和 ucas 文件格式，提供树形视图、列表视图和详细资源分析功能。
   - 💬 该项目功能全面，支持多线程解压、资源注册表加载和加密处理，适用于 UE4 开发者管理和分析打包资源；Stars 数较高，表明社区认可度不错。
 
+- [Unreal Package Manager](https://github.com/jackcayc924/UnrealPackageManager)  An npm-style package manager for Unreal Engine with dependency management and lockfiles.
+  - 这是一个为 Unreal Engine 设计的 npm 风格包管理器，支持从 Git 仓库、本地文件夹或私有注册表安装包。它通过锁文件管理依赖项，确保团队构建的一致性，并可集成现有插件如 Fab 市场资产。
+  - 💬 该项目提供了 UE 生态中稀缺的包管理工具，支持多种源和依赖解析，适合团队协作开发。但仅限 Windows 平台，且作为新兴工具，生态成熟度有待观察。
+  🔗 [Verdaccio](https://verdaccio.org/) · [Nexus](https://www.sonatype.com/products/sonatype-nexus-repository)
+
 
 - [UnrealGPUSwarm](https://github.com/timdecode/UnrealGPUSwarm) 学习compute shaders的例子。 This project is a good starting point for learning how to write compute shaders in Unreal. It implements a boid simulation the GPU. It achieves 0.5 million boids at 45 fps on a GTX 1080.
   <video src="https://user-images.githubusercontent.com/980432/132757577-500416e4-5f27-4add-9c50-641889336d69.mp4" controls autoplay loop> 
