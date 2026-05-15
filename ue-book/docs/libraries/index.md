@@ -753,6 +753,12 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 Epic Games 官方维护的工具，实用性强，特别适合 Blender 用户快速集成 Unreal Engine，但功能聚焦于单向导出，扩展性有限。
   🔗 [Read Docs](https://epicgamesext.github.io/BlenderTools/send2ue/) · [Rigify](https://docs.blender.org/manual/en/latest/addons/rigging/rigify/index.html) · [Read Docs](https://epicgamesext.github.io/BlenderTools/ue2rigify/)
 
+- [Jedi Sculptor](https://github.com/KampaiRaptor/Jedi-Sculptor-Unreal-Engine-Geometry-scripting)  This project was mainly exploration in Geometry scripting.
+  ![Jedi Sculptor screenshot](https://github.com/KampaiRaptor/Jedi-Sculptor-Unreal-Engine-Geometry-scripting/assets/120315901/7e3cc88e-5203-4f5a-b3f5-1b2597788dde)
+  ![Jedi Sculptor screenshot](https://github.com/KampaiRaptor/Jedi-Sculptor-Unreal-Engine-Geometry-scripting/assets/120315901/6af6ee91-9292-41f3-93b7-1dc0a3daa920)
+  - 💬 一个基于 Unreal Engine 几何脚本系统实现的“光剑雕刻”概念原型，创意有趣，展示了运行时网格操作的能力，但更偏向技术演示和创意实验，离成熟的游戏玩法工具尚有距离。
+  🔗 [MIT](https://choosealicense.com/licenses/mit/) · [@SirFansi](https://github.com/Fansi129)
+
 
 - [UnrealGPUSwarm](https://github.com/timdecode/UnrealGPUSwarm) 学习compute shaders的例子。 This project is a good starting point for learning how to write compute shaders in Unreal. It implements a boid simulation the GPU. It achieves 0.5 million boids at 45 fps on a GTX 1080.
   <video src="https://user-images.githubusercontent.com/980432/132757577-500416e4-5f27-4add-9c50-641889336d69.mp4" controls autoplay loop> 
