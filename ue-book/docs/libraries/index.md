@@ -891,6 +891,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 这是一个为 Unreal Engine 的 Metasounds 音频系统实现的音频处理工具集，包括包装、幂运算、平方根、门控等功能，旨在扩展音频节点的实用性。
   - 💬 项目提供了实用的音频处理节点，扩展了 Metasounds 的功能，但部分算法如 VCF 可能较重，需注意性能。
 
+- [UnrealCapabilityDetectExtended](https://github.com/DryreL/UnrealCapabilityDetectExtended)  System capability detection plugin for Unreal Engine 5
+  - 一个用于 Unreal Engine 5 的系统能力检测插件，基于 Intel 原版插件扩展，提供 CPU、缓存、内存和渲染硬件接口的检测功能。该插件旨在帮助开发者分析硬件能力，以便优化项目性能。
+  - 💬 基于 Intel 原版插件的维护分支，专注于兼容性更新，适合需要硬件检测的 UE 项目，但功能不再扩展，适合作为基础工具使用。
+  🔗 [**@DryreL**](https://github.com/dryrel "**@DryreL**") · [<img width="24px" height="24px" src="_Images/icon-visualstudio.png">](https://visualstudio.microsoft.com/downloads/) · [<img width="24px" height="24px" src="_Images/icon-jetbrainsrider.png">](https://www.jetbrains.com/rider/download/)
+
 
 
 ## Engine
