@@ -1,45 +1,45 @@
-# AutomationTestToolset
+# Automation Test Toolset
 
 > Automation test discovery and execution tools.
 
 | 属性 | 值 |
 |---|---|
-| 分类 | Testing |
+| 中文名 | 自动化测试工具集 |
+| 分类 | Experimental |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `AutomationTestToolset` (Editor), `AutomationTestToolsetTests` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-13 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset) | |
 
 ## 用途
 
-该插件提供了一套在编辑器内发现、组织和执行自动化测试的工具集。它旨在解决在大型项目中管理大量自动化测试用例的复杂性问题，为开发者提供一个集中的界面来浏览测试树、筛选测试并触发执行，从而提升测试工作流的效率。
+为 LLM（大语言模型）工具调用提供自动化测试的发现与执行能力。该插件是一套"工具集"（Toolset），暴露一组可供 AI Agent 通过 `ToolsetRegistry` 框架调用的函数，实现：
 
-## 使用场景
+- **发现测试**：异步初始化自动化测试会话，枚举所有可用测试
+- **筛选与运行**：按名称/标签过滤测试，批量异步执行
+- **状态查询与控制**：轮询执行状态、获取详细结果、中止运行
 
-- 当你的项目拥有大量自动化测试（单元测试、集成测试、功能测试），需要在编辑器中进行可视化管理和快速执行时。
-- 当你需要根据特定条件（如测试名称、标签、路径）快速筛选出目标测试用例并运行时。
-- 当你希望将测试执行功能集成到自定义的编辑器工具或面板中时。
+本质上，它让 AI Agent 能像人类开发者一样"跑测试、看结果"，是 UE5 AI 辅助开发工具链的一部分。
 
 ## 模块列表
 
 | 模块 | 类型 | 说明 |
 |---|---|---|
-| `AutomationTestToolset` | Editor | 核心模块，提供测试发现、管理和执行的编辑器工具与界面。 |
-| `AutomationTestToolsetTests` | Editor | 测试模块，包含针对 `AutomationTestToolset` 插件自身功能的自动化测试用例。 |
+| [AutomationTestToolset](AutomationTestToolset.md) | Editor | 核心工具集定义 + `UEditorSubsystem` 控制器生命周期管理 |
+| [AutomationTestToolsetTests](AutomationTestToolsetTests.md) | Editor | CQTest 测试（9 个用例，覆盖所有工具函数） |
 
-### 近期更新
+## 使用场景
 
-- 2026-04-18 `6471b168` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
-- 2026-04-17 `8c911af5` [Backout] - CL52878047
-- 2026-04-17 `9404cd3e` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
-- 2026-04-14 `b391684d` [AutomationTestToolset] Guard `HandleTestsRefreshed` filter reset behind `bDiscoveryRequested`.
-- 2026-04-13 `73b95c3f` [AutomationTestToolset] Move `AutomationTestToolset` tests from `Editor` to `AI.Toolsets` category.
+- 你正在构建 AI 辅助开发工作流，需要让 LLM Agent 能自动运行和检查自动化测试
+- 你使用 `ToolsetRegistry` 框架开发 AI 工具集，需要一个测试执行的参考实现
+- 你需要在编辑器内通过脚本或 AI 批量发现和运行测试，而不想手动操作 Session Frontend
+
+> ⚠️ 本插件默认禁用且为实验性功能，需在插件设置中手动启用。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset)
-- [模块文档：AutomationTestToolset](AutomationTestToolset.md)
-- [模块文档：AutomationTestToolsetTests](AutomationTestToolsetTests.md)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset)
+- 依赖插件：[ToolsetRegistry](../Toolsets/ToolsetRegistry/index.md)

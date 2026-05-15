@@ -1,6 +1,6 @@
 # Data Registry Toolset
 
-> Toolset for querying and inspecting Data Registries（照抄，不翻译）
+> Toolset for querying and inspecting Data Registries
 
 | 属性 | 值 |
 |---|---|
@@ -9,27 +9,73 @@
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `DataRegistryToolset` (Editor) |
-| 实验性 | ⚦️ 是 |
+| 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-28 |
 | 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/DataRegistryToolset) | |
 
 ## 用途
 
-该插件提供了一套命令行工具，专门用于在编辑器中查询、检查和调试 UE5 的 Data Registry 系统。Data Registry 是用于集中管理和动态加载游戏数据（如物品、技能、配置等）的框架。此工具集允许开发者快速查看所有注册表的概览信息、检查特定注册表或数据源的状态，从而解决数据加载、配置错误或性能问题。它不是运行时必需的功能，而是一个纯编辑器开发和调试辅助工具。
+Data Registry Toolset 是一个编辑器专用工具插件，它为 Unreal Engine 的 `Data Registry` 系统提供了一套查询和检查工具。它通过暴露一系列静态函数，解决了 Data Registry 在运行时信息不透明、难以调试的问题。
+
+开发者和数据策划可以使用此工具集来：
+- **发现与列举**：枚举项目中存在哪些 Data Registry 资产。
+- **深度检查**：查看单个注册表的详细信息，如其描述、数据结构（Item Struct）、ID格式和数据源。
+- **数据验证**：获取注册表的 Schema（JSON格式），验证数据结构是否符合预期。
+- **内容查看**：列出注册表中的所有数据项，并获取缓存中的实际数据，用于检查内容是否正确加载和配置。
+- **调试数据源**：区分“编辑器定义”的数据源和“运行时”展开的数据源（特别是当使用了 Meta Source 时），便于理解数据流。
+
+简而言之，它是 `Data Registry` 生态系统中的一个调试和管理助手。
 
 ## 使用场景
 
-- 你需要在编辑器中快速检查所有 Data Registry 的初始化状态和可用性。
-- 你需要排查某个特定数据源（如曲线表、数据表资产）未正确加载到 Data Registry 中的问题。
-- 你需要查看某个 Data Registry 中包含多少项数据，以及它所使用的 ID 格式。
-- 你需要调试 Data Registry 的依赖和继承关系（通过查看父源信息）。
+- 你正在使用 Data Registry 管理大量的游戏数据（如物品表、技能数据、任务配置），需要在编辑器中快速验证这些数据是否被正确识别和缓存。
+- 你需要检查某个特定 Data Registry 的数据源配置，了解其数据是从哪些资产或运行时源加载的。
+- 你的 Data Registry 使用了 `Meta Source`，需要调试最终生效的运行时源列表。
+- 你希望以编程方式（通过蓝图或 C++）查询项目中的数据注册表信息，集成到自定义的编辑器工具或报告功能中。
+- **请注意**：这是一个 `EditorOnly` 插件，其功能仅在 Unreal Editor 中可用，不会被打包到最终游戏包中。
 
 ## 蓝图用法
 
-此插件主要面向 C++ 和命令行用法，未发现公开的蓝图函数。
+该插件的功能通过 `UDataRegistryTools` 类暴露。所有函数都是静态的，标记为 `BlueprintCallable`，可以在任何蓝图中直接调用。
+
+### 核心节点
+
+以下节点按功能分组：
+
+#### 查询注册表
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `List Registries` | 获取所有已注册的 Data Registry 名称。可选的 `StructFilter` 参数用于过滤出使用特定物品结构的注册表。 | `UDataRegistryTools` |
+| `Get Registry Info` | 获取指定注册表的详细信息，包括名称、描述、物品结构、ID格式等，返回 `FDataRegistryInfo` 结构体。 | `UDataRegistryTools` |
+| `Get Schema` | 获取指定注册表的物品结构定义，并以 JSON 字符串形式返回，便于查看字段和类型。 | `UDataRegistryTools` |
+
+#### 检查数据与源
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `List Items` | 列出指定注册表中定义的所有数据项（Item）的名称。 | `UDataRegistryTools` |
+| `List Data Sources` | 获取指定注册表在编辑器中配置的（定义时的）数据源列表，返回 `FDataRegistrySourceSummary` 结构体数组。 | `UDataRegistryTools` |
+| `List Runtime Sources` | 获取指定注册表在运行时最终展开的数据源列表，包含了由 `Meta Source` 等机制生成的瞬态子源。 | `UDataRegistryTools` |
+| `Get Items` | 根据一组数据项名称，从注册表的缓存中获取其对应的结构体数据（`FInstancedStruct`）。仅返回缓存中已存在的项。 | `UDataRegistryTools` |
+
+### 使用示例（蓝图描述）
+
+1.  **列出所有注册表**：
+    创建一个 `List Registries` 节点，直接连接到 `Print String` 节点，即可在输出日志中看到所有注册表的名称。
+2.  **查看特定注册表的详细信息**：
+    - 将 `List Registries` 的输出连接到 `For Each Loop`。
+    - 在循环体内，将当前循环的字符串（注册表名称）连接到 `Get Registry Info` 节点。
+    - 将返回的 `FDataRegistryInfo` 结构体连接到 `Break` 节点，即可访问其 `RegistryName`、`Description`、`ItemCount` 等字段进行显示或逻辑判断。
+3.  **获取并显示一个注册表的缓存数据**：
+    - 使用 `List Items` 获取某个注册表（如 “MyItemRegistry”）的所有数据项名称数组。
+    - 将数组传递给 `Get Items` 节点。
+    - `Get Items` 的输出是一个 `TMap<FString, FInstancedStruct>`。你可以使用 `Map Keys` 节点获取所有键（数据项名称），然后用 `Find` 节点根据键查找对应的值（`FInstancedStruct`），进一步通过 `Break` 或 `Make` 节点处理结构体数据。
 
 ## C++ 用法
+
+插件的功能通过 `UDataRegistryTools` 的静态成员函数提供。由于插件模块类型是 `Editor`，这些函数主要用于编辑器工具和开发流程，**不应在运行时游戏逻辑中调用**。
 
 ### 头文件引入
 
@@ -39,138 +85,145 @@
 
 ### 基本用法
 
-此插件的典型用法是通过自定义的命令行或编辑器扩展来调用其内部工具函数。以下是一个虚构的示例，展示了如何在你自己的编辑器工具中集成 Data Registry 的查询功能。
+以下示例展示了如何在编辑器工具或自定义命令中调用核心查询函数。
 
 ```cpp
-// 假设在一个编辑器工具类中
-#include "DataRegistryTools.h"
-#include "DataRegistrySubsystem.h"
+// 1. 列举所有注册表
+TArray<FString> AllRegistries = UDataRegistryTools::ListRegistries();
+UE_LOG(LogTemp, Log, TEXT("Found %d data registries."), AllRegistries.Num());
 
-void UMyEditorTools::QueryDataRegistries()
-{
-    // 1. 获取 DataRegistry 工具集提供的所有注册表信息
-    TArray<FDataRegistryInfo> RegistryInfos;
-    UDataRegistrySubsystem::Get()->GetAllRegistryInfo(/* 输出参数 */RegistryInfos);
-    
-    // 2. 遍历并打印基本信息
-    for (const FDataRegistryInfo& Info : RegistryInfos)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Registry: %s, Items: %d, Availability: %s"),
-            *Info.RegistryName,
-            Info.ItemCount,
-            *UEnum::GetValueAsString(Info.Availability));
-    }
-}
+// 2. 获取特定注册表的信息
+const FString RegName = TEXT("WeaponData");
+FDataRegistryInfo RegInfo = UDataRegistryTools::GetRegistryInfo(RegName);
+UE_LOG(LogTemp, Log, TEXT("Registry '%s': %d items, Struct: %s"),
+    *RegInfo.RegistryName,
+    RegInfo.ItemCount,
+    RegInfo.ItemStruct ? *RegInfo.ItemStruct->GetName() : TEXT("None"));
+
+// 3. 列出注册表的所有数据项
+TArray<FString> ItemNames = UDataRegistryTools::ListItems(RegName);
+UE_LOG(LogTemp, Log, TEXT("Items in '%s': %s"), *RegName, *FString::Join(ItemNames, TEXT(", ")));
 ```
+*来源: 基于 `DataRegistryTools.h` 中的函数定义。*
 
 ### 进阶用法
 
-查询特定数据源的详细信息，这对于调试数据加载链路很有用。
+结合多个函数进行深度检查，例如检查一个使用了 Meta Source 的注册表的定义源和运行时源的差异。
 
 ```cpp
-void UMyEditorTools::InspectRegistrySource(const FName& RegistryName)
+const FString MetaRegName = TEXT("DynamicItemTable");
+
+// 获取编辑器中定义的源（可能包含 Meta Source 类型）
+TArray<FDataRegistrySourceSummary> DefSources = UDataRegistryTools::ListDataSources(MetaRegName);
+UE_LOG(LogTemp, Log, TEXT("Registry '%s' has %d defined sources."), *MetaRegName, DefSources.Num());
+
+// 获取运行时展开的源（应包含由 Meta Source 实例化出的具体子源）
+TArray<FDataRegistrySourceSummary> RuntimeSources = UDataRegistryTools::ListRuntimeSources(MetaRegName);
+UE_LOG(LogTemp, Log, TEXT("Registry '%s' has %d runtime sources."), *MetaRegName, RuntimeSources.Num());
+
+// 比较并打印运行时源的详细信息
+for (const FDataRegistrySourceSummary& Source : RuntimeSources)
 {
-    // 假设我们有一个名为 “LootTable” 的注册表
-    TArray<FDataRegistrySourceSummary> SourceSummaries;
-    // 通过工具函数获取该注册表下所有数据源的摘要
-    UDataRegistrySubsystem::Get()->GetSourceSummariesForRegistry(RegistryName, /* 输出参数 */SourceSummaries);
-    
-    for (const FDataRegistrySourceSummary& Summary : SourceSummaries)
-    {
-        UE_LOG(LogTemp, Log, TEXT("  Source Class: %s, Asset: %s, Initialized: %s"),
-            Summary.SourceClass ? *Summary.SourceClass->GetName() : TEXT("None"),
-            *Summary.SourceAssetPath.ToString(),
-            Summary.bIsInitialized ? TEXT("True") : TEXT("False"));
-            
-        // 如果是临时子源，可以查看其父源
-        if (Summary.bIsTransient && !Summary.ParentSourceDebugString.IsEmpty())
-        {
-            UE_LOG(LogTemp, Log, TEXT("    Parent Source: %s"), *Summary.ParentSourceDebugString);
-        }
-    }
+    UE_LOG(LogTemp, Log, TEXT("  Runtime Source: %s, Class: %s, Asset: %s, Transient: %s"),
+        *Source.DebugString,
+        Source.SourceClass ? *Source.SourceClass->GetName() : TEXT("Null"),
+        *Source.SourceAssetPath.ToString(),
+        Source.bIsTransient ? TEXT("Yes") : TEXT("No"));
 }
 ```
+*来源: 基于 `FDataRegistrySourceSummary` 结构体和相关函数定义。*
 
 ## Demo 示例
 
-以下示例创建一个简单的编辑器控制台命令，用于打印所有数据注册表的摘要。这展示了如何在不创建完整编辑器 UI 的情况下利用工具集。
+以下是一个编辑器内功能（例如，一个编辑器Utility Widget或自定义命令）的最小C++示例，用于打印某个注册表的概要信息。
 
+**DataRegistryDemo.cpp**
 ```cpp
-// MyRegistryConsoleCommands.h
-#pragma once
-#include "CoreMinimal.h"
-#include "DataRegistryTools.h"
+#include "DataRegistryDemo.h"
+#include "DataRegistryTools.h" // 引入插件头文件
+#include "Modules/ModuleManager.h"
 
-class FMyRegistryConsoleCommands
+void UDataRegistryDemo::PrintRegistrySummary(const FString& RegistryName)
 {
-public:
-    static void RegisterConsoleCommands();
-    
-private:
-    // 控制台命令处理函数
-    static void OnListRegistries(const TArray<FString>& Args, UWorld* World, FOutputDevice& Ar);
-};
-
-// MyRegistryConsoleCommands.cpp
-#include "MyRegistryConsoleCommands.h"
-#include "DataRegistrySubsystem.h"
-#include "HAL/IConsoleManager.h"
-
-static FAutoConsoleCommandWithWorldAndArgs CmdListRegistries(
-    TEXT("DR.ListRegistries"),
-    TEXT("Lists all registered Data Registries and their info"),
-    FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&FMyRegistryConsoleCommands::OnListRegistries)
-);
-
-void FMyRegistryConsoleCommands::OnListRegistries(const TArray<FString>& Args, UWorld* World, FOutputDevice& Ar)
-{
-    Ar.Logf(TEXT("=== Listing All Data Registries ==="));
-    
-    TArray<FDataRegistryInfo> AllInfos;
-    // 注意：此处的 GetAllRegistryInfo 是示例函数名，实际 API 需参考源码
-    if (UDRSubsystem* DRS = UDataRegistrySubsystem::Get())
+    // 1. 检查注册表是否存在
+    FDataRegistryInfo Info = UDataRegistryTools::GetRegistryInfo(RegistryName);
+    if (Info.RegistryName.IsEmpty())
     {
-        // 实际的 API 可能有所不同，这里仅为逻辑演示
-        // DRS->GetAllRegistryInfo(AllInfos);
-        
-        for (const FDataRegistryInfo& Info : AllInfos)
-        {
-            Ar.Logf(TEXT("  Name: %s | Items: %d | Struct: %s"),
-                *Info.RegistryName,
-                Info.ItemCount,
-                Info.ItemStruct ? *Info.ItemStruct->GetName() : TEXT("None"));
-        }
+        UE_LOG(LogTemp, Warning, TEXT("DataRegistry '%s' not found."), *RegistryName);
+        return;
     }
-    else
-    {
-        Ar.Logf(TEXT("Data Registry Subsystem not available."));
-    }
+
+    // 2. 打印基本信息
+    UE_LOG(LogTemp, Display, TEXT("--- Data Registry Summary: %s ---"), *Info.RegistryName);
+    UE_LOG(LogTemp, Display, TEXT("  Description: %s"), *Info.Description);
+    UE_LOG(LogTemp, Display, TEXT("  Item Count: %d"), Info.ItemCount);
+    UE_LOG(LogTemp, Display, TEXT("  Item Struct: %s"), Info.ItemStruct ? *Info.ItemStruct->GetName() : TEXT("N/A"));
+    UE_LOG(LogTemp, Display, TEXT("  ID Format: %s"), *Info.IdFormat);
+
+    // 3. 打印数据源数量
+    TArray<FDataRegistrySourceSummary> DefSources = UDataRegistryTools::ListDataSources(RegistryName);
+    TArray<FDataRegistrySourceSummary> RuntimeSources = UDataRegistryTools::ListRuntimeSources(RegistryName);
+    UE_LOG(LogTemp, Display, TEXT("  Defined Sources: %d"), DefSources.Num());
+    UE_LOG(LogTemp, Display, TEXT("  Runtime Sources: %d (Difference indicates Meta Source usage)"), RuntimeSources.Num());
 }
+```
+
+**DataRegistryDemo.h**
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "UObject/Object.h"
+#include "DataRegistryDemo.generated.h"
+
+UCLASS()
+class UDataRegistryDemo : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    UFUNCTION(BlueprintCallable, Category = "DataRegistryDemo", meta=(CallInEditor="true"))
+    static void PrintRegistrySummary(const FString& RegistryName);
+};
 ```
 
 ## 模块依赖
 
-| 模块 | 用途 |
+从插件的 `.uplugin` 文件可以得知，它依赖以下两个插件（它们需要在你的项目中启用）：
+
+| 模块/插件 | 用途 |
 |---|---|
-| 无特殊依赖（仅标准 Core/Engine 等） | 此插件仅依赖 `Core` 模块。其关键功能依赖于 `DataRegistry` 和 `ToolsetRegistry` 这两个**插件**，而非模块。 |
+| `ToolsetRegistry` | 提供工具集定义（`UToolsetDefinition`）的基础框架，本插件中的 `UDataRegistryTools` 继承自它。 |
+| `DataRegistry` | **核心依赖**。本插件的功能完全围绕 `Data Registry` 系统构建，用于查询和检查其内容和状态。 |
+
+在 `Build.cs` 中，你需要添加这两个插件的模块依赖。通常，你需要添加类似以下代码：
+```csharp
+PublicDependencyModuleNames.AddRange(new string[] { "DataRegistry" });
+// “ToolsetRegistry” 的模块名可能是 “Toolset” 或 “ToolsetRegistryCore”，需根据实际模块名调整。
+// 由于 .uplugin 指定了插件依赖，引擎会自动处理插件加载，但模块依赖仍需在 Build.cs 中声明。
+```
 
 ## 维护状态
 
 ### 近期更新
 
-- 2026-04-28 `ffe59a83` Added toolsets for data registries. Current implemented commands include:
-  *初始提交，添加了数据注册表的查询和检查工具集。*
+根据提供的 Git 历史记录，此插件仅有一条提交记录。
+
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-04-28 | `ffe59a83` | Added toolsets for data registries. Current implemented commands include: Listing registries, Getting registry properties, data and runtime sources, Getting all the runtime data populated in the registry | **首次提交**。添加了用于数据注册表的工具集。实现了查询注册表列表、获取属性/数据/运行时源以及获取所有运行时数据的命令。 |
 
 ### 维护评价
 
-- **创建时间**: 2026-04-28（日期显示为未来时间，可能存在录入错误，但基于信息判断为新近创建的插件）。
-- **最近更新**: 仅有一次提交，说明这是一个非常新的插件。
-- **活跃状态**: 处于早期开发阶段，所有代码为初始提交。
-- **已知限制**: 功能可能不完整，且作为 `Experimental` 和 `EditorOnly` 插件，其 API 和行为可能随版本发生重大变化。
-- **是否推荐**: ✅ **推荐用于探索和内部工具开发**。不推荐在面向用户的正式产品中直接依赖此插件。适合希望提前了解或为 Data Registry 系统构建自定义调试工具的开发者。
+- **状态**：这是一个**全新的、实验性**的插件。
+- **分析**：
+    1.  **创建时间**：文档标记为2026年4月28日创建，这看起来是一个未来的日期，可能是一个占位符或错误。基于当前信息，它应被视为一个新插件。
+    2.  **更新频率**：仅有一条初始提交，尚无法评估长期维护趋势。
+    3.  **活跃度**：自首次提交后无后续更新记录，但鉴于其“实验性”（`IsExperimentalVersion: true`）和“默认不启用”（`EnabledByDefault: false`）的状态，这可能是正常的初始发布。
+    4.  **已知限制**：作为实验性功能，其API可能会在未来版本中更改或移除。它仅限于编辑器环境，不适用于运行时逻辑。
+- **推荐**：如果你在项目中深度使用 `Data Registry` 并急需调试和检查工具，可以**谨慎启用和使用**此实验性插件。建议将其用于开发和调试目的，并做好在未来API变更时更新代码的准备。对于新项目或对稳定性要求高的项目，建议观望或评估其必要性。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/DataRegistryToolset)
-- [官方文档](https://docs.unrealengine.com) (暂无专门文档)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/DataRegistryToolset/Tests) (未在源码信息中发现独立的测试文件)
+- (官方文档链接未提供)

@@ -1,89 +1,115 @@
 # GASToolsets
 
-> Toolsets for the Gameplay Ability System（照抄，不翻译）
+> Toolsets for the Gameplay Ability System
 
 | 属性 | 值 |
 |---|---|
+| 中文名 | GAS 工具集 |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `GASToolsets` (Editor) |
 | 实验性 | ⚠️ 是 |
-| 创建时间 | 2026-03-31 |
+| 创建时间 | 2026-03-27 |
 | 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/GASToolsets) | |
 
 ## 用途
 
-GASToolsets 是一个**编辑器专用**插件，为 Unreal Engine 的 Gameplay Ability System (GAS) 提供了一套工具集（Toolset）。它的核心目的是**为 AI 助手（AI Assistant）等自动化工具提供结构化的接口**，以便在编辑器内查询、检查和操作 GAS 的核心数据，例如运行时属性值、活跃效果、已授予的能力、项目中的 AttributeSet 类以及 GameplayCue。
+GASToolsets 是 Epic 为 **AI 助手（AI Assistant）** 集成所提供的 Gameplay Ability System 辅助工具插件。它将 GAS 的常见检查操作封装为 AI 可调用的工具函数（`meta = (AICallable)`），使 AI 助手能够：
 
-这个插件解决了在编辑器中难以直观地查看和调试 GAS 运行状态的问题。它将 GAS 的复杂数据（如属性、效果、能力）封装成简单的结构体和函数，使得外部工具（如 AI 助手）能够以编程方式理解和操作游戏能力系统，从而辅助开发者进行调试、配置和内容创作。
+1. **查询与管理 GameplayCue**：枚举项目中的 GameplayCue 标签、查找对应的 Notify 资产、在编辑器中预览执行 Cue、创建/删除 Cue 标签和 Notify 蓝图资产。
+2. **检查 AbilitySystemComponent 运行时状态**：读取 Actor 上的所有属性值（基础值 + 当前值）、活跃的 GameplayEffect、已授予的 Ability、当前拥有的 GameplayTag。
+3. **发现 AttributeSet 类**：枚举项目中所有 AttributeSet 子类（包括 C++ 原生类和蓝图子类）及其定义的属性。
+
+本质上，这是 GAS 的 **AI 驱动调试/巡检工具包**，解决了 AI 助手无法直接"看到"游戏能力系统内部状态的问题。
 
 ## 使用场景
 
-- 你正在使用或开发一个集成 AI 助手的编辑器工具，需要让 AI 理解项目中的 GAS 设置（如有哪些 AttributeSet，每个属性集有哪些属性）。
-- 你需要在编辑器内以编程方式检查某个 Actor 当前的属性值、活跃的 GameplayEffect 或已授予的 GameplayAbility。
-- 你需要在编辑器中查询项目里注册的所有 GameplayCue 标签及其关联的 Notify 资产。
-- 你正在为 GAS 编写自动化测试或编辑器扩展，需要一个便捷的接口来获取 GAS 相关信息。
+- 你正在使用 GAS 开发游戏，希望 AI 助手能帮你检查某个 Actor 的生命值、Buff 列表或已装备的技能 → 用 `AbilitySystemInspectorToolset`
+- 你需要 AI 助手帮你排查"Cue 触发了但没有视觉效果"的问题 → 用 `GameplayCueToolset` 的 `FindCueTagsWithoutNotifies()` 找出缺失 Notify 的标签
+- 你想让 AI 助手快速列出项目中所有 AttributeSet 类及其属性定义 → 用 `AttributeSetToolset`
+- 你想让 AI 助手帮你新建一个 GameplayCueNotify 蓝图资产 → 用 `GameplayCueToolset` 的 `CreateCueNotifyAsset()`
 
 ## 蓝图用法
 
-该插件主要为 AI 助手（标记为 `AICallable`）设计，其函数主要通过 C++ 调用，但部分结构体和函数也暴露给了蓝图。
+> **注意**：本插件的所有函数均使用 `meta = (AICallable)` 元数据标记，专门为 AI 助手调用设计，**未声明 `BlueprintCallable`**，因此不能直接作为蓝图节点使用。以下列出供 C++ 开发者和自定义工具集作者参考。
 
-### 核心节点
+### GameplayCue 工具集 — `UGameplayCueToolset`
 
-| 节点 | 说明 | 所在类 |
+| 函数 | 说明 |
+|---|---|
+| `ListCues(ParentTag)` | 列出指定父标签下的所有 GameplayCue 标签，传空返回全部 |
+| `GetCueInfo(CueTag)` | 查询单个 Cue 的 Notify 资产路径和类型（Static/Actor/None） |
+| `ExecuteCueOnSelectedActor(CueTag, Magnitude, Location, Normal)` | 在编辑器选中的 Actor 上非复制执行 Cue，用于预览效果 |
+| `FindCueNotifyAssets(ParentTag)` | 通过资产注册表查找项目中所有 GameplayCueNotify 资产 |
+| `CreateCueNotifyAsset(CueTag, PackagePath, AssetName, bIsActor)` | 创建新的 GameplayCueNotify 蓝图资产（Static 或 Actor） |
+| `AddCueTag(CueTag, Comment)` | 向项目添加一个新的 GameplayCue 标签 |
+| `RemoveCueTag(CueTag)` | 从项目中移除一个 GameplayCue 标签 |
+| `FindCueTagsWithoutNotifies()` | 找出所有没有对应 Notify 资产的 Cue 标签 |
+
+### AbilitySystem 检查工具集 — `UAbilitySystemInspectorToolset`
+
+| 函数 | 说明 |
+|---|---|
+| `GetAttributeValues(Actor)` | 获取 Actor 上 ASC 的所有属性基础值和当前值 |
+| `GetActiveEffects(Actor)` | 获取 Actor 上当前活跃的所有 GameplayEffect（含层数、剩余时间、授予标签） |
+| `GetGrantedAbilities(Actor)` | 获取 Actor 上已授予的所有 Ability（含等级、是否激活） |
+| `GetActiveTags(Actor)` | 获取 Actor 上 ASC 当前拥有的所有 GameplayTag |
+
+### AttributeSet 工具集 — `UAttributeSetToolset`
+
+| 函数 | 说明 |
+|---|---|
+| `FindAttributeSetClasses()` | 枚举项目中所有 AttributeSet 子类（C++ 原生 + 蓝图），含各自定义的属性 |
+| `ListAttributes(ClassName)` | 查询指定 AttributeSet 类定义的属性列表 |
+
+### 核心数据结构
+
+| 结构体 | 说明 | 所在工具集 |
 |---|---|---|
-| `Find Attribute Set Classes` | 查找项目中所有 AttributeSet 子类（包括 C++ 和蓝图类）及其包含的属性。 | `UAttributeSetToolset` |
-| `List Attributes` | 列出指定 AttributeSet 类名下的所有 Gameplay 属性。 | `UAttributeSetToolset` |
-| `List Cues` | 列出项目中注册的 GameplayCue 标签，可按父标签过滤。 | `UGameplayCueToolset` |
-| `Get Cue Info` | 获取指定 GameplayCue 标签的详细信息，包括关联的 Notify 资产路径和类型。 | `UGameplayCueToolset` |
-| `Execute Cue On Selected Actor` | 在编辑器中当前选中的 Actor 上执行一个 GameplayCue（非复制）。 | `UGameplayCueToolset` |
-
-### 使用示例（蓝图描述）
-
-1.  **查询属性集**：在蓝图中，调用 `UAttributeSetToolset::FindAttributeSetClasses` 节点，返回一个 `FAttributeSetClassInfo` 数组。遍历此数组，可以获取每个属性集的类名、资产路径以及其包含的 `FGameplayAttributeInfo` 列表。
-2.  **检查运行时状态**：要检查某个 Actor 的 GAS 状态，需要先获取其 `UAbilitySystemComponent`，然后调用 `UAbilitySystemInspectorToolset` 中的函数（如 `GetRuntimeAttributeValues`），传入组件引用，即可获得 `FRuntimeAttributeValue` 数组，包含每个属性的基值和当前值。
+| `FGameplayCueInfo` | 单个 Cue 的标签、Notify 资产路径、Notify 类型 | GameplayCue |
+| `FGameplayCueNotifyInfo` | Notify 资产的标签、路径、名称、类型 | GameplayCue |
+| `FRuntimeAttributeValue` | 属性名称、所属 AttributeSet、基础值、当前值 | AbilitySystemInspector |
+| `FActiveEffectInfo` | 效果名称、层数、总时长、剩余时长、授予标签 | AbilitySystemInspector |
+| `FGrantedAbilityInfo` | Ability 名称、等级、是否激活 | AbilitySystemInspector |
+| `FGameplayAttributeInfo` | 属性名称、全名、所属 AttributeSet 类名 | AttributeSet |
+| `FAttributeSetClassInfo` | AttributeSet 类名、资产路径、属性列表 | AttributeSet |
 
 ## C++ 用法
+
+> 本插件的工具函数位于 Private 头文件中，不属于公开 API。以下用法供需要与 AI 助手系统集成或理解内部实现的开发者参考。
 
 ### 头文件引入
 
 ```cpp
-#include "GASToolsets.h" // 模块主头文件
-#include "AttributeSetToolset.h" // AttributeSet 工具集
-#include "GameplayCueToolset.h" // GameplayCue 工具集
-#include "AbilitySystemInspectorToolset.h" // 运行时检查工具集
+// 模块接口
+#include "GASToolsets.h"
+
+// 工具集头文件（Private，非公开 API）
+#include "GameplayCueToolset.h"
+#include "AbilitySystemInspectorToolset.h"
+#include "AttributeSetToolset.h"
 ```
 
 ### 基本用法
 
-以下代码展示了如何定义一个用于测试的 AttributeSet 和 Actor，这是使用 GASToolsets 进行检查的基础。
-*来源文件: `Source/GASToolsets/Private/Tests/AttributeSetToolsetTest.h` 和 `Source/GASToolsets/Private/Tests/AbilitySystemInspectorToolsetTest.h`*
+来自测试用例的 Actor 设置模式：
 
 ```cpp
-// 1. 定义一个简单的 AttributeSet 子类
-UCLASS(Hidden, MinimalAPI)
-class UMyHealthAttributeSet : public UAttributeSet
-{
-    GENERATED_BODY()
-public:
-    UPROPERTY(BlueprintReadOnly, Category = "Attribute")
-    FGameplayAttributeData Health;
-    UPROPERTY(BlueprintReadOnly, Category = "Attribute")
-    FGameplayAttributeData MaxHealth;
-};
+// 来源: Source/GASToolsets/Private/Tests/AbilitySystemInspectorToolsetTest.h
 
-// 2. 定义一个拥有 AbilitySystemComponent 的 Actor
+// 创建一个带有 AbilitySystemComponent 的测试 Actor
 UCLASS(Hidden, MinimalAPI)
-class AMyGASActor : public AActor, public IAbilitySystemInterface
+class AGASToolsetsTestActor : public AActor, public IAbilitySystemInterface
 {
     GENERATED_BODY()
+
 public:
-    AMyGASActor()
+    AGASToolsetsTestActor()
     {
-        AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("ASC"));
-        // 通常还需要创建并添加 AttributeSet 子对象
+        AbilitySystemComponent =
+            CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
     }
 
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override
@@ -96,65 +122,102 @@ public:
 };
 ```
 
-### 进阶用法
+```cpp
+// 来源: Source/GASToolsets/Private/Tests/AttributeSetToolsetTest.h
 
-在拥有上述基础对象后，可以在编辑器工具或自动化测试中调用 GASToolsets 的函数来获取信息。
-*（基于工具集函数的典型调用模式）*
+// 创建一个测试用 AttributeSet，定义 Health 和 MaxHealth 属性
+UCLASS(Hidden, MinimalAPI)
+class UGASToolsetsTestAttributeSet : public UAttributeSet
+{
+    GENERATED_BODY()
+
+public:
+    UPROPERTY(BlueprintReadOnly, Category = "Attribute")
+    FGameplayAttributeData Health;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Attribute")
+    FGameplayAttributeData MaxHealth;
+};
+```
+
+### 进阶用法 — 调用工具函数
 
 ```cpp
-// 假设我们已经有一个有效的 UAbilitySystemComponent* ASC
+// 检查选中 Actor 的运行时属性
+AActor* SelectedActor = /* ... */;
+TArray<FRuntimeAttributeValue> AttrValues =
+    UAbilitySystemInspectorToolset::GetAttributeValues(SelectedActor);
 
-// 1. 查询项目中所有的 AttributeSet 类
-TArray<FAttributeSetClassInfo> AllAttributeSets = UAttributeSetToolset::FindAttributeSetClasses();
-for (const FAttributeSetClassInfo& SetInfo : AllAttributeSets)
+for (const FRuntimeAttributeValue& Attr : AttrValues)
 {
-    UE_LOG(LogGASToolsets, Log, TEXT("Found AttributeSet: %s"), *SetInfo.ClassName);
+    UE_LOG(LogGASToolsets, Log, TEXT("%s: Base=%.1f, Current=%.1f"),
+        *Attr.FullName, Attr.BaseValue, Attr.CurrentValue);
 }
 
-// 2. 检查特定 Actor 的运行时属性值
-TArray<FRuntimeAttributeValue> RuntimeValues = UAbilitySystemInspectorToolset::GetRuntimeAttributeValues(ASC);
-for (const FRuntimeAttributeValue& Value : RuntimeValues)
+// 查找项目中所有 Cue 标签，检查哪些缺少 Notify 资产
+TArray<FString> OrphanCues = UGameplayCueToolset::FindCueTagsWithoutNotifies();
+for (const FString& Tag : OrphanCues)
 {
-    UE_LOG(LogGASToolsets, Log, TEXT("Attribute %s: Base=%f, Current=%f"), *Value.AttributeName, Value.BaseValue, Value.CurrentValue);
+    UE_LOG(LogGASToolsets, Warning, TEXT("Cue tag '%s' has no GameplayCueNotify asset!"), *Tag);
 }
 
-// 3. 列出所有以 “GameplayCue.Character” 开头的 GameplayCue
-TArray<FString> CharacterCues = UGameplayCueToolset::ListCues(TEXT("GameplayCue.Character"));
+// 枚举所有 AttributeSet 类及其属性
+TArray<FAttributeSetClassInfo> AllSets = UAttributeSetToolset::FindAttributeSetClasses();
+for (const FAttributeSetClassInfo& Set : AllSets)
+{
+    UE_LOG(LogGASToolsets, Log, TEXT("AttributeSet: %s (%d attributes)"),
+        *Set.ClassName, Set.Attributes.Num());
+}
 ```
 
 ## Demo 示例
 
-一个最小的可编译示例，定义了用于测试的 AttributeSet 和 Actor。
-*（基于测试用例简化）*
+一个可编译的最小示例，展示如何设置与 GASToolsets 测试相同的 Actor 环境：
 
-**MyGASTestClasses.h**
 ```cpp
+// MyGASTestActor.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AttributeSet.h"
-#include "AbilitySystemComponent.h"
+#include "GameFramework/Actor.h"
 #include "AbilitySystemInterface.h"
-#include "MyGASTestClasses.generated.h"
+#include "AbilitySystemComponent.h"
+#include "MyGASTestActor.generated.h"
 
 UCLASS()
 class UMyTestAttributeSet : public UAttributeSet
 {
     GENERATED_BODY()
+
 public:
-    UPROPERTY(BlueprintReadOnly, Category = "Test")
-    FGameplayAttributeData TestAttribute;
+    UPROPERTY(BlueprintReadOnly, Category = "Attribute")
+    FGameplayAttributeData Health;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Attribute")
+    FGameplayAttributeData MaxHealth;
 };
 
 UCLASS()
-class AMyTestGASActor : public AActor, public IAbilitySystemInterface
+class AMyGASTestActor : public AActor, public IAbilitySystemInterface
 {
     GENERATED_BODY()
-public:
-    AMyTestGASActor();
-    virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+public:
+    AMyGASTestActor()
+    {
+        AbilitySystemComponent =
+            CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+        TestAttributeSet =
+            CreateDefaultSubobject<UMyTestAttributeSet>(TEXT("TestAttributeSet"));
+    }
+
+    virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override
+    {
+        return AbilitySystemComponent;
+    }
+
+private:
+    UPROPERTY()
     TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
     UPROPERTY()
@@ -162,49 +225,47 @@ public:
 };
 ```
 
-**MyGASTestClasses.cpp**
 ```cpp
-#include "MyGASTestClasses.h"
-
-AMyTestGASActor::AMyTestGASActor()
-{
-    AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComp"));
-    TestAttributeSet = CreateDefaultSubobject<UMyTestAttributeSet>(TEXT("TestAttributeSet"));
-}
-
-UAbilitySystemComponent* AMyTestGASActor::GetAbilitySystemComponent() const
-{
-    return AbilitySystemComponent;
-}
+// MyGASTestActor.cpp
+#include "MyGASTestActor.h"
+// 无需额外实现，构造函数中已完成所有子对象创建
 ```
+
+将此 Actor 放入关卡后，AI 助手即可通过 GASToolsets 工具集检查其属性、效果、能力和标签。
 
 ## 模块依赖
 
-该插件本身模块依赖简单，但其功能强依赖于其他插件。
+Build.cs 中仅声明了 `Core` 依赖，但插件本身需要以下外部插件：
 
-| 模块/插件 | 用途 |
+| 插件 | 用途 |
 |---|---|
-| `GameplayAbilities` (插件) | 提供核心的 Gameplay Ability System 框架，是本插件操作的对象。 |
-| `ToolsetRegistry` (插件) | 提供 `UToolsetDefinition` 基类，本插件的所有工具集都继承自它。 |
+| `GameplayAbilities` | 提供 AbilitySystemComponent、AttributeSet、GameplayEffect 等核心 GAS 类 |
+| `ToolsetRegistry` | 提供 `UToolsetDefinition` 基类和 AI 工具注册框架 |
+
+无特殊模块依赖（仅标准 Core 等）。
 
 ## 维护状态
 
 ### 近期更新
 
-- 2026-04-18 `6471b168` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
-- 2026-04-17 `8c911af5` [Backout] - CL52878047
-- 2026-04-17 `9404cd3e` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-04-18 | `6471b168` | [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,. | 更改了 UToolsetDefinition 识别工具函数的机制 |
+| 2026-04-17 | `8c911af5` | [Backout] - CL52878047 | 回退了上一次提交的改动 |
+| 2026-04-17 | `9404cd3e` | [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,. | 首次尝试更改工具函数识别机制（后被回退） |
+| 2026-04-01 | `27afb6e8` | [AI Assistant Toolsets] Move toolset tests under AI.Toolsets. | 将工具集测试用例迁移到 AI.Toolsets 目录下 |
+| 2026-03-31 | `95b6ab9c` | [AI Assistant] Disable GAS toolset plugin by default. | 创建仅 4 天后即设为默认禁用 |
 
 ### 维护评价
 
-- **创建时间**：2026年3月31日，是一个非常新的插件。
-- **最近更新**：最近一次更新在2026年4月18日，距今很近，且更新内容与核心功能（工具集定义方式）相关，表明处于**活跃开发**阶段。
-- **维护状态**：**活跃维护中**。作为 Epic Games 官方维护的实验性插件，其更新与 AI 助手等新功能的开发紧密相关。
-- **已知限制**：
-    1.  **实验性插件**：`IsExperimentalVersion=true`，API 和功能可能在未来版本中发生重大变化。
-    2.  **默认禁用**：`EnabledByDefault=false`，需要在项目设置中手动启用。
-    3.  **编辑器专用**：`EditorOnly=true`，无法在打包后的游戏中使用。
-- **推荐使用**：如果你正在开发或使用与 AI 助手集成的编辑器工具，并且需要操作 GAS，那么这个插件是**推荐使用**的。对于普通的 GAS 游戏开发，此插件并非必需，其价值主要体现在编辑器扩展和自动化工具链中。
+⚠️ **实验性早期开发阶段，谨慎使用。**
+
+- **创建时间**：2026-03-27，插件历史不足 1 个月
+- **活跃度**：近 3 周内有 5 次提交，处于活跃迭代中
+- **稳定性**：API 尚未稳定 — 最近的提交中出现了功能改动后回退（`9404cd3e` → `8c911af5` → `6471b168`），说明底层工具函数识别机制仍在调整
+- **默认禁用**：创建仅 4 天后（03-31）就被设为 `EnabledByDefault: false`，表明 Epic 认为该插件尚未准备好面向所有用户
+- **依赖关系**：依赖的 `ToolsetRegistry` 插件同样为实验性，整体工具链风险叠加
+- **推荐**：仅建议关注 AI 助手集成的开发者试用，不建议在生产项目中依赖此插件
 
 ## 相关链接
 

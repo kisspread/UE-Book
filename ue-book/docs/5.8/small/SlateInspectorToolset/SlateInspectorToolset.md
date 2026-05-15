@@ -4,62 +4,80 @@
 
 | 属性 | 值 |
 |---|---|
-| 分类 | Experimental |
+| 中文名 | Slate 检查器工具集 |
+| 分类 | Toolsets |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `SlateInspectorToolset` (Editor), `SlateInspectorToolsetTests` (Editor) |
 | 实验性 | ⚠️ 是 |
-| 创建时间 | 2026-04-03 |
+| 创建时间 | 2026-04-02 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/SlateInspectorToolset) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/SlateInspectorToolset) | |
 
 ## 用途
 
-SlateInspectorToolset 提供了一套 **Playwright 风格的 Slate UI 自动化工具**，用于以编程方式驱动 Unreal Editor 的界面操作。它解决的核心问题是：**如何让 AI Agent 或自动化脚本像人类一样"看到"和"操作"编辑器 UI**。
+这是一个为 Unreal Editor 的 Slate UI 系统打造的 **Playwright 风格自动化工具集**，专为 AI Agent 与编辑器 UI 交互而设计。
 
-具体来说，它做了三件事：
+核心解决的问题：AI Agent（通过 ModelContextProtocol 插件）需要能够"看到"和"操作"编辑器 UI，就像浏览器自动化工具（Playwright/Puppeteer）操作网页一样。该插件提供了：
 
-1. **快照（Snapshot）**：将 Slate 控件树渲染为文本格式的可访问性快照，包含控件角色、标签、状态和短引用标识符（ref），让 AI 能理解当前 UI 结构
-2. **交互（Interaction）**：通过直接调用 Slate 事件 API（`ProcessKeyCharEvent`、`ProcessMouseButtonDownEvent` 等）模拟点击、输入、拖拽等操作，而非使用 AutomationDriver（后者在游戏线程上会死锁）
-3. **观察（Observation）**：通过 Observer 机制持续追踪控件子树变化，保持 ref 缓存实时更新
+1. **UI 快照（Snapshot）**：将 Slate 控件树渲染为带缩进的文本表示（类似 Playwright 的 Accessibility Snapshot），AI Agent 可以从中发现可交互元素的 ref 标识符
+2. **UI 交互（Actions）**：通过 ref 标识符对控件执行点击、输入文字、拖拽、选择下拉选项等操作
+3. **UI 截图（Screenshot）**：对特定控件或整个窗口截图，提供视觉反馈
+4. **持续观察（Observe）**：注册观察者持续遍历控件子树（约 100ms 一次），保持 ref 缓存与 UI 变化同步
 
-该插件通过 `UToolsetRegistry` 注册，供 ModelContextProtocol（MCP）插件自动发现和调用。
+该插件通过 `UToolsetRegistry` 注册工具集，MCP 插件自动发现并暴露给 AI Agent。与传统的自动化测试不同，它直接使用 Slate 事件 API（`ProcessKeyCharEvent`、`ProcessMouseButtonDownEvent` 等），而非 `AutomationDriver`，因为后者在游戏线程（MCP 工具调用执行的线程）上同步调用会导致死锁。
 
 ## 使用场景
 
-- 你正在开发 AI Agent 来自动操作 Unreal Editor → 用 SlateInspectorToolset 提供 UI 感知和交互能力
-- 你需要编写编辑器 UI 的自动化测试脚本 → 用 Snapshot 获取控件树，用 Click/Type 等模拟用户操作
-- 你需要调试 Slate 控件的层级结构 → 用 Snapshot 生成可读的控件树文本
+- 你正在开发 AI 辅助编辑器工具，需要 AI Agent 能够自动操作编辑器 UI → 使用此工具集通过 MCP 暴露 UI 自动化能力
+- 你需要对 Slate UI 进行程序化测试或自动化脚本操作 → 使用 Snapshot + Click/Type/Hover 组合
+- 你需要监控编辑器某个面板的 UI 变化 → 使用 Observe 注册观察者，定期获取缓存快照
+- 你需要批量填写编辑器中的表单 → 使用 FillForm 一次设置多个字段
 
-## 蓝图用法
+## AI 工具 API 用法
 
-所有工具函数均标记为 `UFUNCTION(meta = (AICallable))`，主要供 AI/MCP 系统调用，也可在蓝图中使用。
+该插件的函数标记为 `UFUNCTION(meta = (AICallable))`，专门供 AI Agent 通过 MCP（ModelContextProtocol）系统调用，**不直接暴露为蓝图节点**。所有函数定义在 `USlateInspectorToolset` 类上，均为 `static` 方法。
 
-### 核心节点
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `Snapshot` | 捕获 Slate 控件树的文本快照，返回带缩进的控件列表 | `USlateInspectorToolset` |
-| `Observe` | 注册观察者持续追踪控件子树变化（~100ms 刷新） | `USlateInspectorToolset` |
-| `Unobserve` | 移除观察者 | `USlateInspectorToolset` |
-| `Click` | 模拟鼠标点击指定 ref 的控件 | `USlateInspectorToolset` |
-| `Type` | 模拟键盘输入文本 | `USlateInspectorToolset` |
-| `Hover` | 模拟鼠标悬停 | `USlateInspectorToolset` |
-| `FillForm` | 批量填写表单字段（文本框、复选框、下拉框） | `USlateInspectorToolset` |
-| `Scroll` | 模拟滚轮滚动 | `USlateInspectorToolset` |
-| `PressKey` | 模拟按键事件 | `USlateInspectorToolset` |
-| `Drag` | 模拟鼠标拖拽操作 | `USlateInspectorToolset` |
-| `Screenshot` | 截取当前 UI 截图 | `USlateInspectorToolset` |
-
-### 使用示例（蓝图描述）
+### 工作流程概览
 
 典型的 AI Agent 操作流程：
 
-1. 调用 `Snapshot`（Ref 为空）获取所有顶层窗口列表
-2. 调用 `Observe`（Ref 为目标窗口 ref）开始深度观察该窗口
-3. 再次调用 `Snapshot`（Ref 为窗口 ref）获取窗口内部控件树
-4. 根据快照中的 ref 标识符，调用 `Click`、`Type` 等进行交互
-5. 操作完成后调用 `Unobserve` 停止观察
+```
+1. Snapshot("")          → 获取所有顶层窗口的控件树，发现 ref
+2. Observe("win1", 30)   → 对目标窗口注册深度观察者
+3. Snapshot("win1", 30)  → 获取该窗口的详细控件树
+4. Click("b3")           → 点击按钮 b3
+5. Type("tb1", "Hello")  → 在文本框 tb1 中输入文字
+6. Screenshot("")        → 截图确认当前状态
+7. Unobserve("obs-1")    → 完成后移除观察者
+```
+
+### 核心工具节点
+
+| 工具函数 | 说明 | 参数 |
+|---|---|---|
+| `Snapshot` | 获取控件树的文本快照，发现可交互元素的 ref | `Ref`（子树根，空=全部窗口），`MaxDepth`，`bIncludeSourceLocations` |
+| `Observe` | 注册观察者持续跟踪控件子树变化 | `Ref`（根控件 ref），`MaxDepth` |
+| `Unobserve` | 移除观察者 | `Identifier`（Observe 返回的标识符） |
+| `ListObservers` | 列出所有活跃观察者（JSON） | 无 |
+| `Screenshot` | 对控件或窗口截图 | `Ref`（空=活动窗口） |
+| `Click` | 点击控件 | `Ref`，`Button`（left/right/middle），`DoubleClick`，`Modifiers` |
+| `Hover` | 悬停在控件上 | `Ref` |
+| `Type` | 向文本输入框输入文字 | `Ref`，`Text`，`Submit`（完成后按回车） |
+| `PressKey` | 按下键盘按键（支持修饰键前缀） | `Key`（如 `"Ctrl+C"`、`"Enter"`） |
+| `SelectOption` | 选择下拉框选项 | `Ref`，`Value`（选项文本） |
+| `Drag` | 从一个控件拖拽到另一个 | `StartRef`，`EndRef`，`Modifiers` |
+| `Windows` | 列表/选中/关闭顶层编辑器窗口 | `Action`（list/select/close），`Index` |
+| `WaitFor` | 检查文本是否存在于控件树中 | `Text`（必须存在），`TextGone`（必须不存在） |
+| `FillForm` | 批量填写多个表单字段 | `Fields`（Ref/Value/FieldType 数组） |
+
+### Ref 标识符格式
+
+Ref 根据控件角色（role）使用不同前缀，例如：
+- `b1`, `b2`, `b3` — 按钮（Button）
+- `tb1`, `tb2` — 文本框（TextBox）
+- `cb1`, `cb2` — 复选框（CheckBox）
+- `cbx1` — 下拉框（ComboBox）
 
 ## C++ 用法
 
@@ -67,195 +85,221 @@ SlateInspectorToolset 提供了一套 **Playwright 风格的 Slate UI 自动化�
 
 ```cpp
 #include "SlateInspectorToolset.h"
+#include "SlateInspectorToolsetObserverManager.h"
 #include "SlateInspectorToolsetRefCache.h"
 #include "SlateInspectorToolsetSnapshotRenderer.h"
-#include "SlateInspectorToolsetObserverManager.h"
 ```
 
-### 基本用法：获取控件快照
+### 基本用法：获取控件树快照
+
+`FSlateInspectorToolsetSnapshotRenderer::Render()` 是快照的核心函数，将 Slate 控件树渲染为缩进文本。
 
 ```cpp
-// 捕获所有顶层窗口的快照
-FString AllWindowsSnapshot = USlateInspectorToolset::Snapshot("", 30, false);
+// 来源: Public/SlateInspectorToolsetSnapshotRenderer.h
 
-// 捕获指定子树的快照（使用之前获取的 ref）
-FString SubtreeSnapshot = USlateInspectorToolset::Snapshot("w1", 30, true);
-// bIncludeSourceLocations=true 会在每个控件后附加 [src=File:Line] 标签
+// 获取所有顶层窗口的控件树快照（深度 30 层）
+FString SnapshotText = FSlateInspectorToolsetSnapshotRenderer::Render(
+    nullptr,  // nullptr = 所有顶层窗口
+    30,       // MaxDepth
+    false,    // bIncludeSourceLocations
+    true      // bResetCache = true，清除旧 ref 缓存后重新分配
+);
+
+// 对特定控件子树进行快照
+TSharedPtr<SWidget> MyWindowWidget = /* 获取某个窗口控件 */;
+FString SubtreeSnapshot = FSlateInspectorToolsetSnapshotRenderer::Render(
+    MyWindowWidget,
+    15,    // 只遍历 15 层深
+    true,  // 包含源码位置 [src=File:Line]
+    true
+);
 ```
 
-### 基本用法：模拟交互
+### 基本用法：管理 Ref 缓存
+
+`FSlateInspectorToolsetRefCache` 负责 widget 和 ref 标识符之间的双向映射。
 
 ```cpp
-// 模拟点击按钮（ref 为 "b3"）
-FSlateInspectorToolsetModifierKeys Mods;
-Mods.bShift = false;
-Mods.bCtrl = false;
-USlateInspectorToolset::Click("b3", Mods);
+// 来源: Public/SlateInspectorToolsetRefCache.h
 
-// 模拟在文本框中输入
-USlateInspectorToolset::Type("tb1", TEXT("Hello World"));
+FSlateInspectorToolsetRefCache& Cache = FSlateInspectorToolsetRefCache::Get();
 
-// 模拟鼠标悬停
-USlateInspectorToolset::Hover("b5");
+// 为控件分配 ref（角色前缀由快照渲染器决定）
+TSharedRef<SButton> MyButton = SNew(SButton);
+FString Ref = Cache.GetOrAssignRef(MyButton, TEXT("b"));
+// Ref = "b1"（第一个按钮）
+
+// 通过 ref 反向查找活控件
+TSharedPtr<SWidget> Resolved = Cache.ResolveRef(Ref);
+if (Resolved.IsValid())
+{
+    // 控件仍然存在，可以操作
+}
+
+// 查看控件是否已有 ref（不分配新 ref）
+FString ExistingRef = Cache.FindRef(MyButton);
+
+// 清除所有映射并重置计数器（仅手动快照时使用，观察者模式不应调用）
+Cache.Reset();
+
+// 清除已销毁控件的映射条目（由 ObserverManager 定期调用）
+Cache.PurgeExpired();
 ```
 
-### 进阶用法：批量填写表单
+### 基本用法：注册观察者持续监控
 
 ```cpp
-// 使用 FillForm 一次性填写多个表单字段
-TArray<FSlateInspectorToolsetFormField> Fields;
+// 来源: Public/SlateInspectorToolsetObserverManager.h
 
-FSlateInspectorToolsetFormField NameField;
-NameField.Ref = "tb1";
-NameField.Value = "MyProject";
-NameField.FieldType = "textbox";
-Fields.Add(NameField);
+FSlateInspectorToolsetObserverManager& Manager = FSlateInspectorToolsetObserverManager::Get();
 
-FSlateInspectorToolsetFormField CheckboxField;
-CheckboxField.Ref = "cb2";
-CheckboxField.Value = "true";
-CheckboxField.FieldType = "checkbox";
-Fields.Add(CheckboxField);
+// 注册观察者：监控某个控件子树，深度 20 层
+TSharedPtr<SWidget> TargetPanel = /* 目标面板控件 */;
+FString ObserverId = Manager.AddObserver(TargetPanel, 20);
 
-FSlateInspectorToolsetFormField ComboField;
-ComboField.Ref = "dd3";
-ComboField.Value = "Option2";
-ComboField.FieldType = "combobox";
-Fields.Add(ComboField);
+// 获取观察者的缓存快照文本
+FString CachedText = Manager.GetCachedSnapshot(ObserverId);
 
-USlateInspectorToolset::FillForm(Fields);
-```
+// 智能查找匹配的观察者（null RootWidget 匹配根观察者）
+FString BestSnapshot = Manager.FindMatchingObserverSnapshot(nullptr, 10);
 
-### 进阶用法：直接使用 ObserverManager 和 RefCache
-
-```cpp
-// 获取观察者管理器单例
-FSlateInspectorToolsetObserverManager& ObserverMgr = FSlateInspectorToolsetObserverManager::Get();
-
-// 手动添加观察者
-TSharedPtr<SWidget> MyWidget = /* ... */;
-FString ObserverId = ObserverMgr.AddObserver(MyWidget, 20);
-
-// 获取缓存的快照
-FString CachedSnapshot = ObserverMgr.GetCachedSnapshot(ObserverId);
+// 获取所有活跃观察者
+TArray<FSlateInspectorToolsetObserver> AllObservers = Manager.GetObservers();
+for (const auto& Obs : AllObservers)
+{
+    UE_LOG(LogTemp, Log, TEXT("Observer %s: Root=%s, Depth=%d, CachedTextLen=%d"),
+        *Obs.Identifier,
+        Obs.bRoot ? TEXT("ALL") : *Obs.RootWidget.Pin()->GetTypeAsString(),
+        Obs.MaxDepth,
+        Obs.CachedSnapshotText.Len());
+}
 
 // 移除观察者
-ObserverMgr.RemoveObserver(ObserverId);
-
-// 直接使用 RefCache 进行控件查找
-FSlateInspectorToolsetRefCache& RefCache = FSlateInspectorToolsetRefCache::Get();
-
-// 通过 ref 解析控件
-TSharedPtr<SWidget> Widget = RefCache.ResolveRef("b3");
-
-// 查找控件的 ref
-FString Ref = RefCache.FindRef(MyWidget.ToSharedRef());
+Manager.RemoveObserver(ObserverId);
 ```
 
 ### 进阶用法：自定义快照渲染
 
-```cpp
-// 注册自定义控件类型的角色映射
-FSlateInspectorToolsetSnapshotRenderer::RegisterWidgetRole(
-    FName("SMyCustomWidget"), "custom", "cust");
+你可以为自定义 Slate 控件类型注册角色、标签提取器和状态标志提取器。
 
-// 注册自定义标签提取器
+```cpp
+// 来源: Public/SlateInspectorToolsetSnapshotRenderer.h
+
+// 为自定义控件类型注册角色（出现在快照中时显示的角色名和 ref 前缀）
+FSlateInspectorToolsetSnapshotRenderer::RegisterWidgetRole(
+    FName("SMyCustomWidget"),   // 控件类型名
+    TEXT("custom-widget"),      // 角色名
+    TEXT("cw")                  // ref 前缀 → cw1, cw2, cw3...
+);
+
+// 注册自定义标签提取器（控件在快照中显示的文本标签）
 FSlateInspectorToolsetSnapshotRenderer::RegisterLabelExtractor(
     FName("SMyCustomWidget"),
     [](TSharedRef<SWidget> Widget) -> FString
     {
-        // 从自定义控件提取显示文本
-        return TEXT("MyLabel");
-    });
+        TSharedRef<SMyCustomWidget> Typed = StaticCastSharedRef<SMyCustomWidget>(Widget);
+        return Typed->GetDisplayText().ToString();
+    }
+);
 
-// 注册自定义状态标志提取器
+// 注册自定义状态标志提取器（控件在快照中显示的状态，如 [enabled] [checked]）
 FSlateInspectorToolsetSnapshotRenderer::RegisterStateFlagsExtractor(
     FName("SMyCustomWidget"),
     [](TSharedRef<SWidget> Widget) -> TArray<FString>
     {
-        return { TEXT("enabled"), TEXT("visible") };
-    });
+        TArray<FString> Flags;
+        TSharedRef<SMyCustomWidget> Typed = StaticCastSharedRef<SMyCustomWidget>(Widget);
+        if (Typed->IsActive())   Flags.Add(TEXT("active"));
+        if (Typed->IsFocused())  Flags.Add(TEXT("focused"));
+        return Flags;
+    }
+);
 ```
 
-## Demo 示例
+### 进阶用法：使用 AI 工具 API
 
-一个最小的编辑器子系统，注册自定义控件后获取快照：
-
-```cpp
-// MySnapshotDemoSubsystem.h
-#pragma once
-
-#include "EditorSubsystem.h"
-#include "MySnapshotDemoSubsystem.generated.h"
-
-UCLASS()
-class UMySnapshotDemoSubsystem : public UEditorSubsystem
-{
-    GENERATED_BODY()
-
-public:
-    virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-
-    /** 演示：获取当前编辑器 UI 快照 */
-    UFUNCTION(Exec)
-    void DemoSnapshot();
-};
-```
+所有 `UFUNCTION(meta = (AICallable))` 的函数均为 `static`，可从 C++ 直接调用。
 
 ```cpp
-// MySnapshotDemoSubsystem.cpp
-#include "MySnapshotDemoSubsystem.h"
-#include "SlateInspectorToolset.h"
-#include "SlateInspectorToolsetSnapshotRenderer.h"
+// 来源: Public/SlateInspectorToolset.h
 
-void UMySnapshotDemoSubsystem::Initialize(FSubsystemCollectionBase& Collection)
-{
-    Super::Initialize(Collection);
+// 获取所有窗口的快照
+FString AllWindows = USlateInspectorToolset::Snapshot("", 30, false);
 
-    // 注册自定义控件类型，使其出现在快照中
-    FSlateInspectorToolsetSnapshotRenderer::RegisterWidgetRole(
-        FName("SMyGamePanel"), "panel", "pnl");
-}
+// 对特定控件子树注册深度观察
+FString ObsId = USlateInspectorToolset::Observe("win1", 30);
 
-void UMySnapshotDemoSubsystem::DemoSnapshot()
-{
-    // 获取所有顶层窗口的快照（包含源码位置）
-    FString Snapshot = USlateInspectorToolset::Snapshot("", 30, true);
+// 对控件执行交互操作
+USlateInspectorToolset::Click("b3", "left", false);           // 左键单击按钮 b3
+USlateInspectorToolset::Type("tb1", "Hello World", true);     // 输入文字并按回车
+USlateInspectorToolset::Hover("b2");                          // 悬停按钮 b2
+USlateInspectorToolset::SelectOption("cbx1", "Option A");     // 选择下拉选项
 
-    // 输出到日志
-    UE_LOG(LogTemp, Log, TEXT("=== Slate UI Snapshot ===\n%s"), *Snapshot);
-}
+// 带修饰键的点击
+FSlateInspectorToolsetModifierKeys Mods;
+Mods.bCtrl = true;
+USlateInspectorToolset::Click("b5", "left", false, Mods);     // Ctrl+单击
+
+// 拖拽操作
+USlateInspectorToolset::Drag("item1", "target1");             // 从 item1 拖到 target1
+
+// 按键操作
+USlateInspectorToolset::PressKey("Ctrl+A");                   // 全选
+USlateInspectorToolset::PressKey("Enter");                     // 回车
+
+// 窗口管理
+FString WindowList = USlateInspectorToolset::Windows("list");  // 列出所有窗口
+USlateInspectorToolset::Windows("select", 0);                  // 选中第一个窗口
+USlateInspectorToolset::Windows("close", 2);                   // 关闭第三个窗口
+
+// 等待条件
+bool bReady = USlateInspectorToolset::WaitFor("Save Complete", "Loading...");
+
+// 截图
+FToolsetImage Img = USlateInspectorToolset::Screenshot("b3"); // 截取按钮 b3
+
+// 批量填表
+TArray<FSlateInspectorToolsetFormField> Fields;
+FSlateInspectorToolsetFormField Field1;
+Field1.Ref = "tb1"; Field1.Value = "My Object"; Field1.FieldType = "textbox";
+Fields.Add(Field1);
+FSlateInspectorToolsetFormField Field2;
+Field2.Ref = "cb1"; Field2.Value = "true"; Field2.FieldType = "checkbox";
+Fields.Add(Field2);
+USlateInspectorToolset::FillForm(Fields);
 ```
 
 ## 模块依赖
 
+从源码分析，该插件的独特依赖如下：
+
 | 模块 | 用途 |
 |---|---|
-| `ToolsetRegistry` | 提供 `UToolsetDefinition` 基类和工具集注册机制 |
-| `ToolsetRegistry` (插件依赖) | 整个插件依赖 ToolsetRegistry 插件 |
+| `ToolsetRegistry` | 提供 `UToolsetDefinition` 基类和工具注册框架，MCP 通过此发现工具 |
+
+无其他特殊依赖（仅标准 Core/Engine/Slate 等）。该插件以插件形式依赖 `ToolsetRegistry`。
 
 ## 维护状态
 
 ### 近期更新
 
-- 2026-04-18 `6471b168` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
-- 2026-04-17 `8c911af5` [Backout] - CL52878047
-- 2026-04-17 `9404cd3e` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
-- 2026-04-13 `69570138` [SlateInspectorToolset] Move `SlateInspectorToolset` tests from `Editor` to `AI.Toolsets` category.
-- 2026-04-03 `7f02bd73` [AI Toolsets]: Move all toolsets to load at post engine init to simplify registration when toolset r
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-04-18 | `6471b168` | [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,. | 修改了工具集定义中 UFunction 如何被识别为工具的机制 |
+| 2026-04-17 | `8c911af5` | [Backout] - CL52878047 | 回退了上一次提交的改动 |
+| 2026-04-17 | `9404cd3e` | [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,. | 修改了工具集定义中 UFunction 如何被识别为工具的机制（后被回退） |
+| 2026-04-13 | `69570138` | [SlateInspectorToolset] Move `SlateInspectorToolset` tests from `Editor` to `AI.Toolsets` category. | 将测试用例从 Editor 分类迁移到 AI.Toolsets 分类 |
+| 2026-04-03 | `7f02bd73` | [AI Toolsets]: Move all toolsets to load at post engine init to simplify registration when toolset r | 将所有工具集加载阶段改为 PostEngineInit，简化注册时机 |
 
 ### 维护评价
 
-- **创建时间**：2026-04-03，非常新的插件
-- **实验性标记**：`IsExperimentalVersion=true`，`EnabledByDefault=false`，需要手动启用
-- **维护状态**：🆕 全新插件，尚无后续更新记录
-- **已知限制**：
-  - 输入模拟使用直接 Slate 事件 API 而非 AutomationDriver，因为后者在游戏线程上会死锁
-  - Observer 每 ~100ms 刷新一次，高频 UI 变化可能有延迟
-  - Ref 在控件销毁后不会被重用（可能看到 b1, b3, b7 跳号）
-- **推荐程度**：作为实验性插件，适合在 AI Agent / MCP 场景中试用，不建议用于生产环境的关键自动化流程
+- **活跃维护中**：插件创建仅约 2 周，最近一周内有 5 次提交，处于密集开发阶段
+- **实验性状态**：`IsExperimentalVersion=true`，`EnabledByDefault=false`，需手动启用
+- **注意**：提交记录显示存在回退（backout）操作，说明工具注册机制仍在快速迭代和调整中，API 可能不稳定
+- **风险提示**：该插件与 MCP/AIAssistant 基础设施紧密耦合，`UToolsetDefinition` 基类和工具发现机制可能随时变化
+- **建议**：适合跟踪研究 Epic 的 AI 辅助编辑器方向，暂不建议在生产环境依赖。需额外启用 `ToolsetRegistry` 插件才能工作
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/SlateInspectorToolset)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/SlateInspectorToolset/Source/SlateInspectorToolsetTests)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/SlateInspectorToolset)
+- [官方文档]()（无）

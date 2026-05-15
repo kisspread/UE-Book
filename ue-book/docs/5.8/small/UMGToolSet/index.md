@@ -4,220 +4,237 @@
 
 | 属性 | 值 |
 |---|---|
+| 中文名 | UMG工具集 |
 | 分类 | UI |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
-| 模块 | `UMGToolSet` (EditorNoCommandlet) |
-| 实验性 | ⚠️ 是 |
-| 创建时间 | 2026-04-14 |
-| 年龄标签 | 🆕（约 2 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/UMGToolSet) | |
+| 模块 | `UMGToolSet` (Editor) |
+| 实验性 | ⚚ 是 |
+| 创建时间 | 2026-04-02 |
+| 年龄标签 | 🆕（约 0 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/UMGToolSet) | |
 
 ## 用途
 
-UMGToolSet 是一个为 AI 助手设计的工具集插件。它通过 Unreal Engine 的反射系统，为 AI 提供了一套标准化的函数（工具），使其能够以编程方式理解、创建和操作 UMG（Unreal Motion Graphics）控件蓝图。
+UMGToolSet 是一套面向 AI 编程助手的编辑器专用工具集。它通过提供一系列 `UFUNCTION(BlueprintCallable, meta=(AICallable))` 标记的静态函数，使 AI 助手能够完全程序化地操作 Unreal Motion Graphics (UMG) 控件蓝图的创建、查询、修改和编译全流程。
 
-这个插件解决的核心问题是：**如何让 AI 助手能够像人类开发者一样与 UMG 系统交互**。它抽象了 UMG 控件的创建、属性查询与设置、层次结构管理等复杂操作，将其封装成 AI 可以调用的“工具”。这使得 AI 能够辅助或自动化 UI 的搭建、修改和调试过程。
+该插件的核心价值在于解决了 AI 助手无法直接在 UMG 可视化编辑器中“看到”和“拖拽”控件的问题。它为 AI 提供了一套底层、确定性的 API，让 AI 能够：
+1.  **创建资产**：从零开始创建控件蓝图。
+2.  **构建控件树**：程序化地向蓝图中添加、移动、移除、重命名控件。
+3.  **查询状态**：获取完整的控件树结构、属性详情和命名插槽信息。
+4.  **执行修改**：操作控件变量、绑定事件、替换控件、包装控件。
+5.  **完成生命周期**：编译蓝图并处理错误。
+
+简而言之，它是 AI 驱动 UI 生成的“手”和“眼”。
 
 ## 使用场景
 
-- **AI 辅助 UI 开发**：你正在使用一个 AI 编程助手（如基于大语言模型的工具），希望它能根据你的自然语言描述（例如“创建一个包含标题和图片的垂直布局”）直接生成对应的 UMG 控件层次结构。
-- **自动化 UI 测试生成**：你需要为复杂的 UI 界面生成测试用例，AI 可以利用此工具集遍历现有 UI 结构或创建特定结构的 UI 用于测试。
-- **UI 原型快速迭代**：在概念验证阶段，希望通过 AI 快速生成和调整 UI 布局，而无需手动在编辑器中拖拽。
+-   **AI 驱动的 UI 生成工具**：您正在开发一个 AI 助手，该助手需要根据自然语言描述或设计稿，自动生成复杂的 UMG 控件蓝图。本插件提供了底层的创建和操控能力。
+-   **自动化 UI 测试**：您需要编写自动化测试用例，程序化地创建和修改 UMG 控件，以验证 UI 逻辑或布局。
+-   **脚本化 UI 工作流**：您希望用脚本（通过 AI 或手动调用）批量处理或标准化大量 UMG 资产，例如批量更新某个控件的属性或结构。
 
 ## 蓝图用法
 
-该插件主要为 AI 工具链提供后端支持，其核心函数通常不直接在用户蓝图中调用，而是由 AI 助手框架（如 `ToolsetRegistry`）调用。然而，其定义的数据结构和函数是理解其能力的关键。
+所有函数均标记为 `AICallable`，主要面向 AI 代理调用，但也可在编辑器工具蓝图或脚本中使用。
 
-### 核心数据结构
+### 核心节点
 
-| 结构体 | 说明 |
-|---|---|
-| `FUMGWidgetInfo` | 描述一个 UMG 控件的完整信息，包括控件实例、父级、插槽、所属命名槽宿主、类路径、名称以及是否为变量、是否继承等。这是所有查询和创建操作的主要返回类型。 |
-| `FUMGNamedSlotEntry` | 描述一个命名槽的绑定信息，包括槽名和内容控件。 |
-
-### 核心功能节点（概念）
-
-基于源码注释和结构体设计，插件提供的工具函数可能包括：
-
-| 功能 | 说明 | 所在类/结构 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| **查询控件** | 获取指定控件蓝图中的所有控件信息（`FUMGWidgetInfo` 列表）。 | `UUMGToolSet` (推断) |
-| **创建控件** | 在指定的父控件（`UPanelWidget`）下创建一个新的指定类的控件。 | `UUMGToolSet` (推断) |
-| **设置属性** | 通过反射设置控件或其插槽（`UPanelSlot`）的属性值。 | `UUMGToolSet` (推断) |
-| **获取命名槽** | 获取控件蓝图中所有命名槽及其当前内容。 | `UUMGToolSet` (推断) |
-| **设置命名槽内容** | 将指定控件设置为某个命名槽的内容。 | `UUMGToolSet` (推断) |
+| `CreateWidgetBlueprint` | 在指定内容路径创建一个新的控件蓝图资产。 | `UUMGToolSet` |
+| `AddWidget` | 向控件树中的指定父面板添加一个新的控件实例。 | `UUMGToolSet` |
+| `GetWidgets` | 以深度优先顺序返回整个控件树的完整信息（控件、槽、父级关系等）。 | `UUMGToolSet` |
+| `SetNamedSlotContent` | 将指定控件填充到宿主控件的命名插槽中。 | `UUMGToolSet` |
+| `MoveWidget` | 将一个控件移动到新的父面板和子索引位置。 | `UUMGToolSet` |
+| `RemoveWidget` | 从控件树中移除指定控件及其所有子控件。 | `UUMGToolSet` |
+| `RenameWidget` | 重命名一个控件实例。 | `UUMGToolSet` |
+| `ToggleWidgetAsVariable` | 切换控件的 `bIsVariable` 标志，决定其是否暴露为蓝图变量。 | `UUMGToolSet` |
+| `BindToEventProperty` | 为控件的多播委托事件（如按钮的 `OnClicked`）创建一个蓝图事件处理器图节点。 | `UUMGToolSet` |
+| `WrapWidgets` | 将选中的一个或多个控件包装在一个新的指定类别的面板控件中。 | `UUMGToolSet` |
+| `ReplaceWidgetWithTemplate` | 用另一个模板类替换控件树中的某个控件，并尝试保留兼容的引用。 | `UUMGToolSet` |
+| `GetWidgetDescription` | 获取控件树的详细属性描述文本，用于调试和理解结构。 | `UUMGToolSet` |
+| `AddUIComponent` | 向指定控件添加一个 UI 组件。 | `UUMGToolSet` |
+| `CompileWidgetBlueprint` | 编译控件蓝图，并报告包括缺失的 `BindWidget` 在内的所有错误。 | `UUMGToolSet` |
 
-### 使用示例（AI 工具调用流程描述）
+### 使用示例（蓝图描述）
 
-1.  **AI 调用 `查询控件`**：传入一个 `UWidgetBlueprint` 对象，获取其根控件及所有子控件的 `FUMGWidgetInfo` 列表。
-2.  **AI 分析 `FUMGWidgetInfo`**：通过 `WidgetClassPath` 了解控件类型，通过 `Parent` 和 `Slot` 理解层次关系，通过 `bIsVariable` 判断是否可被蓝图变量引用。
-3.  **AI 调用 `创建控件`**：传入一个父控件的 `FUMGWidgetInfo.Widget`（作为 `UPanelWidget`）和一个控件类路径（如 `UVerticalBox::StaticClass()`），创建新控件并获得其 `FUMGWidgetInfo`。
-4.  **AI 调用 `设置属性`**：使用 `ObjectTools`（来自另一个工具集）配合新控件的 `FUMGWidgetInfo.Widget` 或 `FUMGWidgetInfo.Slot`，设置其具体属性（如 `Text`、`Padding`、`Brush` 等）。
+1.  **创建并构建一个简单的 UI**：
+    -   调用 `CreateWidgetBlueprint` 创建 `“/Game/UI”` 路径下的 `“WBP_MainMenu”`。
+    -   调用 `AddWidget`，传入上一步返回的蓝图、`UVerticalBox` 类和 `“RootBox”` 名称，将其设为根控件。
+    -   再次调用 `AddWidget`，父控件传入 `RootBox`，控件类选择 `UButton`，名称为 `“StartButton”`。
+    -   调用 `GetWidgets` 查看构建结果。
+    -   最后调用 `CompileWidgetBlueprint` 编译蓝图，并检查返回的布尔值确认是否成功。
+
+2.  **查询并修改现有控件**：
+    -   使用 `ListWidgetBlueprints` 或资产路径加载一个现有的 `UWidgetBlueprint`。
+    -   调用 `GetWidgets` 获取整个控件树信息，其中每个 `FUMGWidgetInfo` 都包含 `Widget` 指针。
+    -   对感兴趣的控件（如某个 `UTextBlock`），将其 `Widget` 指针传给 `ObjectTools` 的 `list_properties` 和 `set_properties` 节点来修改其文本、颜色等属性。
+    -   使用 `MoveWidget` 调整控件在树中的位置。
 
 ## C++ 用法
 
-该插件的 C++ 接口主要面向工具集开发者和测试。以下示例展示了如何定义具有 `BindWidget` 要求的控件父类，这是 UMG 工具集需要处理的一种典型场景。
+该插件主要面向蓝图和 AI 系统，其核心类 `UUMGToolSet` 的函数均为静态函数，且标记为 `AICallable`。在 C++ 中直接使用的场景较少，更多是作为底层服务被调用。
 
 ### 头文件引入
 
 ```cpp
-#include "UMGToolSet.h" // 主要工具集头文件
-#include "Blueprint/UserWidget.h"
+// 如果您的模块需要依赖此插件，需要在 .h 中包含其公开头文件
+#include "UMGToolSetModule.h"
+// 主要的类定义在私有头文件中，通常不直接包含，而是通过函数调用
+// #include “UMGToolSet.h” // 私有
 ```
 
-### 基本用法：定义带 BindWidget 的测试控件
+### 基本用法（模拟 AI 调用流程）
 
-此示例来自测试夹具，展示了如何创建一个 C++ 基类，其中包含必须或可选绑定到子蓝图控件的属性。UMG 工具集在操作继承此类的蓝图时，需要理解这些约束。
-
-```cpp
-// 来源: Engine/Plugins/Experimental/Toolsets/UMGToolSet/Source/UMGToolSet/Private/Tests/UMGToolSetTestFixtures.h
-UCLASS()
-class UUMGTestWidgetWithBindings : public UUserWidget
-{
-    GENERATED_BODY()
-
-public:
-    /** 必需的 BindWidget — 如果子蓝图中缺失，编译将报错。 */
-    UPROPERTY(meta = (BindWidget))
-    TObjectPtr<UTextBlock> RequiredText = nullptr;
-
-    /** 必需的 BindWidget — 如果子蓝图中缺失，编译将报错。 */
-    UPROPERTY(meta = (BindWidget))
-    TObjectPtr<UImage> RequiredImage = nullptr;
-
-    /** 可选的 BindWidget — 编译器会提示，但不会报错。 */
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UImage> OptionalIcon = nullptr;
-
-    /** 普通属性（非 BindWidget），用于名称冲突测试。 */
-    UPROPERTY()
-    TObjectPtr<UWidget> InternalRef = nullptr;
-};
-```
-
-### 进阶用法：理解 FUMGWidgetInfo 的层次上下文
-
-`FUMGWidgetInfo` 的 `Parent`、`Slot` 和 `NamedSlotHost` 字段共同定义了控件在 UI 树中的位置。在编写工具函数或测试时，需要正确处理这些关系。
+在编辑器工具或测试代码中，您可以像 AI 一样调用这些静态函数。
 
 ```cpp
-// 概念性代码，展示如何解读 FUMGWidgetInfo
-void AnalyzeWidgetInfo(const FUMGWidgetInfo& Info)
-{
-    if (Info.Parent == nullptr && Info.NamedSlotHost == nullptr)
-    {
-        // 这是根控件
-    }
-    else if (Info.NamedSlotHost != nullptr)
-    {
-        // 这是一个命名槽的内容控件
-        // 要修改它的位置，应使用 SetNamedSlotContent 工具，而不是 AddWidget
-        UWidget* Host = Info.NamedSlotHost;
-        // ... 获取 Host 的命名槽列表并操作
-    }
-    else if (Info.Parent != nullptr)
-    {
-        // 这是一个普通子控件，其插槽信息在 Info.Slot 中
-        UPanelSlot* Slot = Info.Slot;
-        // 可以通过反射设置 Slot 的 Padding, Alignment 等属性
-    }
+// 假设您已经有了一个 UWidgetBlueprint 指针（WidgetBlueprint）
+// 创建一个新的按钮控件并添加到根控件下
+FUMGWidgetInfo NewButtonInfo = UUMGToolSet::AddWidget(
+    WidgetBlueprint,
+    UButton::StaticClass(), // TSubclassOf<UWidget>
+    TEXT(“MyNewButton”),
+    nullptr, // ParentWidget = nullptr 表示添加到根或空树
+    -1       // ChildIndex = -1 表示追加到末尾
+);
 
-    if (Info.bInherited)
-    {
-        // 此控件定义在 C++ 父类中，AI 工具可能不应删除或重命名它
-    }
+if (NewButtonInfo.Widget.IsValid())
+{
+    // 成功创建，现在可以通过 ObjectTools 设置按钮的属性
+    // ... 调用 ObjectTools 系列函数 ...
 }
+```
+
+### 进阶用法（从测试用例推断）
+
+从测试夹具文件 `UMGToolSetTestFixtures.h` 可以看出，该插件主要用于验证各种边界情况，例如 `BindWidget` 的绑定。
+
+```cpp
+// 模拟测试一个带有 BindWidget 的父类
+// 1. 创建一个继承自 UUMGTestWidgetWithBindings 的控件蓝图
+UWidgetBlueprint* TestBP = UUMGToolSet::CreateWidgetBlueprint(
+    TestMountPoint, TEXT(“WBP_TestBindings”),
+    UUMGTestWidgetWithBindings::StaticClass()
+);
+
+// 2. 为其添加必需的 BindWidget 控件（RequiredText, RequiredImage）
+UUMGToolSet::AddWidget(TestBP, UTextBlock::StaticClass(), TEXT(“RequiredText”));
+UUMGToolSet::AddWidget(TestBP, UImage::StaticClass(), TEXT(“RequiredImage”));
+
+// 3. 编译，期望成功
+bool bSuccess = UUMGToolSet::CompileWidgetBlueprint(TestBP);
 ```
 
 ## Demo 示例
 
-以下是一个最小化的 C++ 示例，模拟了 AI 工具集可能执行的一个操作：创建一个垂直盒子并为其添加一个文本块。
+以下是一个最小化的 C++ 示例，演示如何在一个编辑器命令或工具函数中使用 `UUMGToolSet` 来创建一个简单的控件蓝图。
 
 ```cpp
-// MyUITool.h
+// MinimalUMGToolSetDemo.h
 #pragma once
 
-#include "CoreMinimal.h"
-#include "Kismet/BlueprintFunctionLibrary.h"
-#include "UMGToolSet.h" // 包含 FUMGWidgetInfo 等结构
-#include "MyUITool.generated.h"
+#include “CoreMinimal.h”
+#include “Kismet/BlueprintFunctionLibrary.h”
+#include “MinimalUMGToolSetDemo.generated.h”
 
 UCLASS()
-class UMyUITool : public UBlueprintFunctionLibrary
+class UMinimalUMGToolSetDemo : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 
 public:
-    /** 模拟一个 AI 工具：创建简单的垂直布局。 */
-    UFUNCTION(BlueprintCallable, Category = "AI|UMG")
-    static FUMGWidgetInfo CreateSimpleVerticalLayout(UWidgetBlueprint* TargetBlueprint);
+    /**
+     * 创建一个包含垂直盒子和按钮的简单 UMG 控件蓝图。
+     * @param SavePath 资产保存路径，例如 “/Game/Demo”
+     * @param AssetName 资产名称，例如 “WBP_DemoUI”
+     * @return 创建成功返回 true，否则返回 false。
+     */
+    UFUNCTION(BlueprintCallable, Category=“Demo”)
+    static bool CreateSimpleDemoUI(const FString& SavePath, const FString& AssetName);
 };
+```
 
-// MyUITool.cpp
-#include "MyUITool.h"
-#include "Components/VerticalBox.h"
-#include "Components/TextBlock.h"
-#include "Engine/Blueprint.h"
-#include "Kismet2/BlueprintEditorUtils.h"
+```cpp
+// MinimalUMGToolSetDemo.cpp
+#include “MinimalUMGToolSetDemo.h”
+// 包含所需 UMG 控件的头文件
+#include “Components/VerticalBox.h”
+#include “Components/Button.h”
+#include “Components/TextBlock.h”
+// 包含 UMGToolSet 的私有头文件以访问其静态函数
+// 注意：在实际项目中，通常通过插件接口或全局函数访问，此处为演示简化
+#include “Private/UMGToolSet.h”
 
-FUMGWidgetInfo UMyUITool::CreateSimpleVerticalLayout(UWidgetBlueprint* TargetBlueprint)
+bool UMinimalUMGToolSetDemo::CreateSimpleDemoUI(const FString& SavePath, const FString& AssetName)
 {
-    FUMGWidgetInfo Result;
-    if (!TargetBlueprint) return Result;
+    // 1. 创建控件蓝图
+    UWidgetBlueprint* NewBlueprint = UUMGToolSet::CreateWidgetBlueprint(
+        SavePath, AssetName, UUserWidget::StaticClass()
+    );
+    if (!NewBlueprint) return false;
 
-    // 1. 创建垂直盒子作为根控件 (概念性调用，实际需通过工具集API)
-    // UVerticalBox* VerticalBox = CreateWidget<UVerticalBox>(...);
-    // Result.Widget = VerticalBox;
-    // Result.WidgetClassPath = UVerticalBox::StaticClass();
-    // Result.WidgetName = FName("RootVerticalBox");
+    // 2. 添加根垂直盒子
+    FUMGWidgetInfo RootBoxInfo = UUMGToolSet::AddWidget(
+        NewBlueprint,
+        UVerticalBox::StaticClass(),
+        TEXT(“RootVBox”)
+    );
+    if (!RootBoxInfo.Widget.IsValid()) return false;
 
-    // 2. 创建文本块作为子控件
-    // UTextBlock* TextBlock = CreateWidget<UTextBlock>(...);
-    // FUMGWidgetInfo ChildInfo;
-    // ChildInfo.Widget = TextBlock;
-    // ChildInfo.Parent = VerticalBox; // 设置父级
-    // ChildInfo.WidgetClassPath = UTextBlock::StaticClass();
-    // ChildInfo.WidgetName = FName("TitleText");
+    // 3. 向垂直盒子中添加一个按钮
+    FUMGWidgetInfo ButtonInfo = UUMGToolSet::AddWidget(
+        NewBlueprint,
+        UButton::StaticClass(),
+        TEXT(“DemoButton”),
+        Cast<UWidget>(RootBoxInfo.Widget.Get()), // 指定父控件为 RootVBox
+        0 // 作为第一个子项
+    );
+    if (!ButtonInfo.Widget.IsValid()) return false;
 
-    // 3. 设置文本块属性 (概念性调用 ObjectTools)
-    // ObjectTools::SetProperties(TextBlock, {{"Text", FText::FromString("Hello AI")}});
+    // 4. 向按钮中添加文本块
+    FUMGWidgetInfo TextInfo = UUMGToolSet::AddWidget(
+        NewBlueprint,
+        UTextBlock::StaticClass(),
+        TEXT(“ButtonText”),
+        Cast<UWidget>(ButtonInfo.Widget.Get()) // 指定父控件为 DemoButton
+    );
+    if (!TextInfo.Widget.IsValid()) return false;
 
-    // 4. 将文本块添加到垂直盒子 (概念性调用 AddWidget 工具)
-    // AddWidget(VerticalBox, ChildInfo.WidgetClassPath, ChildInfo.WidgetName);
-
-    // 注意：以上是概念流程。实际实现需要调用 UMGToolSet 模块提供的具体函数。
-    // 此示例仅说明工具集可能封装的操作逻辑。
-    return Result;
+    // 5. 编译蓝图
+    return UUMGToolSet::CompileWidgetBlueprint(NewBlueprint);
 }
 ```
 
 ## 模块依赖
 
-从 `.uplugin` 的 `Plugins` 字段和模块类型推断，使用此插件需要以下依赖：
-
 | 模块 | 用途 |
 |---|---|
-| `ToolsetRegistry` | 提供工具集注册和发现的框架，UMGToolSet 依赖它来注册自己提供的 AI 工具。 |
+| `ToolsetRegistry` | 提供 `UToolsetDefinition` 基类和工具集注册框架，本插件的 `UUMGToolSet` 继承自它。 |
+| `UMGEditor` | 提供 `UWidgetBlueprint` 及其编辑器操作的核心功能。 |
+| `AssetTools` | 用于资产的创建、保存等操作（通过 `ObjectTools` 等工具集间接依赖）。 |
 
 ## 维护状态
 
 ### 近期更新
 
-- `6471b168` 2026-04-18 — [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
-- `8c911af5` 2026-04-17 — [Backout] - CL52878047
-- `9404cd3e` 2026-04-17 — [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-05-14 | `6611dd10` | Main implementation for UE-373928 | 实现了 UE-373928 的主要功能，为 Wrap 和 Replace 等操作添加了核心逻辑。 |
+| 2026-05-13 | `dca1fade` | WidgetBlueprintOperationUtils: remove overloads for Wrap and Replace functions | 重构了工具函数，移除了 Wrap 和 Replace 功能的冗余重载版本，简化了接口。 |
+| 2026-05-12 | `21f108ac` | Cherry-pick UMGToolSet | 将 UMGToolSet 插件从开发分支精选到当前分支。 |
+| 2026-04-18 | `6471b168` | [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools | 调整了 AI 助手识别工具函数的方式，可能影响 `AICallable` 函数的暴露规则。 |
+| 2026-04-17 | `8c911af5` | [Backout] - CL52878047 | 回滚了之前的某次提交。 |
 
 ### 维护评价
 
-- **状态**：**活跃维护的实验性插件**。
-- **分析**：
-    1.  **创建时间**：非常新（约 2 年前创建）。
-    2.  **更新频率**：最近一周内有多次提交，表明正在积极开发和调整中。
-    3.  **更新内容**：近期提交主要围绕“AIAssistant”和“ToolsetDefinitions”的核心机制进行修改和回退，说明该插件处于功能定义和接口稳定的关键阶段。
-    4.  **实验性**：`.uplugin` 中明确标记为 `IsExperimentalVersion: true` 且 `EnabledByDefault: false`，表明 Epic 将其视为前沿功能，API 和行为可能发生变化。
-- **建议**：可以关注和学习其设计思路，但**不建议在生产项目中依赖此插件**。适合用于研究 AI 与 UE 编辑器集成的开发者。
+-   **创建时间**：该插件于 2026 年 4 月初创建，是一个非常新的功能。
+-   **活跃度**：从 git 历史看，近期（5月）有频繁的功能提交和重构，表明正处于**活跃开发**阶段。
+-   **状态**：插件明确标记为 `IsExperimentalVersion=true` 且 `EnabledByDefault=false`，属于**实验性功能**，API 和行为可能在未来发生变化。
+-   **推荐度**：如果您正在构建 **AI 驱动的 UI 工具链**，并且愿意接受实验性 API 的变动，那么本插件是目前唯一且核心的选择。对于普通的 UMG 开发，无需关注此插件。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/UMGToolSet)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/UMGToolSet/Source/UMGToolSet/Private/Tests)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/UMGToolSet)
+-   [官方文档]() (无)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/UMGToolSet/Source/UMGToolSet/Private/Tests)

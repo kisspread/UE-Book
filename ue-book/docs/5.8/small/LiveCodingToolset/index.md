@@ -4,131 +4,150 @@
 
 | 属性 | 值 |
 |---|---|
+| 中文名 | 实时编码编译工具集 |
 | 分类 | Editor |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `LiveCodingToolset` (Editor), `LiveCodingToolsetTests` (Editor) |
-| 实验性 | ⚠️ 是 |
+| 实验性 | ⚦️ 是 |
 | 创建时间 | 2026-04-23 |
-| 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/LiveCodingToolset) | |
+| 年龄标签 | 🆕（约 -1 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/LiveCodingToolset) | |
 
 ## 用途
 
-该插件是 Unreal Engine **Live Coding（实时编码）** 功能的配套工具集。它并非 Live Coding 的核心实现，而是为其提供辅助工具和扩展能力。其主要目的是为开发者在使用 Live Coding 进行热重载时，提供额外的编译控制、状态监控或调试支持，从而优化实时编码的工作流。它依赖于 `ToolsetRegistry` 插件来注册和管理这些工具。
+此插件将用于**AI代理（AI Agent）**的“实时编码（Live Coding）”编译功能，从其他模块（如 `UAF`）迁移到了一个独立的引擎插件中。它通过一个工具集子系统，将 `CompileLiveCoding` 函数暴露为 `AICallable`（即可供 AI 调用的）蓝图函数，使得外部 AI 工具（如 MCP）能够以编程方式触发热重载编译，并获取编译输出与结果状态。其主要目的是为高级自动化或 AI 驱动的开发工作流提供标准化的编译接口。
 
 ## 使用场景
 
-- 你正在使用 UE5 的 Live Coding 功能进行 C++ 代码的实时编译和热重载，并希望获得更精细的编译过程控制或状态反馈。
-- 你需要为 Live Coding 流程开发自定义的工具或扩展，并希望通过一个标准的工具集框架来集成它们。
-- 你正在编写或测试与 Live Coding 相关的编辑器功能，需要一个独立的、实验性的模块来承载这些代码。
+- 你正在开发或集成基于 AI 的自动化构建流水线，需要让 AI 能够安全地触发和监控 C++ 代码的实时编译。
+- 你需要一个独立的、可控的接口来执行 Live Coding 编译，以便集成到自定义的编辑器工具或菜单中。
+
+## 模块列表
+
+- **LiveCodingToolset**: 核心运行时模块，包含工具集定义、编译功能实现及子系统管理。
+- **LiveCodingToolsetTests**: 编辑器测试模块，验证子系统的注册和核心编译函数的可用性。
 
 ## 蓝图用法
 
-该插件主要面向 C++ 开发，其核心功能（如工具注册）通常在编辑器启动时通过 C++ 代码完成。目前未发现暴露给蓝图的 `UFUNCTION(BlueprintCallable)` 或 `UPROPERTY(BlueprintReadWrite)` 接口。其使用和配置主要在 C++ 层面进行。
+### 核心节点
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `CompileLiveCoding` | 调用实时编码编译并返回执行结果与日志。 | `ULiveCodingToolset` |
+
+### 使用示例（蓝图描述）
+
+在蓝图中，你可以通过 `ULiveCodingToolsetSubsystem` 获取该工具集的实例，然后调用 `CompileLiveCoding` 节点。节点执行后，返回一个结构体，包含是否成功、是否有错误以及详细的输出日志字符串。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "LiveCodingToolset.h"
+#include "LiveCodingToolsetSubsystem.h"
 ```
 
 ### 基本用法
 
-该插件的核心是通过 `ToolsetRegistry` 注册 Live Coding 相关的工具。以下是一个概念性示例，展示了如何注册一个自定义的 Live Coding 工具（具体实现需参考插件内部逻辑）。
-
 ```cpp
-// 假设在某个 Editor 模块的启动函数中
-#include "ToolsetRegistry.h"
-#include "LiveCodingToolset.h"
-
-void FMyEditorModule::StartupModule()
+// 获取编辑器子系统实例
+ULiveCodingToolsetSubsystem* Subsystem = GEditor->GetEditorSubsystem<ULiveCodingToolsetSubsystem>();
+if (Subsystem && Subsystem->IsToolAvailable())
 {
-    // 获取工具集注册表
-    IToolsetRegistry& ToolsetRegistry = IToolsetRegistry::Get();
-
-    // 注册一个与 Live Coding 相关的工具
-    // 具体的工具类需要实现 IToolsetTool 接口
-    ToolsetRegistry.RegisterTool<FLiveCodingToolsetModule>(
-        TEXT("MyLiveCodingHelper"),
-        MakeUnique<FMyLiveCodingTool>()
-    );
+    // 调用编译函数
+    FLiveCodingResult Result = Subsystem->CompileLiveCoding();
+    
+    if (Result.bSuccess)
+    {
+        UE_LOG(LogLiveCodingToolset, Log, TEXT("编译成功: %s"), *Result.Output);
+    }
+    else
+    {
+        UE_LOG(LogLiveCodingToolset, Error, TEXT("编译失败: %s"), *Result.Output);
+    }
 }
 ```
 
-### 进阶用法
-
-结合 `LiveCodingToolsetTests` 模块的测试用例，可以了解该插件如何被验证和使用。测试通常会模拟 Live Coding 的编译过程，并验证工具集是否按预期工作。
-
 ## Demo 示例
 
-以下是一个最小化的示例，展示如何创建一个依赖于 `LiveCodingToolset` 的编辑器模块，并注册一个简单的工具。
+以下示例展示了一个最小化的编辑器模块，用于通过子系统触发一次 Live Coding 编译。
 
-**MyLiveCodingTool.h**
+**MyToolModule.h**
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ToolsetRegistry/ToolsetTool.h"
+#include "Modules/ModuleManager.h"
 
-class FMyLiveCodingTool : public IToolsetTool
+class FMyToolModule : public IModuleInterface
 {
 public:
-    virtual ~FMyLiveCodingTool() = default;
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
 
-    // IToolsetTool 接口实现
-    virtual void Activate() override;
-    virtual void Deactivate() override;
-    virtual bool CanActivate() const override;
+private:
+    void TriggerLiveCodingCompile();
 };
 ```
 
-**MyLiveCodingTool.cpp**
+**MyToolModule.cpp**
 ```cpp
-#include "MyLiveCodingTool.h"
+#include "MyToolModule.h"
+#include "LiveCodingToolsetSubsystem.h"
+#include "Toolkits/AssetEditorManager.h" // 用于演示
 
-void FMyLiveCodingTool::Activate()
+#define LOCTEXT_NAMESPACE "FMyToolModule"
+
+void FMyToolModule::StartupModule()
 {
-    UE_LOG(LogTemp, Log, TEXT("My Live Coding Tool Activated!"));
-    // 在此处添加工具激活时的逻辑，例如监听编译事件
+    // 此处可绑定菜单或快捷键触发 TriggerLiveCodingCompile
 }
 
-void FMyLiveCodingTool::Deactivate()
+void FMyToolModule::ShutdownModule()
 {
-    UE_LOG(LogTemp, Log, TEXT("My Live Coding Tool Deactivated!"));
-    // 清理工作
 }
 
-bool FMyLiveCodingTool::CanActivate() const
+void FMyToolModule::TriggerLiveCodingCompile()
 {
-    // 可以在此检查 Live Coding 是否可用等条件
-    return true;
+    if (ULiveCodingToolsetSubsystem* Subsystem = GEditor->GetEditorSubsystem<ULiveCodingToolsetSubsystem>())
+    {
+        if (Subsystem->IsToolAvailable())
+        {
+            FLiveCodingResult Result = Subsystem->CompileLiveCoding();
+            // 使用结果，例如显示通知
+            FNotificationInfo Info(Result.bSuccess ? LOCTEXT("CompileSuccess", "Live Coding 成功") : LOCTEXT("CompileFail", "Live Coding 失败"));
+            Info.SubText = FText::FromString(Result.Output.Left(200)); // 显示部分输出
+            FSlateNotificationManager::Get().AddNotification(Info);
+        }
+    }
 }
+
+#undef LOCTEXT_NAMESPACE
+
+IMPLEMENT_MODULE(FMyToolModule, MyToolModule)
 ```
 
 ## 模块依赖
 
 | 模块 | 用途 |
 |---|---|
-| `LiveCoding` | Live Coding 功能的核心模块，本插件为其提供扩展工具。 |
-| `ToolsetRegistry` | 工具集注册表插件，用于管理本插件提供的工具。 |
+| `LiveCoding` | 提供底层的实时编译（Live Coding）功能。 |
 
 ## 维护状态
 
 ### 近期更新
 
-（由于插件为实验性且创建时间较近，暂无历史提交记录可供分析。）
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-04-23 | `0d1e3ace` | [LiveCodingToolset] Move the *Live Coding* *MCP* tool into a dedicated Engine plugin... | 初始创建插件，将实时编码的MCP工具独立为新插件，暴露AICallable编译函数并添加测试。 |
 
 ### 维护评价
 
-- **实验性插件**：该插件被明确标记为 `IsExperimentalVersion: true` 且 `EnabledByDefault: false`，表明它处于早期开发阶段，API 和功能可能不稳定，不建议在生产项目中直接依赖。
-- **创建时间**：插件创建于 2026 年，非常新，属于实验性探索阶段。
-- **维护状态**：作为实验性插件，其维护状态和未来路线图尚不明确。它可能随着 Live Coding 功能的演进而更新，也可能被合并或废弃。
-- **推荐使用**：仅推荐给希望研究或扩展 UE5 Live Coding 内部机制的高级开发者。对于普通项目，应使用引擎内置的 Live Coding 功能，而无需启用此插件。
+- **实验性**：插件标记为 `IsExperimentalVersion` 且 `EnabledByDefault` 为 false，属于实验阶段功能。
+- **活跃状态**：插件于 2026 年 4 月创建，目前仅有初始提交。属于全新插件，未来活跃度有待观察。
+- **使用建议**：适用于希望尝试或集成 AI 驱动编译工作流的开发者。由于是实验性功能，生产环境使用需谨慎，需关注后续更新。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/LiveCodingToolset)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/LiveCodingToolset/Source/LiveCodingToolsetTests)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/LiveCodingToolset)

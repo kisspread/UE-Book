@@ -1,199 +1,223 @@
-# AutomationTestToolset
+# Automation Test Toolset
 
 > Automation test discovery and execution tools.
 
 | 属性 | 值 |
 |---|---|
-| 分类 | Experimental |
+| 中文名 | 自动化测试工具集 |
+| 分类 | Editor |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `AutomationTestToolset` (Editor), `AutomationTestToolsetTests` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-13 |
-| 年龄标签 | 🆕（约 2 年） |
+| 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset) | |
 
 ## 用途
 
-该插件提供了一套用于**发现、管理和执行自动化测试**的编辑器工具集。它旨在解决在大型项目中，自动化测试用例数量庞大、难以快速定位、运行和调试的问题。通过提供集成的测试浏览器、运行器和调试工具，开发者可以更高效地与自动化测试套件进行交互，而无需依赖命令行或外部脚本。
+该插件的核心是为 AI 助手（如 LLM）提供一套标准化的工具（Toolset），用于在编辑器内发现、选择和执行自动化测试。它解决的核心问题是：让 AI 能够像开发者一样，通过函数调用（Tool Call）与 UE 编辑器的自动化测试系统进行交互，从而在持续集成（CI）或 AI 辅助开发流程中自动运行测试、诊断失败原因。
 
 ## 使用场景
 
-- 你的项目拥有数百个自动化测试，需要在编辑器内快速筛选、运行特定测试或测试套件。
-- 你在开发或调试一个新功能，需要频繁运行相关的单元测试或集成测试，并希望立即查看结果和日志。
-- 你希望为团队提供一个统一的、可视化的界面来管理自动化测试，降低测试运行的门槛。
+-   **AI 驱动的 CI/CD**：在自动化流水线中，AI 助手可以使用 `DiscoverTests` 初始化测试环境，通过 `ListTests` 过滤出需要运行的测试，调用 `RunTests` 执行，并使用 `GetTestStatus` 和 `GetTestResults` 轮询结果。
+-   **AI 辅助开发与调试**：开发者可以口头指示 AI 助手“运行所有与玩家移动相关的测试”，AI 助手内部会调用该插件提供的工具来执行命令并反馈结果。
+-   **自动化测试管理**：提供结构化的 JSON 数据，便于外部脚本或工具解析测试列表和结果，用于生成报告或触发后续流程。
 
 ## 蓝图用法
 
-该插件主要提供编辑器工具和UI，而非蓝图节点。其核心功能通过编辑器菜单和窗口暴露。
+此插件主要设计用于被其他插件（如 ToolsetRegistry）的工具函数封装，但其核心功能也通过 `UFUNCTION(BlueprintCallable)` 暴露。
 
-### 核心功能（编辑器UI）
+### 核心节点
 
-| 功能 | 说明 | 入口 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| 测试浏览器 | 以树状结构浏览项目中所有可用的自动化测试，支持按名称、标签等进行筛选。 | 编辑器菜单 -> `Tools` -> `Automation Test Toolset` -> `Test Browser` |
-| 测试运行器 | 从测试浏览器中选择一个或多个测试，直接运行并查看实时输出和结果。 | 测试浏览器窗口内的运行按钮 |
-| 测试结果查看器 | 查看测试运行的历史记录、详细日志、失败截图和性能数据。 | 测试浏览器窗口内的结果面板 |
+| `DiscoverTests` | 初始化测试发现会话（异步，首次调用约15秒） | `UAutomationTestController` |
+| `ListTests` | 返回按名称和标签过滤的测试路径列表（JSON） | `UAutomationTestController` |
+| `RunTests` | 异步执行指定的测试，完成后返回结果（JSON） | `UAutomationTestController` |
+| `RunTestsByFilter` | 根据过滤条件快速批量选择并运行测试 | `UAutomationTestController` |
+| `GetTestStatus` | 轮询当前测试执行控制器的状态 | `UAutomationTestController` |
+| `GetTestResults` | 获取详细的结果，包含每个测试的错误和警告 | `UAutomationTestController` |
+| `StopTests` | 中止正在运行的测试 | `UAutomationTestController` |
 
-### 使用示例（编辑器操作）
+### 使用示例（蓝图描述）
 
-1.  打开测试浏览器：在编辑器主菜单中，找到 `Tools` -> `Automation Test Toolset` -> `Test Browser`。
-2.  浏览测试：在左侧的测试树中，展开节点以查看不同模块或类别的测试。
-3.  运行测试：勾选一个或多个测试，点击窗口顶部的“运行”按钮。测试将在后台执行。
-4.  查看结果：运行完成后，在窗口下方的“结果”面板中查看每个测试的状态（通过/失败）、执行时间和输出日志。失败的测试会高亮显示。
+1.  **获取测试列表**：
+    -   调用 `DiscoverTests` 节点，并连接一个 `Delay` 节点等待约15秒。
+    -   之后调用 `ListTests` 节点，设置 `NameFilter` (如 “Player.”）和 `Limit` (如 10)。
+    -   将输出的 `TestPaths` (FString) 节点连接到 `Print String` 或解析节点，即可看到 JSON 格式的测试路径列表。
+
+2.  **运行并检查结果**：
+    -   先调用 `ListTests` 获取一个测试名称。
+    -   创建一个 `String` 数组，填入测试名称。
+    -   调用 `RunTests` 节点，输入该数组。
+    -   使用 `While` 循环配合 `Delay` 和 `GetTestStatus` 节点轮询状态。
+    -   当状态指示完成后，调用 `GetTestResults` 获取详细结果。
 
 ## C++ 用法
-
-该插件的C++ API主要面向插件内部扩展和高级自动化场景。以下示例基于其测试模块的用法。
 
 ### 头文件引入
 
 ```cpp
-#include "AutomationTestToolset.h"
+#include "AutomationTestController.h"
 ```
 
 ### 基本用法
 
-从测试用例中可以看到，该插件主要用于注册和发现测试。以下是一个简化的测试注册示例。
-
-*来源：`AutomationTestToolsetTests` 模块*
+来自测试用例的典型用法，展示如何初始化和获取测试列表。
 
 ```cpp
-// 定义一个简单的自动化测试
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FMySimpleTest, "MyProject.MyFeature.SimpleTest", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+// 假设在一个 EditorSubsystem 或类似的上下文中
+#include "AutomationTestController.h"
 
-bool FMySimpleTest::RunTest(const FString& Parameters)
+void RunAutomationWorkflow()
 {
-    // 测试逻辑
-    bool bSuccess = true;
-    TestEqual(TEXT("1 + 1 should be 2"), 1 + 1, 2);
-    return bSuccess;
+    // 1. 获取全局唯一的测试控制器实例
+    UAutomationTestController* TestController = UAutomationTestController::Get();
+
+    // 2. 初始化发现会话 (这是异步的，首次调用需要等待)
+    TestController->DiscoverTests();
+
+    // 3. 等待发现完成 (实际使用中需要轮询或回调，此处为示意)
+    // FPlatformProcess::Sleep(15.0f);
+
+    // 4. 获取过滤后的测试列表
+    const FString Filter = TEXT("MyGame.");
+    const int32 Limit = 50;
+    FString JsonTestPaths = TestController->ListTests(Filter, TEXT(""), Limit);
+
+    // 解析 JSON 字符串获取测试名称数组...
+    // 例如：TArray<FString> TestNames = ParseTestPathsFromJson(JsonTestPaths);
 }
 ```
+**来源**: 推断自 `AutomationTestController` 的公共接口和 `AutomationTestToolsetTests` 的测试逻辑。
 
 ### 进阶用法
 
-插件可能提供了用于程序化查询和执行测试的接口。以下是一个假设的用法，展示了如何通过代码触发测试发现。
-
-*注意：此为基于插件设计的推测性示例，具体API需查阅实际头文件。*
+结合 `RunTests` 和状态轮询的完整流程。
 
 ```cpp
-#include "AutomationTestToolset.h"
-#include "IAutomationController.h"
-
-void RunSpecificTests()
+void RunAndMonitorTests(const TArray<FString>& TestNames)
 {
-    // 获取自动化测试控制器（插件可能提供封装）
-    IAutomationControllerPtr AutomationController = /* ... 获取方式 ... */;
-    
-    // 发现所有包含“MyFeature”标签的测试
-    TArray<FAutomationTestInfo> TestInfos;
-    AutomationController->GetTestInfosByTag(TEXT("MyFeature"), TestInfos);
-    
-    // 运行这些测试
-    for (const FAutomationTestInfo& TestInfo : TestInfos)
+    UAutomationTestController* Controller = UAutomationTestController::Get();
+
+    // 1. 异步启动测试
+    Controller->RunTests(TestNames);
+
+    // 2. 轮询状态直到完成
+    while (true)
     {
-        AutomationController->StartTestRun(TestInfo.TestName);
+        FString StatusJson = Controller->GetTestStatus();
+        // 解析 StatusJson，检查状态字段
+        if (/* 状态为 Completed 或 Failed */)
+        {
+            break;
+        }
+        FPlatformProcess::Sleep(1.0f); // 避免过于频繁的轮询
     }
+
+    // 3. 获取详细结果
+    FString ResultsJson = Controller->GetTestResults();
+    // 解析 ResultsJson 获取每个测试的通过状态、错误信息、日志等
 }
 ```
+**来源**: 综合自工具函数的设计模式。
 
 ## Demo 示例
 
-以下是一个最小化的编辑器工具扩展示例，展示了如何在自己的编辑器模块中调用 `AutomationTestToolset` 插件的功能来触发测试。
+一个演示如何从 C++ 代码调用核心功能的最小示例。
 
-**MyTestRunnerTool.h**
 ```cpp
+// MyTestRunner.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Modules/ModuleManager.h"
+#include "AutomationTestController.h"
 
-class FMyTestRunnerToolModule : public IModuleInterface
+class FMyTestRunner
 {
 public:
-    virtual void StartupModule() override;
-    virtual void ShutdownModule() override;
+    void StartTestSession();
+    void ExecuteFilteredTests(const FString& TestNameFilter);
 
 private:
-    void RegisterMenus();
-    void RunAllGameplayTests();
+    TWeakObjectPtr<UAutomationTestController> TestController;
 };
-```
 
-**MyTestRunnerTool.cpp**
-```cpp
-#include "MyTestRunnerTool.h"
-#include "AutomationTestToolset.h" // 引入插件头文件
-#include "ToolMenus.h"
+// MyTestRunner.cpp
+#include "MyTestRunner.h"
 
-#define LOCTEXT_NAMESPACE "FMyTestRunnerToolModule"
-
-void FMyTestRunnerToolModule::StartupModule()
+void FMyTestRunner::StartTestSession()
 {
-    UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FMyTestRunnerToolModule::RegisterMenus));
-}
-
-void FMyTestRunnerToolModule::ShutdownModule()
-{
-    UToolMenus::UnRegisterStartupCallback(this);
-    UToolMenus::UnregisterOwner(this);
-}
-
-void FMyTestRunnerToolModule::RegisterMenus()
-{
-    FToolMenuOwnerScoped OwnerScoped(this);
-    UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Tools");
-    FToolMenuSection& Section = Menu->AddSection("MyTestTools", LOCTEXT("MyTestTools", "My Test Tools"));
-    Section.AddMenuEntry(
-        "RunGameplayTests",
-        LOCTEXT("RunGameplayTests", "Run Gameplay Tests"),
-        LOCTEXT("RunGameplayTestsTooltip", "Runs all tests tagged with 'Gameplay'"),
-        FSlateIcon(),
-        FUIAction(FExecuteAction::CreateRaw(this, &FMyTestRunnerToolModule::RunAllGameplayTests))
-    );
-}
-
-void FMyTestRunnerToolModule::RunAllGameplayTests()
-{
-    // 假设插件提供了这样的静态方法
-    if (FAutomationTestToolsetModule* TestToolsetModule = FModuleManager::GetModulePtr<FAutomationTestToolsetModule>("AutomationTestToolset"))
+    TestController = UAutomationTestController::Get();
+    if (TestController.IsValid())
     {
-        // 这是一个示意性的调用，实际API请查阅插件头文件
-        // TestToolsetModule->RunTestsByTag(TEXT("Gameplay"));
-        UE_LOG(LogTemp, Log, TEXT("Triggered run of all Gameplay tests via AutomationTestToolset."));
+        // 启动测试发现会话
+        TestController->DiscoverTests();
+        UE_LOG(LogTemp, Log, TEXT("Automation test discovery initiated. Please wait ~15 seconds."));
     }
 }
 
-#undef LOCTEXT_NAMESPACE
+void FMyTestRunner::ExecuteFilteredTests(const FString& TestNameFilter)
+{
+    if (!TestController.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Test controller is not available."));
+        return;
+    }
 
-IMPLEMENT_MODULE(FMyTestRunnerToolModule, MyTestRunnerTool)
+    // 1. 获取符合过滤条件的测试列表
+    FString TestPathsJson = TestController->ListTests(TestNameFilter, TEXT(""), 100);
+    // 注意：实际使用需要解析 JSON 字符串
+    // TArray<FString> TestNames = ParseJsonToArray(TestPathsJson);
+    TArray<FString> TestNames; // 伪代码，假设已解析
+
+    if (TestNames.Num() > 0)
+    {
+        // 2. 运行这些测试
+        UE_LOG(LogTemp, Log, TEXT("Running %d tests matching filter '%s'."), TestNames.Num(), *TestNameFilter);
+        TestController->RunTests(TestNames);
+
+        // 注意：这是一个简化的示例。真实的执行和结果检查是异步的，
+        // 需要通过定时轮询 `GetTestStatus()` 和 `GetTestResults()` 来完成。
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No tests found matching the filter '%s'."), *TestNameFilter);
+    }
+}
 ```
 
 ## 模块依赖
 
+从插件的 `.uplugin` 和 Build.cs 文件推断的依赖关系。
+
 | 模块 | 用途 |
 |---|---|
-| `ToolsetRegistry` | 用于将本插件的工具注册到统一的工具集管理框架中。 |
+| `ToolsetRegistry` | 插件显式依赖的父插件，用于将本插件的函数注册为 AI 工具 |
+| `AutomationController` | UE 内置的自动化测试执行框架核心模块 |
+| `MessagingCommon`, `SessionServices`, `SourceControl` | 用于支持测试会话发现、通信及可能的源代码管理集成 |
 
 ## 维护状态
 
 ### 近期更新
 
-- 2026-04-18 `6471b168` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
-- 2026-04-17 `8c911af5` [Backout] - CL52878047
-- 2026-04-17 `9404cd3e` [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,.
-- 2026-04-14 `b391684d` [AutomationTestToolset] Guard `HandleTestsRefreshed` filter reset behind `bDiscoveryRequested`.
-- 2026-04-13 `73b95c3f` [AutomationTestToolset] Move `AutomationTestToolset` tests from `Editor` to `AI.Toolsets` category.
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-05-14 | `675a8bed` | AutomationTestToolset: add RunTestsByFilter for fast batch test selection | 新增 `RunTestsByFilter` 工具，支持按条件快速批量选择测试 |
+| 2026-04-30 | `bbe30475` | [ToolsetRegistry] Iterate Python automation tests without restarting the editor | 优化测试迭代流程，避免重启编辑器 |
+| 2026-04-18 | `6471b168` | [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools | 调整工具函数识别逻辑，影响本插件的工具注册 |
+| 2026-04-17 | `8c911af5` | [Backout] - CL52878047 | 回退了一次提交 |
+| 2026-04-17 | `9404cd3e` | [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools,. | 同上，工具识别逻辑的初次尝试 |
 
 ### 维护评价
 
-- **创建时间**：插件创建于2026年4月，是一个相对较新的项目。
-- **最近更新**：根据提供的git信息，最后一次实质性更新停留在2025年10月，距今已超过半年。这表明插件可能处于**开发早期或维护不活跃**阶段。
-- **实验性状态**：插件明确标记为 `IsExperimentalVersion: true` 且 `EnabledByDefault: false`，说明它仍处于实验阶段，API和功能可能不稳定。
-- **推荐使用**：**谨慎使用**。该插件提供了有价值的测试管理功能，但鉴于其“实验性”状态和近期缺乏更新，不建议在生产环境或关键项目中作为核心依赖。适合在开发或研究环境中试用，并准备好应对潜在的API变更或兼容性问题。
+该插件处于**活跃维护**状态。它创建于 2026 年 4 月，非常年轻（🆕），并在创建后的一个月内有多次功能性更新和优化（如新增 `RunTestsByFilter` 工具）。这些更新表明 Epic 的 AI 工具团队正在积极开发和完善它。
+
+作为实验性插件（`IsExperimentalVersion=true`，`EnabledByDefault=false`），它旨在为特定的前沿工作流（AI 工具集成）提供解决方案，接口和稳定性可能随版本迭代而变化。目前看来，它是一个功能明确、更新及时的实验性工具，适合在受控的编辑器和 CI 环境中进行评估和试用，**推荐对 AI 驱动的自动化测试流程有明确需求的团队关注和试用**。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset/Source/AutomationTestToolsetTests)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/AutomationTestToolset)
+-   官方文档：无
+-   测试用例：位于插件内的 `AutomationTestToolsetTests` 模块中

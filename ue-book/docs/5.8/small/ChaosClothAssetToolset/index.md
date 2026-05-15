@@ -16,48 +16,58 @@
 
 ## 用途
 
-该插件为 UE5 的 AI Agent 工具集系统提供布料资产操作能力，允许 AI Agent 通过结构化指令创建、转换和分配 ChaosClothAsset 到骨骼网格体。
+该插件是一个 **AI 代理（Agent）工具集**，提供一套通过字符串路径操作骨骼网格体上布料资产的 API。它的核心价值在于：
 
-核心解决的问题是：将旧版布料资产（`UClothingAssetCommon`）自动迁移到新版 `UChaosClothAsset` 格式，并完成与骨骼网格体的绑定。这是一套面向 AI 工作流的自动化工具，复制了手动在 SkeletalMesh 编辑器视口右键菜单中执行的操作。
+1. **程序化布料管理**：无需打开 SkeletalMesh 编辑器，即可通过代码/AI 代理完成布料资产的创建、绑定、解绑和查询操作
+2. **旧版布料迁移**：将基于 `UClothingAssetCommon` 的旧版布料资产（通过 `UChaosClothingSimulationFactory` 创建）自动转换为新的 `UChaosClothAsset` 格式，转换过程中保留配置数据和权重贴图
+3. **对接 ToolsetRegistry 系统**：作为 `UToolsetDefinition` 子类，向 UE 的 AI 代理框架注册可调用的工具函数，使 AI 能够自主完成布料资产的管理流程
 
-**注意**：此插件依赖 `ToolsetRegistry`（AI Agent 工具注册表）插件，是 AI 自动化布料工作流的一部分，而非普通用户直接使用的编辑器工具。
+简而言之：这是为 **AI 驱动的自动化工作流** 设计的布料资产操作接口，复刻了 SkeletalMesh 编辑器视口右键菜单中"应用布料数据"/"移除布料数据"的功能。
 
 ## 使用场景
 
-- 你有大量旧版 `UClothingAssetCommon` 布料资产需要迁移到 ChaosClothAsset 新格式
-- 你需要通过 AI Agent 脚本自动化布料资产的创建、转换和 LOD 绑定
-- 你需要批量将 ChaosClothAsset / Outfit Asset 绑定到骨骼网格体的特定 LOD 和 Section
+- 你需要通过 AI 代理自动为角色骨骼网格体创建和绑定 ChaosClothAsset 布料 → 使用此插件
+- 你有大量角色的旧版布料资产需要迁移到新 ChaosClothAsset 格式 → 使用 `ConvertClothingAssetCommonToChaosClothAsset`
+- 你需要在自动化管线中批量管理骨骼网格体的布料绑定关系 → 使用 `CreateClothingAsset` / `AssignClothingToSection`
+- 你正在开发 AI 代理系统，需要让 AI 理解并操作布料工作流 → 参考 `UChaosClothAssetConversionSkill` 中的指令模板
 
 ## 蓝图用法
 
-该插件的函数通过 `UFUNCTION(meta=(AICallable))` 暴露给 AI Agent 系统，而非传统的 BlueprintCallable。这些函数为静态方法，主要通过 AI 工具调用接口访问。
+所有函数均标记为 `meta=(AICallable)`，属于 AI 代理可调用的工具函数。函数全部为 `static`，无需实例化。
 
 ### 核心节点
 
-| 函数 | 说明 | 所在类 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `CreateClothingAsset` | 从 ChaosClothAsset 创建布料资产并添加到骨骼网格体 | `UChaosClothAssetToolset` |
-| `AssignClothingToSection` | 将布料资产绑定到骨骼网格体的指定 LOD/Section | `UChaosClothAssetToolset` |
+| `CreateClothingAsset` | 从 ChaosCloth/Outfit 资产创建布料资产并添加到骨骼网格体的布料数组 | `UChaosClothAssetToolset` |
+| `AssignClothingToSection` | 将布料资产绑定到指定 LOD 和 Section | `UChaosClothAssetToolset` |
+| `RemoveClothingFromSection` | 从指定 LOD Section 解除布料绑定 | `UChaosClothAssetToolset` |
 | `ListClothingAssets` | 列出骨骼网格体上所有布料资产信息 | `UChaosClothAssetToolset` |
-| `ConvertClothingAssetCommonToChaosClothAsset` | 将旧版 UClothingAssetCommon 转换为 ChaosClothAsset | `UChaosClothAssetToolset` |
-| `RemoveClothingFromSection` | 从指定 Section 解除布料绑定 | `UChaosClothAssetToolset` |
+| `GetSectionClothing` | 查询指定 Section 绑定的布料资产名称 | `UChaosClothAssetToolset` |
+| `ConvertClothingAssetCommonToChaosClothAsset` | 将旧版 UClothingAssetCommon 转换为新的 UChaosClothAsset | `UChaosClothAssetToolset` |
 
-### 返回数据结构
+### 数据结构
 
 | 结构体 | 说明 |
 |---|---|
 | `FClothingAssetInfo` | 布料资产信息，包含 `AssetName`、`bRequiresMatchingLodIndex`、`NumClothingLods` |
 
-### Agent 技能工作流
+### 使用示例
 
-插件内置了一个 `UChaosClothAssetConversionSkill`，为 AI Agent 提供了完整的端到端转换指令：
+**基本工作流 — 查询并绑定布料：**
 
-1. 调用 `ListClothingAssets` 查找 `bRequiresMatchingLodIndex == false` 的旧版资产
-2. 对每个旧版资产调用 `ConvertClothingAssetCommonToChaosClothAsset` 进行转换
-3. 转换后的 `UChaosClothAsset` 内嵌 Dataflow 图，源资产由 `ClothingAssetImport` 节点引用
-4. 调用 `CreateClothingAsset` 将新资产附加到骨骼网格体
-5. 调用 `AssignClothingToSection` 逐个绑定到 LOD/Section
-6. 验证通过后可调用 `RemoveClothingFromSection` 解除旧绑定
+1. 调用 `ListClothingAssets` 获取骨骼网格体上所有布料资产
+2. 从返回的 `FClothingAssetInfo` 数组中选择目标资产
+3. 调用 `AssignClothingToSection` 将布料绑定到目标 LOD/Section
+4. 如果是 ChaosClothAsset 类型（`bRequiresMatchingLodIndex == true`），`ClothingLodIndex` 必须与 `LodIndex` 相同
+
+**迁移工作流 — 旧版布料转新格式：**
+
+1. 调用 `ListClothingAssets`，找到 `bRequiresMatchingLodIndex == false` 的条目（即旧版 UClothingAssetCommon）
+2. 调用 `ConvertClothingAssetCommonToChaosClothAsset` 进行转换
+3. 调用 `CreateClothingAsset` 将新资产附加到网格体
+4. 调用 `AssignClothingToSection` 绑定新布料（`ClothingLodIndex` = `LodIndex`）
+5. 验证无误后，调用 `RemoveClothingFromSection` 移除旧版绑定
 
 ## C++ 用法
 
@@ -69,108 +79,188 @@
 
 ### 基本用法
 
-创建布料资产并绑定到骨骼网格体：
+列出骨骼网格体上的布料资产并查询绑定信息：
 
 ```cpp
-// 从 ChaosClothAsset 创建布料资产并附加到骨骼网格体
-TArray<FString> CreatedAssets = UChaosClothAssetToolset::CreateClothingAsset(
-    TEXT("/Game/Characters/MyCharacter.SKEL_MyCharacter"),
-    TEXT("/Game/Cloth/MyClothAsset.MyClothAsset")
-);
+// 列出目标骨骼网格体上的所有布料资产
+TArray<FClothingAssetInfo> Assets = UChaosClothAssetToolset::ListClothingAssets(
+    TEXT("/Game/Characters/SM_Character"));
 
-// 将布料资产绑定到 LOD 0 的 Section 0
-bool bSuccess = UChaosClothAssetToolset::AssignClothingToSection(
-    TEXT("/Game/Characters/MyCharacter.SKEL_MyCharacter"),
-    CreatedAssets[0],
-    0,  // LodIndex
-    0,  // SectionIndex
-    0   // ClothingLodIndex (ChaosClothAsset 需与 LodIndex 相同)
-);
+for (const FClothingAssetInfo& Info : Assets)
+{
+    UE_LOG(LogTemp, Log, TEXT("布料资产: %s, LOD数: %d, 需匹配LOD: %s"),
+        *Info.AssetName,
+        Info.NumClothingLods,
+        Info.bRequiresMatchingLodIndex ? TEXT("是") : TEXT("否"));
+}
+
+// 查询特定 Section 的布料绑定
+FString BoundCloth = UChaosClothAssetToolset::GetSectionClothing(
+    TEXT("/Game/Characters/SM_Character"),
+    /*LodIndex=*/ 0,
+    /*SectionIndex=*/ 2);
+
+if (!BoundCloth.IsEmpty())
+{
+    UE_LOG(LogTemp, Log, TEXT("Section 2 绑定了布料: %s"), *BoundCloth);
+}
 ```
-
-*来源：Source/ChaosClothAssetToolset/Private/ChaosClothAsset/ClothAssetToolset.h*
 
 ### 进阶用法
 
-自定义 AI Agent Skill 扩展布料工作流：
+完整的旧版布料迁移流程（对应 `UChaosClothAssetConversionSkill` 中描述的工作流）：
 
 ```cpp
-UCLASS()
-class UMyCustomClothSkill : public UAgentSkill
-{
-    GENERATED_BODY()
-public:
-    UMyCustomClothSkill()
-    {
-        Description = TEXT("Custom cloth asset workflow.");
-        Toolsets.Add(UChaosClothAssetToolset::StaticClass());
-        Instructions = TEXT("1. List all clothing assets...\n2. Convert legacy assets...");
-    }
-};
-```
+const FString SkeletalMeshPath = TEXT("/Game/Characters/SM_Character");
+const FString OutputFolder = TEXT("/Game/Cloth/");
 
-*来源：Source/ChaosClothAssetToolset/Private/ChaosClothAsset/ChaosClothAssetConversionSkill.h*
+// 1. 列出所有布料资产，查找旧版类型
+TArray<FClothingAssetInfo> Assets = UChaosClothAssetToolset::ListClothingAssets(SkeletalMeshPath);
+
+for (const FClothingAssetInfo& Info : Assets)
+{
+    if (Info.bRequiresMatchingLodIndex)
+    {
+        continue; // 跳过已是 ChaosClothAsset 类型的
+    }
+
+    // 2. 转换旧版布料资产为新的 ChaosClothAsset
+    FString NewAssetPath = UChaosClothAssetToolset::ConvertClothingAssetCommonToChaosClothAsset(
+        SkeletalMeshPath,
+        Info.AssetName,
+        OutputFolder,
+        /*AssetName=*/ TEXT("")); // 空字符串使用默认名 "CA_Converted_<source>"
+
+    if (NewAssetPath.IsEmpty())
+    {
+        UE_LOG(LogTemp, Error, TEXT("转换失败: %s"), *Info.AssetName);
+        continue;
+    }
+
+    // 3. 将新资产附加到骨骼网格体
+    TArray<FString> CreatedAssets = UChaosClothAssetToolset::CreateClothingAsset(
+        SkeletalMeshPath, NewAssetPath);
+
+    if (CreatedAssets.Num() > 0)
+    {
+        // 4. 绑定到 LOD 0, Section 0
+        // ChaosClothAsset 类型的 ClothingLodIndex 必须与 LodIndex 相同
+        UChaosClothAssetToolset::AssignClothingToSection(
+            SkeletalMeshPath,
+            CreatedAssets[0],
+            /*LodIndex=*/ 0,
+            /*SectionIndex=*/ 0,
+            /*ClothingLodIndex=*/ 0); // 与 LodIndex 相同
+
+        // 5. 移除旧版布料绑定
+        UChaosClothAssetToolset::RemoveClothingFromSection(
+            SkeletalMeshPath,
+            /*LodIndex=*/ 0,
+            /*SectionIndex=*/ 0);
+    }
+}
+```
 
 ## Demo 示例
 
-### 自定义 Agent Skill
+以下展示如何创建一个自定义的编辑器命令，利用工具集批量处理场景中所有角色的布料迁移：
 
 ```cpp
-// MyClothAgentSkill.h
+// ClothMigrationCommandlet.h
 #pragma once
 
-#include "ChaosClothAsset/ClothAssetToolset.h"
-#include "ToolsetRegistry/AgentSkill.h"
-#include "MyClothAgentSkill.generated.h"
+#include "Commandlets/Commandlet.h"
+#include "ClothMigrationCommandlet.generated.h"
 
 UCLASS()
-class UMyClothAgentSkill : public UAgentSkill
+class UClothMigrationCommandlet : public UCommandlet
 {
     GENERATED_BODY()
 
 public:
-    UMyClothAgentSkill()
-    {
-        Description = TEXT("Batch convert legacy cloth assets to ChaosClothAsset format.");
-        Toolsets.Add(UChaosClothAssetToolset::StaticClass());
-        Instructions = TEXT(
-            "For each skeletal mesh:\n"
-            "1. List clothing assets and filter legacy ones.\n"
-            "2. Convert each legacy asset to ChaosClothAsset.\n"
-            "3. Bind converted assets to matching LOD/Section."
-        );
-    }
+    virtual int32 Main(const FString& Params) override;
 };
+```
+
+```cpp
+// ClothMigrationCommandlet.cpp
+#include "ClothMigrationCommandlet.h"
+#include "ChaosClothAsset/ClothAssetToolset.h"
+
+int32 UClothMigrationCommandlet::Main(const FString& Params)
+{
+    const FString MeshPath = TEXT("/Game/Characters/SM_Hero");
+    const FString OutputFolder = TEXT("/Game/Cloth/Migrated/");
+
+    // 列出布料资产
+    TArray<FClothingAssetInfo> Assets = UChaosClothAssetToolset::ListClothingAssets(MeshPath);
+
+    UE_LOG(LogTemp, Display, TEXT("找到 %d 个布料资产"), Assets.Num());
+
+    int32 ConvertedCount = 0;
+
+    for (const FClothingAssetInfo& Info : Assets)
+    {
+        if (Info.bRequiresMatchingLodIndex)
+        {
+            UE_LOG(LogTemp, Display, TEXT("跳过已是新版格式: %s"), *Info.AssetName);
+            continue;
+        }
+
+        FString NewPath = UChaosClothAssetToolset::ConvertClothingAssetCommonToChaosClothAsset(
+            MeshPath, Info.AssetName, OutputFolder, TEXT(""));
+
+        if (NewPath.IsEmpty())
+        {
+            UE_LOG(LogTemp, Error, TEXT("转换失败: %s"), *Info.AssetName);
+            continue;
+        }
+
+        TArray<FString> Created = UChaosClothAssetToolset::CreateClothingAsset(MeshPath, NewPath);
+
+        if (Created.Num() > 0)
+        {
+            UChaosClothAssetToolset::AssignClothingToSection(
+                MeshPath, Created[0], 0, 0, 0);
+            UChaosClothAssetToolset::RemoveClothingFromSection(MeshPath, 0, 0);
+            ConvertedCount++;
+        }
+    }
+
+    UE_LOG(LogTemp, Display, TEXT("成功迁移 %d 个布料资产"), ConvertedCount);
+    return 0;
+}
 ```
 
 ## 模块依赖
 
-| 模块 | 用途 |
+Build.cs 中仅有 `Core` 依赖，但 .uplugin 声明了以下插件依赖：
+
+| 插件 | 用途 |
 |---|---|
-| `ToolsetRegistry` | AI Agent 工具注册表和 Skill 基础设施 |
-| `ChaosClothAsset` | ChaosClothAsset 核心类型和资产定义 |
-| `ChaosClothAssetDataflowNodes` | 布料资产的 Dataflow 节点支持（转换时生成 Dataflow 图） |
+| `ToolsetRegistry` | AI 代理工具集注册框架，提供 `UToolsetDefinition` 基类 |
+| `ChaosClothAsset` | ChaosClothAsset 布料资产核心实现 |
+| `ChaosClothAssetDataflowNodes` | ChaosClothAsset 的 Dataflow 节点，转换过程中用于构建新资产的 Dataflow 图 |
 
 ## 维护状态
 
 ### 近期更新
 
-```
-- 2026-05-14 e9598355 Chaos Cloth Asset toolset and updated converter from legacy SKM cloth to Chaos Cloth Asset.
-```
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-05-14 | `e9598355` | Chaos Cloth Asset toolset and updated converter from legacy SKM cloth to Chaos Cloth Asset. | 插件首次创建，包含完整的布料工具集和旧版布料转换器 |
 
 ### 维护评价
 
-- **创建时间**：2026-05-14，全新插件
-- **更新频率**：仅有 1 次初始提交，尚无后续更新
-- **维护状态**：🆕 刚刚创建的实验性插件，功能仍在早期阶段
-- **注意事项**：
-  - 标记为 `IsExperimentalVersion=true`，API 可能发生重大变化
-  - 默认未启用（`EnabledByDefault=false`），需手动在插件设置中启用
-  - 仅编辑器可用（`EditorOnly=true`），不会包含在打包构建中
-  - 代码文件仅 4 个，功能范围较窄
-- **推荐程度**：仅推荐用于实验性 AI Agent 布料工作流探索，生产环境暂不建议依赖
+- **创建时间**：2026-05-14，非常新的插件
+- **实验性**：`.uplugin` 中 `IsExperimentalVersion=true` 且 `EnabledByDefault=false`，表明仍处于早期实验阶段
+- **代码规模**：仅 4 个源文件，功能聚焦且精简
+- **依赖关系**：依赖 `ChaosClothAsset` 和 `ToolsetRegistry` 等实验性插件，整个链条尚不稳定
+- **仅一次提交**：目前只有一条初始提交记录，尚无后续迭代
+- **⚠️ 警告**：这是实验性的 AI 代理工具，API 随时可能发生破坏性变更。仅建议在实验性项目中使用，不建议用于生产环境。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/ChaosClothAssetToolset)
+- [ToolsetRegistry 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/ToolsetRegistry)
+- [ChaosClothAsset 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosClothAsset)

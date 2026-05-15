@@ -4,6 +4,7 @@
 
 | 属性 | 值 |
 |---|---|
+| 中文名 | 游戏功能工具集 |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
@@ -11,62 +12,58 @@
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-03-31 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/GameFeaturesToolset) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/GameFeaturesToolset) | |
 
 ## 用途
 
-GameFeaturesToolset 是 UE5 AI 助手（AI Assistant）工具集生态的一部分。它通过 Toolset Registry 向 AI 助手暴露一组工具函数，使 AI 能够以编程方式与 Game Feature Plugin 系统交互。
+这是一个面向 **AI 助手** 的编辑器工具集插件，将 Game Feature Plugin（GFP）系统的操作暴露给 AI Toolset Registry。
 
-具体来说，这个插件解决的问题是：**AI 助手无法直接操作 Game Feature Plugin**。Game Feature Plugin 是 UE5 的模块化游戏功能系统（用于 DLC、可选功能模块等），但其创建和管理流程涉及目录结构生成、.uplugin 文件编写、插件挂载、数据资产创建等多个步骤。本插件将这些操作封装为 AI 可调用的工具，让 AI 助手能够：
+核心解决的问题：AI 助手无法直接理解或操作 Game Feature Plugin 系统。GameFeatures 模块内部有约 34 种复杂状态，本插件将其简化为 6 种对 LLM 友好的状态（`Uninitialized`、`Installed`、`Registered`、`Loaded`、`Active`、`Unknown`），并提供一组静态函数供 AI 调用来列举、查询、激活和停用 GFP。
 
-1. **列举**当前项目中所有已注册的 Game Feature Plugin
-2. **检查**任意 Game Feature Plugin 的详细数据（GameFeatureData 资产及其包含的 Actions）
-3. **创建**全新的 Game Feature Plugin（包括完整的目录结构、.uplugin 文件和初始数据资产）
-
-所有函数都标记了 `AICallable` 元数据标签，而非 `BlueprintCallable`，说明这些工具专为 AI 助手设计，不直接暴露为蓝图节点。
+所有函数都标记了 `UFUNCTION(meta = (AICallable))`，这意味着它们通过 `UToolsetDefinition` 基类注册到 AI Toolset Registry，可被引擎内置的 AI 助手直接调用。
 
 ## 使用场景
 
-- 你正在使用 UE5 的 AI 助手功能，需要 AI 帮你管理 Game Feature Plugin → 启用此插件
-- 你想通过 AI 对话快速创建一个新的 Game Feature Plugin（如 "ShooterCore"），而不手动搭建目录结构 → AI 助手会调用 `CreateGameFeaturePlugin`
-- 你想让 AI 助手检查某个 Game Feature Plugin 包含哪些 Actions，以便进行分析或修改 → AI 助手会调用 `FindGameFeatureData` + `GetActions`
-- 你需要 AI 助手列出项目中所有 Game Feature Plugin 以便选择操作目标 → AI 助手会调用 `ListGameFeatures`
+- 你在编辑器中使用 AI 助手管理 Game Feature Plugin → 用本插件让 AI 能列举、激活/停用 GFP
+- 你需要通过 AI 工作流创建新的 Game Feature Plugin → 本插件提供了创建功能
+- 你想让 AI 助手能查询某个 GFP 的当前状态（是否已加载、是否已激活等）
 
 ## 蓝图用法
 
-> **注意**：本插件的所有函数均标记为 `AICallable` 而非 `BlueprintCallable`，且类标记为 `Hidden`。这些函数**不能**直接在蓝图中作为节点使用，它们是通过 Toolset Registry 注册给 AI 助手系统的专用工具。
+本插件所有函数均为 `static` 并标记 `AICallable`，主要面向 AI Toolset Registry 使用，但也可在蓝图中调用。
 
-如果你需要在蓝图中操作 Game Feature Plugin，请直接使用 `GameFeatures` 模块提供的公开 API（如 `UGameFeaturesSubsystem`）。
+### 核心节点
 
-### AI 工具列表
-
-以下是本插件向 AI 助手注册的全部工具：
-
-| 工具函数 | 说明 | 所在类 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `ListGameFeatures` | 返回所有已知 Game Feature Plugin 的名称列表（按字母排序）。判定标准：插件声明了对 "GameFeatures" 的依赖 | `UGameFeaturesToolset` |
-| `FindGameFeatureData` | 根据插件名称查找并加载对应的 `UGameFeatureData` 资产 | `UGameFeaturesToolset` |
-| `GetPluginName` | 从 `UGameFeatureData` 资产反查其所属的插件名称 | `UGameFeaturesToolset` |
-| `GetActions` | 获取 `UGameFeatureData` 资产中定义的所有 `UGameFeatureAction` | `UGameFeaturesToolset` |
-| `CreateGameFeaturePlugin` | 创建一个全新的 Game Feature Plugin（含目录结构、.uplugin、挂载、初始数据资产） | `UGameFeaturesToolset` |
+| `ListEnabledGameFeaturePlugins` | 列出所有已启用的 GFP（排序） | `UGameFeaturesToolset` |
+| `ListDiscoveredGameFeaturePlugins` | 列出所有已发现的 GFP（含已禁用） | `UGameFeaturesToolset` |
+| `IsGameFeaturePlugin` | 检查指定插件是否为 GFP | `UGameFeaturesToolset` |
+| `IsGameFeatureActive` | 检查指定 GFP 是否处于激活状态 | `UGameFeaturesToolset` |
+| `GetGameFeatureState` | 获取 GFP 的简化状态枚举 | `UGameFeaturesToolset` |
+| `RequestActivateGameFeature` | 异步请求激活 GFP | `UGameFeaturesToolset` |
+| `RequestDeactivateGameFeature` | 异步请求停用 GFP | `UGameFeaturesToolset` |
 
-### AI 助手调用示例（文字描述）
+### 状态枚举
 
-**场景：让 AI 助手列出所有 Game Feature Plugin 并检查其中一个**
+`EPluginToolsetGFPState` 将引擎内部约 34 种 GFP 状态简化为：
 
-1. AI 助手调用 `ListGameFeatures()` → 获得 `["ShooterCore", "InventorySystem", ...]`
-2. AI 助手调用 `FindGameFeatureData("ShooterCore")` → 获得 `UGameFeatureData*` 指针
-3. AI 助手调用 `GetActions(Data)` → 获得该插件注册的所有 Actions 列表
+| 值 | 含义 |
+|---|---|
+| `Uninitialized` | 未初始化 |
+| `Installed` | 已安装 |
+| `Registered` | 已注册 |
+| `Loaded` | 已加载 |
+| `Active` | 已激活 |
+| `Unknown` | 未知状态 |
 
-**场景：让 AI 助手创建新的 Game Feature Plugin**
+### 使用示例（蓝图描述）
 
-1. 用户向 AI 助手描述需求："帮我创建一个名为 MyAbilitySystem 的 Game Feature Plugin"
-2. AI 助手调用 `CreateGameFeaturePlugin("MyAbilitySystem", "Provides modular ability system")` → 返回新创建的 `UGameFeatureData*`
-3. AI 助手可继续调用 `GetActions` 确认创建结果
+1. **列出所有 GFP**：调用 `ListDiscoveredGameFeaturePlugins` 节点，输出为 `TArray<FString>`，包含所有已发现的 GFP 名称
+2. **激活一个 GFP**：先调用 `IsGameFeaturePlugin` 确认是 GFP，再调用 `RequestActivateGameFeature` 提交激活请求，最后轮询 `GetGameFeatureState` 确认激活完成（激活是异步的）
+3. **检查状态**：调用 `GetGameFeatureState` 获取 `EPluginToolsetGFPState` 枚举值，判断 GFP 处于哪个生命周期阶段
 
 ## C++ 用法
-
-> 本插件的函数设计目标是被 AI 工具系统调用，而非直接在 C++ 游戏代码中使用。以下内容仅供理解其内部实现和扩展参考。
 
 ### 头文件引入
 
@@ -76,126 +73,112 @@ GameFeaturesToolset 是 UE5 AI 助手（AI Assistant）工具集生态的一部�
 
 ### 基本用法
 
-由于所有函数都是 `static` 且标记为 `AICallable`，它们由 Toolset Registry 框架自动发现和调用。以下是各函数的签名和行为说明：
-
 ```cpp
-// 列举所有 Game Feature Plugin 名称
-// 判定标准：插件的 .uplugin 中声明了对 "GameFeatures" 的依赖
-TArray<FString> Names = UGameFeaturesToolset::ListGameFeatures();
-// 返回值示例: ["ShooterCore", "InventorySystem"]
+// 列出所有已发现的 Game Feature Plugins
+TArray<FString> AllGFPs = UGameFeaturesToolset::ListDiscoveredGameFeaturePlugins();
+for (const FString& GFPName : AllGFPs)
+{
+    UE_LOG(LogTemp, Log, TEXT("Found GFP: %s"), *GFPName);
+}
 
-// 根据插件名获取 GameFeatureData 资产
-// 如果插件不存在、不是 Game Feature Plugin、或资产加载失败，会触发脚本错误
-UGameFeatureData* Data = UGameFeaturesToolset::FindGameFeatureData(TEXT("ShooterCore"));
-
-// 从 GameFeatureData 反查插件名称
-FString Name = UGameFeaturesToolset::GetPluginName(Data);
-// 返回值示例: "ShooterCore"
-
-// 获取 GameFeatureData 中的所有 Actions
-TArray<UGameFeatureAction*> Actions = UGameFeaturesToolset::GetActions(Data);
+// 检查某个 GFP 是否处于激活状态
+FString PluginName = TEXT("MyGameFeature");
+if (UGameFeaturesToolset::IsGameFeatureActive(PluginName))
+{
+    UE_LOG(LogTemp, Log, TEXT("%s is active"), *PluginName);
+}
 ```
 
-### 进阶用法：创建 Game Feature Plugin
+### 进阶用法
 
 ```cpp
-// 创建全新的 Game Feature Plugin
-// 这会完成以下步骤：
-//   1. 创建插件目录结构
-//   2. 写入 .uplugin 文件
-//   3. 挂载插件
-//   4. 创建初始 GameFeatureData 资产
-//
-// PluginName 要求：
-//   - 非空
-//   - 唯一（不能与已有插件重名）
-//   - 仅包含字母、数字和下划线（如 "ShooterCore"，不能是 "My-Plugin"）
-//
-// 注意：此函数应在获得用户明确指示/许可后才调用
-UGameFeatureData* NewData = UGameFeaturesToolset::CreateGameFeaturePlugin(
-    TEXT("MyAbilitySystem"),
-    TEXT("Provides modular ability system for the project")
-);
+// 完整的 GFP 激活流程
+FString PluginName = TEXT("MyGameFeature");
+
+// 第一步：确认是 GFP
+if (!UGameFeaturesToolset::IsGameFeaturePlugin(PluginName))
+{
+    UE_LOG(LogTemp, Warning, TEXT("%s is not a Game Feature Plugin"), *PluginName);
+    return;
+}
+
+// 第二步：检查当前状态
+EPluginToolsetGFPState CurrentState = UGameFeaturesToolset::GetGameFeatureState(PluginName);
+if (CurrentState == EPluginToolsetGFPState::Active)
+{
+    UE_LOG(LogTemp, Log, TEXT("%s is already active"), *PluginName);
+    return;
+}
+
+// 第三步：提交激活请求（异步）
+bool bRequestSubmitted = UGameFeaturesToolset::RequestActivateGameFeature(PluginName);
+if (bRequestSubmitted)
+{
+    // 需要轮询确认激活完成
+    // 在 Tick 或定时器中反复调用 GetGameFeatureState()
+    // 直到状态变为 Active
+}
 ```
 
 ## Demo 示例
 
-以下展示如何扩展 `UToolsetDefinition` 创建自定义工具集，参考本插件的实现模式：
+本插件是纯编辑器工具集，无独立 Demo。所有函数均为静态方法，可直接在编辑器工具或蓝图中调用。
 
 ```cpp
-// MyCustomToolset.h
+// MyTool.h
 #pragma once
+#include "GameFeaturesToolset.h"
 
-#include "CoreMinimal.h"
-#include "ToolsetRegistry/ToolsetDefinition.h"
-#include "MyCustomToolset.generated.h"
-
-UCLASS(BlueprintType, Hidden)
-class UMyCustomToolset : public UToolsetDefinition
+class FMyGFPSummary
 {
-    GENERATED_BODY()
-
 public:
-    // AICallable 标记使此函数被 Toolset Registry 自动发现
-    UFUNCTION(meta = (AICallable), Category = "MyTools")
-    static TArray<FString> ListItems();
-
-    UFUNCTION(meta = (AICallable), Category = "MyTools")
-    static FString GetItemDetails(const FString& ItemName);
+    static void PrintAllGFPStatus()
+    {
+        TArray<FString> GFPs = UGameFeaturesToolset::ListDiscoveredGameFeaturePlugins();
+        for (const FString& Name : GFPs)
+        {
+            EPluginToolsetGFPState State = UGameFeaturesToolset::GetGameFeatureState(Name);
+            bool bActive = UGameFeaturesToolset::IsGameFeatureActive(Name);
+            UE_LOG(LogTemp, Display, TEXT("GFP: %s | State: %d | Active: %s"),
+                *Name, (int32)State, bActive ? TEXT("Yes") : TEXT("No"));
+        }
+    }
 };
-```
-
-```cpp
-// MyCustomToolset.cpp
-#include "MyCustomToolset.h"
-
-TArray<FString> UMyCustomToolset::ListItems()
-{
-    // 实现列举逻辑
-    return { TEXT("ItemA"), TEXT("ItemB") };
-}
-
-FString UMyCustomToolset::GetItemDetails(const FString& ItemName)
-{
-    // 实现详情查询逻辑
-    return FString::Printf(TEXT("Details for %s"), *ItemName);
-}
 ```
 
 ## 模块依赖
 
-本插件声明了以下插件级依赖（在 .uplugin 的 `Plugins` 字段中）：
+从 `.uplugin` 的 Plugins 字段可知，本插件依赖以下插件：
 
-| 模块/插件 | 用途 |
+| 模块 | 用途 |
 |---|---|
-| `ToolsetRegistry` | 提供 `UToolsetDefinition` 基类和 AI 工具注册框架 |
-| `GameFeatures` | 提供 `UGameFeatureData`、`UGameFeatureAction`、`UGameFeaturesSubsystem` 等 Game Feature 系统核心类 |
+| `ToolsetRegistry` | AI 工具集注册框架，提供 `UToolsetDefinition` 基类和 `AICallable` 元数据支持 |
+| `GameFeatures` | Game Feature Plugin 系统，提供 GFP 发现、加载、激活/停用的核心子系统 |
 
-无其他特殊依赖（仅标准 Core/Engine 等）。
+无特殊模块依赖（仅标准 Core/Engine/Slate 等）。
 
 ## 维护状态
 
 ### 近期更新
 
-```
-- 6471b168 2026-04-18 [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools
-- 8c911af5 2026-04-17 [Backout] - CL52878047
-- 9404cd3e 2026-04-17 [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools
-```
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-04-27 | `bbb96cf0` | Hack to hopefully silence spurious static analysis CI failure. | 修复静态分析 CI 误报的临时方案 |
+| 2026-04-27 | `b4229de0` | Update GameFeaturesToolset to actually work with the GameFeaturesSubsystem and correctly identify ga | 修复与 GameFeaturesSubsystem 的集成，正确识别 GFP |
+| 2026-04-18 | `6471b168` | [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools, | AI 助手框架调整工具发现机制 |
+| 2026-04-17 | `8c911af5` | [Backout] - CL52878047 | 回退上一次提交 |
+| 2026-04-17 | `9404cd3e` | [AIAssistant] Change how UToolsetDefinitions determine which UFunctions are tools, | AI 助手框架调整工具发现机制 |
 
 ### 维护评价
 
-- **创建时间**：2026-03-31，非常新的插件
-- **更新频率**：创建后 2 周内有 3 次提交，其中一次是回退操作，说明底层工具注册机制仍在快速迭代
-- **实验性状态**：标记为 `IsExperimentalVersion=true` 且 `EnabledByDefault=false`，属于早期实验阶段
-- **代码规模**：仅 4 个源文件，功能精简但完整
-- **依赖稳定性**：依赖的 `ToolsetRegistry` 同为实验性插件，API 可能发生变化（从近期 commit 可见工具发现机制正在调整）
-
-**综合评价**：这是一个刚创建不久的实验性插件，属于 UE5 AI 助手工具集生态的早期组件。由于 Toolset Registry 框架本身仍在演进（近期有 API 变更和回退），本插件的接口可能会随之调整。**不建议在生产环境中依赖此插件**，但如果你在探索 UE5 AI 助手的扩展能力，这是一个很好的参考实现。
+- **状态**：🆕 新建插件，约 1 个月历史
+- **活跃度**：过去一个月内有 5 次提交，开发非常活跃
+- **稳定性**：仍在快速迭代中，最近一次提交（`b4229de0`）修复了与 GameFeaturesSubsystem 的集成问题，说明核心功能刚趋于可用；紧接着就有 CI 修复提交
+- **风险提示**：标记为实验性（`IsExperimentalVersion=true`），默认未启用（`EnabledByDefault=false`），API 可能随时变化
+- **建议**：适合在编辑器中集成 AI 助手功能时试用，不建议在生产环境中依赖此插件
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/GameFeaturesToolset)
-- [GameFeaturesToolset.h](https://github.com/EpicGames/UnrealEngine/blob/5.7/Engine/Plugins/Experimental/Toolsets/GameFeaturesToolset/Source/GameFeaturesToolset/Private/GameFeaturesToolset.h)
-- [ToolsetRegistry 插件](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/ToolsetRegistry)（依赖项）
-- [GameFeatures 插件](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/GameFeatures/GameFeatures)（依赖项）
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/GameFeaturesToolset)
+- [ToolsetRegistry 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/ToolsetRegistry)（前置依赖）
+- [GameFeatures 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/GameFeatures/GameFeatures)（前置依赖）

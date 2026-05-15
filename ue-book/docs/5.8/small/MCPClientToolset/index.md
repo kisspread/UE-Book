@@ -4,62 +4,48 @@
 
 | 属性 | 值 |
 |---|---|
+| 中文名 | MCP 客户端工具集 |
 | 分类 | Experimental |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `MCPClientToolset` (Editor) |
 | 实验性 | ⚠️ 是 |
-| 创建时间 | 2026-04-03 |
-| 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/MCPClientToolset) | |
+| 创建时间 | 2026-04-01 |
+| 年龄标签 | 🆕（约 1 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/MCPClientToolset) | |
 
 ## 用途
 
-MCPClientToolset 是一个**编辑器工具集适配器**，用于将 Unreal Engine 的 Toolset Registry 系统连接到外部的 MCP（Model Context Protocol）服务器。
+MCPClientToolset 是一个 UE5 编辑器插件，它实现了 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 的客户端。其主要功能是作为 UE5 工具注册系统（Toolset Registry）与外部 MCP 服务器之间的桥梁。
 
-MCP 是一种让 AI 模型与外部工具交互的标准化协议。这个插件的核心作用是：**让 UE 编辑器内的 AI 助手（如 EDA）能够调用运行在本地或私有网络上的 MCP 服务器提供的工具**。
-
-插件支持三种连接方式：
-- **Legacy SSE（HTTP+SSE）**：MCP 2025-03-26 之前的旧协议，通过 GET `/sse` 建立长连接事件流，POST `/message` 发送请求
-- **Streamable HTTP**：MCP 2025-03-26 新协议，单一 POST 端点，响应为 JSON 或 SSE
-- **OAuth 2.0 + PKCE**：在上述传输之上叠加 OAuth 认证，支持动态客户端注册（RFC 7591）
+这个插件解决的核心问题是：**让 UE5 编辑器能够发现并调用部署在本地或私有网络中的 AI 服务（MCP 服务器）所提供的工具**。它处理了与 MCP 服务器通信的复杂细节，包括多种传输协议（Legacy SSE 和 Streamable HTTP）和认证方式（静态 API Key 或 OAuth 2.0），使得编辑器内的其他系统（如 EDA）可以透明地使用这些远程 AI 工具，就像使用本地工具一样。
 
 ## 使用场景
 
-- 你在使用 UE 编辑器的 AI 助手（EDA），需要它能调用本地运行的 MCP 工具服务器 → 配置此插件
-- 你有一个私有部署的 MCP 服务器，提供自定义工具（如资产搜索、代码生成等）→ 通过此插件将其注册到 Toolset Registry
-- 你需要通过 OAuth 2.0 认证连接到需要身份验证的 MCP 服务器 → 使用 OAuth 配置模式
+-   **集成外部 AI 服务**：你已经部署了一个 MCP 服务器（例如，用于代码生成、资产创建或场景分析的 AI 服务），并希望直接在 UE5 编辑器的工具链（如编辑器中的某个面板或自动化脚本）中调用它。
+-   **扩展编辑器功能**：你希望将 UE5 编辑器不具备的功能（如调用外部 API 进行翻译、数据检索或特定领域的 AI 推理）作为“工具”暴露给编辑器内的 AI 代理或用户界面。
+-   **开发 AI 辅助工作流**：你正在构建一个基于 AI 的编辑器扩展，需要一种标准化的方式（MCP）来连接不同的 AI 后端服务。
 
 ## 蓝图用法
 
-此插件主要通过**编辑器设置面板**配置，不提供蓝图可调用节点。配置路径：
+该插件的核心功能（连接管理、工具执行）主要由 C++ 类 `FMCPClientToolset` 驱动，由编辑器子系统 `UMCPClientToolsetSubsystem` 管理。蓝图主要用于**配置**，而非直接调用核心功能。
 
-**Editor Preferences → Plugins → MCP Toolset Servers**
+### 核心配置节点
 
-### 配置项
+配置通过 **编辑器偏好设置（Editor Preferences）** 进行，路径为：`Plugins > MCP Toolset Servers`。
 
-| 配置项 | 类型 | 说明 |
+| 配置项 | 说明 | 所在类/结构 |
 |---|---|---|
-| `Name` | `FString` | 工具集显示名称，在 Registry 中使用 |
-| `Description` | `FString` | 人类可读描述，供 AI 作为上下文使用 |
-| `ServerUrl` | `FString` | MCP 服务器基础 URL，如 `http://localhost:3000` |
-| `ApiKey` | `FString` | 可选 API 密钥，以 Bearer Token 方式发送 |
-| `bEnabled` | `bool` | 是否启用此服务器配置 |
-| `Transport` | `EMCPTransport` | 传输协议：`SSE` 或 `StreamableHTTP` |
-| `Auth` | `EMCPAuth` | 认证方式：`None`、`BearerToken` 或 `OAuth2` |
-| `OAuthClientId` | `FString` | OAuth 客户端 ID（留空则使用动态注册） |
-| `OAuthScope` | `FString` | OAuth 作用域，如 `"read:me offline_access"` |
-
-### 枚举类型
-
-**EMCPTransport** — 传输协议选择：
-- `SSE`：Legacy SSE（HTTP+SSE），兼容 MCP 2025-03-26 之前的服务器
-- `StreamableHTTP`：Streamable HTTP，MCP 2025-03-26 新规范
-
-**EMCPAuth** — 认证方式选择：
-- `None`：无认证
-- `BearerToken`：Bearer Token（API Key）
-- `OAuth2`：OAuth 2.0 Authorization Code + PKCE
+| `MCPServers` | MCP 服务器配置列表，每个条目定义了一个连接。 | `UMCPToolsetSettings` |
+| `Name` | 该工具集在注册系统中的显示名称。 | `FMCPServerConfig` |
+| `Description` | 工具集描述，会提供给 AI 作为上下文。 | `FMCPServerConfig` |
+| `ServerUrl` | MCP 服务器的基础 URL (例如 `http://localhost:3000`)。 | `FMCPServerConfig` |
+| `bEnabled` | 是否启用该配置。 | `FMCPServerConfig` |
+| `Transport` | 选择传输协议：`Legacy SSE` 或 `Streamable HTTP`。 | `FMCPServerConfig` |
+| `Auth` | 选择认证方式：`None`, `Bearer Token` 或 `OAuth 2.0`。 | `FMCPServerConfig` |
+| `ApiKey` | 当认证方式为 `Bearer Token` 时使用的 API 密钥。 | `FMCPServerConfig` |
+| `OAuthClientId` | 当认证方式为 `OAuth 2.0` 时的客户端 ID。留空则使用动态注册。 | `FMCPServerConfig` |
+| `OAuthScope` | OAuth 2.0 的 Scope 字符串。 | `FMCPServerConfig` |
 
 ## C++ 用法
 
@@ -67,164 +53,223 @@ MCP 是一种让 AI 模型与外部工具交互的标准化协议。这个插件
 
 ```cpp
 #include "MCPClientToolset/MCPClientToolset.h"
-#include "MCPClientToolset/MCPClientToolsetSubsystem.h"
-#include "MCPClientToolset/MCPToolsetSettings.h"
 ```
 
-### 基本用法
+### 基本用法：创建并执行一个工具
 
-通过异步工厂方法创建 MCP 客户端工具集实例：
+此示例展示了如何手动创建一个 `FMCPClientToolset` 实例并调用一个远程工具。通常，这些实例已由 `UMCPClientToolsetSubsystem` 根据配置自动创建并注册。
 
 ```cpp
-#include "MCPClientToolset/MCPClientToolset.h"
-
-using namespace UE::ToolsetRegistry;
-
-// 配置 MCP 服务器连接
-FMCPClientToolset::FConfig Config;
-Config.Name = TEXT("MyLocalTools");
-Config.Description = TEXT("本地 MCP 工具服务器");
+// 定义配置
+UE::ToolsetRegistry::FMCPClientToolset::FConfig Config;
+Config.Name = TEXT("MyAIServer");
 Config.ServerUrl = TEXT("http://localhost:3000");
-Config.ApiKey = TEXT("my-secret-key");
-Config.bStreamableHTTP = false;  // 使用 Legacy SSE
-Config.bOAuth = false;           // 使用 API Key 认证
+Config.bStreamableHTTP = true; // 或使用 Legacy SSE (默认)
+Config.ApiKey = TEXT("your-api-key"); // 或通过 Auth 设置 OAuth
 
 // 异步创建工具集实例
-TFuture<TValueOrError<TSharedPtr<FMCPClientToolset>, FString>> Future =
-    FMCPClientToolset::Create(Config);
+TFuture<TValueOrError<TSharedPtr<UE::ToolsetRegistry::FMCPClientToolset>, FString>> Future =
+    UE::ToolsetRegistry::FMCPClientToolset::Create(Config);
 
-Future.Next([](TValueOrError<TSharedPtr<FMCPClientToolset>, FString> Result)
+Future.Then([](TValueOrError<TSharedPtr<UE::ToolsetRegistry::FMCPClientToolset>, FString> Result)
 {
     if (Result.HasValue())
     {
-        TSharedPtr<FMCPClientToolset> Toolset = Result.GetValue();
-        // 工具集已就绪，已自动注册到 Toolset Registry
+        TSharedPtr<UE::ToolsetRegistry::FMCPClientToolset> Toolset = Result.GetValue();
+
+        // 获取该服务器提供的工具 JSON Schema (用于描述可用的工具)
+        FString SchemaJson = Toolset->GetJsonSchemaInternal();
+        UE_LOG(LogTemp, Log, TEXT("Tool Schema: %s"), *SchemaJson);
+
+        // 异步执行一个工具
+        TFuture<TValueOrError<FString, FString>> ExecutionFuture =
+            Toolset->ExecuteToolInternal(
+                TEXT("generate_code"), // 工具名称
+                TEXT(R"({"prompt": "Create a simple actor class"})") // JSON 格式的输入
+            );
+
+        ExecutionFuture.Then([](TValueOrError<FString, FString> ExecResult)
+        {
+            if (ExecResult.HasValue())
+            {
+                UE_LOG(LogTemp, Log, TEXT("Tool result: %s"), *ExecResult.GetValue());
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("Tool execution failed: %s"), *ExecResult.GetError());
+            }
+        });
     }
     else
     {
-        UE_LOG(LogMCPClientToolset, Error, TEXT("Failed to create MCP toolset: %s"),
-            *Result.GetError());
+        UE_LOG(LogTemp, Error, TEXT("Failed to create MCP Toolset: %s"), *Result.GetError());
     }
 });
 ```
 
-### 进阶用法
+### 进阶用法：监听子系统的工具集注册
 
-使用 OAuth 2.0 + PKCE 认证连接到需要身份验证的 MCP 服务器：
+编辑器子系统 `UMCPClientToolsetSubsystem` 会在初始化时根据 `UMCPToolsetSettings` 自动创建和注册所有启用的 `FMCPClientToolset`。你可以监听 `UToolsetRegistrySubsystem` 的变化来知道何时有新的外部 AI 工具可用。
 
 ```cpp
-FMCPClientToolset::FConfig OAuthConfig;
-OAuthConfig.Name = TEXT("SecureMCPTools");
-OAuthConfig.Description = TEXT("需要 OAuth 认证的 MCP 服务器");
-OAuthConfig.ServerUrl = TEXT("https://mcp.example.com");
-OAuthConfig.bStreamableHTTP = true;  // 使用新协议
-OAuthConfig.bOAuth = true;           // 启用 OAuth 2.0
-OAuthConfig.OAuthClientId = TEXT("my-app-client-id");  // 留空则动态注册
-OAuthConfig.OAuthScope = TEXT("read:me offline_access");
+#include "ToolsetRegistry/ToolsetRegistrySubsystem.h"
 
-TFuture<TValueOrError<TSharedPtr<FMCPClientToolset>, FString>> Future =
-    FMCPClientToolset::Create(OAuthConfig);
-
-Future.Next([](TValueOrError<TSharedPtr<FMCPClientToolset>, FString> Result)
+// 获取工具集注册子系统
+UToolsetRegistrySubsystem* RegistrySubsystem = GEditor->GetEditorSubsystem<UToolsetRegistrySubsystem>();
+if (RegistrySubsystem)
 {
-    if (Result.HasValue())
+    // 可以获取所有已注册的工具集（包括其他本地工具集和 MCP 远程工具集）
+    TArray<TSharedPtr<UE::ToolsetRegistry::FToolset>> AllToolsets = RegistrySubsystem->GetAllToolsets();
+
+    for (const auto& Toolset : AllToolsets)
     {
-        // OAuth 认证完成，工具集已就绪
-        // 如果 OAuthClientId 为空，服务器会通过 RFC 7591 动态分配客户端 ID
+        // 检查是否是我们关注的 MCP 工具集
+        if (Toolset->GetToolsetName() == TEXT("MyAIServer"))
+        {
+            UE_LOG(LogTemp, Log, TEXT("Found MCP Toolset: %s - %s"),
+                *Toolset->GetToolsetName(), *Toolset->GetToolsetDescription());
+
+            // 通过注册系统执行工具（系统会处理调度）
+            TFuture<TValueOrError<FString, FString>> ResultFuture =
+                RegistrySubsystem->ExecuteTool(Toolset->GetToolsetName(), TEXT("tool_name"), TEXT("{}"));
+            // ... 处理 Future
+        }
     }
-});
+}
 ```
 
 ## Demo 示例
 
-### 最小完整示例：在编辑器模块中注册 MCP 工具集
+一个最小化的示例，展示如何在编辑器模块中配置和使用 MCP 工具集。
 
+**MyMCPDemoModule.h**
 ```cpp
-// MyEditorModule.h
 #pragma once
-
 #include "Modules/ModuleManager.h"
-#include "MCPClientToolset/MCPClientToolset.h"
 
-class FMyEditorModule : public IModuleInterface
+class FMyMCPDemoModule : public IModuleInterface
 {
 public:
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
 
 private:
-    TSharedPtr<UE::ToolsetRegistry::FMCPClientToolset> MCPToolset;
+    void DemoMCPUsage();
 };
 ```
 
+**MyMCPDemoModule.cpp**
 ```cpp
-// MyEditorModule.cpp
-#include "MyEditorModule.h"
+#include "MyMCPDemoModule.h"
 #include "MCPClientToolset/MCPClientToolset.h"
+#include "ToolsetRegistry/ToolsetRegistrySubsystem.h"
 
-#define LOCTEXT_NAMESPACE "MyEditorModule"
+#define LOCTEXT_NAMESPACE "FMyMCPDemoModule"
 
-void FMyEditorModule::StartupModule()
+void FMyMCPDemoModule::StartupModule()
 {
-    using namespace UE::ToolsetRegistry;
-
-    FMCPClientToolset::FConfig Config;
-    Config.Name = TEXT("MyMCPTools");
-    Config.Description = TEXT("我的本地 MCP 工具");
-    Config.ServerUrl = TEXT("http://localhost:3000");
-
-    FMCPClientToolset::Create(Config).Next(
-        [this](TValueOrError<TSharedPtr<FMCPClientToolset>, FString> Result)
-        {
-            if (Result.HasValue())
-            {
-                MCPToolset = Result.GetValue();
-            }
-        });
+    // 通常，MCP 服务器配置在 Editor Preferences 中完成。
+    // 这里演示如何以编程方式（例如，在某个编辑器按钮点击后）临时创建一个连接并执行工具。
+    // 注意：生产环境中推荐使用配置。
+    FCoreDelegates::OnPostEngineInit.AddLambda([this]()
+    {
+        DemoMCPUsage();
+    });
 }
 
-void FMyEditorModule::ShutdownModule()
+void FMyMCPDemoModule::ShutdownModule()
 {
-    MCPToolset.Reset();
+    // 清理资源（如果需要）
+}
+
+void FMyMCPDemoModule::DemoMCPUsage()
+{
+    UE_LOG(LogTemp, Log, TEXT("Starting MCP Client Toolset Demo"));
+
+    // 配置一个临时的 MCP 服务器
+    UE::ToolsetRegistry::FMCPClientToolset::FConfig Config;
+    Config.Name = TEXT("DemoMCPServer");
+    Config.ServerUrl = TEXT("http://localhost:8080"); // 假设你的 MCP 服务器运行在此
+    Config.bStreamableHTTP = true;
+
+    // 创建工具集
+    auto CreateFuture = UE::ToolsetRegistry::FMCPClientToolset::Create(Config);
+    CreateFuture.Then([Config](TValueOrError<TSharedPtr<UE::ToolsetRegistry::FMCPClientToolset>, FString> Result)
+    {
+        if (!Result.HasValue())
+        {
+            UE_LOG(LogTemp, Error, TEXT("Failed to connect to MCP server '%s': %s"),
+                *Config.Name, *Result.GetError());
+            return;
+        }
+
+        auto Toolset = Result.GetValue();
+        UE_LOG(LogTemp, Log, TEXT("Successfully connected to MCP server '%s' (version: %s)"),
+            *Toolset->GetToolsetName(), *Toolset->GetToolsetVersion());
+
+        // 获取服务器支持的工具模式
+        FString Schema = Toolset->GetJsonSchemaInternal();
+        UE_LOG(LogTemp, Log, TEXT("Available Tools Schema:\n%s"), *Schema);
+
+        // 假设服务器提供了一个名为 `summarize` 的工具，我们尝试调用它。
+        FString ToolName = TEXT("summarize");
+        FString InputJson = TEXT(R"({"text": "Unreal Engine is a complete suite of development tools for anyone working with real-time technology."})");
+
+        auto ExecFuture = Toolset->ExecuteToolInternal(ToolName, InputJson);
+        ExecFuture.Then([ToolName](TValueOrError<FString, FString> ExecResult)
+        {
+            if (ExecResult.HasValue())
+            {
+                UE_LOG(LogTemp, Log, TEXT("Tool '%s' executed successfully:\n%s"),
+                    *ToolName, *ExecResult.GetValue());
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("Tool '%s' failed: %s"),
+                    *ToolName, *ExecResult.GetError());
+            }
+        });
+    });
 }
 
 #undef LOCTEXT_NAMESPACE
 
-IMPLEMENT_MODULE(FMyEditorModule, MyEditorModule)
+IMPLEMENT_MODULE(FMyMCPDemoModule, MyMCPDemo)
 ```
 
 ## 模块依赖
 
+从 `MCPClientToolset.Build.cs` 分析，使用该插件需要依赖以下模块：
+
 | 模块 | 用途 |
 |---|---|
-| `ToolsetRegistry` | 工具集注册系统，MCP 客户端工具集通过此模块注册到全局 Registry |
+| `ToolsetRegistry` | 核心依赖。提供 `FToolset` 基类和 `UToolsetRegistrySubsystem` 管理器。 |
+| `HTTP`, `HTTPServer` | 用于实现与 MCP 服务器的通信（SSE, Streamable HTTP）以及处理 OAuth 回调。 |
+| `Json`, `JsonUtilities` | 用于处理 MCP 协议中的 JSON-RPC 消息。 |
 
 ## 维护状态
 
 ### 近期更新
 
-```
-- 6605f684 2026-04-16 [MCP] Add deferred tool loading to ModelContextProtocol server
-- 35e60df1 2026-04-14 Migrate UE_LOG to UE_LOGF.
-- 65c955c0 2026-04-09 MCPToolsetSettings - change back to Config=DefaultPerProjectUserSettings to fix serialization issues
-- 19e89d93 2026-04-06 Change MCPToolsetSettings config to Editor so that it's set at a per-user level
-- aed04419 2026-04-03 [AI Toolsets]: Ensure all toolset plugins are marked as editor only.
-```
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-04-28 | `ce5526cc` | Add support for disabling toolsets and tools by name. | 新增按名称禁用工具集和工具的功能。 |
+| 2026-04-16 | `6605f684` | [MCP] Add deferred tool loading to ModelContextProtocol server | 为 MCP 服务器添加了延迟加载工具的机制。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移到 UE_LOGF。 |
+| 2026-04-09 | `65c955c0` | MCPToolsetSettings - change back to Config=DefaultPerProjectUserSettings to fix serialization issues | 修复了设置序列化问题，将配置存储位置改回默认。 |
+| 2026-04-06 | `19e89d93` | Change MCPToolsetSettings config to Editor so that it's set at a per-user level | 将配置作用域改为编辑器，实现按用户保存设置。 |
 
 ### 维护评价
 
-**活跃开发中** — 该插件创建于 2026-04-03，至今不到一个月，但已有 5 次提交，涵盖功能添加、日志迁移和配置序列化修复。
+该插件**处于活跃开发的实验阶段**。
 
-⚠️ **注意事项**：
-- 标记为 `IsBetaVersion` 和 `IsExperimentalVersion`，API 可能随时变更
-- `EnabledByDefault = false`，需要手动在插件管理器中启用
-- 仅限编辑器使用（`EditorOnly: true`，模块 TargetAllowList 为 Editor）
-- 依赖 ToolsetRegistry 插件，需确保该插件已启用
-- 配置序列化仍在调整中（近期有两次关于 Config 类型的修复）
-
-**推荐**：适合早期探索和测试 MCP 集成，不建议在生产环境中使用。如果你正在为 UE 编辑器 AI 助手开发 MCP 工具集成，可以开始试用，但需做好 API 变更的准备。
+-   **年龄**：插件创建于 2026 年 4 月，非常年轻。
+-   **更新频率**：从提交历史看，在创建后的第一个月内有多次更新，包括功能增强（禁用工具、延迟加载）、维护性重构（日志宏）和重要的 Bug 修复（配置序列化），表明 Epic 工程师正在积极迭代。
+-   **状态**：`.uplugin` 中明确标记 `IsBetaVersion: true` 和 `IsExperimentalVersion: true`，并且默认不启用（`EnabledByDefault: false`）。这属于 UE5 的早期实验性功能。
+-   **建议**：可以用于内部原型开发和技术探索，体验与外部 MCP 服务的集成。**不建议**在需要高度稳定性的生产项目中依赖此插件。API 和行为可能会在未来的版本中发生重大变更。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Toolsets/MCPClientToolset)
-- [MCP 规范](https://modelcontextprotocol.io/)（Model Context Protocol 官方文档）
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Toolsets/MCPClientToolset)
+-   [官方文档]() (无)
+-   [测试用例]() (未在提供的信息中发现)
