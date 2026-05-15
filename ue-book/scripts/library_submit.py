@@ -123,6 +123,12 @@ def extract_links(readme: str, repo_url: str, max_links: int = 3) -> list[tuple[
         label = m.group(1).strip()
         url = m.group(2).strip()
         
+        # Strip HTML tags from label (e.g., <img ...> in link text)
+        label = re.sub(r'<[^>]+>', '', label).strip()
+        # Skip if label is empty after stripping (image-only link)
+        if not label:
+            continue
+        
         # Skip anchors, email, empty, relative links
         if url.startswith('#') or url.startswith('mailto:') or not url:
             continue

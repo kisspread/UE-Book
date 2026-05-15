@@ -898,7 +898,7 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 - [UnrealCapabilityDetectExtended](https://github.com/DryreL/UnrealCapabilityDetectExtended)  System capability detection plugin for Unreal Engine 5
   - 一个用于 Unreal Engine 5 的系统能力检测插件，基于 Intel 原版插件扩展，提供 CPU、缓存、内存和渲染硬件接口的检测功能。该插件旨在帮助开发者分析硬件能力，以便优化项目性能。
   - 💬 基于 Intel 原版插件的维护分支，专注于兼容性更新，适合需要硬件检测的 UE 项目，但功能不再扩展，适合作为基础工具使用。
-  🔗 [**@DryreL**](https://github.com/dryrel "**@DryreL**") · [<img width="24px" height="24px" src="_Images/icon-visualstudio.png">](https://visualstudio.microsoft.com/downloads/) · [<img width="24px" height="24px" src="_Images/icon-jetbrainsrider.png">](https://www.jetbrains.com/rider/download/)
+  🔗 [**@DryreL**](https://github.com/dryrel)
 
 - [PBCharacterMovement](https://github.com/ProjectBorealis/PBCharacterMovement)  HL2-style, classic FPS movement for Unreal Engine implemented in C++
   - 💬 这是一个专注于经典 FPS 移动机制的 UE 插件，实现了 HL2 中的多种高级技巧如 bunnyhopping 和滑行，但需要 C++ 项目支持，且部分游戏特定功能未完全公开，适用于开发类似 Half-Life 风格的 FPS 游戏。
