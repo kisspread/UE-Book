@@ -900,6 +900,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 基于 Intel 原版插件的维护分支，专注于兼容性更新，适合需要硬件检测的 UE 项目，但功能不再扩展，适合作为基础工具使用。
   🔗 [**@DryreL**](https://github.com/dryrel "**@DryreL**") · [<img width="24px" height="24px" src="_Images/icon-visualstudio.png">](https://visualstudio.microsoft.com/downloads/) · [<img width="24px" height="24px" src="_Images/icon-jetbrainsrider.png">](https://www.jetbrains.com/rider/download/)
 
+- [PBCharacterMovement](https://github.com/ProjectBorealis/PBCharacterMovement)  HL2-style, classic FPS movement for Unreal Engine implemented in C++
+  - 💬 这是一个专注于经典 FPS 移动机制的 UE 插件，实现了 HL2 中的多种高级技巧如 bunnyhopping 和滑行，但需要 C++ 项目支持，且部分游戏特定功能未完全公开，适用于开发类似 Half-Life 风格的 FPS 游戏。
+  🔗 [simple Blueprint example](https://blueprintue.com/blueprint/mhk2sgn9/)
+
 
 
 ## Engine
