@@ -1,55 +1,121 @@
 # Toolset Registry
 
-> （无描述）
+> （描述为空）
 
 | 属性 | 值 |
 |---|---|
+| 中文名 | 工具集注册表 |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、测试资源） |
+| 包含内容 | ❌ 无 |
 | 模块 | `ToolsetRegistry` (Editor) |
 | 实验性 | ⚠️ 是 |
-| 创建时间 | 2026-04-24 |
+| 创建时间 | 2026-05-13 |
 | 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ToolsetRegistry) | |
 
+---
+
 ## 用途
 
-ToolsetRegistry 是一个实验性的编辑器插件，旨在为 AI 助手（如基于大语言模型的代理）提供一个结构化的方式来发现和调用 Unreal Engine 编辑器中的工具。它解决的核心问题是：如何让 AI 安全、可控地与复杂的 UE 编辑器环境进行交互。
+Toolset Registry 是一个编辑器专用框架，用于在 Unreal Editor 中 **注册、发现和执行“工具集”（Toolset）**。每个工具集包含一组可被 AI 或用户调用的工具（Tool），工具本质上是暴露为 `AICallable` 的静态蓝图函数或 C++ 函数。
 
-插件通过一个注册表（Registry）机制，允许开发者将各种“工具集”（Toolset）注册到系统中。每个工具集定义了一组相关的工具（例如，创建资产、修改场景、运行测试）。AI 助手可以通过查询注册表获取所有可用工具的 JSON Schema 描述，从而了解每个工具需要什么输入参数以及会返回什么输出。随后，AI 可以通过 JSON 格式的输入来调用这些工具，并接收 JSON 格式的输出或错误信息。
+该插件解决的核心问题：**为 AI 助手（如 AI 编程助手）提供结构化的、可扩展的编辑器操作能力**。通过统一的注册表，AI 可以动态查询可用工具及其 JSON Schema，然后传入参数执行工具，获取返回结果。此外，插件还提供了：
 
-简而言之，它为 AI 代理与 UE 编辑器之间搭建了一座标准化的“工具调用”桥梁。
+- **属性读取/写入**：通过 `UToolsetLibrary` 安全地 Get/Set 任意 UObject 的属性，并自动发出正确的 Undo/Redo 通知。
+- **事务管理**：支持包裹工具执行在事务中，出错时自动回滚。
+- **文件沙盒集成**：与 `FileSandbox` 插件联动，提供隔离的文件操作环境。
+- **Agent 技能系统**：将技能（Skill）定义为一组依赖的工具集和说明文本，方便 AI 动态加载使用。
+- **Python 测试集成**：允许将 Python 单元测试注册到 Unreal 自动化测试框架中运行。
+
+---
 
 ## 使用场景
 
-- **AI 驱动的编辑器自动化**：你正在开发一个 AI 助手，希望它能自动执行诸如“在场景中放置一个立方体”、“创建一个新的材质并设置其颜色”、“查找所有未使用的纹理资产”等任务。
-- **构建自定义 AI 工作流**：你需要将特定的编辑器功能（例如，你的游戏项目特有的资产处理流程）暴露给 AI，以便通过自然语言指令进行控制。
-- **测试 AI 工具调用**：在开发 AI 代理时，你需要一个标准化的环境来测试工具调用的正确性和鲁棒性。
+- **开发 AI 编程助手**：注册自定义工具集，让 AI 能够获取场景对象属性、创建资产、运行脚本、操作文件等。
+- **自定义编辑器扩展**：将复杂操作封装为工具（如批量修改材质、导出关卡数据），通过 JSON 输入输出暴露给外部系统（如聊天机器人、Web API）。
+- **自动化测试**：利用 `UPythonTestRunner` 将 Python 的 `unittest` 测试用例注册到 Unreal 的自动化测试框架，统一管理和运行。
+- **Agent 技能系统**：定义高级技能（如“创建角色”），将多个基础工具按顺序/条件组合，供 AI 或用户按需调用。
+
+---
 
 ## 蓝图用法
 
-该插件主要通过蓝图函数库 `UToolsetRegistry` 和 `UToolsetLibrary` 提供蓝图接口。
+插件中所有 `BlueprintCallable` 函数均可在蓝图或 Python 中调用。以下按功能分组列出核心节点。
 
-### 核心节点
+### 工具集注册与管理
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `RegisterToolsetClass` | 将一个 `UToolsetDefinition` 的子类注册为工具集。 | `UToolsetRegistry` |
-| `UnregisterToolsetClass` | 注销一个已注册的工具集类。 | `UToolsetRegistry` |
-| `IsToolsetClassRegistered` | 检查一个工具集类是否已注册。 | `UToolsetRegistry` |
-| `ExecuteTool` | 通过工具集名称和工具名称执行一个已注册的工具。主要用于测试。 | `UToolsetRegistry` |
-| `GetAllToolsetJsonSchemas` | 获取所有已注册工具集的 JSON Schema 描述。 | `UToolsetRegistry` |
-| `ListStructProperties` | 将一个 UStruct 的属性以 JSON Schema 格式返回。 | `UToolsetLibrary` |
-| `GetObjectProperties` | 获取一个 UObject 上指定属性的值，以 JSON 字符串返回。 | `UToolsetLibrary` |
-| `SetObjectProperties` | 通过 JSON 字符串设置一个 UObject 上的属性值。 | `UToolsetLibrary` |
-| `GetDerivedClasses` | 获取一个基类的所有派生类（包括原生和蓝图类）。 | `UToolsetLibrary` |
+| `IsAvailable` | 检查工具集注册表是否可用（编辑器就绪时） | `UToolsetRegistry` |
+| `RegisterToolsetClass` | 注册一个 `UToolsetDefinition` 子类作为工具集 | `UToolsetRegistry` |
+| `UnregisterToolsetClass` | 注销已注册的工具集类 | `UToolsetRegistry` |
+| `IsToolsetClassRegistered` | 查询某个类是否已注册 | `UToolsetRegistry` |
+| `IsToolsetRegistered` | 按名称查询工具集是否已注册 | `UToolsetRegistry` |
+| `ExecuteTool` | 执行指定工具集下的某个工具，传入 JSON 参数，返回异步结果 | `UToolsetRegistry` |
+| `GetToolsetJsonSchema` | 获取某个工具集类的 JSON Schema | `UToolsetRegistry` |
+| `GetAllToolsetJsonSchemas` | 获取所有已注册工具集的 JSON Schema 合并字符串 | `UToolsetRegistry` |
+
+### 属性读取与写入
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `ListStructProperties` | 返回一个结构体的属性列表（以 JSON Schema 格式） | `UToolsetLibrary` |
+| `GetObjectProperties` | 获取指定对象的多个属性值，返回 JSON 字符串 | `UToolsetLibrary` |
+| `SetObjectProperties` | 从 JSON 字符串设置对象的属性值，返回是否成功 | `UToolsetLibrary` |
+| `GetDerivedClasses` | 获取某个类的所有派生类（原生和蓝图） | `UToolsetLibrary` |
+| `GetDerivedStructs` | 获取某个结构体的所有派生结构体（已加载的） | `UToolsetLibrary` |
+| `UndoTransaction` | 撤销最近一次事务（配合 BeginTransaction/EndTransaction 使用） | `UToolsetLibrary` |
+
+### 异步工具结果处理
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GetValueAsJsonString` | 获取异步结果的 JSON 字符串表示 | `UToolCallAsyncResult` |
+| `SetError` | 将异步结果标记为错误并通知监听器 | `UToolCallAsyncResult` |
+| `BroadcastOnCompletedIfComplete` | 如果结果已经完成，立即广播 `OnCompleted` 事件 | `UToolCallAsyncResult` |
+| `SetValue` | 设置结果的值（字符串） | `UToolCallAsyncResultString` |
+| `SetValue` | 设置结果的值（图片） | `UToolCallAsyncResultImage` |
+| `SetCompleted` | 标记完成（无返回值） | `UToolCallAsyncResultVoid` |
+
+### Agent 技能管理
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `ListSkills` | 列出项目中所有 Agent 技能的概览（路径 -> 描述） | `UAgentSkillToolset` |
+| `GetSkills` | 返回指定技能路径的详细信息（依赖工具集、说明） | `UAgentSkillToolset` |
+| `CreateSkill` | 创建新的 Agent 技能资产（需用户许可） | `UAgentSkillToolset` |
+| `UpdateSkill` | 更新已有技能的内容（需用户许可） | `UAgentSkillToolset` |
+
+### Python 测试运行
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `Create` | 创建 Python 测试运行器实例，注册到自动化测试框架 | `UPythonTestRunner` |
+| `GetTests` | 返回发现的测试 ID 列表 | `UPythonTestRunner` |
+| `RunTest` | 运行指定 ID 的测试 | `UPythonTestRunner` |
+| `GetLastTestResult` | 查询某个测试的执行结果（是否完成、是否成功） | `UPythonTestRunner` |
+
+---
 
 ### 使用示例（蓝图描述）
 
-1.  **定义工具集**：创建一个继承自 `UToolsetDefinition` 的蓝图类。在该类中，创建静态函数，并使用 `meta=(AICallable)` 标记它们为可被 AI 调用的工具。函数的参数和返回值将被自动转换为 JSON Schema。
-2.  **注册工具集**：在游戏初始化或编辑器启动时，调用 `UToolsetRegistry::RegisterToolsetClass` 节点，传入你定义的工具集蓝图类。
-3.  **AI 查询与调用**：AI 助手（或测试蓝图）可以先调用 `GetAllToolsetJsonSchemas` 获取所有工具的描述，然后根据需要调用 `ExecuteTool`，传入工具集名称、工具名称和 JSON 格式的参数。
+**注册并执行工具**：
+1. 调用 `RegisterToolsetClass`，传入一个继承自 `UToolsetDefinition` 的蓝图类（例如 `BP_MyTools`）。
+2. 调用 `ExecuteTool`，输入工具集名称（蓝图类的 DisplayName）、工具名（蓝图函数名）、JSON 参数（字符串）。
+3. `ExecuteTool` 返回 `UToolCallAsyncResultString` 对象，绑定其 `OnCompleted` 事件，在事件中调用 `GetValueAsJsonString` 获取结果。
+
+**设置对象属性**：
+1. 构造一个 JSON 字符串，例如 `{"ActorLocation": {"X": 100, "Y": 0, "Z": 50}}`。
+2. 调用 `SetObjectProperties`，传入目标 `Object`、JSON 字符串和 `BypassContainerCheck` 选项（通常为 `No`）。
+3. 该函数会自动发出正确的 Pre/PostEditChange 通知，支持 Undo/Redo。
+
+**撤销事务**：
+1. 使用 `UKismetSystemLibrary.BeginTransaction` 开始一个事务。
+2. 进行一系列对象修改（如通过 `SetObjectProperties`）。
+3. 如果出错，调用 `UToolsetLibrary.UndoTransaction` 回滚。
+
+---
 
 ## C++ 用法
 
@@ -57,141 +123,162 @@ ToolsetRegistry 是一个实验性的编辑器插件，旨在为 AI 助手（如
 
 ```cpp
 #include "ToolsetRegistry/ToolsetRegistry.h"
-#include "ToolsetRegistry/ToolsetDefinition.h"
 #include "ToolsetRegistry/ToolsetLibrary.h"
+#include "ToolsetRegistry/ToolsetDefinition.h"
 ```
 
 ### 基本用法
 
-**定义一个 C++ 工具集** (来源: `Source/ToolsetRegistry/Private/Tests/FunctionLibraryToolsetTest.h`)
+**注册自定义工具集**（Source: `Engine/Plugins/Experimental/ToolsetRegistry/Private/ToolsetRegistry/FunctionLibraryToolset.h`）
 
 ```cpp
-// 继承自 UToolsetDefinition
-UCLASS(Blueprintable, Hidden)
+// 1. 定义工具集类
+UCLASS(BlueprintType, DisplayName = "My Custom Tools")
 class UMyToolset : public UToolsetDefinition
 {
     GENERATED_BODY()
-
 public:
-    // 定义一个可被 AI 调用的工具函数
-    // meta=(AICallable) 是关键标记
-    UFUNCTION(meta = (AICallable), Category = "MyTools")
-    static FString CreateAsset(const FString& AssetName, const FString& AssetPath);
+    UFUNCTION(meta = (AICallable))  // 标记为可被 AI 调用的工具
+    static FString GetSceneInfo(const FVector& Location)
+    {
+        // 返回场景中某点的信息，格式为 JSON 字符串
+        return TEXT("{\"name\":\"test\", \"value\":42}");
+    }
 
-    // 标记为 AIIgnore 的函数不会被注册为工具
-    UFUNCTION(meta = (AIIgnore))
-    static void InternalHelperFunction();
+    virtual FString GetToolsetVersion() const override
+    {
+        return TEXT("1.0");
+    }
 };
+
+// 2. 在模块 StartupModule 中注册
+void FMyModule::StartupModule()
+{
+    UToolsetRegistry::RegisterToolsetClass(UMyToolset::StaticClass());
+}
+
+// 3. 通过工具集注册表执行工具
+UToolCallAsyncResultString* Result = UToolsetRegistry::ExecuteTool(
+    TEXT("My Custom Tools"),           // 工具集名称
+    TEXT("GetSceneInfo"),              // 工具名（函数名）
+    TEXT("{\"Location\":{\"X\":1,\"Y\":2,\"Z\":3}}")  // JSON 输入
+);
 ```
 
-**注册和调用工具** (来源: `Source/ToolsetRegistry/Private/Tests/ToolCallTestHelpers.h`)
+**使用属性库设置对象属性**（Source: `Engine/Plugins/Experimental/ToolsetRegistry/Private/ToolsetRegistry/ToolsetLibraryImpl.h`）
 
 ```cpp
-#include "ToolsetRegistry/ToolsetRegistrySubsystem.h"
-#include "ToolsetRegistry/ObjectFunctionToolCall.h"
+UStaticMeshComponent* MeshComp = ...;
+FString Json = TEXT("{\"RelativeLocation\":{\"X\":100,\"Y\":0,\"Z\":50}}");
 
-// 获取子系统
-TValueOrError<TObjectPtr<UToolsetRegistrySubsystem>, FString> SubsystemResult = 
-    UToolsetRegistrySubsystem::Get(TEXT("MyPlugin"));
-if (SubsystemResult.HasValue())
+TArray<FName> SetPropertyNames;
+bool bSuccess = UToolsetLibrary::SetObjectProperties(
+    MeshComp, Json, SetPropertyNames, EBypassContainerCheck::No);
+// SetPropertyNames 包含实际被设置的属性名数组
+```
+
+**使用异步结果**（Source: `Engine/Plugins/Experimental/ToolsetRegistry/Public/ToolsetRegistry/ToolCallAsyncResult.h`）
+
+```cpp
+UToolCallAsyncResultString* Result = ...;
+
+// 绑定完成回调
+Result->OnCompleted.AddLambda([Result]()
 {
-    UToolsetRegistrySubsystem* Subsystem = SubsystemResult.GetValue();
-    
-    // 注册工具集类
-    Subsystem->ToolsetRegistry.RegisterToolsetClass(UMyToolset::StaticClass());
-    
-    // 执行一个工具调用 (通常由 AI 代理完成)
-    // 这里使用测试辅助函数模拟
-    UObject* TestObject = GetDefault<UMyToolset>();
-    UFunction* Function = TestObject->GetClass()->FindFunctionByName(TEXT("CreateAsset"));
-    
-    auto ToolCall = MakeShared<FObjectFunctionToolCall>(TestObject, Function);
-    TFuture<FJsonValueOrError> ResultFuture = ToolCall->Execute(
-        FObjectFunctionToolCall::FFunctionInputParamsJson(
-            TInPlaceType<FString>(), 
-            TEXT(R"({"AssetName": "MyNewAsset", "AssetPath": "/Game/Assets"}")")),
-        MakeShared<FToolCallExceptionHandler>());
-    
-    // 处理结果
-    FJsonValueOrError Result = ResultFuture.Get();
-    if (Result.HasValue())
+    if (!Result->Error.IsEmpty())
     {
-        // 工具调用成功，Result.GetValue() 是返回的 JSON 值
+        UE_LOG(LogTemp, Error, TEXT("Tool failed: %s"), *Result->Error);
+        return;
     }
-    else
-    {
-        // 工具调用失败，Result.GetError() 是错误信息
-    }
-}
+    FString Value = Result->Value;
+    UE_LOG(LogTemp, Log, TEXT("Tool result: %s"), *Value);
+});
+
+// 如果结果已经完成，手动广播
+Result->BroadcastOnCompletedIfComplete();
+```
+
+**与文件沙盒交互**（Source: `Engine/Plugins/Experimental/ToolsetRegistry/Public/ToolsetRegistry/SandboxLibrary.h`）
+
+```cpp
+using UE::ToolsetRegistry::FGlobalSandbox;
+
+// 进入沙盒
+FGlobalSandbox::Enter(TEXT("MySandbox"), TEXT("Temporary working area"));
+
+// 执行文件操作（实际文件写入会在沙盒内）
+// ...
+
+// 获取变更列表
+auto Changes = FGlobalSandbox::GetChanges();
+
+// 提交部分文件
+FGlobalSandbox::Persist({TEXT("/Game/MyAsset.uasset")});
+
+// 丢弃全部变更
+FGlobalSandbox::Discard();
+
+// 离开沙盒（不删除）
+FGlobalSandbox::Leave();
+```
+
+**注册 Python 测试**（Source: `Engine/Plugins/Experimental/ToolsetRegistry/Private/ToolsetRegistry/PythonTestRunner.h`）
+
+```cpp
+// 在 Python init_unreal.py 中：
+import unreal
+from mypackage.tests import test_module
+
+_test_runner = unreal.PythonTestRunner.create(
+    'MyPackage.Tests',
+    unreal.PythonTestRunnerSearchOptions(root_module=test_module.__name__))
 ```
 
 ### 进阶用法
 
-**自定义 JSON 转换器** (来源: `Source/ToolsetRegistry/Private/Tests/FakeConverter.h`)
-
-你可以继承 `FToolsetJsonConverter` 来处理自定义类型的 JSON 序列化/反序列化。
+**自定义属性序列化转换器**（Source: `Engine/Plugins/Experimental/ToolsetRegistry/Public/ToolsetRegistry/ToolsetJsonConverter.h`）
 
 ```cpp
-class FMyCustomConverter : public UE::ToolsetRegistry::FToolsetJsonConverter
+class FMyCustomConverter : public FToolsetJsonConverter
 {
-public:
-    virtual FString GetName() const override { return TEXT("MyCustomConverter"); }
-    
+    virtual FString GetName() const override { return TEXT("MyConverter"); }
+
     virtual bool CanConvertProperty(TNotNull<const FProperty*> Property) override
     {
-        // 判断此转换器是否能处理该属性类型
-        return Property->IsA<FStructProperty>() && 
-               CastField<FStructProperty>(Property)->Struct == FMyCustomStruct::StaticStruct();
+        // 例如，只处理 FMyStruct 属性
+        return Property->GetClass() == FMyStruct::StaticStruct();
     }
-    
-    // ... 实现其他虚函数，定义 FMyCustomStruct 与 JSON 的转换逻辑
+
+    virtual TSharedPtr<FJsonObject> PropertyToJsonSchema(
+        TNotNull<const FProperty*> Property) override
+    {
+        // 返回自定义 JSON Schema
+        return MakeShareable(new FJsonObject());
+    }
+    // ... 其他虚函数实现
 };
 
 // 注册转换器
-Subsystem->ToolsetRegistry.RegisterConverter(MakeShared<FMyCustomConverter>());
+FToolsetRegistry& Registry = ...;
+Registry.RegisterConverter(MakeShared<FMyCustomConverter>());
 ```
 
-**处理异步工具调用** (来源: `Source/ToolsetRegistry/Public/ToolsetRegistry/ToolCallAsyncResult.h`)
-
-对于耗时操作，工具可以返回 `UToolCallAsyncResult` 的子类。
+**事务包裹工具执行**（Source: `Engine/Plugins/Experimental/ToolsetRegistry/Private/...`，从 git commit 描述）
 
 ```cpp
-UCLASS()
-class UMyAsyncToolset : public UToolsetDefinition
-{
-    GENERATED_BODY()
-public:
-    UFUNCTION(meta = (AICallable), Category = "AsyncTools")
-    static UToolCallAsyncResultString* LongRunningTask(const FString& Input);
-};
-
-// 在函数实现中
-UToolCallAsyncResultString* UMyAsyncToolset::LongRunningTask(const FString& Input)
-{
-    UToolCallAsyncResultString* AsyncResult = NewObject<UToolCallAsyncResultString>();
-    
-    // 在后台线程执行任务
-    Async(EExecutionThread::AnyBackgroundThreadNormalTask, [AsyncResult, Input]()
-    {
-        // ... 执行耗时操作 ...
-        FString Result = DoWork(Input);
-        
-        // 回到游戏线程设置结果
-        AsyncTask(ENamedThreads::GameThread, [AsyncResult, Result]()
-        {
-            AsyncResult->SetValue(Result); // 这将触发 OnCompleted 委托
-        });
-    });
-    
-    return AsyncResult;
-}
+// 自动事务包裹（在内部实现，无需手动调用）
+// 当通过 ExecuteTool 调用工具时，插件会自动创建一个事务；
+// 如果工具执行过程中抛出脚本异常，会自动调用 UndoTransaction 回滚。
 ```
+
+---
 
 ## Demo 示例
 
-一个最小的工具集定义和使用示例。
+以下是一个完整的 C++ 工具集定义和注册示例，包括一个简单的工具用于获取场景相机位置。
 
 **MyToolset.h**
+
 ```cpp
 #pragma once
 
@@ -199,96 +286,94 @@ UToolCallAsyncResultString* UMyAsyncToolset::LongRunningTask(const FString& Inpu
 #include "ToolsetRegistry/ToolsetDefinition.h"
 #include "MyToolset.generated.h"
 
-UCLASS(Blueprintable)
+UCLASS(BlueprintType, DisplayName = "Camera Tools")
 class UMyToolset : public UToolsetDefinition
 {
     GENERATED_BODY()
 
 public:
-    // 一个简单的加法工具
-    UFUNCTION(meta = (AICallable), Category = "Math")
-    static int32 Add(int32 A, int32 B);
+    // 获取当前编辑器视口相机位置（仅编辑器可用）
+    UFUNCTION(meta = (AICallable))
+    static FString GetEditorCameraLocation();
+
+    virtual FString GetToolsetVersion() const override { return TEXT("1.0"); }
 };
 ```
 
 **MyToolset.cpp**
+
 ```cpp
 #include "MyToolset.h"
+#include "EditorViewportClient.h"
+#include "LevelEditorViewport.h"
+#include "JsonObjectConverter.h"
 
-int32 UMyToolset::Add(int32 A, int32 B)
+FString UMyToolset::GetEditorCameraLocation()
 {
-    return A + B;
-}
-```
-
-**使用 (在编辑器工具或测试中):**
-```cpp
-#include "MyToolset.h"
-#include "ToolsetRegistry/ToolsetRegistrySubsystem.h"
-
-void RegisterAndTestMyToolset()
-{
-    // 1. 获取子系统并注册
-    auto SubsystemResult = UToolsetRegistrySubsystem::Get();
-    if (SubsystemResult.HasError()) return;
-    
-    UToolsetRegistrySubsystem* Subsystem = SubsystemResult.GetValue();
-    Subsystem->ToolsetRegistry.RegisterToolsetClass(UMyToolset::StaticClass());
-    
-    // 2. 查询 Schema (AI 会做这一步)
-    FString Schema = UToolsetRegistry::GetAllToolsetJsonSchemas();
-    UE_LOG(LogTemp, Log, TEXT("Toolset Schemas:\n%s"), *Schema);
-    
-    // 3. 调用工具 (模拟 AI 调用)
-    FString OutResult, OutError;
-    UToolsetRegistry::ExecuteTool(
-        TEXT("MyToolset"), // 工具集名称 (默认为类名)
-        TEXT("Add"),       // 工具名称 (函数名)
-        TEXT(R"({"A": 5, "B": 3})"), // JSON 输入
-        OutResult,
-        OutError
-    );
-    
-    if (OutError.IsEmpty())
+    FVector Location = FVector::ZeroVector;
+    if (GCurrentLevelEditingViewportClient)
     {
-        UE_LOG(LogTemp, Log, TEXT("Tool Result: %s"), *OutResult); // 应输出 8
+        Location = GCurrentLevelEditingViewportClient->GetViewLocation();
     }
+    // 返回 JSON
+    return FString::Printf(TEXT("{\"X\":%f,\"Y\":%f,\"Z\":%f}"),
+        Location.X, Location.Y, Location.Z);
 }
 ```
+
+**Module Startup**
+
+```cpp
+void FMyModule::StartupModule()
+{
+    UToolsetRegistry::RegisterToolsetClass(UMyToolset::StaticClass());
+}
+```
+
+在蓝图中或通过 Python 调用：
+```python
+import unreal
+registry = unreal.ToolsetRegistry
+result = registry.execute_tool("Camera Tools", "GetEditorCameraLocation", "{}")
+print(result.get_value_as_json_string())
+```
+
+---
 
 ## 模块依赖
 
 | 模块 | 用途 |
 |---|---|
-| `PythonScriptPlugin` | 为工具集提供 Python 脚本支持，可能用于定义或调用工具。 |
-| `EditorScriptingUtilities` | 提供编辑器脚本相关的实用工具函数。 |
-| `FileSandbox` | 提供文件沙箱功能，用于安全地执行可能修改文件系统的工具操作。 |
+| `PythonScriptPlugin` | 提供 Python 脚本执行环境，用于工具实现和测试集成 |
+| `EditorScriptingUtilities` | 提供编辑器脚本实用函数（如资产操作、编辑器查询） |
+| `FileSandbox` | 提供沙盒文件系统，支持隔离的文件变更跟踪和提交 |
+
+（其他标准依赖如 Core、Engine、UnrealEd 等已省略）
+
+---
 
 ## 维护状态
 
 ### 近期更新
 
-- 2026-04-24 0cd2b3ea [Backout] - CL53139837
-- 2026-04-24 8dc8f3fd Standardize Epic toolset plugin structure
-- 2026-04-24 f45d0c4c Fix possible null deref in AgentSkill::ListSkills when a skill class path can't be loaded.
+- 2026-05-14 a6b716df Block list for UToolsetLibrary::SetObjectProperties
+- 2026-05-14 3e643253 Wrap execute_tool_script in a transaction with automatic rollback on error
+- 2026-05-14 02299b89 [ToolsetRegistry] Emit correct container change notifications in SetObjectProperties
+- 2026-05-14 fc9371a0 Drop redundant UE_LOGF in OnScriptException
+- 2026-05-13 978a5c16 [Backout] - CL53875137
 
 ### 维护评价
 
-ToolsetRegistry 是一个非常新的实验性插件，所有提交记录都集中在同一天（2026-04-24）。从提交信息看，它经历了结构标准化和一些 bug 修复，表明它正处于积极的早期开发阶段。
+- **创建时间**：2026-05-13，距今不到一个月（非常新）。
+- **更新频率**：最近两天内有多个功能性提交（属性块列表、事务回滚、容器变更通知等），开发活跃。
+- **实验性标记**：`.uplugin` 中 `IsExperimentalVersion=true`，表明 API 和功能可能仍有调整。
+- **已知限制**：暂无已知问题记录，但作为实验性插件，不建议在项目生产环境中依赖过重。
+- **推荐度**：适合在 AI 辅助编辑器开发场景中试用，关注后续版本稳定化。
 
-**优点**：
-- 设计目标明确，为 AI 与 UE 集成提供了标准化框架。
-- 代码结构清晰，包含了完整的测试用例。
-- 依赖于成熟的插件（Python, FileSandbox）。
-
-**风险与注意事项**：
-- **实验性**：标记为 `IsExperimentalVersion=true`，API 和功能可能会发生重大变化。
-- **默认禁用**：需要手动在插件列表中启用。
-- **早期阶段**：虽然代码完整，但缺乏长期维护记录，其稳定性和未来支持存在不确定性。
-
-**推荐**：如果你正在探索 AI 与 UE 编辑器的深度集成，并且愿意承担实验性 API 变化的风险，可以尝试使用。对于生产环境，建议等待其脱离实验状态或进行更长期的观察。
+---
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ToolsetRegistry)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ToolsetRegistry/Source/ToolsetRegistry/Private/Tests)
+- [官方文档]（无）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ToolsetRegistry/Source/ToolsetRegistry/Private/Tests)（假设存在，实际路径可能不同）

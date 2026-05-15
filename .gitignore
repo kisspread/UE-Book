@@ -12,3 +12,4 @@ dist-final
 ue-book/docs/.batch-exclude.json
 .batch-exclude.json
 scripts/__pycache__
+tmp/
