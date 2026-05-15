@@ -746,6 +746,13 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 一个非常聚焦的小工具，解决了UE项目中测试‘首次运行’体验时因PSO缓存而导致性能数据不准确的特定痛点。项目结构清晰，功能单一，适合有相关需求的开发者。
   🔗 [The Unlicense](https://unlicense.org/)
 
+- [Blender Tools](https://github.com/EpicGamesExt/BlenderTools)  Blender addons that improve the game development workflow between Blender and Unreal Engine.
+  ![Blender Tools screenshot](https://raw.githubusercontent.com/EpicGamesExt/BlenderTools/main/docs/main/images/send2ue/4.gif)
+  ![Blender Tools screenshot](https://raw.githubusercontent.com/EpicGamesExt/BlenderTools/main/docs/main/images/ue2rigify/2.png)
+  - Blender 工具集，旨在优化 Blender 与 Unreal Engine 之间的游戏开发工作流程。包含一键发送资产和骨骼重定向功能，简化资产导出与动画制作流程。
+  - 💬 Epic Games 官方维护的工具，实用性强，特别适合 Blender 用户快速集成 Unreal Engine，但功能聚焦于单向导出，扩展性有限。
+  🔗 [Read Docs](https://epicgamesext.github.io/BlenderTools/send2ue/) · [Rigify](https://docs.blender.org/manual/en/latest/addons/rigging/rigify/index.html) · [Read Docs](https://epicgamesext.github.io/BlenderTools/ue2rigify/)
+
 
 - [UnrealGPUSwarm](https://github.com/timdecode/UnrealGPUSwarm) 学习compute shaders的例子。 This project is a good starting point for learning how to write compute shaders in Unreal. It implements a boid simulation the GPU. It achieves 0.5 million boids at 45 fps on a GTX 1080.
   <video src="https://user-images.githubusercontent.com/980432/132757577-500416e4-5f27-4add-9c50-641889336d69.mp4" controls autoplay loop> 
