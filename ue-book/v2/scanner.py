@@ -37,13 +37,15 @@ def scan_plugin(plugin_name: str, plugin_path: str, branch: str) -> dict:
             "name": name, "type": mod_type, "path": cs_rel,
             "deps": list(dict.fromkeys(deps))[:15],
         })
-    # Get creation date (from .uplugin first commit) and recent commits
-    created = _get_creation_date(plugin_path, branch)
+    # Get creation info (first commit + date) and recent commits
+    first_commit = _get_first_commit(plugin_path, branch)
+    created = first_commit.get("date", "unknown")
     commits = _get_commits(plugin_path, branch, count=5)
 
     return {
         "name": plugin_name, "path": plugin_path, "src_files": src_files,
-        "modules": modules, "created": created, "uplugin": uplugin, "commits": commits,
+        "modules": modules, "created": created, "uplugin": uplugin,
+        "commits": commits, "first_commit": first_commit,
     }
 
 
@@ -326,34 +328,24 @@ def _read_uplugin_api(plugin_path: str, branch: str) -> Optional[dict]:
     return None
 
 
-def _get_creation_date(plugin_path: str, branch: str) -> str:
-    """Get the earliest commit date for a plugin's .uplugin file."""
+def _get_first_commit(plugin_path: str, branch: str) -> dict:
+    """Get the first commit (creation) info for a plugin's .uplugin file.
+    Returns {date, sha, message} or {} on failure."""
     from . import config
     repo = config.GH_REPO
     try:
-        # Get total commit count for the .uplugin file, then fetch the last page (first commit)
-        # First API call: get count from the first page
         uplugin_path = f"{plugin_path}/{plugin_path.split('/')[-1]}.uplugin"
-        data = _gh_api(f"repos/{repo}/commits", sha=branch, path=uplugin_path, per_page=1)
-        if not data:
-            return "unknown"
-        
-        # Get total count from Link header not easily accessible via gh CLI.
-        # Fallback: fetch many commits and take oldest
         all_data = _gh_api(f"repos/{repo}/commits", sha=branch, path=uplugin_path, per_page=100)
         if all_data and len(all_data) > 0:
-            return all_data[-1]["commit"]["committer"]["date"]
-        return data[0]["commit"]["committer"]["date"]
+            first = all_data[-1]
+            return {
+                "date": first["commit"]["committer"]["date"],
+                "sha": first["sha"],
+                "message": first["commit"]["message"],
+            }
     except RuntimeError:
         pass
-    # Fallback: try path without .uplugin
-    try:
-        data = _gh_api(f"repos/{repo}/commits", sha=branch, path=plugin_path, per_page=100)
-        if data and len(data) > 0:
-            return data[-1]["commit"]["committer"]["date"]
-    except RuntimeError:
-        pass
-    return "unknown"
+    return {}
 
 
 def _get_commits(path: str, branch: str, count: int = 5) -> list[dict]:
@@ -384,6 +376,13 @@ def _common_header(info: dict) -> list[str]:
     if info.get("uplugin"):
         lines.append("## .uplugin metadata")
         lines.append(f"```json\n{json.dumps(info['uplugin'], indent=2, ensure_ascii=False)}\n```")
+        lines.append("")
+    if info.get("first_commit"):
+        fc = info["first_commit"]
+        lines.append("## First commit (creation)")
+        lines.append(f"Date: {fc.get('date', '')}")
+        lines.append(f"Hash: {fc.get('sha', '')}")
+        lines.append(f"```\n{fc.get('message', '')}\n```")
         lines.append("")
     if info.get("modules"):
         lines.append("## All Modules")
