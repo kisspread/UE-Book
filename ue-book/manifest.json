@@ -4362,6 +4362,76 @@
       "generated_in": "5.7",
       "size": "medium",
       "doc_path": "docs/5.7/medium/WmfMedia/"
+    },
+    "ShaderToolkit": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/ShaderToolkit/"
+    },
+    "PCGPrimitives": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/PCGPrimitives/"
+    },
+    "PCGPrimitives_MeshPartitionInterop": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/PCGPrimitives_MeshPartitionInterop/"
+    },
+    "ChaosClothAssetToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ChaosClothAssetToolset/"
+    },
+    "ConfigSettingsToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ConfigSettingsToolset/"
+    },
+    "DataRegistryToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/DataRegistryToolset/"
+    },
+    "EditorToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/EditorToolset/"
+    },
+    "PCGToolset": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/PCGToolset/"
+    },
+    "PluginToolset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/PluginToolset/"
+    },
+    "InterchangePregenSharedContent": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/InterchangePregenSharedContent/"
+    },
+    "USDPregen": {
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/USDPregen/"
+    },
+    "VEUV": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/VEUV/"
+    },
+    "InterchangeChaosClothAsset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/InterchangeChaosClothAsset/"
+    },
+    "InterchangeOpenUSDChaosClothAsset": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/InterchangeOpenUSDChaosClothAsset/"
     }
   }
 }
