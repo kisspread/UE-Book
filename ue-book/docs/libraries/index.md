@@ -320,6 +320,11 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 项目基于 UE5 动画样本，集成了 ALS 的覆盖层叠系统，适合需要增强运动动画控制的开发者。提供详细的迁移指南，但作为完整插件，可能对新手有一定学习成本。
   🔗 [UE-Only Content - Licensed for Use Only with Unreal Engine-based Products](https://www.unrealengine.com/en-US/eula/content) · [Polygon Hive Discord](https://discord.gg/8KK5WnDp3D)
 
+- [AnimToTextureHelpers](https://github.com/kromond/AnimToTextureHelpers)  Plugin for creating vertex animation textures in Unreal Engine.
+  ![AnimToTextureHelpers screenshot](https://user-images.githubusercontent.com/5624947/211672718-688c375f-e9b9-4872-85d8-2ba624694084.png)
+  - 💬 这是一个基于蓝图的 Unreal Engine 工具，用于将骨骼网格体动画转换为顶点动画纹理，适用于人群动画等性能优化场景。使用简便，但可能需要根据项目需求调整，示例性质较强。
+  🔗 [Mann763](https://github.com/Mann763) · [tomaaron](https://github.com/tomaaron)
+
 
 
 ## Niagara
