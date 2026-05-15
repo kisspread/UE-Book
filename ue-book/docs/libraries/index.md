@@ -325,6 +325,10 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 这是一个基于蓝图的 Unreal Engine 工具，用于将骨骼网格体动画转换为顶点动画纹理，适用于人群动画等性能优化场景。使用简便，但可能需要根据项目需求调整，示例性质较强。
   🔗 [Mann763](https://github.com/Mann763) · [tomaaron](https://github.com/tomaaron)
 
+- [Advanced Locomotion System Refactored](https://github.com/Sixze/ALS-Refactored)  Completely reworked and improved C++ version of Advanced Locomotion System V4.
+  - 💬 一个全面重构的UE5运动系统插件，优化了网络同步和动画性能，适合需要高质量角色运动解决方案的开发者。
+  🔗 [Advanced Locomotion System V4](https://www.fab.com/listings/ef9651a4-fb55-4866-a2d9-1b38b028f9c7)
+
 
 
 ## Niagara
