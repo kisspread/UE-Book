@@ -1048,6 +1048,11 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
   - 💬 该项目提供了 UE5 MetaSounds 的实用参考实现，亮点在于多音色合成和 UMG 集成，适合音频设计师快速原型设计，但 Haskell 语言标签可能与主要 Blueprint/资产结构不符。
   🔗 [AudioKit Synth One](https://audiokitpro.com/synth/) · ["Unreal Engine MetaSounds"](https://dev.epicgames.com/community/learning/tutorials/Kw7l/unreal-engine-metasounds) · [code samples](https://github.com/msp/6070-intro-to-metasounds?tab=readme-ov-file)
 
+- [TargetVector](https://github.com/Voidware-Prohibited/TargetVector)  An Unreal Engine 5 template with EOS, Steam, Common UI, and ALS integration.
+  - 这是一个 Unreal Engine 5 模板项目，集成了 Epic Online Services、Steam、模块化游戏玩法、Common UI 和 ALS（高级运动系统重构版），旨在提供一个跨平台的多人游戏框架。
+  - 💬 项目整合了 EOS、Steam 等主流在线服务和 ALS 等高级系统，亮点在于提供开箱即用的多人游戏模板，但作为模板可能需要用户根据需求自行扩展和优化。
+  🔗 [Codeberg](https://codeberg.org/Voidware-Prohibited/) · [GitHub](https://github.com/Voidware-Prohibited/ALSXT/) · [GitLab](https://gitlab.com/Voidware-Prohibited/ALSXT/)
+
 
 
 ## Other
