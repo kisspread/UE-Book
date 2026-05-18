@@ -2810,8 +2810,7 @@
     "AIModuleToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/AIModuleToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/AIModuleToolset/"
     },
     "AllToolsets": {
       "generated_in": "5.8",
@@ -2822,98 +2821,82 @@
     "AnimationAssistantToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/AnimationAssistantToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/AnimationAssistantToolset/"
     },
     "AutomationTestToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/AutomationTestToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/AutomationTestToolset/"
     },
     "ConversationToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/ConversationToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/ConversationToolset/"
     },
     "DataflowAgent": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/DataflowAgent/",
-      "forced": true
+      "doc_path": "docs/5.8/small/DataflowAgent/"
     },
     "GASToolsets": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/GASToolsets/",
-      "forced": true
+      "doc_path": "docs/5.8/small/GASToolsets/"
     },
     "GameFeaturesToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/GameFeaturesToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/GameFeaturesToolset/"
     },
     "GameplayTagsToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/GameplayTagsToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/GameplayTagsToolset/"
     },
     "LiveCodingToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/LiveCodingToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/LiveCodingToolset/"
     },
     "MCPClientToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/MCPClientToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/MCPClientToolset/"
     },
     "NiagaraToolsets": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/NiagaraToolsets/",
-      "forced": true
+      "doc_path": "docs/5.8/small/NiagaraToolsets/"
     },
     "PhysicsToolsets": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/PhysicsToolsets/",
-      "forced": true
+      "doc_path": "docs/5.8/small/PhysicsToolsets/"
     },
     "SequencerAnimMixerToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/SequencerAnimMixerToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/SequencerAnimMixerToolset/"
     },
     "SlateInspectorToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/SlateInspectorToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/SlateInspectorToolset/"
     },
     "StateTreeToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/StateTreeToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/StateTreeToolset/"
     },
     "UMGToolSet": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/UMGToolSet/",
-      "forced": true
+      "doc_path": "docs/5.8/small/UMGToolSet/"
     },
     "WorldConditionsToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/WorldConditionsToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/WorldConditionsToolset/"
     },
     "UAFAnimNode": {
       "generated_in": "5.8",
@@ -4398,38 +4381,32 @@
     "ChaosClothAssetToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/ChaosClothAssetToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/ChaosClothAssetToolset/"
     },
     "ConfigSettingsToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/ConfigSettingsToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/ConfigSettingsToolset/"
     },
     "DataRegistryToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/DataRegistryToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/DataRegistryToolset/"
     },
     "EditorToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/EditorToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/EditorToolset/"
     },
     "PCGToolset": {
       "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.8/medium/PCGToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/medium/PCGToolset/"
     },
     "PluginToolset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/PluginToolset/",
-      "forced": true
+      "doc_path": "docs/5.8/small/PluginToolset/"
     },
     "InterchangePregenSharedContent": {
       "generated_in": "5.8",

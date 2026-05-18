@@ -4337,20 +4337,6 @@
       "link": "/5.7/SerializationUtils/XmlSerialization"
     }
   ],
-  "/5.8/ShaderToolkit/": [
-    {
-      "text": "概述",
-      "link": "/5.8/ShaderToolkit/"
-    },
-    {
-      "text": "ShaderAudit",
-      "link": "/5.8/ShaderToolkit/ShaderAudit"
-    },
-    {
-      "text": "ShaderAuditCore",
-      "link": "/5.8/ShaderToolkit/ShaderAuditCore"
-    }
-  ],
   "/5.7/SlateIM/": [
     {
       "text": "概述",
@@ -5055,40 +5041,6 @@
       "link": "/5.7/USDImporter/USDTests"
     }
   ],
-  "/5.8/USDPregen/": [
-    {
-      "text": "概述",
-      "link": "/5.8/USDPregen/"
-    },
-    {
-      "text": "USDPregenHttpWorker",
-      "link": "/5.8/USDPregen/USDPregenHttpWorker"
-    },
-    {
-      "text": "USDPregenInterchange",
-      "link": "/5.8/USDPregen/USDPregenInterchange"
-    },
-    {
-      "text": "USDPregenInterchangeEditor",
-      "link": "/5.8/USDPregen/USDPregenInterchangeEditor"
-    },
-    {
-      "text": "USDPregenPy",
-      "link": "/5.8/USDPregen/USDPregenPy"
-    },
-    {
-      "text": "USDPregenUObjectStorage",
-      "link": "/5.8/USDPregen/USDPregenUObjectStorage"
-    },
-    {
-      "text": "USDPregenWrapper",
-      "link": "/5.8/USDPregen/USDPregenWrapper"
-    },
-    {
-      "text": "UsdPregenCore",
-      "link": "/5.8/USDPregen/UsdPregenCore"
-    }
-  ],
   "/5.7/UVEditor/": [
     {
       "text": "概述",
@@ -5105,20 +5057,6 @@
     {
       "text": "UVEditorToolsEditorOnly",
       "link": "/5.7/UVEditor/UVEditorToolsEditorOnly"
-    }
-  ],
-  "/5.8/VEUV/": [
-    {
-      "text": "概述",
-      "link": "/5.8/VEUV/"
-    },
-    {
-      "text": "VEUVCore",
-      "link": "/5.8/VEUV/VEUVCore"
-    },
-    {
-      "text": "VEUVEditor",
-      "link": "/5.8/VEUV/VEUVEditor"
     }
   ],
   "/5.7/VirtualCameraCore/": [
