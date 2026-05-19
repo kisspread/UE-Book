@@ -170,7 +170,8 @@ function buildLibrariesIndex() {
     return libraries;
   }
 
-  const content = fs.readFileSync(LIBRARIES_MD, 'utf-8');
+  let content = fs.readFileSync(LIBRARIES_MD, 'utf-8');
+  content = content.replace(/\r\n/g, '\n'); // normalize CRLF → LF
   
   // Parse library entries: lines starting with "- [Name](url) ..."
   // Some entries have sub-bullets (indented with "  - ")
