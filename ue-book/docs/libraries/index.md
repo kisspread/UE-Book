@@ -532,6 +532,10 @@ Including open source and non-open source, commercial and non-commercial.
   - 一个为 Unreal Engine 的 UMG/Slate UI 框架设计的扩展插件。它主要提供动态文本动画、在2D UI中实现伪3D透视效果以及可由蓝图动态组装的UI树结构等功能。
   - 💬 一个功能聚焦的UE插件，文档详尽，为UMG/Slate提供了文本动画和2D伪3D变换等常用视觉增强。其Stars数表明社区关注度有限，更适合作为特定UI效果的工具库集成到项目中。
 
+- [ReactorUMG](https://github.com/Caleb196x/ReactorUMG)  A helper plugin for Unreal Engine to build UMG game UI and editor UI using React.
+  - ReactorUMG 是一个 Unreal Engine 的辅助插件，允许使用 React 构建 UMG 游戏 UI 和编辑器 UI。它基于 PuertTS 脚本，支持 AI 辅助开发，提供实时预览和热重载功能，以简化 UI 开发流程。
+  - 💬 项目处于 Alpha 阶段，API 尚未稳定，但引入了 Web 前端开发模式到 UE UI 中，亮点在于支持 AI 辅助和热重载，更适合快速开发编辑器工具而非生产级游戏 UI。
+
 
 
 ## Material
