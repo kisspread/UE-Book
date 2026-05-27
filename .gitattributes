@@ -1,0 +1,30 @@
+# Auto-detect text files and normalize line endings to LF on commit
+* text=auto
+
+# Explicit text types — always LF
+*.py       text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.md       text eol=lf
+*.json     text eol=lf
+*.sh       text eol=lf
+*.toml     text eol=lf
+*.cfg      text eol=lf
+
+# Generated/build artifacts — treat as text but don't let tools mess with them
+ue-book/docs/public/manifest.json  text eol=lf
+ue-book/docs/public/sidebar.json   text eol=lf
+
+# Binary
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.pdf      binary
+*.zip      binary
+*.gz       binary
+*.tar      binary
+*.ttf      binary
+*.woff     binary
+*.woff2    binary
