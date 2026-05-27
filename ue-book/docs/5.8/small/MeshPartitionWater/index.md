@@ -4,185 +4,147 @@
 
 | 属性 | 值 |
 |---|---|
+| 中文名 | 网格分区水体兼容 |
 | 分类 | Mesh Partition |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产） |
+| 包含内容 | ❌ 无 |
 | 模块 | `MeshPartitionWater` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-03-05 |
-| 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/MeshPartitionWater) | |
+| 年龄标签 | 🆕（约 1 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MeshPartitionWater) | |
 
 ## 用途
 
-该插件为 Mesh Partition（网格分区/大网格地形）系统与 Water（水体）系统之间提供互操作层。它解决的核心问题是：当使用 Mesh Partition 生成大规模地形网格时，如何让地形自动适配水体（湖泊、海洋、河流）的形状——包括在水体边缘进行高度衰减、生成权重图用于材质混合，以及处理多个水体 modifier 之间的重叠混合。
-
-简单来说，这个插件让 Mesh Partition 地形能够"感知"水体的存在，并自动在水体周围进行地形变形和材质权重分配，使得水岸过渡自然。
+本插件的核心功能是为 **Mesh Partition（网格分区/巨型网格）** 地形系统与 **Water（水体）** 插件提供互操作性。它允许水体（如河流、湖泊、海洋）在基于网格分区生成的地形上正确地交互，实现地形变形（例如河床凹陷、湖岸坡度）和材质混合（如水边沙滩、岸边过渡）。插件提供了一系列修改器组件，用于在网格分区构建过程中处理水体对地形的影响。
 
 ## 使用场景
 
-- 你正在使用 Mesh Partition 系统构建大型地形，同时场景中有 Water 插件生成的湖泊、海洋或河流 → 需要此插件让地形自动适配水体形状
-- 你需要地形在河流/湖泊边缘自动下沉，形成自然的河床/湖床效果 → 使用对应的 Lake/River/Ocean Modifier
-- 场景中有多条河流交汇或河流汇入湖泊，需要平滑的权重混合 → 插件内置了内部水体权重通道处理重叠
+- 你正在使用 **Mesh Partition** 插件生成大规模地形，并且地形中包含了使用官方 **Water** 插件创建的河流、湖泊或海洋。
+- 你希望水体能够自动、正确地塑造下方或周围的网格分区地形，例如让河流河床低于周围地形，让湖泊拥有平缓的岸边坡度。
+- 你需要在水体与地形的交界处实现自然的材质权重过渡（例如水边沙地）。
 
 ## 蓝图用法
 
-所有 Modifier 组件均标记为 `BlueprintSpawnableComponent`，可在蓝图中直接添加到 Actor。
+插件主要提供组件形式，需要在水体或网格分区的Actor中添加相应的修改器组件。
 
-### 核心组件
+### 核心节点
 
-| 组件 | 说明 | 适用水体 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `ULakeModifier` | 湖泊地形变形 Modifier | 湖泊 (Lake) |
-| `URiverModifier` | 河流地形变形 Modifier | 河流 (River) |
-| `UOceanModifier` | 海洋地形变形 Modifier | 海洋 (Ocean) |
-
-### 可编辑属性
-
-| 属性 | 类型 | 说明 | 所在类 |
-|---|---|---|---|
-| `MaxZDistance` | `double` | Modifier 影响地形的最大垂直距离（默认 10000） | `UWaterModifier` |
+| `Set Max Z Distance` | 设置此水体修改器影响地形的最大垂直距离。 | `UWaterModifier` |
+| `Is Enabled` | 查询此水体修改器是否启用。 | `UWaterModifier` |
 
 ### 使用示例（蓝图描述）
 
-1. 在你的 Mesh Partition Actor 上，添加 `ULakeModifier`（或 `URiverModifier` / `UOceanModifier`）组件
-2. 组件会自动关联场景中对应的 Water Body Actor（通过 `WaterBrushActorInterface`）
-3. 调整 `MaxZDistance` 控制地形受水体影响的最大垂直范围
-4. 地形在构建时会自动根据水体形状进行高度变形和权重图生成
+1.  在你的 `WaterBody` Actor（如 `WaterBody_River` 或 `WaterBody_Lake`）上，添加一个对应的修改器组件（如 `URiverModifier` 或 `ULakeModifier`）。
+2.  在组件的细节面板中，调整 `Max Z Distance` 属性，以控制水体对地形的变形影响范围。
+3.  当网格分区系统构建地形时，这些修改器组件会自动参与计算，根据水体的形状（通过 `WaterSpline`）和设置对网格分区地形的顶点和权重进行变形和混合。
 
 ## C++ 用法
+
+本插件主要作为编辑器和构建时工具使用，其核心类是 `UWaterModifier` 及其子类。
 
 ### 头文件引入
 
 ```cpp
-#include "MeshPartitionWaterModifier.h"  // 基类 UWaterModifier
+// 根据具体修改器类型引入对应头文件
+#include "MeshPartitionWaterModifier.h" // UWaterModifier 基类
+#include "MeshPartitionRiverModifier.h" // URiverModifier
+#include "MeshPartitionLakeModifier.h"  // ULakeModifier
 ```
-
-> 注意：`ULakeModifier`、`URiverModifier`、`UOceanModifier` 的头文件位于 Private 目录，通常不需要直接 include。通过基类 `UWaterModifier` 和 Mesh Partition 的 Modifier 系统进行交互。
 
 ### 基本用法
 
-该插件主要通过组件系统工作，核心交互方式是在 Mesh Partition 的 Modifier 框架中使用水体 Modifier：
-
+创建一个继承自 `UWaterModifier` 的自定义修改器组件，以实现特定的水体交互逻辑。
 ```cpp
-// UWaterModifier 提供的辅助方法，用于获取关联的水体信息
-AWaterBody* WaterActor = WaterModifier->GetWaterBodyActor();
-UWaterBodyComponent* WaterComponent = WaterModifier->GetWaterBodyComponent();
-UWaterSplineComponent* WaterSpline = WaterModifier->GetWaterSpline();
-
-// 检查 Modifier 是否启用
-bool bEnabled = WaterModifier->IsEnabled();
-
-// 设置最大影响距离
-WaterModifier->SetMaxZDistance(5000.0);
-```
-
-### 进阶用法
-
-`UWaterModifier` 提供了静态辅助函数，用于自定义水体混合计算：
-
-```cpp
-// 计算顶点的高度衰减权重
-// 参数：是否在水体内、水体高度、到样条线距离、目标高度、网格Z值、高度图设置、曲线设置
-float FalloffHeight = UWaterModifier::CalculateVertexFalloffHeight(
-    InternalBlendWeight,  // 内部混合权重（会被修改）
-    bIsInside,            // 顶点是否在水体内部
-    WaterHeight,          // 水面高度
-    DistanceFromSpline,   // 到水体样条线的距离
-    TargetHeight,         // 目标高度
-    MeshZ,                // 网格顶点Z值
-    HeightmapSettings,    // 水体高度图设置
-    CurveSettings         // 水体曲线设置
-);
-
-// 计算顶点的权重图 alpha 值（不包含调制纹理）
-float Weight = UWaterModifier::CalculateVertexWeight(
-    bIsInside,            // 是否在水体内部
-    DistanceFromSpline,   // 到样条线距离
-    WeightmapSettings     // 权重图设置
-);
-
-// 注册水体权重图到实例信息
-UWaterModifier::RegisterWaterWeightmaps(WeightMaps, Instance);
-```
-
-## Demo 示例
-
-以下展示如何创建一个自定义的水体 Modifier 组件：
-
-```cpp
-// MyWaterModifier.h
+// MyCustomWaterModifier.h
 #pragma once
 
-#include "CoreMinimal.h"
 #include "MeshPartitionWaterModifier.h"
-#include "MyWaterModifier.generated.h"
+#include "MyCustomWaterModifier.generated.h"
 
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class UMyWaterModifier : public UE::MeshPartition::UWaterModifier
+UCLASS(ClassGroup=(MeshPartition), meta=(BlueprintSpawnableComponent))
+class UMyCustomWaterModifier : public MeshPartition::UWaterModifier
 {
     GENERATED_BODY()
 
 public:
-    // 创建后台构建操作
-    virtual TSharedPtr<const MeshPartition::IModifierBackgroundOp> 
-    CreateBackgroundOp(const MeshPartition::EBuildType InBuildType) const override;
+    // 覆写核心方法，定义你的自定义地形修改逻辑
+    virtual void PostProcessSection(AActor* InSection) override;
 
-    // 返回代码版本标识，用于缓存失效
+    // 覆写背景操作创建方法，用于多线程地形构建
+    virtual TSharedPtr<const MeshPartition::IModifierBackgroundOp> CreateBackgroundOp(
+        const MeshPartition::EBuildType InBuildType) const override;
+
+    // 返回一个版本Key，当你的逻辑改变时更新它，以强制地形重新构建
     virtual FGuid GetCodeVersionKey() const override;
 };
 ```
 
+### 进阶用法
+
+在自定义修改器的 `CreateBackgroundOp` 中，创建一个后台操作对象，该对象将在构建线程中执行实际的顶点处理。
 ```cpp
-// MyWaterModifier.cpp
-#include "MyWaterModifier.h"
-
-TSharedPtr<const MeshPartition::IModifierBackgroundOp> 
-UMyWaterModifier::CreateBackgroundOp(const MeshPartition::EBuildType InBuildType) const
+// 在 UMyCustomWaterModifier 的 .cpp 中
+TSharedPtr<const MeshPartition::IModifierBackgroundOp> UMyCustomWaterModifier::CreateBackgroundOp(
+    const MeshPartition::EBuildType InBuildType) const
 {
-    // 创建并返回后台操作，用于在构建线程中执行地形变形
-    // 参考 ULakeModifier / URiverModifier 的实现
-    return nullptr; // 需要实现具体的 FBackgroundOp
+    // 创建一个后台操作实例，并将必要的设置（如 MaxZDistance）传递进去
+    auto BackgroundOp = MakeShared<FMyCustomWaterBackgroundOp>();
+    BackgroundOp->MaxZDistance = this->MaxZDistance;
+    BackgroundOp->WaterSpline = GetWaterSpline(); // 调用基类的辅助函数获取水样条线
+    return BackgroundOp;
 }
+```
 
-FGuid UMyWaterModifier::GetCodeVersionKey() const
+## Demo 示例
+
+一个最小化的自定义水体湖修改器示例。
+
+```cpp
+// SimpleLakeModifier.h
+#pragma once
+
+#include "MeshPartitionLakeModifier.h"
+#include "SimpleLakeModifier.generated.h"
+
+UCLASS(ClassGroup=(MeshPartition), meta=(BlueprintSpawnableComponent))
+class USimpleLakeModifier : public MeshPartition::ULakeModifier
 {
-    // 当此 GUID 变化时，缓存的构建结果会失效并重新构建
-    return FGuid(0x12345678, 0x12345678, 0x12345678, 0x12345678);
-}
+    GENERATED_BODY()
+
+public:
+    // 使用父类的所有默认实现，仅通过属性进行配置
+    // 例如，你可以在蓝图中设置 MaxZDistance
+};
 ```
 
 ## 模块依赖
 
 | 模块 | 用途 |
 |---|---|
-| `MeshPartition` | 网格分区系统，提供 `UModifierComponent` 基类和构建框架 |
-| `Water` | 水体系统，提供 `WaterBrushActorInterface`、`UWaterBodyComponent`、`UWaterSplineComponent` 等 |
+| `MeshPartition` | 核心的网格分区/地形构建系统。 |
+| `Water` | 官方的水体插件，提供水体Actor、样条线和渲染系统。 |
 
 ## 维护状态
 
 ### 近期更新
 
-```
-- 2026-04-01 d41ed57e Updating Ground Truth Meshes for Remesh and Boolean Modifiers
-- 2026-03-20 4f6ea1be [Mesh Partition]
-- 2026-03-13 a0b73b93 add an internal water weight channel and use it to more cleanly blend different water modifiers together
-- 2026-03-05 29f7cf7b [Mesh Partition]（初始提交）
-```
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-04-01 | `d41ed57e` | Updating Ground Truth Meshes for Remesh and Boolean Modifiers | 更新了用于重网格化和布尔运算修改器的基准网格数据。 |
+| 2026-03-20 | `4f6ea1be` | [Mesh Partition] | 常规的网格分区系统更新。 |
+| 2026-03-13 | `a0b73b93` | add an internal water weight channel and use it to more cleanly blend different water modifiers toge | 新增了内部水体权重通道，用于更干净地混合多个水体修改器。 |
+| 2026-03-05 | `29f7cf7b` | [Mesh Partition] | 插件的首次提交，移入实验性文件夹。 |
 
 ### 维护评价
 
-该插件创建于 2026 年 3 月，是一个非常新的实验性插件。从 git 历史来看，在创建后的一个月内有 4 次提交，包括功能增强（内部水体权重通道用于多水体混合）和测试资源更新，表明处于**活跃开发**阶段。
-
-**注意事项**：
-- 标记为 `IsExperimentalVersion: true`，API 可能随时变化
-- `EnabledByDefault: false`，需要手动在插件设置中启用
-- 依赖 Mesh Partition 和 Water 两个插件，确保它们已启用
-- 作为实验性功能，建议在生产环境中谨慎使用
-
-**推荐**：如果你正在使用 Mesh Partition 构建地形并需要水体交互，这是官方推荐的互操作方案。虽然是实验性阶段，但由 Epic Games 维护，质量有保障。
+- **状态**：实验性插件，创建时间很短（约1年），处于**活跃开发**阶段。
+- **更新频率**：近期有功能更新（如权重通道混合优化），表明核心功能仍在完善。
+- **推荐使用**：**推荐在需要实现 Mesh Partition 地形与 Water 水体交互的项目中使用**。由于是实验性插件，其API和功能在未来版本中可能发生变化。在正式项目中使用前，建议进行充分的测试和验证。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/MeshPartitionWater)
-- [官方文档](https://dev.epicgames.com/community/learning/knowledge-base/nK7J/unreal-engine-introduction-to-mesh-terrain#usingwaterbodytools)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MeshPartitionWater)
+- [官方文档](https://dev.epicgames.com/community/learning/knowledge-base/nK7J/unreal-engine-introduction-to-mesh-terrain#usingwaterbodytools)（介绍 Mesh Partition 地形使用水体工具的部分）

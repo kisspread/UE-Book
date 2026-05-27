@@ -1,29 +1,30 @@
 # ChaosDataflowSolver
 
-> （无描述）
+> 
 
 | 属性 | 值 |
 |---|---|
+| 中文名 | Dataflow物理驱动器 |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（物理资产） |
+| 包含内容 | ❌ 无 |
 | 模块 | `ChaosDataflowSolver` (Runtime) |
 | 实验性 | ⚠️ 是 |
-| 创建时间 | 2026-02-26 |
+| 创建时间 | 2026-02-25 |
 | 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosDataflowSolver) | |
 
 ## 用途
 
-ChaosDataflowSolver 是一个实验性插件，其核心功能是作为 **Dataflow 图形化编程系统与 Chaos 物理引擎之间的桥梁**。它提供了一个 Actor (`AChaosDataflowSolverActor`) 和一个 Component (`UChaosSolverBindingComponent`)，用于将 UE 中的物理组件（如 `UPrimitiveComponent`、`UInstancedStaticMeshComponent`）连接到基于 Dataflow 的 Chaos 物理求解器。
+`ChaosDataflowSolver` 插件的核心作用是**作为 Dataflow 图与 Chaos 物理模拟系统之间的桥梁**。它解决了“如何使用 Dataflow 可视化编程框架来驱动 Chaos 物理模拟”的问题。
 
-该插件解决的问题是：允许开发者通过 Dataflow 的可视化节点图来定义和驱动物理模拟流程，而不是完全依赖传统的物理资产或蓝图。它为需要高度定制化、程序化或数据驱动的物理模拟场景（如复杂的破坏系统、程序化生成的物体交互）提供了一种新的实验性工作流。
+该插件提供了一个 `AChaosDataflowSolverActor`，该 Actor 实现了 `IDataflowPhysicsSolverInterface` 接口。你可以将一个 Dataflow Simulation 资产分配给它，从而在运行时通过 Dataflow 图来读取和写入物理模拟状态，进而控制场景中的物理物体（如刚体）。这为使用可视化节点图（Dataflow）创建复杂的、可配置的物理行为提供了可能，而无需编写大量 C++ 代码。
 
 ## 使用场景
 
-- **你需要通过 Dataflow 图形化编程来控制物理模拟**：使用 `AChaosDataflowSolverActor` 作为 Dataflow 物理求解器的载体，并通过 `UChaosSolverBindingComponent` 将场景中的物理物体绑定到该求解器。
-- **你希望将现有的物理资产（如带有碰撞的静态网格）集成到 Dataflow 工作流中**：通过 `UChaosSolverBindingComponent` 将这些组件的物理体注册到 Dataflow 求解器中进行模拟。
-- **你正在实验 Chaos 物理引擎的新 API（RigidPhysics）**：该插件内部使用了 `RigidPhysics` 模块来创建和管理刚体，是探索该新 API 的一个入口。
+- **程序化物理动画**：你希望使用 Dataflow 图来驱动一个物体的物理轨迹或变形，例如生成一道可控的闪电链或流体路径。
+- **动态关卡元素**：需要设计一个可被设计师通过节点图调整物理参数（如质量、碰撞）的机关或载具。
+- **复杂物理效果原型**：快速迭代一个复杂的物理交互效果，利用 Dataflow 的即时反馈进行调试。
 
 ## 蓝图用法
 
@@ -31,17 +32,14 @@ ChaosDataflowSolver 是一个实验性插件，其核心功能是作为 **Datafl
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Set Solver Active` | 控制求解器是否能够模拟其控制的粒子。 | `AChaosDataflowSolverActor` |
-| `Simulation Actor` (属性) | 指向用于模拟的 `AChaosDataflowSolverActor` 实例。 | `UChaosSolverBindingComponent` |
-| `Keep Kinematic In Original` (属性) | 控制是否在原始组件中保持运动学状态。 | `UChaosSolverBindingComponent` |
+| `SetSolverActive` | 控制求解器是否能够模拟其控制的粒子。可动态开关物理模拟。 | `AChaosDataflowSolverActor` |
 
 ### 使用示例（蓝图描述）
 
-1.  在场景中放置一个 `AChaosDataflowSolverActor`。
-2.  在需要参与 Dataflow 物理模拟的 Actor 上，添加 `UChaosSolverBindingComponent`。
-3.  在 `UChaosSolverBindingComponent` 的细节面板中，将 `Simulation Actor` 属性指向场景中的 `AChaosDataflowSolverActor`。
-4.  通过蓝图调用 `AChaosDataflowSolverActor` 的 `Set Solver Active` 节点来启动或停止模拟。
-5.  `AChaosDataflowSolverActor` 内部会通过其 `SimulationAsset` 属性（`FDataflowSimulationAsset`）引用一个 Dataflow 资产，该资产定义了具体的模拟逻辑。
+1.  **放置 Actor**：在场景中放置一个 `AChaosDataflowSolverActor`。
+2.  **配置资产**：在 Actor 的细节面板中，找到 `Physics` 类别下的 `Simulation Asset`，分配你创建的 Dataflow Simulation 资产。
+3.  **控制求解器**：在蓝图中，通过 `Get Actor of Class` 节点获取该 Actor 的引用，然后调用 `Set Solver Active` 节点，传入 `True` 或 `False` 来启用或禁用模拟。
+4.  **绑定物体**：通过 `UChaosSolverBindingComponent` 将场景中的 `UPrimitiveComponent`（如静态网格体）绑定到求解器，使其受到 Dataflow 模拟结果的影响。
 
 ## C++ 用法
 
@@ -54,141 +52,114 @@ ChaosDataflowSolver 是一个实验性插件，其核心功能是作为 **Datafl
 
 ### 基本用法
 
-创建一个求解器 Actor 并注册一个物理组件。
+该插件主要用于通过蓝图或编辑器配置 Dataflow 资产来使用。其 C++ 接口主要面向扩展和自定义。
 
 ```cpp
-// 假设在某个 Actor 或 Component 的 BeginPlay 中
-UWorld* World = GetWorld();
-if (World)
-{
-    // 1. 生成求解器 Actor
-    FActorSpawnParameters SpawnParams;
-    AChaosDataflowSolverActor* SolverActor = World->SpawnActor<AChaosDataflowSolverActor>(AChaosDataflowSolverActor::StaticClass(), FTransform::Identity, SpawnParams);
+// 获取场景中的 ChaosDataflowSolverActor
+AChaosDataflowSolverActor* SolverActor = ...; // 通过 SpawnActor 或查找获取
 
-    // 2. 获取需要绑定的物理组件 (例如，当前 Actor 的根组件)
-    UPrimitiveComponent* PhysicsComponent = Cast<UPrimitiveComponent>(GetRootComponent());
-    if (SolverActor && PhysicsComponent)
-    {
-        // 3. 将物理组件注册到求解器
-        SolverActor->RegisterPhysicsComponent(PhysicsComponent);
-        // 4. 激活求解器
-        SolverActor->SetSolverActive(true);
-    }
+if (SolverActor)
+{
+    // 在 C++ 中控制求解器的活动状态
+    SolverActor->SetSolverActive(true);
 }
 ```
-*来源：基于 `AChaosDataflowSolverActor` 的公共接口推断。*
 
 ### 进阶用法
 
-通过 `UChaosSolverBindingComponent` 进行更自动化的绑定。该组件在 `BeginPlay` 时会自动查找或处理与 `SimulationActor` 的关联。
-
-```cpp
-// 在某个 Actor 的构造函数或初始化函数中
-UChaosSolverBindingComponent* BindingComp = CreateDefaultSubobject<UChaosSolverBindingComponent>(TEXT("SolverBinding"));
-BindingComp->SimulationActor = /* 指向场景中已存在的 AChaosDataflowSolverActor 的软引用 */;
-BindingComp->bKeepKinematicInOriginal = true;
-```
-*来源：基于 `UChaosSolverBindingComponent` 的成员变量和 `BeginPlay` 逻辑推断。*
+要实现自定义的物理组件集成，你可能需要研究 `IDataflowPhysicsSolverInterface` 接口。`AChaosDataflowSolverActor` 已经提供了基础实现。若要将自定义组件接入该系统，需要参考 `PrimitiveRigidComponentInterface` 和 `InstancedRigidComponentInterface` 中的逻辑，为你的组件实现类似的静态函数来创建和同步刚体数据。
 
 ## Demo 示例
 
-以下是一个最小化的 C++ 示例，展示如何创建一个使用 `ChaosDataflowSolver` 的 Actor。
-
-**MyPhysicsActor.h**
 ```cpp
+// MyChaosDrivenActor.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "MyPhysicsActor.generated.h"
-
-class AChaosDataflowSolverActor;
-class UPrimitiveComponent;
+#include "ChaosDataflowSolverActor.h"
+#include "MyChaosDrivenActor.generated.h"
 
 UCLASS()
-class AMyPhysicsActor : public AActor
+class AMyChaosDrivenActor : public AChaosDataflowSolverActor
 {
     GENERATED_BODY()
 
 public:
-    AMyPhysicsActor();
+    AMyChaosDrivenActor();
 
-protected:
     virtual void BeginPlay() override;
 
-private:
-    UPROPERTY(VisibleAnywhere)
-    UPrimitiveComponent* PhysicsMesh;
+    // 可以重写基类接口的方法以注入自定义逻辑
+    virtual void WriteToSimulation(const float DeltaTime, const bool bAsyncTask) override;
 
-    UPROPERTY()
-    AChaosDataflowSolverActor* SolverActor;
+    UPROPERTY(EditAnywhere, Category="Custom")
+    float CustomParameter = 1.0f;
 };
 ```
 
-**MyPhysicsActor.cpp**
 ```cpp
-#include "MyPhysicsActor.h"
-#include "ChaosDataflowSolverActor.h"
-#include "Components/StaticMeshComponent.h"
+// MyChaosDrivenActor.cpp
+#include "MyChaosDrivenActor.h"
 
-AMyPhysicsActor::AMyPhysicsActor()
+AMyChaosDrivenActor::AMyChaosDrivenActor()
 {
-    PrimaryActorTick.bCanEverTick = false;
-
-    PhysicsMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PhysicsMesh"));
-    RootComponent = PhysicsMesh;
-    // 确保网格体有碰撞
-    PhysicsMesh->SetSimulatePhysics(true);
+    PrimaryActorTick.bCanEverTick = true;
 }
 
-void AMyPhysicsActor::BeginPlay()
+void AMyChaosDrivenActor::BeginPlay()
 {
     Super::BeginPlay();
+    // 自定义初始化逻辑
+}
 
-    UWorld* World = GetWorld();
-    if (World)
-    {
-        // 生成 Dataflow 求解器
-        FActorSpawnParameters SpawnParams;
-        SpawnParams.Owner = this;
-        SolverActor = World->SpawnActor<AChaosDataflowSolverActor>(AChaosDataflowSolverActor::StaticClass(), GetActorTransform(), SpawnParams);
+void AMyChaosDrivenActor::WriteToSimulation(const float DeltaTime, const bool bAsyncTask)
+{
+    // 在调用父类将 Dataflow 计算结果写入物理系统前，可以修改参数
+    // CustomParameter 可以驱动 Dataflow 图中的某个输入值
 
-        if (SolverActor)
-        {
-            // 将本 Actor 的物理网格体注册到求解器
-            SolverActor->RegisterPhysicsComponent(PhysicsMesh);
-            // 激活求解器 (需要先为 SolverActor 配置有效的 SimulationAsset)
-            // SolverActor->SetSolverActive(true);
-        }
-    }
+    // 调用父类实现，执行实际的写入操作
+    Super::WriteToSimulation(DeltaTime, bAsyncTask);
 }
 ```
 
 ## 模块依赖
 
+从 `Build.cs` 分析，使用此插件需要依赖以下不常见的模块：
+
 | 模块 | 用途 |
 |---|---|
-| `RigidPhysics` | 提供新的刚体物理 API (`FRigidBodyHandle`, `FRigidSceneHandle` 等)，是插件内部创建和管理物理体的核心。 |
-| `Dataflow` | 提供 Dataflow 模拟接口 (`IDataflowPhysicsSolverInterface`, `FDataflowSimulationAsset`) 和模拟管理器。 |
-| `Chaos` | Chaos 物理引擎的核心模块，提供调试绘制、形状创建等底层功能。 |
+| `Dataflow` | Dataflow 图计算框架的核心模块 |
+| `PhysicsInterface` | Chaos 物理系统的接口抽象层 |
+| `PhysicsCore` | Chaos 物理系统的核心运行时 |
+| `RigidPhysics` | 用于处理刚体物理数据和代理 |
 
 ## 维护状态
 
 ### 近期更新
 
-- 2026-04-09 f167027d 修复 ChaosDataFlowSolver 中的一个弃用警告。
-- 2026-04-08 6d6dbc44 Chaos API：添加 PhysicsService 并移除异步插件对 dataflow 的依赖。
-- 2026-03-04 3c8f6206 Chaos API：Shape Instance 第一部分。
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-04-09 | `f167027d` | Fix a deprecation warning in ChaosDataFlowSolver. | 修复了一个废弃API的编译警告。 |
+| 2026-04-08 | `6d6dbc44` | Chaos API: Adding PhysicsService and removing the dependecy of the async plugin on dataflow. | Chaos API更新：引入PhysicsService，并解除了异步插件对dataflow的依赖。 |
+| 2026-03-04 | `3c8f6206` | Chaos API: Shape Instance Part 1 | Chaos API更新：关于Shape Instance功能的第一部分。 |
+| 2026-02-27 | `7a513cdb` | Chaos API: Fixing an issue where rigid object pointers could be casted to unrelated context types. | 修复了一个刚体对象指针可能被强制转换为不相关上下文类型的问题。 |
+| 2026-02-26 | `70865526` | Include Rigid Headers | 包含刚体相关头文件。 |
 
 ### 维护评价
 
-- **创建时间**：2026年2月，非常新的插件。
-- **最近更新**：2026年4月仍有活跃提交，主要围绕 Chaos API 的演进和修复。
-- **维护状态**：**活跃维护中**。作为实验性插件，它紧跟 Chaos 物理引擎和 Dataflow 系统的最新 API 变化。
-- **已知限制**：插件标记为 `Experimental`，且默认未启用 (`Installed: false`)。API 和功能可能在未来版本中发生重大变化或移除。
-- **推荐使用**：**仅推荐用于实验和原型开发**。不建议在需要稳定性的生产项目中使用。适合希望探索 Chaos 物理与 Dataflow 结合可能性的开发者。
+`ChaosDataflowSolver` 是一个**非常新的实验性插件**（创建于 2026 年 2 月底）。从近期提交记录看，它仍在被 Epic 内部团队**积极维护和开发**，最近一次更新在 2026 年 4 月，主要集中在与 Chaos 核心 API 的同步更新和解耦优化上。
+
+**优势**：
+-   提供了 Dataflow 与 Chaos 物理深度集成的官方途径。
+-   处于活跃开发期，API 会随引擎主版本更新。
+
+**风险与局限**：
+-   **实验性**：插件标记为 `IsExperimentalVersion: true`，API 可能发生变化，不建议在生产环境中核心功能上使用。
+-   **文档缺失**：官方文档链接为空，完全依赖源码和示例学习。
+-   **功能不完整**：从代码看，`SkeletalRigidComponentInterface` 和 `LandscapeRigidComponentInterface` 尚未实现具体功能。
+
+**推荐使用**：如果你正在研究或实验 Dataflow 与物理模拟的结合，并且能够接受 API 变动的风险，这个插件是值得探索的。对于稳定项目，请等待其脱离实验状态。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosDataflowSolver)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosDataflowSolver/Tests) (如果存在)
