@@ -275,19 +275,67 @@ def build_plugin_graph():
 plugin_graph = build_plugin_graph()
 
 
+# ═══════════════════════════════════════════════════════════════════
 # ── Runner ──
+# ═══════════════════════════════════════════════════════════════════
 
-def run_pipeline(plugins: list[dict], version: str, batch_size: int = 3) -> list[dict]:
-    """Run doc generation for a list of plugins."""
+MAX_RUN_DURATION = 10000  # default ~2h47m, leaves buffer for commit + cleanup
+
+
+def _make_result(name: str, success: bool, skipped: bool = False,
+                 error: str | None = None, duration: float = 0,
+                 doc_path: str = "", size: str = "small") -> dict:
+    """Normalize result dict with all expected keys."""
+    return {
+        "name": name,
+        "success": success,
+        "skipped": skipped,
+        "error": error,
+        "duration_seconds": duration,
+        "doc_path": doc_path,
+        "size": size,
+    }
+
+
+def run_pipeline(plugins: list[dict], version: str,
+                 batch_size: int = 3,
+                 max_duration: int = MAX_RUN_DURATION) -> list[dict]:
+    """Run doc generation for a list of plugins.
+
+    Returns one result per plugin. Plugins that were skipped because
+    the time limit was reached have ``skipped=True`` and can be
+    re-queued on the next run.
+    """
     import asyncio
 
     progress_path = config.PROGRESS_PATH
+    total = len(plugins)
 
-    async def _run():
+    async def _run() -> list[dict]:
         sem = asyncio.Semaphore(batch_size)
+        shutdown = False
 
-        async def _process_one(plugin):
+        async def _timer():
+            nonlocal shutdown
+            await asyncio.sleep(max_duration)
+            shutdown = True
+            print(f"\n⏰ Time limit reached ({max_duration}s), stopping new work...")
+
+        async def _process_one(plugin: dict) -> dict:
+            nonlocal shutdown
+            # Check BEFORE acquiring the semaphore so queued tasks bail instantly
+            if shutdown:
+                return _make_result(
+                    plugin["name"], success=False, skipped=True,
+                    error=f"timebox: run time limit of {max_duration}s reached",
+                )
             async with sem:
+                # Double-check after acquiring — timer may have fired during queue wait
+                if shutdown:
+                    return _make_result(
+                        plugin["name"], success=False, skipped=True,
+                        error=f"timebox: run time limit of {max_duration}s reached",
+                    )
                 loop = asyncio.get_event_loop()
                 initial_state = {
                     "plugin_name": plugin["name"],
@@ -308,42 +356,53 @@ def run_pipeline(plugins: list[dict], version: str, batch_size: int = 3) -> list
                     result = await loop.run_in_executor(
                         None, lambda: plugin_graph.invoke(initial_state)
                     )
-                    out = {
-                        "name": result.get("result_name", result.get("plugin_name")),
-                        "success": result.get("result_success", not bool(result.get("error"))),
-                        "error": result.get("result_error", result.get("error")),
-                        "duration_seconds": result.get("result_duration", 0),
-                        "doc_path": result.get("result_doc_path", ""),
-                        "size": result.get("result_size", "small"),
-                    }
+                    out = _make_result(
+                        name=result.get("result_name", result.get("plugin_name")),
+                        success=result.get("result_success", not bool(result.get("error"))),
+                        error=result.get("result_error") or result.get("error"),
+                        duration=result.get("result_duration", 0),
+                        doc_path=result.get("result_doc_path", ""),
+                        size=result.get("result_size", "small"),
+                    )
                 except Exception as e:
-                    out = {
-                        "name": plugin["name"],
-                        "success": False,
-                        "error": str(e),
-                        "duration_seconds": time.time() - initial_state["_start_time"],
-                        "doc_path": "",
-                        "size": "small",
-                    }
-                status = "✅" if out["success"] else "❌"
-                dur = f"{out['duration_seconds']:.0f}s"
-                print(f"  {status} {out['name']} ({dur})")
-                if out.get("error"):
-                    print(f"     Error: {out['error'][:120]}")
+                    out = _make_result(
+                        name=plugin["name"],
+                        success=False, error=str(e),
+                        duration=time.time() - initial_state["_start_time"],
+                    )
                 return out
 
+        timer_task = asyncio.create_task(_timer())
+
         tasks = [_process_one(p) for p in plugins]
-        results = []
+        results: list[dict] = []
         start_t = time.time()
 
         for coro in asyncio.as_completed(tasks):
             out = await coro
             results.append(out)
-            # Incremental progress save — atomic via rename
+
+            # Print status
+            if out.get("skipped"):
+                print(f"  ⏭️  {out['name']} (skipped)")
+            else:
+                status = "✅" if out["success"] else "❌"
+                dur = f"{out.get('duration_seconds', 0):.0f}s"
+                print(f"  {status} {out['name']} ({dur})")
+                if out.get("error"):
+                    print(f"     Error: {out['error'][:120]}")
+
+            # Incremental progress save to last_run.json
+            n_done = sum(1 for r in results if r.get("success"))
+            n_skipped = sum(1 for r in results if r.get("skipped"))
             progress = {
                 "version": version,
-                "results": results,
-                "elapsed": time.time() - start_t,
+                "last_result": {
+                    "success": n_done,
+                    "skipped": n_skipped,
+                    "failed": len(results) - n_done - n_skipped,
+                    "elapsed": time.time() - start_t,
+                },
                 "complete": False,
             }
             tmp = progress_path + ".tmp"
@@ -351,23 +410,20 @@ def run_pipeline(plugins: list[dict], version: str, batch_size: int = 3) -> list
                 json.dump(progress, f, indent=2, ensure_ascii=False)
             os.replace(tmp, progress_path)
 
+            # If we just processed a skipped result and all remaining are skipped,
+            # we can break early (timer fired, everything queued is skipped)
+            if shutdown and all(
+                r.get("skipped") for r in results[-batch_size:]
+            ):
+                break
+
+        timer_task.cancel()
         return results
 
-    print(f"\nGenerating docs for {len(plugins)} plugins (batch_size={batch_size})...\n")
+    print(f"\nGenerating docs for {total} plugins "
+          f"(batch_size={batch_size}, max_duration={max_duration}s)...\n")
     results = asyncio.run(_run())
-
-    # Mark complete
-    _mark_progress_complete(progress_path)
+    n_ok = sum(1 for r in results if r.get("success"))
+    n_skip = sum(1 for r in results if r.get("skipped"))
+    print(f"\nRound complete: {n_ok} success, {n_skip} skipped ({total} total)\n")
     return results
-
-
-def _mark_progress_complete(progress_path: str):
-    """Set complete=True on the progress file after successful finish."""
-    if os.path.exists(progress_path):
-        with open(progress_path) as f:
-            data = json.load(f)
-        data["complete"] = True
-        tmp = progress_path + ".tmp"
-        with open(tmp, "w") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        os.replace(tmp, progress_path)

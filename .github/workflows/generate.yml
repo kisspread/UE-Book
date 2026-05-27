@@ -11,6 +11,14 @@ on:
         description: 'Force regenerate plugins (comma-separated, or "all")'
         required: false
         type: string
+      max_duration:
+        description: 'Max duration per run in seconds (default: 10000 ≈ 2h47m)'
+        required: false
+        type: string
+
+concurrency:
+  group: generate-${{ inputs.version }}
+  cancel-in-progress: false
 
 jobs:
   generate:
@@ -69,25 +77,28 @@ jobs:
           elif [ -n "${{ inputs.force }}" ]; then
             ARGS="$ARGS --force $(echo '${{ inputs.force }}' | tr ',' ' ')"
           fi
+          if [ -n "${{ inputs.max_duration }}" ]; then
+            ARGS="$ARGS --max-duration ${{ inputs.max_duration }}"
+          fi
           python3 -m v2.run $ARGS 2>&1 | tee ../pipeline_output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
 
-      - name: Commit and push
-        if: steps.pipeline.outputs.exit_code == '0'
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+      - name: Commit and push (fallback)
+        if: always()
         run: |
           cd ..
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add ue-book/docs/ ue-book/manifest.json
+          # run.py handles commit+push under normal conditions.
+          # This step is a safety net — picks up any files saved to disk
+          # if run.py crashed before it could push.
+          git add ue-book/docs/ ue-book/manifest.json ue-book/v2/last_run.json
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "No uncommitted changes (run.py already pushed)."
             exit 0
           fi
-          git commit -m "docs: update UE ${{ inputs.version }} plugin docs"
+          git commit -m "docs: fallback commit for UE ${{ inputs.version }} plugin docs"
           git pull --rebase origin master
-          git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/kisspread/UE-Book.git"
           git push
 
       - name: Notify result
@@ -98,13 +109,15 @@ jobs:
           import json
           d = json.load(open('v2/last_run.json'))
           results = d.get('results', [])
-          success = sum(1 for r in results if r.get('success'))
-          failed = sum(1 for r in results if not r.get('success'))
-          elapsed = d.get('elapsed', 0)
-          names = [r['name'] for r in results if r.get('success')][:5]
-          err_names = [r['name'] for r in results if not r.get('success')][:3]
+          success = sum(1 for r in results if r.get('success') and not r.get('skipped'))
+          failed = sum(1 for r in results if not r.get('success') and not r.get('skipped'))
+          skipped = sum(1 for r in results if r.get('skipped'))
+          elapsed = d.get('last_result', {}).get('elapsed', 0)
+          names = [r['name'] for r in results if r.get('success') and not r.get('skipped')][:5]
+          err_names = [r['name'] for r in results if not r.get('success') and not r.get('skipped')][:3]
           lines = []
           if success: lines.append(f'✅ {success} succeeded')
+          if skipped: lines.append(f'⏭️  {skipped} skipped')
           if failed: lines.append(f'❌ {failed} failed')
           lines.append(f'⏱️ {elapsed:.0f}s')
           if names: lines.append(f'Generated: {\", \".join(names)}')
