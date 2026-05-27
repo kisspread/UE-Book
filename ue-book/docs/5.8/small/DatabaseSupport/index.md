@@ -4,188 +4,304 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 数据库支持 |
+| 中文名 | 数据库抽象层 |
 | 分类 | Database |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `DatabaseSupport` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2019-01-10 |
-| 年龄标签 | 🏛️ 文物（约 7 年） |
+| 年龄标签 | 👴 老古董（约 6 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/Database/DatabaseSupport) | |
 
 ## 用途
 
-该插件提供了一套**抽象的数据库访问接口**，其本身不实现任何具体的数据库连接功能，而是定义了用于数据库查询和结果集处理的基础类。它的存在是为了在UE项目中提供一个统一的数据库访问抽象层，使得其他插件（例如 SQLiteSupport）可以在其基础上实现具体的数据库连接和操作。
+DatabaseSupport 是一个**纯抽象接口层**，本身不提供任何数据库连接实现。它定义了数据库操作的基础接口：连接管理（`FDataBaseConnection`）和结果集遍历（`FDataBaseRecordSet`）。
 
-这个插件解决的核心问题是：为不同平台（特别是不支持直接数据库连接的平台）提供一个标准化的、可扩展的数据库访问框架，使得游戏或应用能够以一致的方式与各种数据库进行交互。
+这个插件的存在意义是为其他具体数据库实现（如 SQLiteSupport）提供统一的抽象层。通过继承这些基类，不同的数据库后端可以提供一致的 API，使上层代码无需关心底层数据库类型。
+
+该插件默认隐藏（Hidden=true）且不默认启用（EnabledByDefault=false），说明它是一个底层基础设施模块，不建议直接使用，而是被其他数据库插件间接依赖。
 
 ## 使用场景
 
-- 你需要为你的UE项目集成数据库功能，但又不想直接依赖某个特定的数据库（如MySQL、SQLite）时，可以基于此抽象层开发。
-- 你正在为一个不支持直接数据库连接的平台（如某些主机平台）开发，需要一个能在所有平台上运行的数据库访问方案。
-- 你正在开发一个需要数据持久化功能的游戏或应用（例如存档系统、配置管理），并希望以标准化的方式处理数据库操作。
+- 你需要为 UE5 项目集成自定义数据库后端 → 继承 `FDataBaseConnection` 和 `FDataBaseRecordSet`
+- 你在开发跨平台数据库抽象层 → 使用这些接口保证 API 一致性
+- 你使用 SQLiteSupport 等官方数据库插件 → 它们在底层依赖本插件的接口定义
 
 ## 蓝图用法
 
-此插件**不包含任何蓝图可调用的函数或属性**。它是一个纯 C++ 运行时模块，旨在被其他模块（插件）引用和扩展，而非直接在蓝图中使用。
+本插件没有暴露任何蓝图接口。所有 API 均为纯 C++ 抽象类，不包含 `BlueprintCallable` 或 `BlueprintReadWrite` 标记。
 
 ## C++ 用法
-
-该插件主要定义了三个核心类，用于抽象数据库连接和结果集。
 
 ### 头文件引入
 
 ```cpp
-#include "DatabaseSupport/Database.h"
+#include "Database.h"
+#include "DatabaseSupport.h"
 ```
 
 ### 基本用法
 
-**1. 使用 `FDataBaseConnection` 连接数据库并执行命令**
+本插件的核心是两个抽象基类和一个辅助结构体：
+
+**列信息结构体 `FDatabaseColumnInfo`**：
 
 ```cpp
-// 假设我们有一个具体的数据库连接类（例如来自SQLiteSupport插件）
-FDataBaseConnection* MyConnection = CreateDatabaseConnection(); // 此函数需由具体实现提供
+// 描述数据库查询结果中某列的元信息
+FDatabaseColumnInfo ColumnInfo;
+ColumnInfo.ColumnName = TEXT("UserName");
+ColumnInfo.DataType = EDataBaseUnrealTypes::DBT_STRING;
+```
+
+**结果集遍历 `FDataBaseRecordSet`**：
+
+```cpp
+// 假设 RecordSet 是某个具体数据库实现返回的结果集
+void ProcessResults(FDataBaseRecordSet* RecordSet)
+{
+    if (RecordSet->HasError())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Database error: %s"), *RecordSet->GetErrorMessage());
+        return;
+    }
+
+    // 使用内置迭代器遍历所有记录
+    for (FDataBaseRecordSet::TIterator It(RecordSet); It; ++It)
+    {
+        FString Name = It->GetString(TEXT("UserName"));
+        int32 Age = It->GetInt(TEXT("Age"));
+        float Score = It->GetFloat(TEXT("Score"));
+        int64 ID = It->GetBigInt(TEXT("ID"));
+    }
+
+    // 或者手动控制遍历
+    int32 Count = RecordSet->GetRecordCount();
+
+    // 获取列元信息（动态获取可用列名和类型）
+    TArray<FDatabaseColumnInfo> Columns = RecordSet->GetColumnNames();
+    for (const FDatabaseColumnInfo& Col : Columns)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Column: %s, Type: %d"), *Col.ColumnName, (int32)Col.DataType);
+    }
+}
+```
+
+**数据库连接 `FDataBaseConnection`**：
+
+```cpp
+// 使用具体实现创建连接
+FDataBaseConnection* Connection = CreateSomeDatabaseConnection(); // 由子类提供
 
 // 打开连接
-const TCHAR* ConnectionString = TEXT("MyDatabase.db");
-bool bSuccess = MyConnection->Open(ConnectionString, nullptr, nullptr);
+bool bSuccess = Connection->Open(
+    TEXT("ConnectionString"),           // 连接字符串
+    TEXT("127.0.0.1"),                  // 远程连接 IP
+    TEXT("OverrideConnectionString")    // 覆盖连接字符串
+);
 
-if (bSuccess)
+// 执行不返回结果的命令（如 INSERT、UPDATE）
+Connection->Execute(TEXT("INSERT INTO Users (Name, Age) VALUES ('Alice', 30)"));
+
+// 执行返回结果集的命令（如 SELECT）
+FDataBaseRecordSet* RecordSet = nullptr;
+if (Connection->Execute(TEXT("SELECT * FROM Users WHERE Age > 18"), RecordSet))
 {
-    // 执行非查询命令（如 CREATE TABLE）
-    MyConnection->Execute(TEXT("CREATE TABLE IF NOT EXISTS PlayerData (ID INTEGER PRIMARY KEY, Name TEXT)"));
-    
-    // 执行查询命令
-    FDataBaseRecordSet* RecordSet = nullptr;
-    if (MyConnection->Execute(TEXT("SELECT * FROM PlayerData"), RecordSet))
-    {
-        // 处理结果集
-        if (RecordSet && !RecordSet->HasError())
-        {
-            // ... 见下方示例
-        }
-        // 重要：调用者负责删除返回的 RecordSet
-        delete RecordSet;
-    }
-    
-    // 关闭连接
-    MyConnection->Close();
+    // 使用 RecordSet...
+    // 调用者负责删除 RecordSet
+    delete RecordSet;
 }
 
-// 重要：调用者负责删除连接对象
-delete MyConnection;
+// 或使用 TUniquePtr 自动管理生命周期
+TUniquePtr<FDataBaseRecordSet> SafeRecordSet;
+Connection->Execute(TEXT("SELECT * FROM Users"), SafeRecordSet);
+
+// 关闭连接
+Connection->Close();
 ```
 
-**2. 遍历 `FDataBaseRecordSet` 结果集**
+### 进阶用法
+
+**继承实现自定义数据库后端**：
 
 ```cpp
-// 假设 RecordSet 是从查询中获得的有效指针
-FDataBaseRecordSet* RecordSet = ...; 
-
-// 方法一：使用内置的 TIterator
-for (FDataBaseRecordSet::TIterator It(RecordSet); It; ++It)
+// 以继承方式实现具体数据库连接
+class FMyDatabaseConnection : public FDataBaseConnection
 {
-    // It 指向当前的 RecordSet
-    FString PlayerName = It->GetString(TEXT("Name"));
-    int32 PlayerId = It->GetInt(TEXT("ID"));
-    UE_LOG(LogTemp, Log, TEXT("Player %d: %s"), PlayerId, *PlayerName);
-}
-
-// 方法二：手动遍历
-RecordSet->MoveToFirst(); // 虽然TIterator会自动调用，但手动调用也可以
-while (!RecordSet->IsAtEnd())
-{
-    FString Value = RecordSet->GetString(TEXT("SomeColumn"));
-    // ... 处理数据
-    RecordSet->MoveToNext();
-}
-```
-
-**3. 获取结果集的列信息**
-
-```cpp
-TArray<FDatabaseColumnInfo> Columns = RecordSet->GetColumnNames();
-for (const FDatabaseColumnInfo& ColInfo : Columns)
-{
-    FString TypeName;
-    switch (ColInfo.DataType)
+public:
+    virtual bool Open(const TCHAR* ConnectionString,
+                      const TCHAR* RemoteConnectionIP,
+                      const TCHAR* RemoteConnectionStringOverride) override
     {
-    case DBT_FLOAT: TypeName = TEXT("Float"); break;
-    case DBT_INT: TypeName = TEXT("Int"); break;
-    case DBT_STRING: TypeName = TEXT("String"); break;
-    default: TypeName = TEXT("Unknown"); break;
+        // 实现实际的数据库连接逻辑
+        return true;
     }
-    UE_LOG(LogTemp, Log, TEXT("Column: %s (Type: %s)"), *ColInfo.ColumnName, *TypeName);
-}
+
+    virtual void Close() override
+    {
+        // 关闭实际连接
+    }
+
+    virtual bool Execute(const TCHAR* CommandString, FDataBaseRecordSet*& RecordSet) override
+    {
+        // 执行 SQL 并返回自定义结果集
+        RecordSet = new FMyDatabaseRecordSet();
+        return true;
+    }
+};
+
+// 继承实现自定义结果集
+class FMyDatabaseRecordSet : public FDataBaseRecordSet
+{
+public:
+    virtual FString GetString(const TCHAR* Column) const override { return TEXT("value"); }
+    virtual int32 GetInt(const TCHAR* Column) const override { return 42; }
+    virtual float GetFloat(const TCHAR* Column) const override { return 3.14f; }
+    virtual int64 GetBigInt(const TCHAR* Column) const override { return 123456789LL; }
+    virtual TArray<FDatabaseColumnInfo> GetColumnNames() const override
+    {
+        TArray<FDatabaseColumnInfo> Columns;
+        FDatabaseColumnInfo Info;
+        Info.ColumnName = TEXT("Name");
+        Info.DataType = EDataBaseUnrealTypes::DBT_STRING;
+        Columns.Add(Info);
+        return Columns;
+    }
+    virtual int32 GetRecordCount() const override { return 10; }
+    virtual void MoveToFirst() override { /* 移动游标到首行 */ }
+    virtual void MoveToNext() override { /* 移动游标到下一行 */ }
+    virtual bool IsAtEnd() const override { return false; }
+    virtual bool HasError() const override { return false; }
+};
 ```
 
 ## Demo 示例
 
-这是一个展示如何继承并实现抽象接口的最小示例。
-
-**MyDatabaseConnection.h**
 ```cpp
+// MyDatabaseExample.h
 #pragma once
-#include "DatabaseSupport/Database.h"
 
-class FMyDatabaseConnection : public FDataBaseConnection
+#include "Database.h"
+
+// 自定义数据库连接实现（演示用，无实际后端）
+class FExampleConnection : public FDataBaseConnection
 {
 public:
-    virtual bool Open(const TCHAR* ConnectionString, const TCHAR* RemoteConnectionIP, const TCHAR* RemoteConnectionStringOverride) override;
+    virtual bool Open(const TCHAR* ConnectionString,
+                      const TCHAR* RemoteConnectionIP,
+                      const TCHAR* RemoteConnectionStringOverride) override;
     virtual void Close() override;
     virtual bool Execute(const TCHAR* CommandString) override;
     virtual bool Execute(const TCHAR* CommandString, FDataBaseRecordSet*& RecordSet) override;
+};
 
-private:
-    // 假设的内部状态
-    bool bIsOpen = false;
+// 自定义结果集实现
+class FExampleRecordSet : public FDataBaseRecordSet
+{
+    TArray<TMap<FString, FString>> Rows;
+    int32 CurrentIndex = 0;
+
+public:
+    FExampleRecordSet();
+    virtual int32 GetRecordCount() const override;
+    virtual FString GetString(const TCHAR* Column) const override;
+    virtual int32 GetInt(const TCHAR* Column) const override;
+    virtual TArray<FDatabaseColumnInfo> GetColumnNames() const override;
+
+protected:
+    virtual void MoveToFirst() override;
+    virtual void MoveToNext() override;
+    virtual bool IsAtEnd() const override;
 };
 ```
 
-**MyDatabaseConnection.cpp**
 ```cpp
-#include "MyDatabaseConnection.h"
+// MyDatabaseExample.cpp
+#include "MyDatabaseExample.h"
 
-bool FMyDatabaseConnection::Open(const TCHAR* ConnectionString, const TCHAR* RemoteConnectionIP, const TCHAR* RemoteConnectionStringOverride)
+bool FExampleConnection::Open(const TCHAR* ConnectionString,
+                               const TCHAR* RemoteConnectionIP,
+                               const TCHAR* RemoteConnectionStringOverride)
 {
-    // 实现具体的数据库连接逻辑
-    bIsOpen = true;
-    UE_LOG(LogTemp, Log, TEXT("Database opened: %s"), ConnectionString);
-    return bIsOpen;
-}
-
-void FMyDatabaseConnection::Close()
-{
-    // 实现具体的关闭逻辑
-    bIsOpen = false;
-}
-
-bool FMyDatabaseConnection::Execute(const TCHAR* CommandString)
-{
-    if (!bIsOpen) return false;
-    UE_LOG(LogTemp, Log, TEXT("Executing command: %s"), CommandString);
-    // 实现具体的命令执行
+    UE_LOG(LogTemp, Log, TEXT("Connection opened with: %s"), ConnectionString);
     return true;
 }
 
-bool FMyDatabaseConnection::Execute(const TCHAR* CommandString, FDataBaseRecordSet*& RecordSet)
+void FExampleConnection::Close()
 {
-    if (!bIsOpen || !Execute(CommandString))
+    UE_LOG(LogTemp, Log, TEXT("Connection closed"));
+}
+
+bool FExampleConnection::Execute(const TCHAR* CommandString)
+{
+    UE_LOG(LogTemp, Log, TEXT("Execute: %s"), CommandString);
+    return true;
+}
+
+bool FExampleConnection::Execute(const TCHAR* CommandString, FDataBaseRecordSet*& RecordSet)
+{
+    RecordSet = new FExampleRecordSet();
+    return true;
+}
+
+FExampleRecordSet::FExampleRecordSet()
+{
+    // 模拟数据
+    TMap<FString, FString> Row1;
+    Row1.Add(TEXT("Name"), TEXT("Alice"));
+    Row1.Add(TEXT("Age"), TEXT("30"));
+    Rows.Add(Row1);
+
+    TMap<FString, FString> Row2;
+    Row2.Add(TEXT("Name"), TEXT("Bob"));
+    Row2.Add(TEXT("Age"), TEXT("25"));
+    Rows.Add(Row2);
+}
+
+int32 FExampleRecordSet::GetRecordCount() const { return Rows.Num(); }
+
+FString FExampleRecordSet::GetString(const TCHAR* Column) const
+{
+    if (Rows.IsValidIndex(CurrentIndex))
     {
-        RecordSet = nullptr;
-        return false;
+        const FString* Val = Rows[CurrentIndex].Find(Column);
+        return Val ? *Val : FString();
     }
-    // 实现具体的查询并返回 RecordSet
-    // RecordSet = new FMyDatabaseRecordSet(...);
-    return true;
+    return FString();
 }
+
+int32 FExampleRecordSet::GetInt(const TCHAR* Column) const
+{
+    const FString Str = GetString(Column);
+    return FCString::Atoi(*Str);
+}
+
+TArray<FDatabaseColumnInfo> FExampleRecordSet::GetColumnNames() const
+{
+    TArray<FDatabaseColumnInfo> Columns;
+    if (Rows.Num() > 0)
+    {
+        for (const auto& Pair : Rows[0])
+        {
+            FDatabaseColumnInfo Info;
+            Info.ColumnName = Pair.Key;
+            Info.DataType = EDataBaseUnrealTypes::DBT_STRING;
+            Columns.Add(Info);
+        }
+    }
+    return Columns;
+}
+
+void FExampleRecordSet::MoveToFirst() { CurrentIndex = 0; }
+void FExampleRecordSet::MoveToNext() { CurrentIndex++; }
+bool FExampleRecordSet::IsAtEnd() const { return CurrentIndex >= Rows.Num(); }
 ```
 
 ## 模块依赖
 
-无特殊依赖（仅标准 Core/Engine/Slate 等）。由于这是一个提供抽象接口的基础模块，它本身不依赖其他特定的功能模块。
+本插件的 Build.cs 未提供，但基于源码分析，其依赖极为简单。
+
+无特殊依赖（仅标准 Core/Engine 等）。
 
 ## 维护状态
 
@@ -193,18 +309,26 @@ bool FMyDatabaseConnection::Execute(const TCHAR* CommandString, FDataBaseRecordS
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2025-10-31 | `c8c0f285` | PR #12093: add error detection for SQLiteSupport | 为SQLiteSupport插件增加了错误检测功能 |
-| 2025-06-13 | `185bf170` | Replace some usages of FORCEINLINE with inline in Engine modules. | 将部分FORCEINLINE用法替换为inline，进行代码风格统一 |
-| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新了内置插件的供应商链接以使用安全协议（HTTPS） |
-| 2019-12-27 | `360d078c` | Second batch of remaining Engine copyright updates. | 进行了第二批引擎版权信息更新 |
+| 2025-10-31 | `c8c0f285` | PR #12093: add error detection for SQLiteSupport | 为 SQLiteSupport 添加错误检测，涉及本插件接口变更 |
+| 2025-06-13 | `185bf170` | Replace some usages of FORCEINLINE with inline in Engine modules. | 将 FORCEINLINE 替换为 inline，纯代码风格调整 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新内置插件的供应商链接为安全协议 |
+| 2019-12-27 | `360d078c` | Second batch of remaining Engine copyright updates. | 批量更新引擎版权信息 |
+| 2019-01-10 | `57c677da` | Copying //UE4/Dev-Enterprise@4705006 to Dev-Main | 从 Enterprise 分支复制到 Main 分支，插件初始提交 |
 
 ### 维护评价
 
-**维护不活跃**。该插件创建于2019年，是一个非常基础的抽象层。最近的更新（2025年10月）是针对依赖此插件的`SQLiteSupport`进行的功能性改动，而非对`DatabaseSupport`本身的核心逻辑更新。之前的更新大多是代码风格或元数据的批量修改，非实质性功能更新。该插件作为基础设施，功能稳定，但长期缺乏针对其本身的功能演进。
+本插件属于**稳定基础设施**，代码量极小（3 个文件），功能自 2019 年创建以来基本未变。
 
-由于它是隐藏的（Hidden: true）且默认不启用（EnabledByDefault: false），主要被其他插件依赖，普通用户通常不会直接使用。如果你的项目需要基础的数据库抽象层，可以依赖它，但需注意它本身不提供任何具体的数据库连接实现。
+- **创建时间**：2019 年，来自 Epic 的 Enterprise 分支
+- **更新频率**：非常低，6 年间仅有 5 次提交，且多数为全局性的代码风格或版权更新
+- **功能性更新**：2025-10 的最近一次提交是为 SQLiteSupport 添加错误检测，表明该接口仍在被下游使用
+- **状态**：隐藏且不默认启用，作为 SQLiteSupport 等插件的底层依赖存在
+- **推荐使用**：**不推荐直接使用**。除非你在开发自定义数据库后端，否则应直接使用 SQLiteSupport 等具体实现插件。如果你需要为项目集成非标准数据库，可以继承这些抽象类。
+
+⚠️ 该插件标记为 Hidden，API 稳定性无官方保证，可能在引擎大版本更新时发生变更。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/Database/DatabaseSupport)
-- [官方文档](无)
+- [官方文档]()（无）
+- [测试用例]()（无测试文件）

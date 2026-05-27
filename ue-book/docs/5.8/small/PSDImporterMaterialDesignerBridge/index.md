@@ -1,230 +1,175 @@
 # PSD Importer Material Designer Bridge
 
-> A bridge plugin between the PSD Importer and the Dynamic Material plugin.
+> PSD Importer Material Designer Bridge
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | PSD导入器-材质设计器桥接器 |
+| 中文名 | PSD导入材质设计器桥接 |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
+| 包含内容 | ✅ 有（编辑器模块代码） |
 | 模块 | `PSDImporterMaterialDesignerBridge` (Editor) |
-| 实验性 | ⚦ 是 |
+| 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-04-28 |
 | 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PSDImporterMaterialDesignerBridge) | |
 
 ## 用途
 
-此插件是连接 **PSD Importer** 和 **Dynamic Material** 两个插件的桥梁。它解决了在游戏开发中，美术人员导入 Photoshop (PSD) 文件后，需要手动为导入的图层纹理创建复杂材质和场景对象的痛点。此插件自动化了这一过程，能够根据导入的PSD文档，一键生成对应的 `DynamicMaterial` 实例以及用于在场景中展示该材质的 `Quad` 演员。
-
-**核心工作流程**：`PSDImporter` 导入PSD文件 → 此插件介入 → 自动生成 `DynamicMaterial` 资产 + `Quad` 演员。
+本插件是一个**桥接插件**，用于连接 **PSD Importer** 和 **DynamicMaterial (Material Designer)** 这两个独立的工具。
+它解决的核心问题是：将一个分层的 Photoshop (PSD) 文件直接转换为一个基于 DynamicMaterial 系统的、具有完整层结构和混合模式的材质实例。
+这避免了设计师手动从 PSD 文件提取纹理并逐层创建动态材质的繁琐过程。该插件在内容浏览器中提供右键菜单集成，允许用户直接从导入的 `UPSDDocument` 资产生成材质和场景四边形，极大地优化了美术工作流。
 
 ## 使用场景
 
-- 美术人员在Photoshop中设计UI或场景元素，导出为分层的PSD文件。
-- 在UE5编辑器中，使用 `PSDImporter` 插件导入该PSD文件。
-- 希望将导入的各个图层快速生成带有正确混合模式、裁剪和遮罩的动态材质，并在场景中预览。
+- 你是一名美术或技术美术，使用 Photoshop 设计 UI 或 2D 资产，并希望快速将分层的 PSD 文件导入 UE5 并自动生成可编辑的、支持层叠的动态材质。
+- 你需要为每个 PSD 图层创建独立的四边形网格体（Quad Mesh），以便在 3D 场景中精确排列和显示 2D 图层。
+- 你正在使用 DynamicMaterial 插件来创建高度可定制的材质，并希望利用现有的 PSD 文件作为素材来源。
 
 ## 蓝图用法
 
-此插件的功能主要通过编辑器扩展（右键菜单）和工厂类内部实现，没有暴露大量直接的蓝图节点。主要交互方式是在内容浏览器中右键PSD导入器资产进行操作。
-
-### 核心节点
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `CanCreateMaterial` | 检查给定的PSD文档是否可以用来创建材质 | `UPSDImporterMDMaterialFactory` |
-| `CreateMaterial` | 为一个PSD文档创建 `UDynamicMaterialInstance` 资产 | `UPSDImporterMDMaterialFactory` |
-| `CreateQuadActor` | 为一个PSD文档创建用于展示材质的 `APSDQuadActor` 演员 | `UPSDImporterMDQuadsFactory` |
-| `CreateQuads` | 在指定的 `QuadActor` 中为所有图层创建 `Quad` | `UPSDImporterMDQuadsFactory` |
-
-### 使用示例（蓝图描述）
-
-此插件的典型用法并非通过蓝图节点连接，而是通过**内容浏览器集成**：
-
-1.  使用 `PSDImporter` 插件导入一个 `.psd` 文件，生成 `UPSDDocument` 资产。
-2.  在**内容浏览器**中，右键单击该 `UPSDDocument` 资产。
-3.  在右键菜单中，会出现由本插件注入的选项，例如“创建动态材质”或“创建四边形（Material Designer）”。
-4.  点击相应菜单项，插件将自动在后台调用 `UPSDImporterMDMaterialFactory` 或 `UPSDImporterMDQuadsFactory` 来生成资产。
+该插件主要提供编辑器集成功能（右键菜单）和 C++ 工厂类。源码分析未发现标记为 `UFUNCTION(BlueprintCallable)` 的公共蓝图接口函数。其核心操作通过编辑器右键菜单触发，具体流程由 C++ 工厂类在后台完成。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "PSDImporterMDMaterialFactory.h"
-#include "PSDImporterMDQuadsFactory.h"
+// 使用插件提供的常量
 #include "PSDImporterMDConstants.h"
+
+// 使用材质/四边形工厂（通常在编辑器模块或工具中）
+#include "Factories/PSDImporterMDMaterialFactory.h"
+#include "Factories/PSDImporterMDQuadsFactory.h"
 ```
 
 ### 基本用法
 
-**1. 为PSD文档创建动态材质**
-
-假设你已经有一个有效的 `UPSDDocument*` 对象（通常由 `PSDImporter` 插件提供）。
+**1. 使用常量（示例）**
+这些常量定义了材质参数名称，可用于在材质图或代码中设置动态材质的属性。
+（来源：`Public/PSDImporterMDConstants.h`）
 
 ```cpp
-// 来源: Private/Factories/PSDImporterMDMaterialFactory.h 以及对 CreateMaterial 的推断
-#include "Factories/PSDImporterMDMaterialFactory.h"
-#include "PSDDocument.h"
-
-void CreateMaterialForPSD(UPSDDocument* InDocument)
-{
-    // 创建工厂实例
-    UPSDImporterMDMaterialFactory* MaterialFactory = NewObject<UPSDImporterMDMaterialFactory>();
-
-    // 检查是否可创建
-    if (MaterialFactory->CanCreateMaterial(InDocument))
-    {
-        // 创建材质资产 (具体创建过程在工厂内部处理)
-        UDynamicMaterialInstance* NewMaterial = MaterialFactory->CreateMaterial(InDocument);
-        if (NewMaterial)
-        {
-            UE_LOG(LogPSDImporterMaterialDesignerBridge, Log, TEXT("Successfully created Dynamic Material: %s"), *NewMaterial->GetName());
-        }
-    }
-}
+// 在设置动态材质参数时使用
+UDynamicMaterialModel* MaterialModel = ...;
+MaterialModel->SetTextureParameter(
+    UE::PSDImporterMaterialDesignerBridge::TextureEmissiveParameterName,
+    MyEmissiveTexture
+);
 ```
 
-**2. 为PSD文档创建Quad演员**
+**2. 使用工厂创建材质**
+`UPSDImporterMDMaterialFactory` 负责根据 `UPSDDocument` 创建 `UDynamicMaterialInstance`。
+（来源：`Private/Factories/PSDImporterMDMaterialFactory.h`）
 
 ```cpp
-// 来源: Private/Factories/PSDImporterMDQuadsFactory.h
-#include "Factories/PSDImporterMDQuadsFactory.h"
-#include "PSDQuadActor.h"
+// 假设您已有一个有效的 UPSDDocument* Document
+UPSDImporterMDMaterialFactory* MaterialFactory = NewObject<UPSDImporterMDMaterialFactory>();
 
-void CreateQuadActorForPSD(UWorld* InWorld, UPSDDocument* InDocument)
+if (MaterialFactory->CanCreateMaterial(Document))
 {
-    UPSDImporterMDQuadsFactory* QuadsFactory = NewObject<UPSDImporterMDQuadsFactory>();
-
-    // 创建 QuadActor（演员）
-    APSDQuadActor* QuadActor = QuadsFactory->CreateQuadActor(*InWorld, InDocument);
-    if (QuadActor)
+    UDynamicMaterialInstance* NewMaterial = MaterialFactory->CreateMaterial(Document);
+    if (NewMaterial)
     {
-        // 为所有图层创建子 Quad (例如使用 Material Designer 类型)
-        QuadsFactory->CreateQuads(*QuadActor, EPSDImporterMaterialDesignerType::MaterialDesigner);
-        UE_LOG(LogPSDImporterMaterialDesignerBridge, Log, TEXT("Created QuadActor with quads for document: %s"), *InDocument->GetName());
+        // 材质创建成功，保存到内容浏览器或进行其他操作
+        UE_LOG(LogTemp, Log, TEXT("Dynamic Material created: %s"), *NewMaterial->GetName());
     }
 }
 ```
 
 ### 进阶用法
 
-**使用常量为材质参数命名**
-
-当你需要手动操作由本插件生成的材质参数时，可以使用预定义的常量名。
+**创建带四边形的场景对象**
+`UPSDImporterMDQuadsFactory` 负责在场景中生成 `APSDQuadActor`，并为其每个图层创建 `APSDQuadMeshActor`，同时将材质应用到网格体上。
+（来源：`Private/Factories/PSDImporterMDQuadsFactory.h`）
 
 ```cpp
-// 来源: Public/PSDImporterMDConstants.h
-#include "PSDImporterMDConstants.h"
-
-void SetMaterialParameters(UMaterialInstanceDynamic* InMID)
+// 在拥有 World 上下文的编辑器工具或命令中
+UWorld* World = GEditor->GetEditorWorldContext().World();
+if (World && Document)
 {
-    if (InMID)
+    UPSDImporterMDQuadsFactory* QuadsFactory = NewObject<UPSDImporterMDQuadsFactory>();
+    
+    // 1. 创建根 Quad Actor
+    APSDQuadActor* QuadActor = QuadsFactory->CreateQuadActor(*World, Document);
+    
+    if (QuadActor)
     {
-        // 设置发光纹理 (由工厂自动设置)
-        // InMID->SetTextureParameterValue(UE::PSDImporterMaterialDesignerBridge::TextureEmissiveParameterName, SomeTexture);
-
-        // 设置裁剪区域 (这些参数在创建材质时由工厂根据PSD图层信息设置)
-        // InMID->SetScalarParameterValue(UE::PSDImporterMaterialDesignerBridge::OpacityCropLeft, 0.1f);
-        // InMID->SetScalarParameterValue(UE::PSDImporterMaterialDesignerBridge::OpacityCropRight, 0.9f);
-        UE_LOG(LogTemp, Log, TEXT("Material uses parameter: %s"), UE::PSDImporterMaterialDesignerBridge::TextureEmissiveParameterName);
+        // 2. 为 Quad Actor 创建各个图层的网格体并应用材质
+        // EPSDImporterMaterialDesignerType 枚举应来自依赖的 PSDImporter 或本插件，需查阅头文件确认具体定义
+        QuadsFactory->CreateQuads(*QuadActor, /* InType */);
+        
+        UE_LOG(LogTemp, Log, TEXT("PSD Quad Actor and meshes created in world."));
     }
 }
 ```
 
 ## Demo 示例
 
+以下是一个最小化示例，展示如何使用工厂类创建一个动态材质实例。此示例假设在编辑器工具或命令中执行。
+
+**PSDImporterMDBridgeDemo.h**
 ```cpp
-// PSDImporterMDBridgeDemo.h
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "PSDImporterMDBridgeDemo.generated.h"
-
 class UPSDDocument;
-class UDynamicMaterialInstance;
-class APSDQuadActor;
 
-UCLASS()
-class APSDImporterMDBridgeDemoActor : public AActor
+class FPSDImporterMDBridgeDemo
 {
-	GENERATED_BODY()
-
 public:
-	// 在编辑器中设置一个导入的PSD资产
-	UPROPERTY(EditAnywhere, Category = "PSD Bridge Demo")
-	TObjectPtr<UPSDDocument> Document;
-
-	// 生成的材质资产（只读，演示用）
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PSD Bridge Demo")
-	TObjectPtr<UDynamicMaterialInstance> GeneratedMaterial;
-
-	// 生成的Quad演员（只读，演示用）
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PSD Bridge Demo")
-	TObjectPtr<APSDQuadActor> GeneratedQuadActor;
-
-	UFUNCTION(CallInEditor, Category = "PSD Bridge Demo")
-	void DemoCreateMaterial();
-
-	UFUNCTION(CallInEditor, Category = "PSD Bridge Demo")
-	void DemoCreateQuadActor();
+    static void CreateDynamicMaterialFromPSD(UPSDDocument* InDocument);
 };
 ```
 
+**PSDImporterMDBridgeDemo.cpp**
 ```cpp
-// PSDImporterMDBridgeDemo.cpp
 #include "PSDImporterMDBridgeDemo.h"
 #include "Factories/PSDImporterMDMaterialFactory.h"
-#include "Factories/PSDImporterMDQuadsFactory.h"
-#include "PSDImporterMDBridgeLog.h"
+#include "PSDImporterMDConstants.h"
+#include "DynamicMaterial/DynamicMaterialInstance.h"
+#include "PSDImporter/PSDDocument.h"
 
-void APSDImporterMDBridgeDemoActor::DemoCreateMaterial()
+void FPSDImporterMDBridgeDemo::CreateDynamicMaterialFromPSD(UPSDDocument* InDocument)
 {
-	if (!Document)
-	{
-		UE_LOG(LogPSDImporterMaterialDesignerBridge, Warning, TEXT("No PSD Document assigned!"));
-		return;
-	}
+    if (!InDocument)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Invalid PSD Document."));
+        return;
+    }
 
-	UPSDImporterMDMaterialFactory* Factory = NewObject<UPSDImporterMDMaterialFactory>();
-	if (Factory->CanCreateMaterial(Document))
-	{
-		GeneratedMaterial = Factory->CreateMaterial(Document);
-		UE_LOG(LogPSDImporterMaterialDesignerBridge, Log, TEXT("Demo: Material created successfully."));
-	}
-}
+    UPSDImporterMDMaterialFactory* Factory = NewObject<UPSDImporterMDMaterialFactory>();
+    if (!Factory->CanCreateMaterial(InDocument))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Cannot create material from this PSD document."));
+        return;
+    }
 
-void APSDImporterMDBridgeDemoActor::DemoCreateQuadActor()
-{
-	if (!Document || !GetWorld())
-	{
-		UE_LOG(LogPSDImporterMaterialDesignerBridge, Warning, TEXT("No PSD Document or World available!"));
-		return;
-	}
+    UDynamicMaterialInstance* MaterialInstance = Factory->CreateMaterial(InDocument);
+    if (MaterialInstance)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Successfully created Dynamic Material '%s' from PSD document '%s'."),
+            *MaterialInstance->GetName(),
+            *InDocument->GetName());
 
-	UPSDImporterMDQuadsFactory* Factory = NewObject<UPSDImporterMDQuadsFactory>();
-	GeneratedQuadActor = Factory->CreateQuadActor(*GetWorld(), Document);
-	if (GeneratedQuadActor)
-	{
-		Factory->CreateQuads(*GeneratedQuadActor, EPSDImporterMaterialDesignerType::MaterialDesigner);
-		UE_LOG(LogPSDImporterMaterialDesignerBridge, Log, TEXT("Demo: Quad Actor created successfully."));
-	}
+        // 在此处可以进一步操作 MaterialInstance，例如：
+        // 1. 将其保存到内容浏览器的特定路径
+        // 2. 应用到某个 StaticMeshComponent 上
+        // 3. 设置额外的材质参数
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create Dynamic Material from PSD document."));
+    }
 }
 ```
 
 ## 模块依赖
 
-此插件作为**编辑器插件**，其使用者（也是编辑器环境）需要依赖以下核心模块：
+要使用此插件的功能，您的模块需要依赖以下插件（或对应模块）：
+- `DynamicMaterial`：提供 `UDynamicMaterialInstance`, `UDynamicMaterialModelEditorOnlyData`, `UDMMaterialSlot` 等核心类。
+- `PSDImporter`：提供 `UPSDDocument`, `FPSDFileLayer`, `EPSDBlendMode` 等核心类。
 
-| 模块 | 用途 |
-|---|---|
-| `DynamicMaterial` | 核心依赖，用于创建和操作 `UDynamicMaterialInstance` 和 `UDMMaterialSlot` 等材质设计器资产。 |
-| `PSDImporter` | 核心依赖，提供 `UPSDDocument`、`FPSDFileLayer` 等导入数据结构。 |
-| `LevelEditor` | 用于在编辑器中集成右键菜单（内容浏览器扩展）。 |
-| `ContentBrowser` | 用于在内容浏览器资产选择菜单中添加条目。 |
+您无需直接依赖此桥接插件模块，因为其工厂类（`UPSDImporterMDMaterialFactory`, `UPSDImporterMDQuadsFactory`）旨在被编辑器工具或内容浏览器扩展代码调用。您需要确保这两个插件在您的项目中已启用。
 
 ## 维护状态
 
@@ -232,19 +177,19 @@ void APSDImporterMDBridgeDemoActor::DemoCreateQuadActor()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2025-04-28 | `9216b924` | Horde issue 881859 | 可能是一次与构建系统或自动化测试相关的修复。 |
-| 2025-04-28 | `fed4030e` | PSD Importer: Renamed and moved to Experimental | 插件创建，从其他位置移动并重命名为当前实验性路径。 |
+| 2025-04-28 | `9216b924` | Horde issue 881859 | 构建系统问题修复（Horde） |
+| 2025-04-28 | `fed4030e` | PSD Importer: Renamed and moved to Experimental | 从原位置重命名并移至实验性插件目录 |
 
 ### 维护评价
 
-此插件**非常新**，创建于2025年4月，并且**仅在创建当天有提交记录**。它被明确标记为**实验性**（`IsExperimentalVersion: true`）且**默认未启用**（`Installed: false`）。
-
-**评价**：
-- **优点**：解决了一个具体的工作流问题（PSD到动态材质的自动化），设计清晰。
-- **风险**：处于实验阶段，API和功能可能不稳定，且目前没有活跃的后续提交，**存在被移除或大幅修改的风险**。
-- **建议**：可以用于探索和验证工作流，但**不建议在生产项目中作为核心功能依赖**。需密切关注后续更新动态。
+- **创建时间**：2025年4月，非常新的插件。
+- **更新频率**：仅在创建当天（2025-04-28）有两次提交。自创建以来无任何功能更新或 bug 修复记录。
+- **活跃程度**：**极不活跃**。缺乏后续维护和迭代。
+- **已知问题/限制**：标记为实验性 (`IsExperimentalVersion: true`)，且仅支持 Win64 平台。功能可能不完整或不稳定。
+- **使用建议**：**谨慎使用**。该插件目前仅作为实验性功能存在，没有活跃维护迹象。如果您是 DynamicMaterial 和 PSD Importer 的深度用户，并且迫切需要此桥接功能，可以尝试使用，但需自行承担风险。对于生产环境，建议等待其成熟或自行实现类似功能。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PSDImporterMaterialDesignerBridge)
-- [官方文档](）（无）
+- [官方文档]() (无)
+- [测试用例]() (在提供的文件分析中未发现测试文件，可能位于 `Engine/Tests/` 或未包含)

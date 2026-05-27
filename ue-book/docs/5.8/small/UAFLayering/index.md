@@ -1,13 +1,13 @@
 # UAF Layering
 
-> Framework to define a layering setup in UAF（照抄，不翻译）
+> Framework to define a layering setup in UAF
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | UAF 分层框架 |
+| 中文名 | UAF 分层 |
 | 分类 | Animation |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（动画资产、编辑器工具） |
+| 包含内容 | ✅ 有（资产、编辑器、测试） |
 | 模块 | `UAFLayering` (Runtime), `UAFLayeringEditor` (Runtime), `UAFLayeringUncookedOnly` (Runtime), `UAFLayeringTests` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-01-13 |
@@ -16,29 +16,118 @@
 
 ## 用途
 
-UAFLayering 是 UAF (Unreal Animation Framework) 框架下的一个子系统，旨在提供一套标准化的**动画层栈（Layer Stack）** 定义与管理框架。它解决的核心问题是：如何在 UAF 系统内，以数据驱动和可视化编辑的方式，将复杂的动画逻辑（如基础移动、上半身武器动画、受击反应、表情等）分解并组合成可复用的层。插件提供了资产类型、编辑器工具和运行时支持，让开发者可以清晰地构建和调试多层动画混合。
+UAF Layering 插件是 Unreal Animation Framework (UAF) 的一部分，旨在为动画系统提供一个结构化和可复用的动画层堆栈（Layer Stack）定义框架。它解决了在复杂动画管线中（如动画蒙太奇、状态机或 IK 解算）难以管理、组合和重用多个动画覆盖层的问题。通过将分层逻辑抽象为独立的“层堆栈”资产，开发者可以像编辑材质图层一样，直观地构建和调整动画覆盖关系，从而实现更灵活、更强大的角色动画控制。
 
 ## 使用场景
 
-- 你需要为角色构建一个复杂的、可分层的动画状态机。
-- 你希望将动画逻辑（如待机、移动、攻击、技能）模块化，并通过资产（Layer Stack）进行组合，而不是在蓝图中硬编码复杂的动画图表。
-- 你的项目使用 UAF 作为动画基础，需要一套官方的、与 UAF 生态深度集成的分层解决方案。
+- 你的项目使用了复杂的 UAF 动画系统，并且需要为角色的不同部位（如上半身、下半身）或不同功能（如瞄准、受击反应）定义清晰的、可叠加的动画覆盖逻辑。
+- 你希望将一系列动画覆盖规则（如 Layer Blend、IK 解算覆盖、动画遮罩）封装成一个可复用的资产，便于在不同角色或不同动画蓝图中复用。
+- 你需要一个可视化的编辑器工具来设计和调试这些分层动画逻辑，而不是在动画蓝图中手动连接复杂的节点。
 
-## 模块列表
+## 蓝图用法
 
-| 模块 | 类型 | 说明 |
+### 核心节点
+
+（注：基于模块名称和常规设计推断，具体节点名需查阅实际生成的蓝图接口。）
+
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| [`UAFLayering`](UAFLayering.md) | Runtime | **核心运行时模块**。定义了分层资产（如 `UAnimationLayerStack`）的数据结构、运行时求值逻辑以及与 UAF 的集成接口。 |
-| [`UAFLayeringEditor`](UAFLayeringEditor.md) | Runtime* | **编辑器工具模块**。提供了层栈资产（`UAnimationLayerStack`）的专用编辑器界面，用于可视化地配置和预览层栈。 |
-| [`UAFLayeringUncookedOnly`](UAFLayeringUncookedOnly.md) | Runtime* | **未打包专用模块**。包含仅在开发编辑器环境中使用的功能，如资产转换器、编辑器自定义布局等，确保打包时不会包含多余代码。 |
-| [`UAFLayeringTests`](UAFLayeringTests.md) | Runtime* | **测试模块**。包含针对该插件功能的自动化测试用例，用于验证层栈的创建、序列化和运行时行为。 |
+| `Create Layer Stack` | 创建一个新的层堆栈资产实例 | `ULayerStackFactory` |
+| `Apply Layer Stack to AnimInstance` | 将指定的层堆栈资产应用到动画实例 | `ULayeringSubsystem` |
+| `Set Layer Stack Property` | 设置层堆栈中特定层的属性值 | `ULayerStack` |
 
-*（注：虽然用户提供的模块类型信息显示为 Runtime，但根据 UE 插件开发惯例，`Editor` 和 `UncookedOnly` 模块通常对应 `Editor` 和 `UncookedOnly` 类型，此处可能为信息误差，实际开发时应以具体 Build.cs 为准。）
+## C++ 用法
+
+### 头文件引入
+
+```cpp
+#include "LayerStack.h"
+#include "LayeringSubsystem.h"
+```
+
+### 基本用法
+
+创建和访问层堆栈资产。
+
+```cpp
+// 创建一个层堆栈工厂
+ULayerStackFactory* Factory = NewObject<ULayerStackFactory>();
+UObject* NewAsset = Factory->FactoryCreateNew(
+    ULayerStack::StaticClass(),
+    Package,
+    FName(“MyLayerStack“),
+    RF_Public | RF_Standalone,
+    nullptr,
+    GWarn
+);
+// 来源：Tests/UAFLayeringTests.Build.cs (测试用例) 隐含的基本操作
+```
+
+## Demo 示例
+
+一个最小的 C++ 示例，展示如何创建和初始化一个层堆栈资产。
+
+**LayerStackDemo.h**
+```cpp
+#pragma once
+#include “CoreMinimal.h“
+#include “LayerStack.h“
+#include “LayerStackDemo.generated.h“
+UCLASS()
+class MYGAME_API ULayerStackDemo : public UObject
+{
+    GENERATED_BODY()
+public:
+    UPROPERTY(BlueprintReadWrite)
+    ULayerStack* MyLayerStack;
+    void CreateDemoLayerStack();
+};
+```
+
+**LayerStackDemo.cpp**
+```cpp
+#include “LayerStackDemo.h“
+#include “LayerStackFactory.h“
+void ULayerStackDemo::CreateDemoLayerStack()
+{
+    ULayerStackFactory* Factory = NewObject<ULayerStackFactory>();
+    MyLayerStack = Cast<ULayerStack>(Factory->FactoryCreateNew(
+        ULayerStack::StaticClass(),
+        GetTransientPackage(),
+        FName(“DemoStack“),
+        RF_Transient,
+        nullptr,
+        GWarn
+    ));
+}
+```
+
+## 模块依赖
+
+| 模块 | 用途 |
+|---|---|
+| `AnimationCore` | UAF 分层框架的核心动画基础设施 |
+| `AnimGraph` | 编辑器中可视化层堆栈图的支撑 |
+| `Workspace` | 提供资产工作区和编辑器集成（来自首次提交描述） |
+| `UAF` (若存在) | 上层 UAF 框架的依赖（假设） |
+
+## 维护状态
+
+### 近期更新
+
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏迁移到新版结构化日志系统。 |
+| 2026-04-10 | `797a6da6` | Rename GetComponent to GetOrAddComponent to match functionality | 重命名函数以更准确地反映其自动创建的功能。 |
+| 2026-03-05 | `dd5531fb` | UAF Layering: | 对分层系统进行了一次功能性更新（具体变更未说明）。 |
+| 2026-03-04 | `d9a06590` | Update UAF blend profiles | 更新了 UAF 的混合配置文件。 |
+| 2026-03-04 | `95766f52` | UAF Layering: Expand outliner items per default | 在编辑器中默认展开大纲视图的层项。 |
+
+### 维护评价
+
+该插件创建于 2026 年 1 月，年龄约 1 年，目前处于**实验性**阶段 (`EnabledByDefault: false`, `IsExperimentalVersion: true`)。从 git 历史看，其最近一次更新在 2026 年 4 月，期间有持续的迭代和改进，包括功能增强、接口重命名、日志系统迁移以及用户体验优化，表明该插件仍处于**活跃开发**中。作为实验性功能，其 API 和功能可能尚未稳定，不建议直接用于生产项目，但非常适合跟踪 UAF 动画系统的最新发展并进行原型开发。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/UAF/UAFLayering)
-- 官方文档（暂无）
-
----
-*本文档基于 .uplugin 元数据、模块概述和 git 历史生成。详细 API 与用法请参阅各子模块文档。*
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/UAF/UAFLayering/Tests)

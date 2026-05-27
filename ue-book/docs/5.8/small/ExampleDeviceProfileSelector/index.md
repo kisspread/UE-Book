@@ -4,7 +4,7 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 设备配置示例选择器 |
+| 中文名 | 示例设备配置选择器 |
 | 分类 | Device Profile Selectors |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
@@ -16,128 +16,149 @@
 
 ## 用途
 
-这个插件是一个**示例**，用于演示如何为特定硬件设备选择不同的设备配置文件（Device Profile）。设备配置文件是 UE 中用于根据平台（如 PC、移动设备、主机）或特定硬件配置来调整引擎设置（如图形质量、分辨率、功能开关等）的机制。`ExampleDeviceProfileSelector` 展示了如何实现 `IDeviceProfileSelectorModule` 接口，从而根据当前运行的硬件环境返回一个合适的配置文件名称，而不是使用引擎默认的设备选择逻辑。它本身不提供复杂的硬件检测，主要用于教学和作为自定义设备选择器的起点模板。
+该插件是一个**参考实现**和**示例**，用于演示如何创建自定义的设备配置文件选择器。其核心功能是让引擎能够根据当前运行的硬件平台或设备类型，动态选择并加载对应的设备配置文件（Device Profile）。设备配置文件允许开发者为不同硬件（如高端PC、低端PC、不同主机、移动设备等）定义不同的图形、性能和质量设置，以实现游戏的自适应优化。
 
 ## 使用场景
 
-- 当你需要为游戏支持多种硬件设备（如高中低端手机、不同配置的 PC）并想根据具体设备型号自动应用最合适的画质设置时。
-- 你希望学习或实现一个自定义的设备配置文件选择逻辑，而不是依赖引擎默认的 `Platform` 名称来选择 Profile。
-- 在开发过程中，需要快速测试不同设备配置文件在不同场景下的表现。
+- 你在开发一款需要跨多种硬件平台（PC、主机、移动设备）运行的游戏，希望根据设备性能自动应用不同的画质预设。
+- 你需要实现比引擎内置设备配置文件选择逻辑更复杂的判断规则（例如，根据具体GPU型号、内存大小、操作系统版本等综合判断）。
+- 你正在学习如何编写引擎的底层模块，特别是如何实现 `IDeviceProfileSelectorModule` 接口。
 
 ## 蓝图用法
 
-此插件是一个纯粹的 C++ 模块，不提供任何蓝图节点。它通过注册一个模块接口来工作，该接口在引擎初始化时被调用。
+该插件主要通过 C++ 模块接口工作，不提供直接可用的蓝图节点。
 
 ## C++ 用法
 
 ### 头文件引入
 
+由于这是一个示例模块，通常不会直接引用它。如果你需要编写自己的设备配置选择器，则需要实现 `IDeviceProfileSelectorModule` 接口，该接口定义在 `DeviceProfileServices` 模块中。
+
 ```cpp
-#include "ExampleDeviceProfileSelectorModule.h"
+#include “IDeviceProfileSelectorModule.h”
 ```
 
 ### 基本用法
 
-此插件的核心是实现 `IDeviceProfileSelectorModule` 接口。要创建自己的设备选择器，需要继承并实现该接口。以下是一个基于该示例的基本用法说明。
+要创建一个设备配置选择器，你需要实现 `IDeviceProfileSelectorModule` 接口。下面是一个基于本示例插件结构的简化说明：
+
+1.  **声明模块类**：继承 `IDeviceProfileSelectorModule`。
+2.  **实现核心函数**：`GetRuntimeDeviceProfileName()`，该函数负责返回当前设备应使用的配置文件名称。
 
 ```cpp
-// 假设你要创建一个名为 `FMyDeviceProfileSelectorModule` 的自定义选择器
-// （来源：Engine/Plugins/Runtime/ExampleDeviceProfileSelector/Source/ExampleDeviceProfileSelector/Private/ExampleDeviceProfileSelectorModule.h）
+// 你的自定义选择器模块头文件 (示例)
+#pragma once
 
-#include "IDeviceProfileSelectorModule.h"
-#include "Modules/ModuleManager.h"
+#include “IDeviceProfileSelectorModule.h”
 
 class FMyDeviceProfileSelectorModule : public IDeviceProfileSelectorModule
 {
 public:
-    // 在这里实现获取运行时设备配置文件名称的逻辑
-    virtual const FString GetRuntimeDeviceProfileName() override
-    {
-        // 在实际实现中，这里会包含复杂的硬件检测逻辑（如查询设备型号、GPU 能力等）
-        // 并返回一个对应的设备配置文件名称字符串。
-        // 例如：
-        // if (IsHighEndDevice())
-        //     return TEXT("HighEnd_Mobile");
-        // else
-        //     return TEXT("LowEnd_Mobile");
-        return TEXT("MyCustomProfile");
-    }
-
-    // 模块生命周期函数
-    virtual void StartupModule() override
-    {
-        // 可选：模块启动时的初始化代码
-    }
-
-    virtual void ShutdownModule() override
-    {
-        // 可选：模块关闭时的清理代码
-    }
-};
-```
-
-### 进阶用法
-
-在实际项目中，`GetRuntimeDeviceProfileName()` 方法内部需要整合硬件检测逻辑。这通常涉及查询平台相关的 API（如 Android 的 `Build.MODEL` 或 iOS 的设备标识符）以及评估 GPU 能力等。最终返回的字符串必须与项目设置中的设备配置文件（Device Profiles）列表中的名称匹配。
-
-## Demo 示例
-
-一个完整且可运行的最小自定义设备配置文件选择器模块示例。
-
-**MyDeviceSelector.h**
-```cpp
-#pragma once
-
-#include "IDeviceProfileSelectorModule.h"
-#include "CoreMinimal.h"
-
-class FMyDeviceSelectorModule : public IDeviceProfileSelectorModule
-{
-public:
+    // 返回当前设备对应的配置文件名称
     virtual const FString GetRuntimeDeviceProfileName() override;
-
+    
+    // 模块生命周期函数
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
 };
 ```
 
-**MyDeviceSelector.cpp**
 ```cpp
-#include "MyDeviceSelector.h"
+// 你的自定义选择器模块实现 (示例)
+#include “MyDeviceProfileSelectorModule.h”
 
-const FString FMyDeviceSelectorModule::GetRuntimeDeviceProfileName()
+const FString FMyDeviceProfileSelectorModule::GetRuntimeDeviceProfileName()
 {
-    // 简单示例：根据是否为移动平台返回不同配置文件
-#if PLATFORM_ANDROID || PLATFORM_IOS
-    return TEXT("Mobile_Profile");
-#else
-    return TEXT("Desktop_Profile");
-#endif
+    // 在这里编写你的硬件检测和配置文件选择逻辑
+    // 例如：根据GPU名称、内存、分辨率等返回 “PC_Low”, “PC_Medium”, “Console_Xbox” 等字符串
+    FString ProfileName = TEXT(“Default”);
+    // ... 复杂判断逻辑 ...
+    return ProfileName;
 }
 
-void FMyDeviceSelectorModule::StartupModule()
+void FMyDeviceProfileSelectorModule::StartupModule()
 {
-    // 模块启动时可以注册一些服务或执行初始化
+    // 模块启动时的初始化代码（如果需要）
 }
 
-void FMyDeviceSelectorModule::ShutdownModule()
+void FMyDeviceProfileSelectorModule::ShutdownModule()
 {
-    // 模块关闭时进行清理
+    // 模块关闭时的清理代码（如果需要）
+}
+```
+
+### 进阶用法
+
+实际应用中，`GetRuntimeDeviceProfileName()` 的实现会非常复杂，可能需要：
+*   查询 `FPlatformMisc` 获取系统信息。
+*   检查 `GRHIAdapterName` 获取GPU信息。
+*   结合多个条件（如平台、GPU、内存、用户设置）进行综合判断。
+*   加载一个配置文件或数据表来定义映射规则。
+
+## Demo 示例
+
+下面是一个最小的自定义设备配置选择器模块示例，它根据当前平台简单返回一个配置文件名。
+
+**MyDeviceProfileSelector.h**
+```cpp
+#pragma once
+
+#include “IDeviceProfileSelectorModule.h”
+
+class FMyDeviceProfileSelectorModule : public IDeviceProfileSelectorModule
+{
+public:
+    virtual const FString GetRuntimeDeviceProfileName() override;
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
+    virtual ~FMyDeviceProfileSelectorModule() {}
+};
+```
+
+**MyDeviceProfileSelector.cpp**
+```cpp
+#include “MyDeviceProfileSelector.h”
+#include “Misc/PlatformMisc.h”
+
+const FString FMyDeviceProfileSelectorModule::GetRuntimeDeviceProfileName()
+{
+    // 简单的平台判断逻辑
+    FString PlatformName = FPlatformProperties::PlatformName();
+    if (PlatformName == TEXT(“Windows”))
+    {
+        return TEXT(“PC_Default”);
+    }
+    else if (PlatformName == TEXT(“XSX”) || PlatformName == TEXT(“PS5”))
+    {
+        return TEXT(“NextGenConsole”);
+    }
+    else if (PlatformName == TEXT(“Android”) || PlatformName == TEXT(“IOS”))
+    {
+        return TEXT(“Mobile”);
+    }
+    // 默认返回
+    return TEXT(“Default”);
 }
 
-// 注册模块
-IMPLEMENT_MODULE(FMyDeviceSelectorModule, MyDeviceSelector);
+void FMyDeviceProfileSelectorModule::StartupModule()
+{
+    // 注册模块逻辑（通常由引擎自动处理，此处可留空）
+}
+
+void FMyDeviceProfileSelectorModule::ShutdownModule()
+{
+}
+
+IMPLEMENT_MODULE(FMyDeviceProfileSelectorModule, MyDeviceProfileSelector)
 ```
 
 ## 模块依赖
 
-要使用此插件或基于它创建自定义实现，你的模块需要依赖 `DeviceProfileSelector` 模块。
+从插件的用途推断，它主要依赖引擎的核心设备配置服务模块。
 
 | 模块 | 用途 |
 |---|---|
-| `DeviceProfileSelector` | 提供设备配置文件选择的核心接口 `IDeviceProfileSelectorModule`。 |
-
-无特殊依赖（仅标准 Core/Engine 等）。
+| `DeviceProfileServices` | 提供 `IDeviceProfileSelectorModule` 接口定义和设备配置文件管理的核心功能 |
 
 ## 维护状态
 
@@ -145,16 +166,19 @@ IMPLEMENT_MODULE(FMyDeviceSelectorModule, MyDeviceSelector);
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将遗留的 `UE_LOG` 宏迁移到新的 `UE_LOGF` 宏，属于引擎日志系统的现代化更新。 |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件的批处理提交，可能包含项目设置、元数据或轻微的构建系统调整，无实质性功能变更。 |
-| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 将内置插件的供应商链接从 HTTP 更新为 HTTPS，属于安全合规性维护。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将旧的日志宏统一迁移到新的 UE_LOGF 宏，属于代码现代化清理。 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件相关的通用提交，可能是路径或构建系统调整。 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新内置插件的供应商链接，使用安全协议（HTTPS），属于维护性更新。 |
+| 2019-12-27 | `360d078c` | Second batch of remaining Engine copyright updates. | 批量更新引擎版权年份，纯文本修改。 |
+| 2018-12-14 | `7598af05` | Update copyright notices to 2019. | 更新版权年份至2019年，纯文本修改。 |
 
 ### 维护评价
 
-`ExampleDeviceProfileSelector` 作为一个创建于 2014 年的示例插件，其核心功能自诞生以来基本未发生变化。近期（2026 年）的更新仅涉及引擎内部的日志宏迁移，属于被动维护。它在 2022 年和 2023 年有过零星的维护性更新，主要是为了跟上引擎的底层变更（如安全链接、项目结构调整）。该插件状态稳定，但由于其示例性质，预计不会有新功能添加。它**适合作为学习和参考的模板**，不建议在生产环境中直接使用此插件，而是应在其基础上创建自己的实现。
+该插件创建于 **2014年**，是一个历史悠久的示例模块。查看其近期提交记录可以发现，过去 **超过10年** 的所有提交均为版权更新、日志宏迁移或通用的插件系统维护，**没有任何实质性功能更新或bug修复**。它作为一个稳定的 API 示例存在，其核心接口（`IDeviceProfileSelectorModule`）已成为引擎标准部分。
+
+**结论**：这是一个**功能稳定但已停止活跃开发**的示例插件。它仍然可以作为学习和实现自定义设备配置选择器的**有效参考**，但不应期待任何新功能。对于生产环境，通常建议直接实现 `IDeviceProfileSelectorModule` 接口，而不是依赖或修改此示例插件。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/ExampleDeviceProfileSelector)
-- 官方文档：无
-- 测试用例：无
+- [官方文档]( )（无）

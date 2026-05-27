@@ -4,32 +4,33 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 外部GPU统计 |
+| 中文名 | 外部 GPU 统计 |
 | 分类 | Rendering |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `ExternalGPUStatistics` (Runtime) |
-| 实验性 | ⚚️ 是 |
+| 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-05-29 |
 | 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/ExternalGPUStatistics) | |
 
 ## 用途
 
-本插件旨在绕过通用的图形API层，通过直接调用硬件厂商（NVIDIA、AMD、Intel）提供的专用库，来获取更精确、更详细的GPU硬件状态信息。它解决了引擎内置性能统计信息不够精细的问题，能为开发者提供如GPU核心频率、GPU繁忙率、显存占用等底层硬件指标，用于深度性能分析和调试。
+该插件通过各 GPU 厂商的专用 API 获取底层硬件级别的详细 GPU 使用信息，包括 GPU 核心频率、GPU 利用率和显存使用量。与 UE 内置的通用 GPU 性能统计不同，该插件直接调用 NVML（NVIDIA）和 oneAPI Level Zero（Intel）等厂商专有库，能提供更精确、更丰富的硬件监控数据。
+
+该插件目前处于实验阶段，仅实现了 NVIDIA（通过 NVML）和 Intel（通过 oneAPI Level Zero）的支持，AMD 尚未实现。插件默认禁用，不适用于 Shipping 构建和 Server 目标。
 
 ## 使用场景
 
-- 你正在开发一款对GPU性能有极致要求的图形应用（如电影级渲染、高精度科学可视化），需要监控GPU核心频率和占用率以排除瓶颈。
-- 你是一名图形程序员或技术美术，需要分析特定GPU厂商硬件在Unreal Engine中的实际表现。
-- 你需要在运行时动态调整渲染策略，依据GPU的实际负载（如繁忙率）来做决策。
+- 你需要在开发/测试阶段监控 NVIDIA 或 Intel GPU 的实时核心频率、利用率和显存占用 → 启用该插件
+- 你正在做 GPU 性能分析工具或自定义性能 HUD，需要获取比 UE 内置统计更底层的硬件数据
+- 你在做跨平台 GPU 性能对比测试（Win64/Linux），需要统一的厂商 API 抽象层
+
+> ⚠️ 注意：该插件在 Shipping 构建中被禁止使用（TargetConfigurationDenyList 包含 Shipping），仅用于开发和测试。
 
 ## 蓝图用法
 
-当前版本（1.0）的插件主要通过C++模块接口暴露功能，未提供任何 `BlueprintCallable` 或 `BlueprintReadWrite` 的蓝图节点。所有GPU统计信息的获取均需在C++层完成。
-
-### 核心节点
-无可用蓝图节点。
+该插件未暴露任何 `BlueprintCallable` 函数，仅提供 C++ 模块接口。所有功能通过 C++ 代码访问。
 
 ## C++ 用法
 
@@ -41,154 +42,125 @@
 
 ### 基本用法
 
-此插件的核心是模块接口和其封装的厂商特定API。以下示例展示了如何初始化并查询NVIDIA GPU的利用率和显存信息（基于源码中 `NVML` 相关实现推断）。
+通过模块接口访问 GPU 统计信息：
 
 ```cpp
-// 1. 检查模块是否可用
+// 检查模块是否可用
 if (IExternalGPUStatistics::IsAvailable())
 {
-    // 2. 获取模块实例
+    // 获取模块实例
     IExternalGPUStatistics& GPUStats = IExternalGPUStatistics::Get();
-    
-    // 注意：实际接口需查阅具体厂商封装类。
-    // 以下为基于 NVML 接口伪代码示例。
-    // 假设存在一个 NVML 的封装类 `NVMLLibrary`
-    if (GPUStats.IsNVMLInitialized()) // 假设的初始化检查函数
-    {
-        uint32 GpuUtilization = 0;
-        uint64 MemoryUsed = 0;
-        
-        // 假设的查询函数，返回第一个GPU的利用率
-        GPUStats.GetNvidiaGPUUtilization(0, GpuUtilization);
-        // 假设的查询函数，返回第一个GPU的显存使用
-        GPUStats.GetNvidiaGPUMemoryUsage(0, MemoryUsed);
-        
-        UE_LOG(LogTemp, Log, TEXT("GPU Utilization: %u%%"), GpuUtilization);
-        UE_LOG(LogTemp, Log, TEXT("GPU Memory Used: %llu MB"), MemoryUsed / (1024 * 1024));
-    }
 }
 ```
-**注意**：以上 `GetNvidiaGPUUtilization` 等函数为基于插件设计推断的示例函数名。实际API请参考源码 `Source/ExternalGPUStatistics/Public/` 和 `Private/Vendors/` 下的头文件。插件当前公开的模块接口 `IExternalGPUStatistics` 主要作为模块加载和生命周期的入口。
 
-### 进阶用法
+> 模块加载阶段为 `PostEngineInit`，因此只能在引擎初始化完成后使用。
 
-从 `Intel.h` 源码分析可知，Intel的实现使用了 `oneAPI Level Zero` 来设置Metrics Streamer并收集数据。以下是一个模拟Intel GPU统计收集的流程片段（基于 `Intel.h` 中的函数签名）：
+### Intel GPU 指标获取（内部实现）
+
+以下代码展示了 Intel GPU 指标获取的核心流程（来自 `Source/ExternalGPUStatistics/Private/Vendors/Intel.h`）：
 
 ```cpp
-#include "Vendors/Intel.h"
+#include "ze_api.h"
+#include "zet_api.h"
 
-// ... 在某个初始化函数中
-TArray<UE::GPUStats::Intel::FIntelDriver> Drivers;
-if (UE::GPUStats::Intel::GetDrivers(Drivers) && Drivers.Num() > 0)
+namespace UE::GPUStats::Intel
 {
-    TArray<UE::GPUStats::Intel::FIntelDevice> Devices;
-    if (UE::GPUStats::Intel::GetDevicesForDriver(Drivers[0], Devices) && Devices.Num() > 0)
+    // 1. 获取驱动列表
+    TArray<FIntelDriver> Drivers;
+    GetDrivers(Drivers);
+
+    // 2. 获取驱动下的设备
+    for (const FIntelDriver& Driver : Drivers)
     {
-        TArray<zet_metric_group_handle_t> MetricsForDevice;
-        if (UE::GPUStats::Intel::SetupMetricsForDevice(Devices[0], MetricsForDevice))
+        TArray<FIntelDevice> Devices;
+        GetDevicesForDriver(Driver, Devices);
+
+        for (const FIntelDevice& Device : Devices)
         {
-            TArray<UE::GPUStats::Intel::FIntelMetricsStreamer> MetricsStreamers;
-            if (UE::GPUStats::Intel::SetupMetricsStreamersForDevice(Devices[0], MetricsForDevice, MetricsStreamers))
-            {
-                // 在后续帧中调用以获取数据
-                float FrequencyScaling, GPUUtilization;
-                uint64 GPUMemoryUsage;
-                UE::GPUStats::Intel::CalculateMetrics(Devices[0], MetricsForDevice, MetricsStreamers, FrequencyScaling, GPUUtilization, GPUMemoryUsage);
-                
-                // ... 使用数据
-            }
+            // 3. 设置指标组
+            TArray<zet_metric_group_handle_t> MetricsForDevice;
+            SetupMetricsForDevice(Device, MetricsForDevice);
+
+            // 4. 创建指标流
+            TArray<FIntelMetricsStreamer> Streamers;
+            SetupMetricsStreamersForDevice(Device, MetricsForDevice, Streamers);
+
+            // 5. 计算指标
+            float FrequencyScaling = 0.f;
+            float GPUUtilization = 0.f;
+            uint64 GPUMemoryUsage = 0;
+            CalculateMetrics(Device, MetricsForDevice, Streamers,
+                             FrequencyScaling, GPUUtilization, GPUMemoryUsage);
         }
     }
 }
-
-// ... 在引擎关闭时，需要清理资源
-// 对每个 MetricsStreamer 调用 ShutdownMetricStreamer
-// 对每个 Driver 调用 ShutdownDriver
 ```
+
+### 进阶用法
+
+该插件采集的三类核心指标（以 Intel 为例）：
+
+| 指标枚举 | 说明 |
+|---|---|
+| `AvgGpuCoreFrequencyMHz` | GPU 核心平均频率 (MHz) |
+| `GpuBusy` | GPU 利用率百分比 |
+| `SlmBytesWritten` | 共享本地内存写入字节数 |
 
 ## Demo 示例
 
-一个最小的C++示例，演示如何初始化插件并假设查询一次GPU统计信息。
-
 ```cpp
-// MyGPUStatsActor.h
+// MyGPUMonitor.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "MyGPUStatsActor.generated.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "MyGPUMonitor.generated.h"
 
 UCLASS()
-class AMyGPUStatsActor : public AActor
+class UMyGPUMonitor : public UGameInstanceSubsystem
 {
     GENERATED_BODY()
 
 public:
-    AMyGPUStatsActor();
+    virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+    virtual void Deinitialize() override;
 
-protected:
-    virtual void BeginPlay() override;
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-public:
-    virtual void Tick(float DeltaTime) override;
+    /** 尝试读取 GPU 统计信息，返回是否成功 */
+    UFUNCTION(BlueprintCallable)
+    bool QueryGPUStats(float& OutUtilization, float& OutFrequencyScaling, uint64& OutMemoryUsage);
 
 private:
-    bool bGPUStatsInitialized = false;
+    double LastQueryTime = 0.0;
 };
+```
 
-// MyGPUStatsActor.cpp
-#include "MyGPUStatsActor.h"
+```cpp
+// MyGPUMonitor.cpp
+#include "MyGPUMonitor.h"
 #include "IExternalGPUStatistics.h"
 
-AMyGPUStatsActor::AMyGPUStatsActor()
+void UMyGPUMonitor::Initialize(FSubsystemCollectionBase& Collection)
 {
-    PrimaryActorTick.bCanEverTick = true;
+    Super::Initialize(Collection);
 }
 
-void AMyGPUStatsActor::BeginPlay()
+void UMyGPUMonitor::Deinitialize()
 {
-    Super::BeginPlay();
-    
-    // 尝试初始化GPU统计（此函数为假设，实际初始化可能发生在模块加载时或需要调用特定API）
-    if (IExternalGPUStatistics::IsAvailable())
-    {
-        // 这里可能需要调用具体厂商的初始化函数，例如 NVML 的 nvmlInit()
-        // 为简化示例，假设模块加载即代表可用。
-        bGPUStatsInitialized = true;
-        UE_LOG(LogTemp, Log, TEXT("External GPU Statistics module is available."));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("External GPU Statistics module is not available."));
-    }
+    Super::Deinitialize();
 }
 
-void AMyGPUStatsActor::Tick(float DeltaTime)
+bool UMyGPUMonitor::QueryGPUStats(float& OutUtilization, float& OutFrequencyScaling, uint64& OutMemoryUsage)
 {
-    Super::Tick(DeltaTime);
-
-    if (bGPUStatsInitialized)
+    if (!IExternalGPUStatistics::IsAvailable())
     {
-        // 伪代码：查询并打印GPU信息
-        // 假设通过模块接口有一个简单的查询方法
-        /*
-        uint32 Utilization;
-        if (IExternalGPUStatistics::Get().QueryGPUUtilization(Utilization))
-        {
-            UE_LOG(LogTemp, Log, TEXT("Current GPU Utilization: %u%%"), Utilization);
-        }
-        */
-        // 实际调用应基于插件暴露的真实API
+        UE_LOG(LogTemp, Warning, TEXT("ExternalGPUStatistics module is not available."));
+        return false;
     }
-}
 
-void AMyGPUStatsActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    Super::EndPlay(EndPlayReason);
-    
-    // 清理工作可能需要在模块级别进行，Actor销毁时可能无需特别操作。
-    bGPUStatsInitialized = false;
+    // 模块可用，可在此扩展具体查询逻辑
+    // 当前 IExternalGPUStatistics 接口未公开具体查询方法，
+    // 底层厂商 API（NVML / Level Zero）的具体调用在 Private 模块中实现
+    return true;
 }
 ```
 
@@ -196,8 +168,10 @@ void AMyGPUStatsActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 | 模块 | 用途 |
 |---|---|
-| `NVML` | 提供与 NVIDIA GPU 管理库交互的封装。 |
-| `oneAPILevelZero` | 提供与 Intel oneAPI Level Zero 运行时交互的封装，用于获取 Intel GPU 底层指标。 |
+| `NVML` | NVIDIA Management Library，用于获取 NVIDIA GPU 硬件级统计信息 |
+| `oneAPILevelZero` | Intel oneAPI Level Zero API，用于获取 Intel GPU 硬件级指标数据 |
+
+> 该插件不依赖 UE 内部的 `RenderCore` 或 `RHI` 等渲染模块，而是直接通过厂商原生库获取硬件数据。
 
 ## 维护状态
 
@@ -205,18 +179,25 @@ void AMyGPUStatsActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移到 UE_LOGF。 |
-| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修复一次错误的查找替换后进行的第二次提交。 |
-| 2026-02-27 | `6759aa54` | [Backout] - CL51314860 | 回退了变更列表 CL51314860 的改动。 |
-| 2026-02-27 | `7723864b` | Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing regist... | 将委托获取方式从静态变量改为函数调用，以修复注册丢失问题。 |
-| 2026-02-02 | `4e9f614b` | （无消息） | 提交信息为空。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移到新的 UE_LOGF 格式 |
+| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修复错误的批量替换后的重试 |
+| 2026-02-27 | `6759aa54` | [Backout] - CL51314860 | 回退一个有问题的提交 |
+| 2026-02-27 | `7723864b` | Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing regist | 修复引擎初始化委托的注册问题 |
+| 2026-02-02 | `4e9f614b` | *(无描述)* | 提交信息缺失，推测为常规维护 |
 
 ### 维护评价
 
-该插件创建于一年前（2025年5月），属于实验性功能。从Git历史看，自创建后有过几次维护性更新（如委托API迁移、日志格式变更、错误修复），最近一次实质性功能更新可能在2025年7月（基于初始提交描述的规划）。近几个月的更新主要是跟随引擎代码风格的调整。由于仍标记为实验性且`EnabledByDefault=false`，表明Epic官方可能仍在评估其稳定性和功能完整性。它目前处于**维护中**状态，适合用于研究和实验，但不建议在生产环境的主关键路径上依赖此插件。推荐关注其后续版本，以确认AMD和Android支持的进展。
+- **创建时间**：2025 年 5 月，非常年轻的插件
+- **实验状态**：`IsExperimentalVersion=true`，`EnabledByDefault=false`，明确标记为实验性
+- **最近活动**：最近一次更新在 2026 年 4 月，主要为内部 API 迁移（日志宏），属于维护性更新
+- **功能完整性**：目前仅 NVIDIA 实现完整，Intel 已有框架代码，AMD 尚未实现
+- **平台限制**：仅支持 Win64 和 Linux，不支持 Shipping 构建
+- **存在回退/修复提交**：2026-02-27 有多次回退和修复，说明代码仍在积极调试中
+
+**综合评价**：该插件仍处于早期实验阶段，功能尚不完整（缺少 AMD 支持），接口尚未对外公开具体查询方法。近期更新主要是内部维护和 API 迁移，而非新功能开发。**建议仅用于内部实验和测试，不建议在正式项目中依赖该插件。**
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/ExternalGPUStatistics)
-- [官方文档]()（暂无）
-- [测试用例]()（插件目录内未提供公开测试用例）
+- [NVML 文档](https://docs.nvidia.com/deploy/nvml-api/)（NVIDIA GPU 统计底层 API）
+- [oneAPI Level Zero 文档](https://spec.oneapi.io/level-zero/latest/)（Intel GPU 指标底层 API）

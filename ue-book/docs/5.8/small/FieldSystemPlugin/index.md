@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 场系统 |
+| 中文名 | 场系统编辑器 |
 | 分类 | Geometry |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（场系统资产） |
+| 包含内容 | ✅ 有（FieldSystem 资产、编辑器图标） |
 | 模块 | `FieldSystemEditor` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-12-12 |
@@ -16,116 +16,81 @@
 
 ## 用途
 
-该插件为 Unreal Engine 提供了 **“场系统（Field System）”** 资产的编辑器支持。它主要解决如何在编辑器中创建和管理“场”资产的问题。这里的“场”（Field）通常用于定义空间中的向量、标量或整型值分布，常用于 Chaos 物理系统（如破碎模拟）中定义影响区域、衰减规则或空间约束。插件的核心是作为编辑器扩展，为 `UFieldSystem` 资产提供工厂、资产类型操作和编辑器样式。
+FieldSystemPlugin 提供了 **Field System（场系统）** 资产的编辑器支持，用于创建和管理分析场（Analytic Field）资产。Field System 是 Unreal Engine 物理系统的一部分，主要服务于 Chaos Destruction（混沌破碎）系统，允许开发者定义空间中的标量/向量场，用于控制破碎模拟中的力、速度、破碎程度等物理属性的空间分布。
+
+该插件本身是一个纯编辑器插件（尽管模块类型标记为 Runtime），负责：
+- 注册 FieldSystem 资产类型及其在内容浏览器中的展示
+- 提供 FieldSystem 资产的创建工厂
+- 处理 FieldSystem Actor 的生成逻辑
+- 定义编辑器中使用的类图标和缩略图样式
 
 ## 使用场景
 
-- 你在使用 **Chaos 物理系统** 进行高级破碎模拟，需要定义力场、速度场或衰减场来控制破碎效果时。
-- 你需要为**程序化几何体**或**粒子系统**创建基于空间坐标的值分布规则时。
+- 你需要对 Chaos Destruction 破碎效果进行空间化控制 → 定义 Field System 来指定不同区域的破碎强度
+- 你需要创建受力场影响粒子、刚体等物理对象 → 使用 Field System 定义力的空间分布
+- 你需要在编辑器中可视化和编辑物理场 → 通过该插件提供的资产编辑器操作 Field System
 
 ## 蓝图用法
 
-该插件主要为编辑器提供资产创建与管理界面，公开的运行时蓝图 API 较少。
+该插件主要提供编辑器资产类型支持，不直接暴露蓝图可调用函数。FieldSystem 资产在编辑器中创建后，通常由 Chaos Destruction 系统在运行时使用。
 
-### 核心节点
+### 核心资产操作
 
-从提供的源码分析，未发现直接暴露给蓝图的 `BlueprintCallable` 函数。该插件的功能主要通过编辑器资产操作（如右键创建新资产）来使用。
-
-### 使用示例（蓝图描述）
-
-在内容浏览器中：
-1. 右键 -> 物理 -> **Field System**。
-2. 创建一个新的 Field System 资产。
-3. 双击打开该资产，在专门的场编辑器中进行配置（具体配置方式属于运行时场系统功能，不在此编辑器插件范围内）。
+| 操作 | 说明 |
+|---|---|
+| 创建 Field System 资产 | 在内容浏览器中右键 → Physics → Field System |
+| 拖放到场景 | 自动创建 FieldSystem Actor |
 
 ## C++ 用法
 
-该插件的主要用法体现在其提供的资产工厂上，用于在代码中程序化创建 Field System 资产。
+该插件是编辑器扩展，C++ 用法集中在资产类型注册和工厂模式。
 
 ### 头文件引入
 
 ```cpp
+#include "Field/FieldSystemEditorModule.h"
 #include "Field/FieldSystemFactory.h"
 ```
 
 ### 基本用法
 
-通过插件提供的 `UFieldSystemFactory` 来创建 Field System 资产。
-*代码示例参考自 `FieldSystemFactory.h`*
+检查 FieldSystemEditor 模块是否可用：
 
 ```cpp
-// 创建一个新的 Field System 资产
-UFieldSystem* NewFieldSystem = UFieldSystemFactory::StaticFactoryCreateNew(
-    UFieldSystem::StaticClass(),
-    MyOuterObject, // 外部对象（如一个包）
-    FName(“MyNewFieldSystem”), // 资产名称
-    RF_NoFlags, // 对象标志
-    nullptr, // 上下文
-    GWarn // 反馈上下文（警告）
+// Source: Source/FieldSyStemEditor/Public/Field/FieldSystemEditorModule.h
+if (IFieldSystemEditorModule::IsAvailable())
+{
+    IFieldSystemEditorModule& EditorModule = IFieldSystemEditorModule::Get();
+}
+```
+
+### 工厂创建
+
+```cpp
+// Source: Source/FieldSyStemEditor/Public/Field/FieldSystemFactory.h
+// 通过工厂创建新的 FieldSystem 资产
+UFieldSystem* NewFieldSystem = Cast<UFieldSystem>(
+    UFieldSystemFactory::StaticFactoryCreateNew(
+        UFieldSystem::StaticClass(),
+        InPackage,
+        FName("MyFieldSystem"),
+        RF_Public | RF_Standalone,
+        nullptr,
+        GWarn
+    )
 );
 ```
 
 ## Demo 示例
 
-一个简单的示例，展示如何在运行时通过 C++ 获取插件模块。
+该插件为编辑器扩展，不包含运行时示例代码。典型使用方式是：
 
-### FieldSystemDemoActor.h
-```cpp
-#pragma once
-#include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "FieldSystemDemoActor.generated.h"
-
-UCLASS()
-class AFieldSystemDemoActor : public AActor
-{
-    GENERATED_BODY()
-
-public:
-    AFieldSystemDemoActor();
-
-    virtual void BeginPlay() override;
-
-private:
-    void CheckFieldSystemEditorModule();
-};
-```
-
-### FieldSystemDemoActor.cpp
-```cpp
-#include "FieldSystemDemoActor.h"
-#include "Field/FieldSystemEditorModule.h"
-
-AFieldSystemDemoActor::AFieldSystemDemoActor()
-{
-    PrimaryActorTick.bCanEverTick = false;
-}
-
-void AFieldSystemDemoActor::BeginPlay()
-{
-    Super::BeginPlay();
-    CheckFieldSystemEditorModule();
-}
-
-void AFieldSystemDemoActor::CheckFieldSystemEditorModule()
-{
-    // 检查 FieldSystemEditor 模块是否已加载并可用
-    if (IFieldSystemEditorModule::IsAvailable())
-    {
-        // 获取模块单例（注意：通常在编辑器环境下可用）
-        IFieldSystemEditorModule& FieldSystemEditor = IFieldSystemEditorModule::Get();
-        UE_LOG(LogTemp, Log, TEXT("FieldSystemEditor module is available."));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("FieldSystemEditor module is not available."));
-    }
-}
-```
+1. 在编辑器中启用插件（Edit → Plugins → Field System）
+2. 在内容浏览器中右键 → 创建 Physics → Field System 资产
+3. 编辑 Field System 资产中的场定义
+4. 将 Field System 资产拖放到场景中或关联到 Chaos Destruction Actor
 
 ## 模块依赖
-
-该插件仅包含一个模块 `FieldSystemEditor`，且没有列出额外的依赖。
 
 | 模块 | 用途 |
 |---|---|
@@ -137,22 +102,25 @@ void AFieldSystemDemoActor::CheckFieldSystemEditorModule()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-02-03 | `20825e79` | Fix duplicate symbol linker errors | 修复了链接器中的重复符号错误 |
-| 2023-11-15 | `b64f2e25` | [Deprecation Cleanup] Remove deprecated code in actor factory class | 清理了 Actor 工厂类中的已废弃代码 |
-| 2023-02-17 | `73c74eaf` | Removing redundant include paths: | 移除了冗余的包含路径 |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 通用的插件目录更新 |
-| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 将内置插件的供应商链接更新为安全协议 |
+| 2026-02-03 | `20825e79` | Fix duplicate symbol linker errors | 修复重复符号链接错误 |
+| 2023-11-15 | `b64f2e25` | [Deprecation Cleanup] Remove deprecated code in actor factory class | 清理 ActorFactory 中的废弃代码 |
+| 2023-02-17 | `73c74eaf` | Removing redundant include paths: | 移除冗余的 include 路径 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件批量更新 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新内置插件链接为安全协议 |
 
 ### 维护评价
 
-- **年龄**：插件创建于 2018 年，已超过 7 年，属于“老古董”。
-- **维护频率**：更新频率较低，最后一次功能性更新（符号修复）发生在 2026 年初，之前两年主要是编译和代码清理。
-- **维护状态**：**低活跃度维护**。插件仍被纳入主仓库构建，没有被标记为废弃，但功能上已趋于稳定，没有新功能的开发迹象。
-- **已知限制**：作为实验性插件，且 `EnabledByDefault=false`，它不是一个开箱即用的功能，需要用户主动启用。
-- **推荐使用**：**谨慎推荐**。如果你需要在使用 Chaos 等高级物理系统时进行场定义，并且不介意使用实验性插件，可以尝试。否则，对于大多数项目，可等待其正式发布或寻找替代方案。使用时需注意其实验性状态和可能的未来变动。
+⚠️ **该插件长期处于实验性状态，建议谨慎使用。**
+
+- **创建时间**：2018年12月，至今已约7年
+- **状态**：IsBetaVersion = true，EnabledByDefault = false，仍在 Experimental 目录
+- **更新频率**：近年来仅有零散的维护性提交（编译修复、废弃代码清理），无功能性更新
+- **源码规模**：极小（11个文件），功能有限，主要提供编辑器资产类型注册
+- **注意**：该插件是 Chaos Destruction 系统的编辑器侧支持的一部分，核心 FieldSystem 运行时功能可能在其他模块中实现
+
+**建议**：如果你只需要 FieldSystem 的运行时功能（如在 Chaos Destruction 中使用），该插件可能不是必需的。如果你需要在编辑器中创建和管理 FieldSystem 资产，需手动启用此插件。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/FieldSystemPlugin)
-- [官方文档]() (无)
-- [测试用例]() (提供的文件信息中未发现测试用例，可在 `Engine/Tests/` 目录下搜索相关关键词)
+- [官方文档]()（无）

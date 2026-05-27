@@ -138,9 +138,10 @@
       "doc_path": "docs/5.7/small/AnimationSharing/"
     },
     "AnimatorKit": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AnimatorKit/"
+      "doc_path": "docs/5.8/small/AnimatorKit/",
+      "forced": true
     },
     "AppleARKitFaceSupport": {
       "generated_in": "5.7",
@@ -228,9 +229,10 @@
       "doc_path": "docs/5.7/small/BlankPlugin/"
     },
     "BlendSpaceMotionAnalysis": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/BlendSpaceMotionAnalysis/"
+      "doc_path": "docs/5.8/small/BlendSpaceMotionAnalysis/",
+      "forced": true
     },
     "BlueprintFileUtils": {
       "generated_in": "5.7",
@@ -363,9 +365,10 @@
       "doc_path": "docs/5.7/small/ContentBrowserFileDataSource/"
     },
     "ControlRigModules": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ControlRigModules/"
+      "doc_path": "docs/5.8/small/ControlRigModules/",
+      "forced": true
     },
     "ControlRigSpline": {
       "generated_in": "5.7",
@@ -1396,9 +1399,10 @@
       "doc_path": "docs/5.7/medium/AnimationModifierLibrary/"
     },
     "AnimationWarping": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/AnimationWarping/"
+      "doc_path": "docs/5.8/medium/AnimationWarping/",
+      "forced": true
     },
     "ApexDestruction": {
       "generated_in": "5.7",
@@ -1457,9 +1461,10 @@
       "doc_path": "docs/5.7/medium/AvalancheSceneState/"
     },
     "BlendStack": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/BlendStack/"
+      "doc_path": "docs/5.8/medium/BlendStack/",
+      "forced": true
     },
     "Bridge": {
       "generated_in": "5.7",
@@ -2260,9 +2265,10 @@
       "doc_path": "docs/5.7/xlarge/ConcertSyncCore/"
     },
     "ControlRig": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/ControlRig/"
+      "doc_path": "docs/5.8/xlarge/ControlRig/",
+      "forced": true
     },
     "DMXControlConsole": {
       "generated_in": "5.7",
@@ -2636,7 +2642,8 @@
     "StreamingADA": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/StreamingADA/"
+      "doc_path": "docs/5.8/small/StreamingADA/",
+      "forced": true
     },
     "LiveLinkGenericRecordingDevice": {
       "generated_in": "5.8",

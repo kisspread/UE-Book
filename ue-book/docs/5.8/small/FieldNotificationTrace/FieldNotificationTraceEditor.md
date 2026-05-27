@@ -1,4 +1,3 @@
-```markdown
 # Field Notification Trace
 
 > Add support to trace field notification object.
@@ -17,220 +16,150 @@
 
 ## 用途
 
-FieldNotificationTrace 是一个**开发者调试工具**，用于在 Unreal Insights 的 Rewind Debugger 中追踪和可视化 Field Notification（字段通知）事件。
+该插件为 `FieldNotify` 系统（常用于属性绑定和模型-视图-视图模型（MVVM）模式）添加了运行时追踪和分析支持。它的核心功能是记录 `FieldNotify` 属性的值变化事件，并将这些事件数据集成到 Unreal Insights 的追踪系统和 **Rewind Debugger** 中。
 
-UE5 的 Field Notification 系统是属性变更通知机制，广泛用于 UMG 数据绑定和 MVVM 模式。当绑定的属性值发生变化时，系统会触发字段通知。本插件的核心功能是：
-
-1. **记录**：在运行时捕获所有字段通知事件（属性值何时变化、哪个字段触发了通知）
-2. **可视化**：在 Rewind Debugger 时间轴中以轨道形式展示每个对象的字段通知事件
-3. **回放分析**：配合 Rewind Debugger 的时间回溯功能，回放并检查字段通知的触发时机
-
-这解决了开发者在调试 UI 数据绑定问题时"不知道通知何时触发、是否遗漏"的痛点。
+解决的问题是：开发者难以在运行时调试属性绑定的流程。例如，一个 UI 控件的数值意外改变，开发者很难知道是哪个对象的哪个 `FieldNotify` 属性在何时改变了，以及改变的源头是什么。该插件通过提供一个可视化的时间线，将这些事件记录并回放，极大地简化了这类 UI 状态绑定问题的调试过程。
 
 ## 使用场景
 
-- 你在用 UMG + Field Notification 做数据绑定，但 UI 没有正确更新 → 用 FieldNotificationTrace 查看通知是否被触发
-- 你需要排查 MVVM ViewModel 中属性变更通知的时序问题 → 在 Rewind Debugger 中回放查看
-- 你需要确认某个属性变更是否正确传播到了 UI 层 → 通过时间轴对齐分析
-
-**前提条件**：需要先启用 `GameplayInsights` 插件。
+- 你正在使用 **FieldNotify** 和 **属性绑定** 来构建复杂的 UI 逻辑，但界面的值出现了意料之外的变化，需要回溯是哪个属性在何时被修改的。
+- 你需要分析 UI 或游戏逻辑中 `FieldNotify` 事件的性能，例如它们在某一帧内触发了多少次、是否有冗余的广播。
+- 你正在开发一个使用 MVVM 模式的游戏或应用，需要监控视图模型（ViewModel）中属性变化对视图（View）的驱动过程。
 
 ## 蓝图用法
 
-本插件**没有暴露任何蓝图接口**。它是一个纯开发者工具，通过 Unreal Insights 和 Rewind Debugger 界面使用，无需编写任何代码。
+该插件主要提供**编辑器内分析和可视化**功能，而非暴露可直接在运行时调用的蓝图节点。其核心交互界面是通过 **Rewind Debugger** 提供的。
 
-### 使用方式
+### 核心节点
 
-1. 启用插件（`Edit > Plugins > Field Notification Trace`）
-2. 启用 `GameplayInsights` 插件（如果未启用）
-3. 打开 `Window > Developer Tools > Insights`（或使用命令行参数 `-trace=default,fieldnotification`）
-4. 在 Unreal Insights 中连接到运行中的游戏实例
-5. 启用 Rewind Debugger（`Tools > Rewind Debugger`）
-6. 在 Rewind Debugger 时间轴中找到对应的 Field Notification 轨道
+该插件不提供 `BlueprintCallable` 节点。其功能通过以下方式访问：
+
+1.  **在编辑器中**：打开 **Rewind Debugger** 窗口。
+2.  **在追踪轨道中**：你将看到一个名为 “Field Notify” 或类似的轨道，它会根据追踪的 `FieldNotify` 事件在时间线上绘制标记。
+3.  **查看详情**：点击事件标记，可以在详情面板中查看事件相关的对象 ID、字段名称等信息。
 
 ## C++ 用法
 
-本插件的核心是 Trace Services 集成，以下是从源码中提取的关键 API。
+该插件的 C++ 用法主要分为两部分：运行时插件（用于数据生产）和编辑器插件（用于数据消费和可视化）。
 
 ### 头文件引入
 
+对于运行时数据记录（假设你正在扩展或测试追踪系统）：
 ```cpp
-// Runtime 模块 - 追踪服务
-#include "FieldNotificationTraceServices.h"
+#include "FieldNotificationTrace/FieldNotificationTraceModule.h" // 假设的公共头文件
+```
+
+对于编辑器端分析或与 Rewind Debugger 集成：
+```cpp
+#include "FieldNotificationTraceEditorModule.h"
 #include "FieldNotificationTraceProvider.h"
-#include "FieldNotificationTraceAnalyzer.h"
-
-// Editor 模块 - Rewind Debugger 集成
 #include "FieldNotificationTrack.h"
-#include "FieldNotificationRewindDebugger.h"
 ```
 
-### 基本用法：自定义追踪服务模块
+### 基本用法
 
-以下代码展示了 `FTraceServiceModule` 如何向 Trace Services 注册字段通知追踪模块。
+该插件的核心逻辑是自动注册到 Unreal Insights 的分析会话中。一个典型的用例是，当 `FieldNotify` 属性的值发生变化时，系统会通过 `FTraceProvider` 记录一次事件。
 
+以下代码展示了如何从 `FTraceProvider` 中查询已记录的事件（通常在编辑器分析器中使用）：
 ```cpp
-// 来源: Private/FieldNotificationTraceServices.h
-
-// FTraceServiceModule 实现了 TraceServices::IModule 接口
-// 当 Unreal Insights 启动分析会话时，OnAnalysisBegin 会被调用
-// 它会创建 FTraceProvider 和 FTraceAnalyzer 实例
-class FTraceServiceModule : public TraceServices::IModule
-{
-    virtual void OnAnalysisBegin(TraceServices::IAnalysisSession& Session) override;
-    virtual void GetLoggers(TArray<const TCHAR*>& OutLoggers) override;
-    // 命令行参数: -trace=fieldnotification
-    virtual const TCHAR* GetCommandLineArgument() override
-    {
-        return TEXT("fieldnotification");
-    }
-};
-```
-
-### 基本用法：追踪提供者（数据存储层）
-
-`FTraceProvider` 是数据存储层，负责保存字段通知事件数据。
-
-```cpp
-// 来源: Private/FieldNotificationTraceProvider.h
-
-using namespace UE::FieldNotification;
-
-// 获取追踪提供者实例
-FTraceProvider* Provider = /* 从分析会话中获取 */;
-
-// 记录对象生命周期
-Provider->AppendObjectBegin(ObjectId, ProfileTime);
-Provider->AppendObjectEnd(ObjectId, ProfileTime);
-
-// 记录字段值变更事件
-Provider->AppendFieldValueChanged(ObjectId, ProfileTime, RecordingTime, FieldNotifyId);
-
-// 注册字段通知名称
-Provider->AppendFieldNotify(FieldNotifyId, FName("MyPropertyName"));
-```
-
-### 进阶用法：枚举追踪数据
-
-通过回调模式枚举存储的字段通知事件，用于 UI 渲染和分析报告。
-
-```cpp
-// 来源: Private/FieldNotificationTraceProvider.h
-
-// 枚举时间范围内的所有对象
-Provider->EnumerateObjects(StartTime, EndTime,
-    [&](double InStartTime, double InEndTime, uint32 InDepth, const FTraceProvider::FObject& Object)
-    {
-        // 处理每个对象的时间段
-        uint64 ObjectId = Object.SelfObjectId;
-    });
-
-// 枚举指定对象的字段通知事件
+// 来自 Private/FieldNotificationTraceProvider.h
+// 假设已有一个有效的 FTraceProvider 实例 (Provider)
+// 和时间范围 (StartTime, EndTime)
 Provider->EnumerateFieldNotifies(ObjectId, StartTime, EndTime,
-    [&](double InStartTime, double InEndTime, uint32 InDepth,
-        const FTraceProvider::FFieldNotifyEvent& Event)
+    [&](double EventTime, double RecordingTime, uint32 Depth, const FTraceProvider::FFieldNotifyEvent& Event)
     {
-        // Event.FieldNotifyId 可用于获取字段名称
+        // EventTime: 事件发生时的时间戳
+        // Event.FieldNotifyId: 变化的字段的 ID
         FFieldNotificationId FieldId = Provider->GetFieldNotificationId(Event.FieldNotifyId);
-        FName FieldName = FieldId.GetFieldName();
-    });
-
-// 枚举录制期间的字段通知（用于实时录制模式）
-Provider->EnumerateRecordingFieldNotifies(ObjectId, StartTime, EndTime,
-    [&](double InStartTime, double InEndTime, uint32 InDepth,
-        const FTraceProvider::FFieldNotifyEvent& Event)
-    {
-        // 处理录制中的事件
-    });
+        UE_LOG(LogTemp, Log, TEXT("Field %s changed at time %f"), *FieldId.ToString(), EventTime);
+    }
+);
 ```
 
-### 进阶用法：Rewind Debugger 轨道扩展
+### 进阶用法
 
-以下代码展示了如何为 Rewind Debugger 创建自定义的字段通知轨道。
+更复杂的用法涉及集成到 **Rewind Debugger** 中，创建自定义的轨道来可视化 `FieldNotify` 事件。这主要由 `FieldNotificationTraceEditor` 模块中的 `FTracksCreator` 和 `FFieldNotifyTrack` 类完成。
 
+你可以通过继承 `IRewindDebuggerExtension` 来扩展调试器的功能，例如在录制开始/停止时执行自定义逻辑：
 ```cpp
-// 来源: Private/FieldNotificationTrack.h
-
-using namespace UE::FieldNotification;
-
-// FObjectTrack: 代表一个拥有字段通知的对象
-// 在 Rewind Debugger 的对象树中作为父节点
-class FObjectTrack : public RewindDebugger::FRewindDebuggerTrack
+// 来自 Private/FieldNotificationRewindDebugger.h
+class FMyCustomExtension : public UE::FieldNotification::FRewindDebuggerRuntimeExtension
 {
-    // 子轨道：每个字段通知一个 FFieldNotifyTrack
-    TArray<TSharedPtr<FFieldNotifyTrack>> Children;
-};
-
-// FFieldNotifyTrack: 代表单个字段的通知事件
-// 在时间轴上显示为事件点
-class FFieldNotifyTrack : public RewindDebugger::FRewindDebuggerTrack
-{
-    FFieldNotifyTrack(uint64 InObjectId, uint32 InFieldNotifyId,
-                      FFieldNotificationId InFieldNotify);
-    // 双击轨道可跳转到相关代码位置
-    virtual bool HandleDoubleClickInternal() override;
-};
-
-// FTracksCreator: 负责发现和创建轨道
-// 通过 IRewindDebuggerTrackCreator 接口注册
-class FTracksCreator : public RewindDebugger::IRewindDebuggerTrackCreator
-{
-    virtual TSharedPtr<RewindDebugger::FRewindDebuggerTrack>
-        CreateTrackInternal(const RewindDebugger::FObjectId& InObjectId) const override;
-    virtual bool HasDebugInfoInternal(const RewindDebugger::FObjectId& InObjectId) const override;
+public:
+    virtual void RecordingStarted() override
+    {
+        // 当 Rewind Debugger 开始录制时，你可以进行自定义初始化
+        // 例如，确保特定的 FieldNotify 跟踪通道已开启
+        Super::RecordingStarted();
+    }
 };
 ```
 
 ## Demo 示例
 
-以下展示如何为自定义类型集成字段通知追踪。本插件本身不需要用户编写代码，但如果你想要扩展追踪能力，可以参考以下模式。
+以下示例演示了如何在自定义模块中注册一个简单的 FieldNotify 事件追踪（简化版，实际实现需处理更多细节）。
 
+### `MyFieldNotifyDemo.h`
 ```cpp
-// MyViewModel.h
 #pragma once
+#include "CoreMinimal.h"
+#include "FieldNotification/FieldNotificationId.h"
+#include "MyFieldNotifyDemo.generated.h"
 
-#include "FieldNotification/FieldNotification.h"
-#include "UObject/Object.h"
-#include "MyViewModel.generated.h"
-
-UCLASS()
-class UMyViewModel : public UObject
+UCLASS(BlueprintType)
+class UMyDataObject : public UObject
 {
     GENERATED_BODY()
 
 public:
-    // 声明带字段通知的属性
-    // UE5 的 FieldNotification 系统会在属性变化时自动触发通知
     UPROPERTY(BlueprintReadWrite, FieldNotify)
-    FString PlayerName;
-
-    UPROPERTY(BlueprintReadWrite, FieldNotify)
-    int32 Score;
-
-    // BlueprintCallable 函数，修改属性时会自动触发字段通知
-    UFUNCTION(BlueprintCallable)
-    void UpdateScore(int32 NewScore)
-    {
-        Score = NewScore;
-        // FieldNotification 系统自动通知，FieldNotificationTrace 会自动捕获
-    }
+    int32 Health = 100;
 };
+```
 
-// 使用说明：
-// 1. 启用 FieldNotificationTrace 插件
-// 2. 运行游戏，连接 Unreal Insights
-// 3. 在 Rewind Debugger 中即可看到 Score 和 PlayerName 的通知事件时间轴
+### `MyFieldNotifyDemo.cpp`
+```cpp
+#include "MyFieldNotifyDemo.h"
+// 假设我们通过某种方式获取到了全局的 Trace Provider (这通常由引擎内部完成)
+// 在实际开发中，你通常不需要直接调用 Provider，而是通过 FieldNotify 的广播机制间接触发。
+// 下面仅为演示追踪器的底层调用逻辑。
+// extern UE::FieldNotification::FTraceProvider* GFieldNotificationTraceProvider;
+
+void SimulateFieldNotifyChange(UMyDataObject* DataObject)
+{
+    if (DataObject)
+    {
+        // 修改属性值
+        DataObject->Health = 95;
+        
+        // 通常，广播事件由引擎或用户代码完成，例如：
+        // DataObject->FFieldNotifyClass::BroadcastFieldValueChanged(FFieldNotificationId(GET_MEMBER_NAME_CHECKED(UMyDataObject, Health)));
+        // 此时，FieldNotificationTrace 插件的运行时部分（如果启用并激活了追踪）会自动捕获这个广播事件，
+        // 并通过内部机制记录到 Trace Stream 中。
+    }
+}
 ```
 
 ## 模块依赖
 
+要使用此插件，你的项目模块需要依赖：
+
+### FieldNotificationTrace (Runtime 模块) 依赖
 | 模块 | 用途 |
 |---|---|
-| `GameplayInsights` | 父级插件依赖，提供 Insights 基础设施和 Rewind Debugger 框架 |
-| `TraceServices` | Trace 分析会话和时间轴数据存储 |
-| `RewindDebugger` | 时间回溯调试器框架，提供 Track/Extension 接口 |
-| `UnrealInsights` | Trace 分析器接口（IAnalyzer） |
-| `FieldNotification` | 字段通知核心类型（FFieldNotificationId） |
+| `GameplayInsights` | 插件核心依赖，提供 Insights 追踪框架 |
+| `TraceAnalysis` | 用于分析追踪会话中的数据 |
+| `TraceServices` | 提供追踪服务和会话管理 |
+
+### FieldNotificationTraceEditor (Editor 模块) 依赖
+| 模块 | 用途 |
+|---|---|
+| `FieldNotificationTrace` | 依赖其运行时模块 |
+| `RewindDebugger` | 集成回放调试器的核心框架 |
+| `TraceAnalysis` | 在编辑器中分析追踪数据 |
+| `TraceServices` | 在编辑器中访问追踪服务 |
+
+**注意**：该插件本身还依赖 `GameplayInsights` 插件（在 .uplugin 中声明）。
 
 ## 维护状态
 
@@ -238,22 +167,28 @@ public:
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-01 | `fb04ebb6` | [MassDebug] | 与 MassDebug 框架相关的改动 |
-| 2026-03-30 | `6004f575` | [RewindDebugger] | Rewind Debugger 框架层面更新 |
-| 2026-01-16 | `526a5a0a` | [RewindDebugger] Replaced included header by forward declaration for TraceService::Frame | 将 TraceService::Frame 头文件替换为前向声明，减少编译依赖 |
-| 2026-01-16 | `e2c597c8` | Fix missing debug tracks in rewind debugger for PoseSearch, SequenceInfo, and EvaluationTask when us | 修复多个模块调试轨道缺失的 bug |
-| 2026-01-15 | `1be36357` | [Backout] - CL49859133 | 回退某次提交 |
+| 2026-04-01 | `fb04ebb6` | [MassDebug] | 与 Mass 框架调试工具相关的更新 |
+| 2026-03-30 | `6004f575` | [RewindDebugger] | 与回放调试器相关的通用更新 |
+| 2026-01-16 | `526a5a0a` | [RewindDebugger] Replaced included header by forward declaration for TraceService::Frame | 重构代码，将头文件包含替换为前置声明，优化编译依赖 |
+| 2026-01-16 | `e2c597c8` | Fix missing debug tracks in rewind debugger for PoseSearch, SequenceInfo, and EvaluationTask when us | 修复了多个调试轨道在特定情况下不显示的 Bug |
+| 2026-01-15 | `1be36357` | [Backout] - CL49859133 | 回滚了某个之前的改动 |
 
 ### 维护评价
 
-- **状态**：仍在维护中，作为 Rewind Debugger 生态的一部分持续更新
-- **风险**：标记为 **Beta 版**且**默认未启用**，API 可能发生变化
-- **活跃度**：最近几个月有持续更新，主要是跟随 Rewind Debugger 框架的维护和修复
-- **限制**：仅用于开发调试，不应用于生产环境；依赖 GameplayInsights 插件；当前仅支持 Editor 模块的可视化（Runtime 追踪录制的扩展仍在 TODO 中，参见 `FieldNotificationRewindDebugger.h` 中的 `@todo` 注释）
-- **推荐**：如果你在项目中大量使用 Field Notification 进行 UI 数据绑定调试，推荐启用此插件；否则无需关注
+该插件由 Epic Games 创建于 2024 年 5 月，相对年轻。从 Git 历史看，**2026 年初仍有持续的维护活动**，包括功能更新、重构和 Bug 修复，表明它仍处于活跃开发中，但更新频率不算高。
+
+**主要特点**：
+- **Beta 状态**：插件被明确标记为 `IsBetaVersion=true`，意味着其 API 可能不稳定，功能和接口在未来版本中可能会发生改变。
+- **编辑器专用**：主要功能（可视化、分析）集中在编辑器模块 (`FieldNotificationTraceEditor`)，适用于开发调试，而非游戏运行时。
+- **深度集成**：与 Unreal Insights 和 Rewind Debugger 深度绑定，是引擎调试工具链的一部分。
+
+**推荐使用**：
+- 如果你在项目中大量使用 `FieldNotify` 属性绑定，并且遇到了难以调试的状态同步问题，**强烈建议启用此插件**，它能提供宝贵的可视化调试信息。
+- 由于其 Beta 状态和编辑器侧重点，不建议在最终的游戏打包中启用此插件。
+- 使用时需注意，它需要配合 **Gameplay Insights** 和 **Rewind Debugger** 工具使用。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/FieldNotificationTrace)
-- 官方文档（暂无）
-```
+- [官方文档](https://docs.unrealengine.com) (无特定文档，属于引擎内部调试工具)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Tests/FieldNotificationTrace) (可能存在，路径为推测)

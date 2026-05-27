@@ -1,6 +1,6 @@
 # Field Notification Trace
 
-> Add support to trace field notification object.
+> Add support to trace field notification object.（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
@@ -11,192 +11,202 @@
 | 模块 | `FieldNotificationTrace` (Runtime), `FieldNotificationTraceEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-05-24 |
-| 年龄标签 | 🆕（约 1 年） |
+| 年龄标签 | 🆕（约 2 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/FieldNotificationTrace) | |
 
 ## 用途
 
-Field Notification Trace 插件为 Unreal Insights 和 Rewind Debugger 提供了一个专门用于可视化调试**字段通知（Field Notification）** 数据流的追踪通道。它解决的核心问题是：在使用基于 `INotifyFieldValueChanged` 接口的 MVVM（Model-View-ViewModel）或数据绑定系统时，开发者难以直观地追踪对象字段值的变化时机、频率和来源，尤其是在复杂的 UI 数据绑定场景中。此插件通过在字段值变化时生成特定的 Trace 事件，并将其集成到时间轴调试工具中，使得开发者可以回放和检查 UI 绑定数据的变化历史，从而快速定位数据驱动的 UI 刷新问题。
+Field Notification Trace 是一个用于调试字段通知（Field Notification）机制的开发者工具。它解决了在使用 Unreal Engine 的字段通知系统（通常用于 MVVM 架构或 UI 数据绑定）时，难以追踪特定字段值变更原因和时机的问题。此插件通过集成到 **Rewind Debugger** 中，为开发者提供了可视化的追踪轨道，可以记录并回放字段通知对象的生命周期以及字段值发生变化的事件，从而极大地简化了 UI 数据绑定相关 Bug 的调试过程。
 
 ## 使用场景
 
-- 你正在使用 Unreal 的 `ViewModel` 和 `INotifyFieldValueChanged` 构建数据驱动的 UI 系统，但界面更新不符合预期。
-- 你需要调试一个复杂的 UI，其中多个视图绑定到同一数据模型的不同字段，需要查看某个特定字段（如 `Score` 或 `Health`）的值在游戏运行时的变化序列。
-- 你正在使用 Rewind Debugger 进行回放调试，希望将底层数据对象的字段变化事件与游戏画面、动画等事件在同一个时间轴上进行关联分析。
-- 你需要诊断性能问题，查看某段时间内某个对象的字段被频繁更新的情况。
+- **你正在使用 MVVM 框架或自定义的字段通知系统来构建 UI**，当某个 UI 控件的显示值不符合预期时，可以使用此插件追踪是哪个数据源的字段值发生了变化，以及变化的具体时间点。
+- **你需要调试一个复杂的、依赖多个数据源的 UI 界面**，此插件可以帮助你理清数据流动和更新的顺序。
+- **你在开发一个需要高响应性和数据一致性的编辑器工具或运行时 UI**，并希望确保所有字段变更都被正确处理和响应。
 
 ## 蓝图用法
 
-此插件的功能主要通过 C++ 宏和编辑器工具面板提供，没有直接暴露给蓝图的节点。其核心价值在于**分析和可视化**通过宏嵌入到代码中的追踪数据。开发者通过在 C++ 代码中使用宏，然后在编辑器的 `Window > Developer Tools > Trace Insights` 或 Rewind Debugger 面板中查看结果。
+此插件主要通过 C++ 宏提供追踪功能，不直接暴露传统的蓝图节点。其调试信息通过 **Rewind Debugger** 的界面进行查看和分析。
+
+### 核心节点
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| （无直接蓝图节点） | 此插件功能通过 C++ 宏集成，调试界面通过 Rewind Debugger 提供。 | N/A |
 
 ## C++ 用法
 
+此插件的核心是提供一组用于在 C++ 代码中插入追踪点的宏。
+
 ### 头文件引入
 
-要使用追踪宏，需要包含公共头文件。
-
+要使用追踪宏，通常需要包含以下头文件，该文件会检查 `UE_FIELDNOTIFICATION_TRACE_ENABLED` 宏是否定义：
 ```cpp
 #include "Trace/FieldNotificationTrace.h"
 ```
 
 ### 基本用法
 
-插件提供了三个核心宏，用于在关键位置插入追踪点。你需要在你的类中正确实现 `INotifyFieldValueChanged` 接口。
-
-**1. 追踪对象生命周期**
-
-在创建（或初始化）一个实现了 `INotifyFieldValueChanged` 的对象时，调用 `LIFETIME_BEGIN`；在销毁或使其失效时，调用 `LIFETIME_END`。这有助于在时间轴上标记对象的活跃期。
-
-**2. 追踪字段值变化**
-
-在你实现的 `BroadcastFieldValueChanged` 函数内部，当特定字段的值发生变化时，调用 `FIELD_VALUE_CHANGED`。这是最核心的追踪点。
+在实现字段通知接口的类中，在对象创建和销毁时插入生命周期追踪宏。当字段值发生变化时，插入字段值更新追踪宏。
 
 ```cpp
-// 来源：建议的集成模式（基于插件宏设计）
-// MyViewModel.h
-UCLASS()
-class UMyViewModel : public UObject, public INotifyFieldValueChanged
+// 假设你的类继承自 INotifyFieldValueChanged 接口
+// 你的类创建时（如构造函数或初始化函数）
 {
-    GENERATED_BODY()
+    UE_TRACE_FIELDNOTIFICATION_LIFETIME_BEGIN(this);
+}
 
-public:
-    virtual void BroadcastFieldValueChanged(const FFieldNotificationEvent& InEvent) override;
-
-    UPROPERTY(BlueprintReadWrite, FieldNotify)
-    int32 Score;
-};
-
-// MyViewModel.cpp
-void UMyViewModel::BroadcastFieldValueChanged(const FFieldNotificationEvent& InEvent)
+// 你的类销毁时（如析构函数）
 {
-    // 在广播具体字段变化前，插入追踪点
-    if (InEvent.GetFieldId() == FMyViewModelFFI::Score)
+    UE_TRACE_FIELDNOTIFICATION_LIFETIME_END(this);
+}
+
+// 当你更新一个字段的值并准备广播通知时
+void UMyViewModel::SetMyValue(int32 NewValue)
+{
+    if (MyValue != NewValue)
     {
-        UE_TRACE_FIELDNOTIFICATION_FIELD_VALUE_CHANGED(this, InEvent.GetFieldId());
+        MyValue = NewValue;
+        // 广播字段变化通知之前或之后，插入追踪点
+        // FFieldId 是通过 UE_FIELD_NOTIFICATION_DECLARE_FIELD 宏定义的
+        UE_TRACE_FIELDNOTIFICATION_FIELD_VALUE_CHANGED(this, UMyViewModel::MyValueFieldId);
+        // ... 广播通知 ...
     }
-
-    // 继续调用父类或标准广播逻辑
-    // ...
 }
 ```
+
+*（来源：根据 Public/Trace/FieldNotificationTrace.h 中宏定义推断的通用用法）*
 
 ### 进阶用法
 
-结合对象生命周期宏，可以提供更完整的追踪上下文。通常，`LIFETIME_BEGIN` 会在对象构造后或初始化绑定时调用，`LIFETIME_END` 在对象销毁前或解绑时调用。
+结合 `FTrace` 类的静态方法，可以在不使用宏的情况下进行更灵活的追踪控制。
 
 ```cpp
-// 来源：基于宏设计的生命周期集成模式
-UMyViewModel::UMyViewModel()
-{
-    // 对象构造，但通常绑定还未就绪
-}
+#include "Trace/FieldNotificationTrace.h"
 
-void UMyViewModel::InitializeViewModel()
-{
-    // 初始化，开始绑定数据，此时标记生命周期开始
-    UE_TRACE_FIELDNOTIFICATION_LIFETIME_BEGIN(this);
-    // ... 初始化逻辑
-}
+// 手动开始追踪一个对象的生命周期
+TScriptInterface<INotifyFieldValueChanged> InterfacePtr = this;
+UE::FieldNotification::FTrace::OutputObjectBegin(InterfacePtr);
 
-void UMyViewModel::DeinitializeViewModel()
-{
-    // 解绑数据，准备销毁，标记生命周期结束
-    UE_TRACE_FIELDNOTIFICATION_LIFETIME_END(this);
-    // ... 清理逻辑
-}
+// ... 对象存在期间的操作 ...
 
-// BroadcastFieldValueChanged 内部的使用同基本用法
+// 手动报告某个字段的值已更新
+FFieldId MyFieldId = UMyViewModel::MyValueFieldId; // 通常由宏生成
+UE::FieldNotification::FTrace::OutputUpdateField(this, MyFieldId);
+
+// 对象结束前
+UE::FieldNotification::FTrace::OutputObjectEnd(InterfacePtr);
 ```
+
+*（来源：Public/Trace/FieldNotificationTrace.h 中的 FTrace 类 API）*
 
 ## Demo 示例
 
-一个完整的、可编译的最小示例，展示如何为一个自定义的 ViewModel 类集成字段通知追踪。
+以下是一个最小示例，展示如何在一个自定义的 ViewModel 类中集成字段通知追踪。
 
-**MyTracedViewModel.h**
+**MyTraceableViewModel.h**
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UObject/Interface.h"
 #include "UObject/NoExportTypes.h"
-#include "FieldNotification/FieldNotificationDeclaration.h"
-#include "Trace/FieldNotificationTrace.h"
-#include "MyTracedViewModel.generated.h"
+#include "INotifyFieldValueChanged.h"
+#include "Trace/FieldNotificationTrace.h" // 包含追踪宏
+#include "MyTraceableViewModel.generated.h"
 
 UCLASS(BlueprintType)
-class UMyTracedViewModel : public UObject, public INotifyFieldValueChanged
+class UMyTraceableViewModel : public UObject, public INotifyFieldValueChanged
 {
     GENERATED_BODY()
 
 public:
-    UMyTracedViewModel();
-    virtual ~UMyTracedViewModel();
+    UMyTraceableViewModel();
+    virtual ~UMyTraceableViewModel();
+
+    // 字段声明
+    UE_FIELD_NOTIFICATION_DECLARE_CLASS_DESCRIPTOR;
+    UE_FIELD_NOTIFICATION_DECLARE_FIELD(MyName);
+    UE_FIELD_NOTIFICATION_DECLARE_FIELD(MyScore);
+
+    UFUNCTION(BlueprintCallable, Category = "ViewModel")
+    void SetMyName(const FString& NewName);
+
+    UFUNCTION(BlueprintCallable, Category = "ViewModel")
+    void SetMyScore(int32 NewScore);
 
     // INotifyFieldValueChanged 接口实现
-    virtual void BroadcastFieldValueChanged(const FFieldNotificationEvent& InEvent) override;
+    virtual FFieldValueChangedDelegate& GetFieldValueChangedDelegate(FFieldId InFieldId) override;
+    virtual void BroadcastFieldValueChanged(FFieldId InFieldId) override;
 
-    // 一个带字段通知的属性
-    UPROPERTY(BlueprintReadWrite, FieldNotify, Category = "Demo")
-    int32 PlayerHealth = 100;
-
-    UPROPERTY(BlueprintReadWrite, FieldNotify, Category = "Demo")
-    FText PlayerName;
-
-    // 手动修改字段并广播变化的函数，用于演示
-    UFUNCTION(BlueprintCallable, Category = "Demo")
-    void SetPlayerHealth(int32 NewHealth);
+private:
+    FString MyName;
+    int32 MyScore;
+    FFieldValueChangedDelegate FieldValueChangedDelegate;
 };
 ```
 
-**MyTracedViewModel.cpp**
+**MyTraceableViewModel.cpp**
 ```cpp
-#include "MyTracedViewModel.h"
-#include "FieldNotification/FieldNotificationHelpers.h"
+#include "MyTraceableViewModel.h"
+#include "FieldNotification/FieldNotification.h"
 
-UMyTracedViewModel::UMyTracedViewModel()
+// 初始化类描述符
+UE_FIELD_NOTIFICATION_IMPLEMENT_CLASS(UMyTraceableViewModel, TEXT("MyTraceableViewModel"))
+UE_FIELD_NOTIFICATION_IMPLEMENT_FIELD(UMyTraceableViewModel, MyName)
+UE_FIELD_NOTIFICATION_IMPLEMENT_FIELD(UMyTraceableViewModel, MyScore)
+
+UMyTraceableViewModel::UMyTraceableViewModel()
 {
-    // 在构造时标记生命周期开始
+    // 在对象创建时开始生命周期追踪
     UE_TRACE_FIELDNOTIFICATION_LIFETIME_BEGIN(this);
 }
 
-UMyTracedViewModel::~UMyTracedViewModel()
+UMyTraceableViewModel::~UMyTraceableViewModel()
 {
-    // 在析构时标记生命周期结束
+    // 在对象销毁时结束生命周期追踪
     UE_TRACE_FIELDNOTIFICATION_LIFETIME_END(this);
 }
 
-void UMyTracedViewModel::BroadcastFieldValueChanged(const FFieldNotificationEvent& InEvent)
+void UMyTraceableViewModel::SetMyName(const FString& NewName)
 {
-    // 检查变化的字段，并插入追踪点
-    if (InEvent.GetFieldId() == GET_MEMBER_NAME_CHECKED(UMyTracedViewModel, PlayerHealth))
+    if (MyName != NewName)
     {
-        UE_TRACE_FIELDNOTIFICATION_FIELD_VALUE_CHANGED(this, InEvent.GetFieldId());
+        MyName = NewName;
+        // 追踪字段值变化
+        UE_TRACE_FIELDNOTIFICATION_FIELD_VALUE_CHANGED(this, UMyViewModel::MyNameFieldId);
+        BroadcastFieldValueChanged(UMyViewModel::MyNameFieldId);
     }
-    else if (InEvent.GetFieldId() == GET_MEMBER_NAME_CHECKED(UMyTracedViewModel, PlayerName))
-    {
-        UE_TRACE_FIELDNOTIFICATION_FIELD_VALUE_CHANGED(this, InEvent.GetFieldId());
-    }
-
-    // 标准的广播实现（简化版，实际应遵循 Epic 的推荐模式）
-    FieldNotification::FFieldNotificationEventMulticast::Broadcast(this, InEvent);
 }
 
-void UMyTracedViewModel::SetPlayerHealth(int32 NewHealth)
+void UMyTraceableViewModel::SetMyScore(int32 NewScore)
 {
-    // 使用 FFieldNotificationHelpers 来安全地修改并广播字段变化
-    FFieldNotificationHelpers::SetFieldValue(this, GET_MEMBER_NAME_CHECKED(UMyTracedViewModel, PlayerHealth), NewHealth);
+    if (MyScore != NewScore)
+    {
+        MyScore = NewScore;
+        // 追踪字段值变化
+        UE_TRACE_FIELDNOTIFICATION_FIELD_VALUE_CHANGED(this, UMyViewModel::MyScoreFieldId);
+        BroadcastFieldValueChanged(UMyViewModel::MyScoreFieldId);
+    }
+}
+
+FFieldValueChangedDelegate& UMyTraceableViewModel::GetFieldValueChangedDelegate(FFieldId InFieldId)
+{
+    return FieldValueChangedDelegate;
+}
+
+void UMyTraceableViewModel::BroadcastFieldValueChanged(FFieldId InFieldId)
+{
+    FieldValueChangedDelegate.Broadcast(InFieldId);
 }
 ```
 
 ## 模块依赖
 
-从 `FieldNotificationTrace.Build.cs` 分析，此插件依赖于以下核心模块以实现其功能。
-
 | 模块 | 用途 |
 |---|---|
-| `GameplayInsights` | 提供与 Unreal Insights 追踪通道和 Rewind Debugger 集成的底层支持。 |
-| `FieldNotification` | 核心的字段通知系统模块，定义了 `INotifyFieldValueChanged` 接口和基础框架。 |
-
-*注：此插件还依赖常见的 `Core`、`CoreUObject`、`Engine` 等模块，此处已省略。*
+| `GameplayInsights` | 作为父插件提供基础的 Insights 框架和调试功能。 |
+| `RewindDebugger` | 提供回放调试器的框架和 UI，用于展示字段通知追踪轨道。 |
 
 ## 维护状态
 
@@ -204,29 +214,17 @@ void UMyTracedViewModel::SetPlayerHealth(int32 NewHealth)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-01 | `fb04ebb6` | [MassDebug] | 与大规模调试功能相关的维护性更新。 |
-| 2026-03-30 | `6004f575` | [RewindDebugger] | 对Rewind Debugger集成模块进行更新或修复。 |
-| 2026-01-16 | `526a5a0a` | [RewindDebugger] Replaced included header by forward declaration for TraceService::Frame | 优化头文件包含，将包含头文件改为前向声明以减少编译依赖。 |
-| 2026-01-16 | `e2c597c8` | Fix missing debug tracks in rewind debugger for PoseSearch, SequenceInfo, and EvaluationTask when us | 修复了在Rewind Debugger中特定调试轨道缺失的bug。 |
-| 2026-01-15 | `1be36357` | [Backout] - CL49859133 | 回滚了某个可能导致问题的更改。 |
+| 2026-04-01 | `fb04ebb6` | [MassDebug] | 集成到 MassDebug 框架中，增强大规模实体调试能力。 |
+| 2026-03-30 | `6004f575` | [RewindDebugger] | 围绕 RewindDebugger 进行调整或集成。 |
+| 2026-01-16 | `526a5a0a` | [RewindDebugger] Replaced included header by forward declaration for TraceService::Frame | 优化头文件依赖，用前向声明替代完整包含，编译优化。 |
+| 2026-01-16 | `e2c597c8` | Fix missing debug tracks in rewind debugger for PoseSearch, SequenceInfo, and EvaluationTask when us | 修复多个调试轨道在特定情况下缺失的显示问题。 |
+| 2026-01-15 | `1be36357` | [Backout] - CL49859133 | 回退了之前的某个提交。 |
 
 ### 维护评价
 
-该插件创建于 2024 年中，是一个相对年轻的**实验性**插件。从 Git 历史看，它在 2026 年初仍有针对调试工具集成（RewindDebugger）的活跃维护和 Bug 修复，表明 Epic Games 将其作为 UI/Editor 开发工具链的一部分在持续迭代。
-
-**优势**：
-- 作为官方实验性插件，与 `GameplayInsights` 和 `RewindDebugger` 深度集成，提供了其他第三方工具难以实现的、与引擎内置调试器结合的可视化追踪体验。
-- 明确针对现代的 UI/MVVM 架构痛点，实用性强。
-
-**注意事项**：
-- **实验性状态**：功能可能不完整，API 可能在未来版本中发生变化。
-- **默认禁用**：需要在项目插件设置中手动启用。
-- **主要面向高级开发者**：需要对 Unreal 的字段通知系统和 C++ 宏有了解才能有效使用。
-
-**推荐使用**：如果你正在开发一个大量依赖 `FieldNotification` 进行数据绑定的复杂 UI 项目，并且需要深度的运行时调试能力，**强烈建议尝试此插件**。它能极大提升调试 UI 数据流问题的效率。对于简单项目，则无需使用。
+该插件创建于 2024 年 5 月，历史较短。最近一次更新在 2026 年 4 月，表明其仍在**活跃维护**中，并且持续集成到新的调试框架（如 MassDebug）中。由于它是 `IsBetaVersion=true` 且 `EnabledByDefault=false` 的实验性插件，**推荐仅在需要调试 UI 数据绑定问题时手动启用**。其功能相对专一，但作为开发和调试工具，对于解决复杂的 UI 数据流问题非常有价值。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/FieldNotificationTrace)
-- 官方文档链接（暂无）
-- [相关测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/FieldNotificationTrace/Tests) （路径推测，基于常见项目结构）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/FieldNotificationTrace/Tests)（如果存在）

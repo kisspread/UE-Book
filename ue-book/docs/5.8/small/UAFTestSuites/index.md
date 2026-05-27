@@ -1,13 +1,13 @@
 # UAF Tests
 
-> UAF Automated Tests
+> UAF Automated Tests（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | UAF测试套件 |
-| 分类 | Testing |
+| 中文名 | UAF 自动化测试 |
+| 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（自动化测试资产） |
+| 包含内容 | ✅ 有（测试资产、测试数据） |
 | 模块 | `UAFAnimGraphTestSuite` (Runtime), `UAFAnimNodeTestData` (Runtime), `UAFCQTestSuite` (Runtime), `UAFTestSuite` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-02-10 |
@@ -16,40 +16,36 @@
 
 ## 用途
 
-此插件为 Unreal Animation Framework (UAF) 提供了全面的自动化测试套件。它是一个仅包含测试逻辑和数据的集合，用于验证UAF框架中核心功能（如动画图、动画节点、自定义查询）的正确性与稳定性。其存在是为了确保UAF在开发和迭代过程中不引入回归错误，是保障动画框架质量的关键基础设施。
+UAFTestSuites 是 **Unreal Animation Framework (UAF)** 的自动化测试插件，为 UAF 核心功能提供全面的回归测试覆盖。该插件包含动画图（AnimGraph）、动画节点（AnimNode）以及自定义查询（Custom Query）等多个维度的测试套件，用于验证 UAF 系统在引擎开发过程中的正确性和稳定性。
 
-## 使用场景
-
-- **引擎开发者/贡献者**：在修改或扩展UAF框架后，运行此测试套件以验证改动没有破坏现有功能。
-- **动画系统集成**：在将UAF框架集成到自定义项目或维护引擎分支时，使用此测试套件确保集成的兼容性。
-- **质量保证 (QA)**：作为自动化回归测试的一部分，定期运行以监控动画系统的健康状况。
+由于 UAF 本身仍处于实验阶段，此测试插件配合 EngineTest 等测试项目运行，是 UAF 开发团队保障代码质量的关键基础设施。
 
 ## 模块列表
 
 | 模块 | 类型 | 说明 |
 |---|---|---|
-| `UAFAnimGraphTestSuite` | Runtime | 针对动画图编辑器及运行时功能的自动化测试。 |
-| `UAFAnimNodeTestData` | Runtime | 存储动画节点测试所需的数据资产和蓝图。 |
-| `UAFCQTestSuite` | Runtime | 针对UAF自定义查询 (Custom Query) 系统的自动化测试。 |
-| `UAFTestSuite` | Runtime | UAF框架通用功能的核心自动化测试套件。 |
+| `UAFAnimGraphTestSuite` | Runtime | UAF 动画图相关功能的自动化测试 |
+| `UAFAnimNodeTestData` | Runtime | UAF 动画节点的测试数据资产和辅助资源 |
+| `UAFCQTestSuite` | Runtime | UAF 自定义查询（Custom Query）的自动化测试 |
+| `UAFTestSuite` | Runtime | UAF 核心功能的通用自动化测试 |
 
-## C++ 用法
+## 使用场景
 
-此插件主要用于运行自动化测试，而非提供给外部项目的运行时API。其测试用例通常通过 Unreal Automation 系统触发。
+- **UAF 引擎开发者**：在修改 UAF 核心代码后运行此测试套件，验证改动未引入回归问题
+- **CI/CD 流水线**：在引擎构建流水线中自动执行，作为 UAF 功能的门禁测试
+- **AnimSandbox / EngineTest 项目**：首次创建时即在这些测试项目中启用，用于集成验证
 
-### 运行测试
-测试可通过编辑器中的 `Session Frontend` -> `Automation` 窗口找到并运行，或通过命令行调用。
+> ⚠️ 此插件**不面向最终用户**，仅用于 UAF 内部开发测试。普通项目无需也不应启用此插件。
 
 ## 模块依赖
 
-此插件是纯测试插件，其模块主要依赖于UAF框架本身及其他核心动画模块。使用此插件（即运行其测试）通常不需要在你的项目中添加额外的模块依赖。
+由于所有模块均为测试模块，依赖较为标准：
 
 | 模块 | 用途 |
 |---|---|
-| `UAFCore` | UAF框架核心模块 |
-| `AnimationCore` | 动画核心数学和类型 |
-| `AnimationBlueprintLibrary` | 动画蓝图相关工具 |
-| `AnimationGraph` | 动画图系统 |
+| `UAF` | 被测主体 — UAF 核心框架 |
+
+其他依赖为标准的 Core/Engine/Animation 模块，无特殊外部依赖。
 
 ## 维护状态
 
@@ -57,17 +53,21 @@
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 修复编译警告，提升跨平台兼容性。 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了格式化打印中关于32/64位的说明符错误。 |
-| 2026-04-14 | `12eb7efc` | Fix FBindableXxx binding serialization issues when used with UAF traits | 修复了UAF特性与绑定序列化交互时的问题。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将旧式UE_LOG迁移到新的UE_LOGF宏。 |
-| 2026-04-10 | `797a6da6` | Rename GetComponent to GetOrAddComponent to match functionality | 将函数重命名为`GetOrAddComponent`以更准确反映其行为。 |
+| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 修复函数类型转换警告，确保 MSVC 和 Clang 编译器兼容 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复 32/64 位格式化说明符不匹配问题 |
+| 2026-04-14 | `12eb7efc` | Fix FBindableXxx binding serialization issues when used with UAF traits | 修复 FBindableXxx 绑定在 UAF traits 中的序列化问题 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏从 UE_LOG 到 UE_LOGF |
+| 2026-04-10 | `797a6da6` | Rename GetComponent to GetOrAddComponent to match functionality | 重命名 GetComponent 为 GetOrAddComponent 以匹配实际行为 |
 
 ### 维护评价
 
-这是一个非常新的测试插件（创建于2026年2月），并且近期（2026年5月）仍有活跃的更新，主要集中在编译兼容性修复、代码质量改进和框架bug修复上。这表明该插件正在被**积极维护**，并且与UAF核心框架的开发同步。作为实验性插件，它仅用于开发和测试，不建议在生产环境中使用。**强烈推荐**UAF框架的开发者和贡献者使用此插件来保障代码质量。
+- **状态**：🟢 活跃维护中
+- UAF 整体仍处于实验阶段（`IsExperimentalVersion=true`），此测试插件随 UAF 核心代码同步更新
+- 最近 3 个月内持续有实质性更新（编译兼容修复、序列化修复、API 重命名等）
+- 作为 Epic 官方测试套件，在 UAF 正式发布前将保持活跃维护
+- **建议**：仅供 UAF 开发团队使用，普通项目请勿启用
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/UAF/UAFTestSuites)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/UAF/UAFTestSuites/Source)
+- [UAF 主插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/UAF)

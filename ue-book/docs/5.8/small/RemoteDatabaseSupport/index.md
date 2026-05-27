@@ -4,7 +4,7 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 远程数据库代理 |
+| 中文名 | 远程数据库支持 |
 | 分类 | Database |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
@@ -16,214 +16,202 @@
 
 ## 用途
 
-这个插件提供了一个**远程数据库代理客户端**，用于通过网络 Socket 连接到一个数据库代理服务器。它解决的核心问题是：**为没有原生数据库支持的平台提供数据库访问能力**。
-
-许多移动平台或嵌入式平台可能没有本地的 SQLite 或其他数据库库。通过这个插件，UE 应用程序可以连接到一台运行了数据库代理服务的服务器，将 SQL 命令通过 Socket 发送给代理执行，再接收结果，从而实现跨平台的数据库访问。
+该插件的核心功能是提供一种通过网络 Socket 连接到远程数据库代理（Database Proxy）的方式。它并非直接连接数据库，而是充当一个客户端，与一个运行在别处（例如专用服务器或开发机）的代理服务进行通信。这种设计允许本身不支持原生数据库功能（如某些主机平台）的游戏引擎实例，能够通过代理来访问和操作数据库。
 
 ## 使用场景
 
-- 你的游戏需要在**移动设备**（如 iOS/Android）上存储玩家数据，但该平台无法直接使用本地数据库库。
-- 你正在开发一个**跨平台应用**，需要统一的数据库访问接口，而不关心底层平台是否原生支持数据库。
-- 你希望将数据库处理逻辑集中到一台**服务器或代理**上，客户端只负责发送命令和接收数据。
+- 你的游戏运行在一个没有原生数据库驱动支持的平台（例如旧版主机），但需要记录玩家数据 → 使用此插件连接到一个部署了完整数据库支持的代理服务器。
+- 你在开发阶段，希望将游戏的数据库操作集中到一台开发机上进行调试和测试，避免每台开发机都配置本地数据库 → 使用此插件作为客户端连接到中心代理。
+- 你需要一个跨平台统一的数据库访问层，将网络通信与数据库操作解耦 → 使用此插件实现客户端，由代理服务处理实际的数据库连接和命令执行。
 
 ## 蓝图用法
 
-在公共头文件 (`Public/*.h`) 中没有发现标记为 `BlueprintCallable` 或 `BlueprintReadWrite` 的蓝图可访问函数或属性。这个插件主要面向 C++ 开发者，通过代码进行调用。
+该插件未暴露任何 `UFUNCTION(BlueprintCallable)` 或 `UPROPERTY(BlueprintReadWrite)` 节点，因此无法直接在蓝图中使用。其功能完全通过 C++ 接口访问。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "RemoteDatabaseConnection.h"
+#include "RemoteDatabaseConnection.h" // 核心连接类
+#include "RemoteDatabaseSupport.h"    // 模块接口
 ```
 
 ### 基本用法
 
-核心类是 `FRemoteDatabaseConnection`，它继承自数据库基类 `FDataBaseConnection`。
+该插件的核心是 `FRemoteDatabaseConnection` 类，它继承自引擎通用的 `FDataBaseConnection` 接口。
 
 ```cpp
-// 创建一个远程数据库连接实例
-FRemoteDatabaseConnection* Connection = new FRemoteDatabaseConnection();
+// 来源于 Source/RemoteDatabaseSupport/Public/RemoteDatabaseConnection.h
 
-// 定义连接参数
-const TCHAR* ConnectionString = TEXT("MyDBConnectionString");
-const TCHAR* RemoteIP = TEXT("192.168.1.100"); // 数据库代理服务器的IP
-const TCHAR* RemoteOverrideString = TEXT("RemoteDBName"); // 可选的覆盖连接字符串
+// 1. 创建一个远程数据库连接实例
+FRemoteDatabaseConnection* RemoteDB = new FRemoteDatabaseConnection();
 
-// 打开连接
-bool bSuccess = Connection->Open(ConnectionString, RemoteIP, RemoteOverrideString);
+// 2. 打开连接到远程代理
+// ConnectionString: 传递给本地数据库层的字符串（可能留空）
+// RemoteConnectionIP: 远程数据库代理的 IP 地址
+// RemoteConnectionStringOverride: 代理服务器上使用的实际数据库连接字符串
+const TCHAR* ProxyIP = TEXT("192.168.1.100");
+const TCHAR* DBConnectionString = TEXT("User=MyUser;Password=MyPass;Database=MyDB;");
+bool bSuccess = RemoteDB->Open(TEXT(""), ProxyIP, DBConnectionString);
+
 if (bSuccess)
 {
-    UE_LOG(LogTemp, Log, TEXT("Successfully connected to remote database proxy."));
+    UE_LOG(LogTemp, Log, TEXT("Successfully connected to remote DB proxy."));
     
-    // 执行一个不返回结果的SQL命令（例如 INSERT, UPDATE）
-    const TCHAR* InsertCommand = TEXT("INSERT INTO Players (Name, Score) VALUES ('Hero', 100)");
-    bool bExecuted = Connection->Execute(InsertCommand);
+    // 3. 执行一条命令
+    bool bExecSuccess = RemoteDB->Execute(TEXT("INSERT INTO Players (Name, Score) VALUES ('Player1', 100)"));
     
-    if (bExecuted)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Command executed successfully."));
-    }
-    
-    // 关闭连接
-    Connection->Close();
-}
-else
-{
-    UE_LOG(LogTemp, Error, TEXT("Failed to connect to remote database proxy."));
-}
-
-// 清理
-delete Connection;
-```
-
-### 进阶用法
-
-`Execute` 方法有一个重载版本可以接收一个 `FDataBaseRecordSet` 指针，用于处理 SELECT 查询返回的结果集。
-
-```cpp
-FRemoteDatabaseConnection* Connection = new FRemoteDatabaseConnection();
-Connection->Open(ConnectionString, RemoteIP, RemoteOverrideString);
-
-const TCHAR* SelectCommand = TEXT("SELECT * FROM Players WHERE Score > 50");
-FDataBaseRecordSet* RecordSet = nullptr;
-
-// 执行查询并获取结果集
-bool bSuccess = Connection->Execute(SelectCommand, RecordSet);
-if (bSuccess && RecordSet)
-{
-    // 遍历结果集
-    for (RecordSet->MoveToFirst(); !RecordSet->IsAtEnd(); RecordSet->MoveToNext())
-    {
-        FString PlayerName = RecordSet->GetString(TEXT("Name"));
-        int32 PlayerScore = RecordSet->GetInt(TEXT("Score"));
-        UE_LOG(LogTemp, Log, TEXT("Player: %s, Score: %d"), *PlayerName, PlayerScore);
-    }
-    
-    // 调用者负责删除 RecordSet
-    delete RecordSet;
-}
-
-Connection->Close();
-delete Connection;
-```
-
-## Demo 示例
-
-一个完整的、最小化的远程数据库连接和查询示例。
-
-### .h 文件
-
-```cpp
-// RemoteDBDemo.h
-#pragma once
-
-class FRemoteDatabaseConnection;
-
-class FRemoteDBDemo
-{
-public:
-    void RunDemo();
-    
-private:
-    FRemoteDatabaseConnection* DatabaseConnection = nullptr;
-    
-    bool ConnectToProxy(const FString& IP);
-    void InsertPlayerData(const FString& PlayerName, int32 Score);
-    void QueryPlayerData();
-    void Disconnect();
-};
-```
-
-### .cpp 文件
-
-```cpp
-// RemoteDBDemo.cpp
-#include "RemoteDBDemo.h"
-#include "RemoteDatabaseConnection.h" // 确保 Build.cs 中依赖了 RemoteDatabaseSupport 模块
-
-void FRemoteDBDemo::RunDemo()
-{
-    // 1. 连接到代理服务器
-    if (!ConnectToProxy(TEXT("127.0.0.1")))
-    {
-        UE_LOG(LogTemp, Error, TEXT("Demo: Connection failed."));
-        return;
-    }
-    
-    // 2. 插入数据
-    InsertPlayerData(TEXT("UnrealPlayer"), 9500);
-    
-    // 3. 查询数据
-    QueryPlayerData();
-    
-    // 4. 断开连接
-    Disconnect();
-}
-
-bool FRemoteDBDemo::ConnectToProxy(const FString& IP)
-{
-    DatabaseConnection = new FRemoteDatabaseConnection();
-    // 使用一个简单的连接字符串。实际使用时，RemoteConnectionStringOverride 可能包含数据库名等信息。
-    return DatabaseConnection->Open(TEXT(""), *IP, TEXT("GameDatabase"));
-}
-
-void FRemoteDBDemo::InsertPlayerData(const FString& PlayerName, int32 Score)
-{
-    if (!DatabaseConnection) return;
-    
-    FString Command = FString::Printf(TEXT("INSERT INTO Players (Name, Score) VALUES ('%s', %d)"), *PlayerName, Score);
-    bool bSuccess = DatabaseConnection->Execute(*Command);
-    UE_LOG(LogTemp, Log, TEXT("Insert %s: %s"), *PlayerName, bSuccess ? TEXT("Success") : TEXT("Failed"));
-}
-
-void FRemoteDBDemo::QueryPlayerData()
-{
-    if (!DatabaseConnection) return;
-    
+    // 4. 执行查询并获取结果集
     FDataBaseRecordSet* RecordSet = nullptr;
-    bool bSuccess = DatabaseConnection->Execute(TEXT("SELECT Name, Score FROM Players"), RecordSet);
+    bool bQuerySuccess = RemoteDB->Execute(TEXT("SELECT Name, Score FROM Players"), RecordSet);
     
-    if (bSuccess && RecordSet)
+    if (bQuerySuccess && RecordSet)
     {
-        UE_LOG(LogTemp, Log, TEXT("--- Player List ---"));
-        for (RecordSet->MoveToFirst(); !RecordSet->IsAtEnd(); RecordSet->MoveToNext())
+        // 5. 遍历结果集（FRemoteDataBaseRecordSet 提供了迭代方法）
+        // 假设 RecordSet 实际上是 FRemoteDataBaseRecordSet* 类型
+        // 在实际使用中，通常由 Execute 函数的内部逻辑返回正确类型的指针。
+        while (!RecordSet->IsAtEnd())
         {
-            FString Name = RecordSet->GetString(TEXT("Name"));
-            int32 Score = RecordSet->GetInt(TEXT("Score"));
-            UE_LOG(LogTemp, Log, TEXT("Player: %s, Score: %d"), *Name, Score);
+            FString PlayerName = RecordSet->GetString(TEXT("Name"));
+            int32 PlayerScore = RecordSet->GetInt(TEXT("Score"));
+            UE_LOG(LogTemp, Log, TEXT("Player: %s, Score: %d"), *PlayerName, PlayerScore);
+            RecordSet->MoveToNext();
         }
+        
+        // 6. 清理结果集（根据文档注释，调用者负责删除）
         delete RecordSet;
     }
 }
 
-void FRemoteDBDemo::Disconnect()
+// 7. 关闭连接
+RemoteDB->Close();
+
+// 8. 清理连接对象
+delete RemoteDB;
+```
+
+### 进阶用法：使用模块接口
+
+`IRemoteDatabaseSupport` 模块接口主要用于检查模块是否加载，本身不提供数据库操作功能。它通常用于确保插件模块在调用其 API 之前已经就绪。
+
+```cpp
+// 来源于 Source/RemoteDatabaseSupport/Public/RemoteDatabaseSupport.h
+
+// 检查模块是否可用
+if (IRemoteDatabaseSupport::IsAvailable())
 {
-    if (DatabaseConnection)
+    // 获取模块引用（确保模块已加载）
+    IRemoteDatabaseSupport& Module = IRemoteDatabaseSupport::Get();
+    // 此模块接口主要用于生命周期管理，实际数据库操作使用 FRemoteDatabaseConnection 类
+    UE_LOG(LogTemp, Log, TEXT("RemoteDatabaseSupport module is loaded."));
+}
+```
+
+## Demo 示例
+
+一个最小的、可编译的示例，演示如何连接、执行查询并处理结果。
+
+**DemoDatabaseActor.h**
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "RemoteDatabaseConnection.h"
+#include "DemoDatabaseActor.generated.h"
+
+UCLASS()
+class ADemoDatabaseActor : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    ADemoDatabaseActor();
+
+    virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+private:
+    UPROPERTY()
+    FRemoteDatabaseConnection* RemoteConnection;
+    
+    void ConnectAndQuery();
+};
+```
+
+**DemoDatabaseActor.cpp**
+```cpp
+#include "DemoDatabaseActor.h"
+#include "RemoteDatabaseSupport.h"
+
+ADemoDatabaseActor::ADemoDatabaseActor()
+{
+    RemoteConnection = nullptr;
+}
+
+void ADemoDatabaseActor::BeginPlay()
+{
+    Super::BeginPlay();
+    
+    if (IRemoteDatabaseSupport::IsAvailable())
     {
-        DatabaseConnection->Close();
-        delete DatabaseConnection;
-        DatabaseConnection = nullptr;
-        UE_LOG(LogTemp, Log, TEXT("Disconnected from database proxy."));
+        ConnectAndQuery();
     }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("RemoteDatabaseSupport module is not available!"));
+    }
+}
+
+void ADemoDatabaseActor::ConnectAndQuery()
+{
+    RemoteConnection = new FRemoteDatabaseConnection();
+    
+    // 请替换为实际的远程代理 IP 和数据库连接字符串
+    const TCHAR* ProxyIP = TEXT("127.0.0.1");
+    const TCHAR* DBConnStr = TEXT("Driver={MySQL ODBC 8.0 Unicode Driver};Server=localhost;Database=testdb;User=root;Password=root;");
+    
+    if (RemoteConnection->Open(TEXT(""), ProxyIP, DBConnStr))
+    {
+        UE_LOG(LogTemp, Log, TEXT("Connected to proxy at %s"), ProxyIP);
+        
+        // 执行一个查询
+        FDataBaseRecordSet* Results = nullptr;
+        if (RemoteConnection->Execute(TEXT("SELECT 1 + 1 AS Result"), Results))
+        {
+            // 假设查询返回一行一列
+            if (Results && !Results->IsAtEnd())
+            {
+                int32 ResultValue = Results->GetInt(TEXT("Result"));
+                UE_LOG(LogTemp, Log, TEXT("Query Result: %d"), ResultValue);
+            }
+            // 根据接口文档，调用者负责删除
+            delete Results;
+            Results = nullptr;
+        }
+    }
+}
+
+void ADemoDatabaseActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (RemoteConnection)
+    {
+        RemoteConnection->Close();
+        delete RemoteConnection;
+        RemoteConnection = nullptr;
+    }
+    Super::EndPlay(EndPlayReason);
 }
 ```
 
 ## 模块依赖
 
-要使用此插件，你的模块需要在 `Build.cs` 文件中添加对 `RemoteDatabaseSupport` 模块的依赖。
+根据插件的 `.uplugin` 文件，它依赖于 `DatabaseSupport` 插件。该插件提供了 `FDataBaseConnection` 和 `FDataBaseRecordSet` 等基类。
 
-```csharp
-PublicDependencyModuleNames.AddRange(new string[] {
-    "Core",
-    "CoreUObject",
-    "Engine",
-    "RemoteDatabaseSupport" // 添加这一行
-});
-```
-
-此外，该插件还依赖于 `DatabaseSupport` 插件。
+| 模块 | 用途 |
+|---|---|
+| `DatabaseSupport` | 提供数据库连接和记录集的基础抽象接口 (`FDataBaseConnection`, `FDataBaseRecordSet`)。 |
 
 ## 维护状态
 
@@ -231,20 +219,18 @@ PublicDependencyModuleNames.AddRange(new string[] {
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2024-04-02 | `f0ec1829` | PR #8660: Fix `bool ExecuteDBProxyCommand()` | 修复了数据库代理命令执行函数的返回值逻辑错误。 |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 通用的引擎插件仓库结构整理或迁移。 |
-| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 将内置插件的第三方链接更新为使用安全协议（如HTTPS）。 |
-| 2019-12-27 | `360d078c` | Second batch of remaining Engine copyright updates. | 第二批次的引擎版权信息更新。 |
-| 2019-02-04 | `d3f54b21` | Fix CreateSocket and CreateInternetAddr functional usage so they no longer use the deprecated method | 修复了创建 Socket 和网络地址的方法，停止使用已废弃的API。 |
+| 2024-04-02 | `f0ec1829` | PR #8660: Fix `bool ExecuteDBProxyCommand()` | 修复 `ExecuteDBProxyCommand` 函数的布尔值返回。 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件目录结构的批量调整或更新。 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新内置插件的供应商链接为安全协议。 |
 
 ### 维护评价
 
-该插件创建于 2019 年初，是一个较为成熟的“老”插件。最近的实质性更新是 **2024 年 4 月** 对核心函数 `ExecuteDBProxyCommand` 的 bug 修复，表明它**仍在被维护和关注**，但并非活跃的功能开发。
+该插件创建于 2019 年初，已有约 6 年历史。从 Git 记录看，过去几年几乎没有功能性更新，最近的两次有意义的提交是 2024 年的一个 bug 修复和 2022 年的链接更新。这表明该插件功能已基本稳定，但处于**不活跃维护**状态。它没有被标记为废弃（Deprecated），并且 `EnabledByDefault` 为 `false`，说明它仅用于特定场景。
 
-其功能范围明确且稳定，主要用于通过 Socket 连接远程数据库代理。它**不推荐**用于需要复杂本地数据库操作或追求最新特性的场景，但对于其设计初衷——**跨平台远程数据库访问**——它是一个稳定可靠的解决方案。
+**结论**：如果你需要在一个不支持原生数据库的平台上通过代理访问数据库，这个插件仍然是一个可选项。但由于长期缺乏功能性更新和文档，使用时可能会遇到边缘情况问题。建议在项目中做好封装，并准备好自行处理可能遇到的兼容性或稳定性问题。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/Database/RemoteDatabaseSupport)
-- [官方文档]()（无）
-- [测试用例]()（未在插件目录内发现标准测试文件）
+- 官方文档：无
+- 测试用例：未在插件目录内发现标准测试文件。

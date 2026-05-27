@@ -1,10 +1,10 @@
 # SQLite Support
 
-> SQLite Database Support
+> SQLite Database Support（照抄）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | SQLite 数据库支持 |
+| 中文名 | SQLite数据库支持 |
 | 分类 | Database |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
@@ -16,218 +16,224 @@
 
 ## 用途
 
-此插件为虚幻引擎项目提供了对 SQLite 数据库的运行时支持。它封装了 SQLite 的核心 API，使开发者能够在 UE 项目中方便地打开、连接、执行 SQL 命令以及处理查询结果集。该插件主要用于需要在客户端或独立服务器上使用轻量级、无需服务器进程的嵌入式数据库的场景，例如本地数据存储、缓存或离线数据处理。
+为 Unreal Engine 提供 SQLite 数据库的运行时访问能力。该插件基于 UE 的通用数据库抽象层（`DatabaseSupport`），实现了 SQLite 特有的连接管理和结果集处理。它封装了 `SQLiteCore` 底层库，让开发者可以用统一的 `FDataBaseConnection`/`FDataBaseRecordSet` 接口来执行 SQL 查询、读取结果，而无需直接与 SQLite C API 交互。
 
 ## 使用场景
 
-- 你需要为游戏或应用创建一个本地数据库，用于保存玩家设置、游戏进度或动态生成的关卡数据。
-- 你的工具或编辑器扩展需要离线存储或处理结构化数据。
-- 项目需要集成一个轻量级的数据库解决方案，无需部署和管理外部数据库服务器（如 MySQL、PostgreSQL）。
+- 你有一个本地存档系统，需要结构化存储玩家进度、配置数据 → 用 SQLite 替代纯 JSON 文件
+- 你正在开发离线单机游戏，需要一个轻量级的本地数据库来管理游戏数据表 → 用 SQLiteSupport
+- 你需要在运行时执行复杂的 SQL 查询（JOIN、聚合、索引）而非简单的键值查找 → 用 SQLiteSupport
+- 你需要将外部导入的 `.db` 文件作为游戏资源使用 → 用 SQLiteSupport
 
 ## 蓝图用法
 
-该插件主要提供 C++ 接口，蓝图中直接操作数据库连接和结果集的功能相对有限，但可通过核心类暴露的函数进行基础操作。
-
-### 核心节点
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `Open` | 打开指定的 SQLite 数据库文件。 | `FSQLiteDatabaseConnection` |
-| `Execute` | 执行一个 SQL 命令（如 INSERT, UPDATE, CREATE TABLE）。 | `FSQLiteDatabaseConnection` |
-| `Execute (with ResultSet)` | 执行查询（如 SELECT）并获取结果集。调用者负责管理 `FSQLiteResultSet` 的生命周期。 | `FSQLiteDatabaseConnection` |
-| `Close` | 关闭数据库连接并释放文件锁。 | `FSQLiteDatabaseConnection` |
-| `GetString` | 从结果集的当前行中，按列名获取一个字符串值。 | `FSQLiteResultSet` |
-| `GetInt` | 从结果集的当前行中，按列名获取一个整数值。 | `FSQLiteResultSet` |
-| `GetFloat` | 从结果集的当前行中，按列名获取一个浮点数值。 | `FSQLiteResultSet` |
-| `GetBigInt` | 从结果集的当前行中，按列名获取一个 64 位整数值。 | `FSQLiteResultSet` |
-| `MoveToFirst` | 将结果集游标移动到第一行。 | `FSQLiteResultSet` |
-| `MoveToNext` | 将结果集游标移动到下一行。 | `FSQLiteResultSet` |
-| `IsAtEnd` | 检查结果集游标是否已到达末尾。 | `FSQLiteResultSet` |
-
-### 使用示例（蓝图描述）
-
-由于蓝图节点截图限制，请按以下逻辑连接：
-1.  创建一个 `FSQLiteDatabaseConnection` 对象。
-2.  调用 `Open` 节点，连接字符串设为你的数据库文件路径（如 `“Game/SaveData.db”`）。
-3.  对于写操作，调用 `Execute` 节点，传入 SQL 语句字符串（如 `“INSERT INTO Players (Name) VALUES (‘Alice’)”`）。
-4.  对于读操作，调用 `Execute (with ResultSet)` 节点，传入查询语句（如 `“SELECT * FROM Players”`），并保存输出的 `FSQLiteResultSet`。
-5.  使用 `MoveToFirst` 和 `IsAtEnd` 配合循环，遍历结果集中的每一行。
-6.  在循环内，使用 `GetString`、`GetInt` 等节点按列名获取数据。
-7.  操作完成后，调用 `Close` 关闭连接。
+该插件没有暴露任何蓝图节点。所有 API 均为 C++ 接口，适合在 C++ 代码中直接使用。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
+#include "SQLiteSupport.h"
 #include "SQLiteDatabaseConnection.h"
 #include "SQLiteResultSet.h"
 ```
 
 ### 基本用法
 
-一个简单的数据库操作流程，包含创建表、插入数据和查询数据。
-**（注：以下为基于公开 API 推导的典型用法，非来自特定测试用例文件）**
+以下示例展示如何打开数据库、执行查询并读取结果：
 
 ```cpp
-// 假设在某个 UObject 或 Actor 中使用
-#include "SQLiteDatabaseConnection.h"
-#include "SQLiteResultSet.h"
+// 创建数据库连接
+FSQLiteDatabaseConnection Connection;
 
-// 创建一个数据库连接对象
-FSQLiteDatabaseConnection DatabaseConnection;
+// 打开本地 SQLite 数据库文件
+const FString DbPath = FPaths::ProjectSavedDir() / TEXT("MyGame.db");
+if (Connection.Open(*DbPath, nullptr, nullptr))
+{
+    UE_LOG(LogTemp, Log, TEXT("数据库打开成功"));
+}
 
-// 打开或创建数据库文件
-bool bSuccess = DatabaseConnection.Open(TEXT("Game/MySaveData.db"), nullptr, nullptr);
+// 执行无返回结果的命令（建表、插入等）
+bool bSuccess = Connection.Execute(TEXT(
+    "CREATE TABLE IF NOT EXISTS Players ("
+    "  Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    "  Name TEXT NOT NULL,"
+    "  Score REAL DEFAULT 0"
+    ")"
+));
+
 if (bSuccess)
 {
-    // 创建一个表
-    DatabaseConnection.Execute(TEXT("CREATE TABLE IF NOT EXISTS Players (ID INTEGER PRIMARY KEY, Name TEXT)"));
-    
-    // 插入数据
-    DatabaseConnection.Execute(TEXT("INSERT INTO Players (ID, Name) VALUES (1, 'PlayerOne')"));
-    
-    // 查询数据
-    FSQLiteResultSet* ResultSet = nullptr;
-    DatabaseConnection.Execute(TEXT("SELECT * FROM Players"), ResultSet);
-    
-    if (ResultSet && !ResultSet->HasError())
-    {
-        // 移动到第一行
-        ResultSet->MoveToFirst();
-        
-        // 遍历所有行
-        while (!ResultSet->IsAtEnd())
-        {
-            FString PlayerName = ResultSet->GetString(TEXT("Name"));
-            int32 PlayerID = ResultSet->GetInt(TEXT("ID"));
-            
-            UE_LOG(LogTemp, Log, TEXT("Player Found: ID=%d, Name=%s"), PlayerID, *PlayerName);
-            
-            ResultSet->MoveToNext();
-        }
-        
-        // 清理结果集
-        delete ResultSet;
-    }
-    
-    // 关闭连接
-    DatabaseConnection.Close();
+    UE_LOG(LogTemp, Log, TEXT("建表成功"));
 }
+
+// 插入数据
+Connection.Execute(TEXT("INSERT INTO Players (Name, Score) VALUES ('Alice', 95.5)"));
+
+// 关闭连接
+Connection.Close();
 ```
 
 ### 进阶用法
 
-结合 `SQLiteCore` 模块（该插件的依赖项）使用预处理语句，可以更安全、高效地执行参数化查询。
-**（需要额外包含 SQLiteCore 的头文件，如 `#include “SQLitePreparedStatement.h”`）**
+执行带返回结果集的查询，遍历读取字段数据：
+
+```cpp
+#include "SQLiteDatabaseConnection.h"
+#include "SQLiteResultSet.h"
+
+FSQLiteDatabaseConnection Connection;
+if (Connection.Open(TEXT("/path/to/database.db"), nullptr, nullptr))
+{
+    FSQLiteResultSet* ResultSet = nullptr;
+
+    // 执行查询并获取结果集
+    if (Connection.Execute(TEXT("SELECT Id, Name, Score FROM Players ORDER BY Score DESC"), ResultSet)
+        && ResultSet != nullptr)
+    {
+        // 遍历所有记录
+        for (ResultSet->MoveToFirst(); !ResultSet->IsAtEnd(); ResultSet->MoveToNext())
+        {
+            const int32 Id = ResultSet->GetInt(TEXT("Id"));
+            const FString Name = ResultSet->GetString(TEXT("Name"));
+            const float Score = ResultSet->GetFloat(TEXT("Score"));
+
+            UE_LOG(LogTemp, Log, TEXT("Player %d: %s, Score: %.1f"), Id, *Name, Score);
+        }
+
+        // 获取记录总数
+        int32 RecordCount = ResultSet->GetRecordCount();
+        UE_LOG(LogTemp, Log, TEXT("共 %d 条记录"), RecordCount);
+
+        // 获取列信息
+        TArray<FDatabaseColumnInfo> Columns = ResultSet->GetColumnNames();
+        for (const auto& Column : Columns)
+        {
+            UE_LOG(LogTemp, Log, TEXT("列名: %s"), *Column.ColumnName);
+        }
+
+        // 检查错误
+        if (ResultSet->HasError())
+        {
+            UE_LOG(LogTemp, Error, TEXT("查询错误 [%d]: %s"),
+                ResultSet->GetErrorCode(), *ResultSet->GetErrorMessage());
+        }
+
+        // 调用者负责释放结果集
+        delete ResultSet;
+        ResultSet = nullptr;
+    }
+
+    Connection.Close();
+}
+
+// 检查模块是否可用
+if (ISQLiteSupport::IsAvailable())
+{
+    ISQLiteSupport& Support = ISQLiteSupport::Get();
+    // 模块已加载，可使用
+}
+
+// 获取最近的错误信息
+FString LastError = Connection.GetLastError();
+if (!LastError.IsEmpty())
+{
+    UE_LOG(LogTemp, Error, TEXT("数据库错误: %s"), *LastError);
+}
+```
 
 ## Demo 示例
 
-一个最小化的数据库操作示例，展示从创建到查询的完整流程。
+一个最小完整的使用示例，展示连接、建表、插入、查询的全流程：
 
+**SQLiteDemo.h**
 ```cpp
-// 文件: MyDBManager.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SQLiteDatabaseConnection.h"
 
-class MYPROJECT_API FMyDBManager
+class FSQLiteDemo
 {
 public:
-    FMyDBManager();
-    ~FMyDBManager();
-
-    bool Initialize(const FString& DatabasePath);
-    void Shutdown();
-
-    bool AddUser(const FString& UserName, int32 Age);
-    TArray<FString> GetAllUserNames();
-
-private:
-    FSQLiteDatabaseConnection Connection;
-    bool bIsInitialized;
+    /** 初始化数据库并执行完整的 CRUD 演示 */
+    static void RunDemo();
 };
+```
 
-// 文件: MyDBManager.cpp
-#include "MyDBManager.h"
+**SQLiteDemo.cpp**
+```cpp
+#include "SQLiteDemo.h"
+#include "SQLiteSupport.h"
+#include "SQLiteDatabaseConnection.h"
 #include "SQLiteResultSet.h"
 
-FMyDBManager::FMyDBManager()
-    : bIsInitialized(false)
+void FSQLiteDemo::RunDemo()
 {
-}
-
-FMyDBManager::~FMyDBManager()
-{
-    Shutdown();
-}
-
-bool FMyDBManager::Initialize(const FString& DatabasePath)
-{
-    if (Connection.Open(*DatabasePath, nullptr, nullptr))
+    // 确保模块可用
+    if (!ISQLiteSupport::IsAvailable())
     {
-        // 创建表
-        Connection.Execute(TEXT(
-            "CREATE TABLE IF NOT EXISTS Users ("
-            "ID INTEGER PRIMARY KEY AUTOINCREMENT, "
-            "UserName TEXT NOT NULL, "
-            "Age INTEGER)"
-        ));
-        bIsInitialized = true;
-        return true;
+        UE_LOG(LogTemp, Error, TEXT("SQLiteSupport 模块未加载"));
+        return;
     }
-    return false;
-}
 
-void FMyDBManager::Shutdown()
-{
-    if (bIsInitialized)
+    FSQLiteDatabaseConnection DB;
+    const FString DbPath = FPaths::ProjectSavedDir() / TEXT("demo.db");
+
+    // 打开数据库
+    if (!DB.Open(*DbPath, nullptr, nullptr))
     {
-        Connection.Close();
-        bIsInitialized = false;
+        UE_LOG(LogTemp, Error, TEXT("无法打开数据库: %s"), *DB.GetLastError());
+        return;
     }
-}
 
-bool FMyDBManager::AddUser(const FString& UserName, int32 Age)
-{
-    if (!bIsInitialized) return false;
+    // 建表
+    DB.Execute(TEXT(
+        "CREATE TABLE IF NOT EXISTS Items ("
+        "  Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "  Name TEXT NOT NULL,"
+        "  Quantity INTEGER DEFAULT 0"
+        ")"
+    ));
 
-    // 注意：实际应用中应对输入进行转义，防止SQL注入。这里仅为示例。
-    FString Query = FString::Printf(TEXT("INSERT INTO Users (UserName, Age) VALUES ('%s', %d)"), *UserName, Age);
-    return Connection.Execute(*Query);
-}
+    // 清空旧数据
+    DB.Execute(TEXT("DELETE FROM Items"));
 
-TArray<FString> FMyDBManager::GetAllUserNames()
-{
-    TArray<FString> UserNames;
-    if (!bIsInitialized) return UserNames;
+    // 插入数据
+    DB.Execute(TEXT("INSERT INTO Items (Name, Quantity) VALUES ('Sword', 1)"));
+    DB.Execute(TEXT("INSERT INTO Items (Name, Quantity) VALUES ('Shield', 2)"));
+    DB.Execute(TEXT("INSERT INTO Items (Name, Quantity) VALUES ('Potion', 10)"));
 
+    // 查询数据
     FSQLiteResultSet* ResultSet = nullptr;
-    Connection.Execute(TEXT("SELECT UserName FROM Users"), ResultSet);
-
-    if (ResultSet && !ResultSet->HasError())
+    if (DB.Execute(TEXT("SELECT Name, Quantity FROM Items WHERE Quantity > 1"), ResultSet)
+        && ResultSet)
     {
-        ResultSet->MoveToFirst();
-        while (!ResultSet->IsAtEnd())
+        UE_LOG(LogTemp, Log, TEXT("数量大于1的物品:"));
+        for (ResultSet->MoveToFirst(); !ResultSet->IsAtEnd(); ResultSet->MoveToNext())
         {
-            UserNames.Add(ResultSet->GetString(TEXT("UserName")));
-            ResultSet->MoveToNext();
+            UE_LOG(LogTemp, Log, TEXT("  %s x%d"),
+                *ResultSet->GetString(TEXT("Name")),
+                ResultSet->GetInt(TEXT("Quantity")));
         }
         delete ResultSet;
     }
-    return UserNames;
+
+    // 关闭数据库
+    DB.Close();
 }
 ```
 
 ## 模块依赖
 
-该插件依赖于以下核心模块以提供完整的 SQLite 功能。
+该插件依赖以下插件（在 .uplugin 中声明）：
 
-| 模块 | 用途 |
+| 插件 | 用途 |
 |---|---|
-| `DatabaseSupport` | 提供通用的数据库接口基类 `FDataBaseConnection` 和 `FDataBaseRecordSet`。 |
-| `SQLiteCore` | 提供底层的 SQLite C API 封装、预处理语句等核心功能。 |
+| `DatabaseSupport` | UE 通用数据库抽象层，提供 `FDataBaseConnection`/`FDataBaseRecordSet` 基类 |
+| `SQLiteCore` | SQLite 底层 C 库封装，提供 `FSQLiteDatabase`、`FSQLitePreparedStatement` 等核心类型 |
+
+你的模块 Build.cs 通常只需依赖 `SQLiteSupport` 即可，运行时会自动拉入上述依赖。
 
 ## 维护状态
 
@@ -235,18 +241,21 @@ TArray<FString> FMyDBManager::GetAllUserNames()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏迁移到 UE_LOGF。 |
-| 2025-10-31 | `c57f0b00` | Clarified that the output param of Step was only filled for error cases, and not when a row is retur | 澄清了 Step 函数的输出参数仅在错误时填充，而非成功返回行时。 |
-| 2025-10-31 | `c8c0f285` | PR #12093: add error detection for SQLiteSupport | 为 SQLiteSupport 添加了错误检测功能。 |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件目录结构调整。 |
-| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新内置插件的供应商链接为安全协议。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移至 UE_LOGF 新日志宏 |
+| 2025-10-31 | `c57f0b00` | Clarified that the output param of Step was only filled for error cases, and not when a row is returned. | 明确 Step 输出参数仅在错误时填充 |
+| 2025-10-31 | `c8c0f285` | PR #12093: add error detection for SQLiteSupport | 为 SQLiteSupport 增加错误检测功能 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件批量维护性更新 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 将内置插件的第三方链接更新为安全协议 |
 
 ### 维护评价
 
-该插件创建于 2019 年初，是一个相对成熟的运行时插件。从提交历史看，它并未处于高度活跃的开发状态，但在 2025 年 10 月仍有针对错误处理和文档注释的改进提交，表明 Epic 仍在对其进行维护和澄清。插件功能稳定，接口变化不大。对于需要本地 SQLite 支持的项目，它仍然是官方提供且可靠的选择，但开发者应注意其 `EnabledByDefault` 为 `false`，需手动在项目中启用。
+该插件于 2019 年创建，已有约 6 年历史，属于老古董级别。从最近的 commit 来看，2025 年底有实质性的错误检测功能增强（PR #12093），2026 年初有日志宏迁移的工程性更新，表明仍在持续维护中。
+
+该插件规模很小（仅约 6 个源文件），功能单一且稳定，基本不会出现重大 bug。**默认未启用**（`EnabledByDefault: false`），需要在项目设置中手动开启。
+
+作为 Epic 官方维护的插件，代码质量可靠，适合作为本地数据库方案使用。唯一需要注意的是它不提供蓝图接口，纯 C++ 使用。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/Database/SQLiteSupport)
-- 官方文档：无
-- 测试用例：此插件提供的文件信息中未包含独立的测试文件。
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/Database/SQLiteSupport/Tests)（如存在）

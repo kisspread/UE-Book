@@ -1,217 +1,174 @@
-# PCG Mesh Partition Interop
+# Procedural Content Generation Framework (PCG) Mesh Partition Interop
 
-> Interoperability of Mesh Partition with PCG.（照抄，不翻译）
+> Interoperability of Mesh Partition with PCG.
 
 | 属性 | 值 |
 |---|---|
 | 中文名 | PCG网格分区互操作 |
 | 分类 | Mesh Partition |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（内容资产） |
-| 模块 | `PCGMeshPartitionInterop` (Runtime), `PCGMeshPartitionInteropEditor` (Runtime) |
+| 包含内容 | ✅ 有（组件资产） |
+| 模块 | `PCGMeshPartitionInterop` (Runtime), `PCGMeshPartitionInteropEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-03-05 |
-| 年龄标签 | 🆕（约 0 年） |
+| 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PCGMeshPartitionInterop) | |
 
 ## 用途
 
-这个插件为 PCG（程序化内容生成框架）和 Mesh Partition（网格分区）系统之间提供桥梁。它解决的核心问题是：**如何让 PCG 能够采样和使用 Mesh Partition 构建的网格数据（例如地形网格）**。
+该插件解决了程序化内容生成框架 (PCG) 与网格分区系统 (Mesh Partition) 之间的数据互通问题。它的核心目的是：**让 PCG 能够高效地采样、查询和使用由 Mesh Partition 系统生成的网格数据**。
 
-Mesh Partition 系统用于将大型网格（如地形）分割成多个区块（Section）进行高效处理。PCG 系统则基于空间数据（如点、线、网格表面）来程序化生成内容。这个插件通过在 Mesh Partition 构建的网格上附加特定的组件，将网格数据转换为 PCG 可以访问和采样的格式（缓存的动态网格和 AABB 树），从而实现了两个系统之间的互操作性。
+具体来说，当您使用 Mesh Partition 系统从一个大型源网格（如地形或巨型建筑模型）中“分区”并构建出多个较小的、优化的网格（Sections）后，PCG 通常需要在这些网格的表面或体积内进行采样（例如放置植被、石头）。如果没有互操作性，PCG 可能无法直接获取这些已构建网格的精确几何数据（如位置、法线、曲率）来进行计算。
+
+这个插件通过提供适配器组件，在构建完成后为网格数据创建优化的内部表示（如动态网格及其空间索引树），从而允许 PCG 系统在编辑器和运行时直接、高效地访问这些数据。
 
 ## 使用场景
 
-- 你使用 Mesh Partition 系统构建了一个可交互或动态的地形网格，并希望基于该地形的表面（如坡度、法线、位置）使用 PCG 来程序化生成植被、石头或装饰物。
-- 你需要在编辑器或运行时，从 Mesh Partition 构建的最终网格上获取精确的几何信息（用于碰撞、射线检测或采样），并将其传递给 PCG 工作流。
-- 你在开发一个包含程序化生成地形和内容的关卡，需要将网格构建和内容生成两个流程无缝集成。
+- **开放世界地形管理**：您使用 Mesh Partition 将一个巨大的地形网格分割成多个区块（Chunks），并希望 PCG 系统能自动在每个区块的表面根据法线、坡度等信息放置正确的植被和岩石。
+- **程序化城市生成**：您有一个由大型预制件（如整个街区）组成的网格，通过 Mesh Partition 进行优化和分区。您希望 PCG 在这些分区后的建筑表面精确地生成窗户、广告牌、空调外机等元素。
+- **任何需要 PCG 访问预构建的、分区后网格数据的场景**：只要您的内容管线涉及先用 Mesh Partition 处理网格，再用 PCG 在其上生成内容，就需要此插件。
 
 ## 蓝图用法
 
-该插件主要通过组件（Component）而非蓝图节点进行交互。核心类 `UPCGAdapterComponent` 是一个修改器组件（ModifierComponent），需要添加到参与 Mesh Partition 的 Actor 上。
+该插件主要通过一个特定的组件来扩展 Mesh Partition 的功能。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `PostBuildSectionMesh` | 当网格分区构建完成一个区块的网格后被调用，用于在该网格上生成 PCG 数据组件 | `UPCGAdapterComponent` |
-| `ComputeBounds` | 计算该适配器组件影响的空间包围盒 | `UPCGAdapterComponent` |
+| `Mesh Partition PCG Adapter Component` | 一个修饰器组件，添加到使用 Mesh Partition 的 Actor 上。它在网格构建完成后，自动为 PCG 系统准备所需的数据缓存（FDynamicMesh 和空间查询树）。 | `UPCGAdapterComponent` |
 
 ### 使用示例（蓝图描述）
 
-1. **添加组件**：在你的 Actor（例如一个网格分区 Actor）上，添加 `Mesh Partition PCG Adapter Component`。该组件会作为该 Actor 的修改器。
-2. **自动工作流**：当 Mesh Partition 系统构建网格时，会调用 `UPCGAdapterComponent::PostBuildSectionMesh`。这个方法会在最终生成的网格 Actor 上自动添加一个 `UPCGDataComponent`（来自 MeshPartition 模块）。
-3. **数据生成**：`UPCGDataComponent` 内部会缓存构建好的 `FDynamicMesh` 及其 AABB 树。这使得 PCG 系统可以在运行时或编辑器中通过该组件访问到精确的网格数据。
-4. **PCG 采样**：在 PCG 图表中，你可以使用需要输入网格或表面数据的节点（如 `Get Surface` 或 `Sample Mesh`），并将它们连接到代表该网格数据的 PCG 数据引脚上。
+1.  在您的场景中，确保有一个使用了 `Mesh Partition` 组件的 Actor（例如一个大型静态网格体 Actor）。
+2.  在该 Actor 的组件列表中，添加 `Mesh Partition PCG Adapter Component`。
+3.  当 Mesh Partition 系统完成网格的构建和分区后，此适配器组件会自动运行，为每个生成的网格区块创建 PCG 可用的数据。
+4.  在您的 PCG 图中，使用标准的 PCG 节点（如 `Surface Sampler`，`Get Mesh Data` 等）进行采样时，它们将能够自动检测到由该适配器生成的数据，并将其作为采样源。
 
 ## C++ 用法
+
+在 C++ 中，主要的集成点是 `UPCGAdapterComponent`，您通常需要以编程方式将其实例添加到运行 Mesh Partition 的 Actor 上。
 
 ### 头文件引入
 
 ```cpp
-// 如果需要在运行时或编辑器中使用适配器组件
 #include "MeshPartitionPCGAdapterComponent.h"
-
-// 如果需要自定义编辑器设置或可视化
-#include "PCGMeshPartitionInteropEditorSettings.h"
-#include "PCGMeshTerrainSectionDataVisualization.h"
 ```
 
 ### 基本用法
 
-**创建自定义 PCG 适配器组件（示例）**
-
-这个例子展示如何创建一个继承自 `UPCGAdapterComponent` 的自定义组件，以在网格分区完成后执行额外逻辑。
+以下代码片段展示了如何在代码中创建并配置该适配器组件（基于 `UPCGAdapterComponent` 的职责推断）：
 
 ```cpp
-// MyCustomAdapterComponent.h
-#pragma once
+// 假设我们有一个 AActor* ActorUsingMeshPartition，它已经添加了 MeshPartition 组件
+// 并且已经设置好了源网格和分区设置。
 
-#include "MeshPartitionPCGAdapterComponent.h"
-#include "MyCustomAdapterComponent.generated.h"
+// 在构造函数或初始化函数中添加适配器组件
+UPCGAdapterComponent* PCGAdapter = NewObject<UPCGAdapterComponent>(ActorUsingMeshPartition);
+PCGAdapter->RegisterComponent(); // 如果需要立即注册
 
-UCLASS(ClassGroup=(MeshPartition), meta=(BlueprintSpawnableComponent, DisplayName="My Custom PCG Adapter"))
-class UMyCustomAdapterComponent : public UPCGAdapterComponent
-{
-	GENERATED_BODY()
-
-public:
-	// 重写 PostBuildSectionMesh 以添加自定义行为
-	virtual void PostBuildSectionMesh(AActor* InSection, const MeshPartition::FMeshData& InBuiltMesh) override;
-};
-
-// MyCustomAdapterComponent.cpp
-#include "MyCustomAdapterComponent.h"
-
-void UMyCustomAdapterComponent::PostBuildSectionMesh(AActor* InSection, const MeshPartition::FMeshData& InBuiltMesh)
-{
-	// 首先，调用父类实现以确保 PCGDataComponent 被正确添加和初始化
-	Super::PostBuildSectionMesh(InSection, InBuiltMesh);
-
-	// 在这里添加你的自定义逻辑
-	// 例如：记录日志，或基于新构建的网格数据设置其他属性
-	UE_LOG(LogTemp, Log, TEXT("Custom PCG Adapter: Section '%s' mesh built with %d vertices."),
-		*InSection->GetName(), InBuiltMesh.Vertices.Num());
-}
+// 通常，适配器组件的配置（如属性）在蓝图中完成更直观。
+// 它的 PostBuildSectionMesh 回调会在 Mesh Partition 完成每个区块构建后由系统自动调用。
 ```
 
 ### 进阶用法
 
-**自定义编辑器设置和数据可视化（编辑器模块）**
-
-这个例子展示如何扩展编辑器模块的功能，例如为新的 PCG 数据类型注册自定义的颜色和可视化。
+该适配器的主要工作发生在其 `PostBuildSectionMesh` 虚函数中。如果您需要扩展其功能，可以创建子类：
 
 ```cpp
-// 假设我们定义了一种新的数据类型，并希望为其创建可视化
-#include "PCGMeshPartitionInteropEditorModule.h"
-#include "PCGMeshTerrainSectionDataVisualization.h"
+// MyCustomPCGAdapter.h
+#pragma once
+#include "MeshPartitionPCGAdapterComponent.h"
+#include "MyCustomPCGAdapter.generated.h"
 
-// 在编辑器模块的 StartupModule 中注册
-void FPCGMegaMeshInteropEditorModule::StartupModule()
+UCLASS(meta=(BlueprintSpawnableComponent, DisplayName = "My Custom PCG Adapter"))
+class UMyCustomPCGAdapter : public UPCGAdapterComponent
 {
-	// 注册自定义的 PCG 数据引脚颜色（例如，为我们的新数据类型）
-	// RegisterPinColors();
+    GENERATED_BODY()
 
-	// 注册自定义的数据可视化器
-	// RegisterDataVisualizations();
-}
-
-// 一个简化的自定义可视化器示例
-class FMyCustomPCGDataVisualization : public IPCGDataVisualization
-{
 public:
-	virtual void ExecuteDebugDisplay(FPCGContext* Context, const UPCGSettingsInterface* SettingsInterface, const UPCGData* Data, AActor* TargetActor) const override
-	{
-		// 实现自定义的调试显示逻辑，例如在场景中绘制网格采样点
-		if (const UMyCustomPCGData* MyData = Cast<UMyCustomPCGData>(Data))
-		{
-			// ... 绘制逻辑
-		}
-	}
+    virtual void PostBuildSectionMesh(AActor* InSection, const MeshPartition::FMeshData& InBuiltMesh) override
+    {
+        // 首先调用父类实现，完成标准的 PCG 数据缓存生成
+        Super::PostBuildSectionMesh(InSection, InBuiltMesh);
 
-	virtual FPCGTableVisualizerInfo GetTableVisualizerInfoWithDomain(const UPCGData* Data, const FPCGMetadataDomainID& DomainID) const override
-	{
-		FPCGTableVisualizerInfo Info;
-		// ... 定义表格可视化器要显示哪些属性
-		return Info;
-	}
+        // 在此添加自定义逻辑，例如：
+        // - 为每个区块的网格计算额外的自定义属性。
+        // - 触发自定义的后处理流程。
+        UE_LOG(LogTemp, Log, TEXT("Custom processing after mesh build for section: %s"), *InSection->GetName());
+    }
 };
 ```
 
 ## Demo 示例
 
-一个完整的、可编译的最小示例，展示如何创建一个使用 PCG 适配器的简单网格分区 Actor。
+一个完整的、可编译的最小示例，展示如何在代码中使用该适配器组件。
 
-**头文件 (MyPartitionActor.h):**
 ```cpp
+// MyMeshPartitionActor.h
 #pragma once
-
 #include "GameFramework/Actor.h"
-#include "MyPartitionActor.generated.h"
+#include "MyMeshPartitionActor.generated.h"
 
+class UMeshPartitionComponent;
 class UPCGAdapterComponent;
 
 UCLASS()
-class AMyPartitionActor : public AActor
+class AMyMeshPartitionActor : public AActor
 {
-	GENERATED_BODY()
-	
-public:	
-	AMyPartitionActor();
+    GENERATED_BODY()
+
+public:
+    AMyMeshPartitionActor();
 
 protected:
-	virtual void BeginPlay() override;
+    virtual void BeginPlay() override;
 
-public:	
-	virtual void Tick(float DeltaTime) override;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UMeshPartitionComponent* MeshPartitionComponent;
 
-protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh Partition")
-	TObjectPtr<UPCGAdapterComponent> PCGAdapter;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UPCGAdapterComponent* PCGAdapterComponent;
 };
+```
 
-**源文件 (MyPartitionActor.cpp):**
 ```cpp
-#include "MyPartitionActor.h"
+// MyMeshPartitionActor.cpp
+#include "MyMeshPartitionActor.h"
+#include "MeshPartitionComponent.h" // 来自 MeshPartition 插件
 #include "MeshPartitionPCGAdapterComponent.h"
 
-AMyPartitionActor::AMyPartitionActor()
+AMyMeshPartitionActor::AMyMeshPartitionActor()
 {
-	PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = false;
 
-	// 创建一个根场景组件
-	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	SetRootComponent(Root);
+    // 创建 Mesh Partition 组件
+    MeshPartitionComponent = CreateDefaultSubobject<UMeshPartitionComponent>(TEXT("MeshPartition"));
+    RootComponent = MeshPartitionComponent;
 
-	// 添加 PCG 适配器组件
-	PCGAdapter = CreateDefaultSubobject<UPCGAdapterComponent>(TEXT("PCGAdapter"));
-	PCGAdapter->SetupAttachment(Root);
+    // 创建 PCG 适配器组件，它会自动附加到同一个 Actor 上
+    PCGAdapterComponent = CreateDefaultSubobject<UPCGAdapterComponent>(TEXT("PCGAdapter"));
+    // 适配器组件需要与 Mesh Partition 组件协同工作，无需额外附加
 }
 
-void AMyPartitionActor::BeginPlay()
+void AMyMeshPartitionActor::BeginPlay()
 {
-	Super::BeginPlay();
-	// Mesh Partition 系统会在构建网格时自动调用 PCGAdapter->PostBuildSectionMesh
-}
-
-void AMyPartitionActor::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
+    Super::BeginPlay();
+    // 在 BeginPlay 时，如果网格已经构建完成，适配器可能已经准备好了数据。
+    // 更多初始化逻辑可在此添加。
 }
 ```
 
 ## 模块依赖
 
-从 `PCGMeshPartitionInterop.Build.cs` 和 `PCGMeshPartitionInteropEditor.Build.cs` 的 `PublicDependencyModuleNames` 和 `PrivateDependencyModuleNames` 中提取。该插件有明确的插件依赖，其模块主要依赖这些插件提供的模块。
+从插件的 `.uplugin` 和构建文件推断，要使用此插件，您的模块需要依赖以下 **独特** 的模块：
 
 | 模块 | 用途 |
 |---|---|
-| `PCG` | 核心 PCG 框架模块，提供数据、节点和图表运行时基础 |
-| `MeshPartition` | 核心网格分区系统，提供网格构建、区块管理等基础功能 |
-| `GeometryScript` | 几何脚本模块，可能用于动态网格操作 |
-| `PCGGeometryScriptInterop` | PCG 与 GeometryScript 的互操作模块 |
-
-*注：常见的 Core、Engine、Slate 等模块依赖已省略。*
+| `MeshPartition` | 提供网格分区系统的核心功能，如 `UMeshPartitionComponent` 和 `FMeshData`。 |
+| `PCG` | 提供程序化内容生成框架的核心类和上下文。 |
+| `PCGMeshPartitionInterop` | 本插件的运行时模块，提供核心适配器逻辑。 |
+| `PCGMeshPartitionInteropEditor` | 本插件的编辑器模块，提供数据可视化、设置和编辑器特定功能。 |
 
 ## 维护状态
 
@@ -219,23 +176,20 @@ void AMyPartitionActor::Tick(float DeltaTime)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `99ccb29e` | [PCG] Fix crash in BakeMeshAttr/BakeMeshTerrainSection reading RHI resources that either aren't resi | 修复烘焙网格属性时读取无效RHI资源导致的崩溃 |
-| 2026-05-14 | `82d81c0e` | [PCG] Add Bake Mesh Terrain Section Mesh node | 新增烘焙网格地形区块网格的PCG节点 |
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为浮点数的警告 |
-| 2026-05-13 | `0fc2fa0f` | [PCG] Track Final layer key for refresh on modifier changes in Get Mesh Terrain Section node | 优化获取网格地形区块节点，跟踪最终图层键以响应修改器变化 |
-| 2026-05-13 | `6cf8f045` | [PCG] Fix GPU crash arising from binding a compressed texture as a UAV which is not supported. | 修复将压缩纹理绑定为UAV（不支持）导致的GPU崩溃 |
+| 2026-05-22 | `99ccb29e` | [PCG] Fix crash in BakeMeshAttr/BakeMeshTerrainSection reading RHI resources that either aren't resi | 修复了BakeMesh相关节点读取已销毁的RHI资源导致的崩溃。 |
+| 2026-05-14 | `82d81c0e` | [PCG] Add Bake Mesh Terrain Section Mesh node | 增加了“烘焙网格地形剖面网格”节点。 |
+| 2026-05-13 | `0fc2fa0f` | [PCG] Track Final layer key for refresh on modifier changes in Get Mesh Terrain Section node | 优化了“获取网格地形剖面”节点，在修饰器更改时能正确刷新。 |
+| 2026-05-13 | `6cf8f045` | [PCG] Fix GPU crash arising from binding a compressed texture as a UAV which is not supported. | 修复了将压缩纹理错误地绑定为UAV导致的GPU崩溃。 |
 
 ### 维护评价
 
-该插件处于**活跃开发**状态。
-- **创建时间**：2026年3月，是一个非常新的插件。
-- **更新频率**：最近一个月内有密集的提交（5次），且集中在功能性更新和关键bug修复上（如崩溃修复、新节点添加），表明其处于快速迭代期。
-- **实验性标签**：插件明确标记为 `IsExperimentalVersion=true` 且 `EnabledByDefault=false`，这确认了其**实验性**状态。这意味着其API和功能未来可能发生重大变化，不建议在核心生产项目中使用，但非常适合用于原型设计和功能验证。
-- **已知问题**：从提交记录看，近期修复了多个GPU相关的崩溃问题，说明在涉及图形资源（RHI， UAV）时仍可能存在稳定性挑战。
-- **推荐使用**：如果你正在探索PCG与Mesh Partition的集成，并且可以接受实验性API的风险，这是一个**值得关注和试用**的插件。对于生产环境，建议等待其API稳定。
+- **状态**：**活跃维护中**。
+- **创建时间**：创建于 2026 年 3 月，至今不足 1 年，是一个非常新的插件。
+- **更新频率**：近期（2026年5月）有多次功能性更新和 bug 修复，显示正在积极开发和完善。
+- **实验性**：该插件被明确标记为 `IsExperimentalVersion=true`，且 `EnabledByDefault=false`。这意味着它功能可能尚未稳定，API 可能变化，Epic 不建议在生产环境中作为核心功能依赖。请仅在实验性项目或愿意承担更新风险的场景中使用。
+- **推荐**：对于需要在 **实验性项目** 中实现 PCG 与网格分区数据互操作的开发者，可以尝试使用并关注其更新。对于追求稳定性的项目，建议观望或将其视为参考实现。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PCGMeshPartitionInterop)
-- [官方文档](https://docs.unrealengine.com/latest/en-US/procedural-content-generation--framework-in-unreal-engine/) (PCG框架总体文档，插件特定文档可能尚未发布)
-- 测试用例路径：`Engine/Plugins/Experimental/PCGMeshPartitionInterop/Tests/` (如果存在)
+- [官方文档](https://docs.unrealengine.com/latest/en-US/procedural-content-generation--framework-in-unreal-engine/) (PCG 框架通用文档)

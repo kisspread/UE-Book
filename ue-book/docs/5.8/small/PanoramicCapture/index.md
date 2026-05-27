@@ -7,178 +7,279 @@
 | 中文名 | 全景捕获 |
 | 分类 | Movie Capture |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、材质） |
+| 包含内容 | ✅ 有（蓝图资产） |
 | 模块 | `PanoramicCapture` (UncookedOnly) |
-| 实验性 | ⚠️ 是 |
+| 实验性 | 否 |
 | 创建时间 | 2019-06-10 |
 | 年龄标签 | 👴 老古董（约 6 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PanoramicCapture) | |
 
 ## 用途
-此插件的核心功能是在游戏或应用运行时，从场景中捕获一系列的二维图像切片，然后将这些切片拼接、投影成一张完整的全景图像或视频序列。它主要用于生成用于虚拟现实（VR）体验的立体（左右眼）全景内容，也支持单目模式。插件通过精确控制相机在多个水平和垂直角度的旋转来完成多角度拍摄，并提供了丰富的控制台变量来自定义拍摄参数（如视角、分辨率、质量等）和输出通道（如最终颜色、深度、法线、材质属性等）。其设计目的是服务于VR内容创作者，以便在引擎内直接生成可用于全景播放器或后期合成的素材。
+
+这个插件用于从 UE 场景中捕获全景图像序列。它通过围绕相机位置按指定角度步进旋转，使用 `USceneCaptureComponent2D` 逐片（slice）拍摄场景，然后将这些片段拼接成球面投影的全景图。
+
+**核心解决的问题**：UE 原生的截图功能只捕获普通透视图像，无法直接生成 VR/全景内容所需的 360° 球面投影图像。此插件自动化了这个复杂的多角度拼接流程，支持：
+- **立体全景**（stereoscopic）：分别渲染左右眼视角，输出上下排列的立体全景图
+- **单目全景**（monoscopic）：只渲染单眼视角
+- **多渲染通道**：除了最终颜色，还可以输出世界法线、场景深度、粗糙度、金属度、基础颜色、环境遮蔽等 GBuffer 数据
+- **动画序列**：连续捕获多帧，生成全景视频序列
+
+由 Kite & Lightning（一家 VR 内容公司）最初开发。
 
 ## 使用场景
-- 你正在开发一个VR应用或游戏，需要为其生成高质量的立体全景环境地图（Skybox）。
-- 你需要为一个360度视频项目在UE场景中拍摄源素材。
-- 你需要获取场景在多个渲染通道（如深度、法线、材质ID）下的数据，用于后期合成或机器学习数据集生成。
-- 你在编辑器中需要快速预览当前场景在全景模式下的视觉效果。
+
+- 你需要为 VR 应用生成 360° 全景截图或预渲染视频
+- 你需要从 UE 场景中导出多通道全景数据（法线、深度等），用于后期合成或 AI 训练
+- 你需要在编辑器中快速预览场景在全景设备上的效果
+- 你需要为全景视频平台（如 YouTube 360、Meta Quest）生成内容素材
+
+**注意**：此插件仅支持 Win64 平台，且仅在未打包（UncookedOnly）状态下可用，即只能在编辑器中使用。
 
 ## 蓝图用法
-该插件主要通过控制台命令进行控制，但提供了一个蓝图可用的Pawn类用于在关卡中进行交互和结果预览。
+
+### 核心类
+
+插件暴露了一个蓝图可用的 Pawn 类 `AStereoCapturePawn`，用于在蓝图中发起立体全景捕获并读取结果。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `UpdateStereoAtlas` | 异步执行立体全景图的更新与拼接操作。这是一个延迟（Latent）节点。 | `AStereoCapturePawn` |
-| `LeftEyeAtlas` | 获取拼接完成后的左眼全景纹理（`UTexture2D`）。 | `AStereoCapturePawn` |
-| `RightEyeAtlas` | 获取拼接完成后的右眼全景纹理（`UTexture2D`）。 | `AStereoCapturePawn` |
+| `UpdateStereoAtlas` | 触发立体全景捕获，完成后自动更新左右眼纹理（Latent 异步节点） | `AStereoCapturePawn` |
+| `LeftEyeAtlas` | 只读属性，捕获完成后的左眼全景纹理（`UTexture2D*`） | `AStereoCapturePawn` |
+| `RightEyeAtlas` | 只读属性，捕获完成后的右眼全景纹理（`UTexture2D*`） | `AStereoCapturePawn` |
 
 ### 使用示例（蓝图描述）
-1.  在你的场景中放置一个 `AStereoCapturePawn` 或其子类。
-2.  在某个事件（如关卡蓝图中的 `BeginPlay` 或一个按键事件）中，调用该Pawn的 `UpdateStereoAtlas` 节点。该节点将启动后台捕获流程，并在流程完成后（通过Latent节点的输出引脚通知）自动更新Pawn的纹理属性。
-3.  你可以在其他地方（如UMG界面）直接读取该Pawn的 `LeftEyeAtlas` 和 `RightEyeAtlas` 属性，以获取最终生成的全景纹理用于显示或保存。
+
+1. **创建 StereoCapturePawn**：在关卡中放置一个 `StereoCapturePawn`（或通过 SpawnActor 蓝图节点生成）
+2. **触发全景捕获**：调用 `UpdateStereoAtlas` 节点。这是一个 Latent 节点，连接到你的事件图后，会在捕获完成后继续执行后续引脚
+3. **读取结果**：捕获完成后，从 `LeftEyeAtlas` 和 `RightEyeAtlas` 属性获取生成的全景纹理，可以用于材质、UI 显示或保存到文件
+
+**StereoCameraLayer 组件**：插件还提供了 `UStereoStaticMeshComponent`，可以设置 `EyeToRender` 属性为 `LeftEye`、`RightEye` 或 `BothEyes`，控制网格体仅对特定眼睛渲染，用于立体场景的差异化内容。
 
 ## C++ 用法
-核心控制通过控制台命令和 `FStereoPanoramaManager` 单例完成。
+
+### 控制台命令（主要使用方式）
+
+插件通过控制台命令驱动，这是最直接的使用方式：
+
+```cpp
+// 在编辑器控制台或代码中执行：
+
+// 捕获单帧全景截图
+SP.PanoramicScreenshot
+
+// 捕获全景动画序列（从当前帧开始）
+SP.PanoramicMovie
+
+// 设置捕获质量: preview | average | improved
+SP.PanoramicQuality preview
+
+// 暂停/恢复游戏（用于精确控制捕获时机）
+SP.TogglePause
+```
 
 ### 头文件引入
+
 ```cpp
-// 通常不需要直接包含，使用控制台命令即可。若需管理类，可包含：
-#include "StereoPanoramaManager.h"
+#include "StereoPanorama.h"
+#include "SceneCapturer.h"
 ```
 
-### 基本用法
-通过控制台命令触发拍摄。
-```cpp
-// 在控制台输入或通过代码执行命令，进行单帧全景截图
-// 命令格式：SP.PanoramicScreenshot [参数]
-// 示例代码：在某个函数中执行控制台命令
-GEngine->Exec(nullptr, TEXT("SP.PanoramicScreenshot"));
+### 基本用法：通过控制台变量调整参数
 
-// 进行序列拍摄（生成多帧用于视频）
-GEngine->Exec(nullptr, TEXT("SP.PanoramicMovie"));
+```cpp
+// 来源: Source/PanoramicCapture/Private/StereoPanoramaManager.h
+// 
+// 插件注册了大量控制台变量来控制捕获行为。
+// 可以在代码中通过 IConsoleManager 设置：
+
+// 设置水平角度增量（度），决定水平方向的采样密度
+IConsoleVariable* CVarHAng = IConsoleManager::Get().FindConsoleVariable(TEXT("SP.HorizontalAngularIncrement"));
+if (CVarHAng) CVarHAng->Set(TEXT("15"));  // 每15度采样一次
+
+// 设置垂直角度增量
+IConsoleVariable* CVarVAng = IConsoleManager::Get().FindConsoleVariable(TEXT("SP.VerticalAngularIncrement"));
+if (CVarVAng) CVarVAng->Set(TEXT("15"));
+
+// 设置瞳距（用于立体全景）
+IConsoleVariable* CVarEyeSep = IConsoleManager::Get().FindConsoleVariable(TEXT("SP.EyeSeparation"));
+if (CVarEyeSep) CVarEyeSep->Set(TEXT("3.5"));
+
+// 设置单目模式（只捕获一只眼）
+IConsoleVariable* CVarMono = IConsoleManager::Get().FindConsoleVariable(TEXT("SP.MonoscopicMode"));
+if (CVarMono) CVarMono->Set(TEXT("1"));
+
+// 设置输出目录
+IConsoleVariable* CVarOutputDir = IConsoleManager::Get().FindConsoleVariable(TEXT("SP.OutputDir"));
+if (CVarOutputDir) CVarOutputDir->Set(TEXT("C:/PanoramicOutput"));
+
+// 控制输出通道
+IConsoleVariable* CVarDepth = IConsoleManager::Get().FindConsoleVariable(TEXT("SP.OutputSceneDepth"));
+if (CVarDepth) CVarDepth->Set(TEXT("1"));  // 同时输出场景深度图
 ```
-**控制台变量说明（通过命令行或代码设置）**：
-- `SP.HorizontalAngularIncrement`: 水平方向切片间的角度增量。
-- `SP.VerticalAngularIncrement`: 垂直方向切片间的角度增量。
-- `SP.EyeSeparation`: 立体模式下的双眼间距。
-- `SP.MonoscopicMode`: 设为1启用单目模式，0为立体模式。
-- `SP.OutputDir`: 设置输出图像序列的目录。
-- `SP.PanoramicQuality [preview|average|improved]`: 设置渲染质量预设。
 
-### 进阶用法
-通过 `FStereoPanoramaManager` 管理器进行更精细的控制，例如获取捕获完成的委托。
+### 进阶用法：直接调用 PanoramicScreenshot API
+
 ```cpp
-#include "StereoPanoramaManager.h"
+// 来源: Source/PanoramicCapture/Private/StereoPanoramaManager.h
+//
+// 可以通过代码直接调用全景截图，指定起始帧和结束帧：
 
 // 获取管理器实例
 TSharedPtr<FStereoPanoramaManager> Manager = FStereoPanoramaModule::Get();
-if (Manager.IsValid())
-{
-    // 定义一个回调委托，捕获完成时触发
-    FStereoCaptureDoneDelegate OnCaptureDone;
-    OnCaptureDone.BindLambda([](const TArray<FLinearColor>& LeftData, const TArray<FLinearColor>& RightData)
-    {
-        // 在这里处理捕获到的原始线性颜色数据
-        UE_LOG(LogTemp, Warning, TEXT("Capture finished! Left atlas size: %d"), LeftData.Num());
-    });
 
-    // 启动捕获（示例：从第0帧到第60帧）
-    UWorld* World = GEditor->GetEditorWorldContext().World();
-    Manager->PanoramicScreenshot(0, 60, OnCaptureDone, World);
-}
+// 定义完成回调
+FStereoCaptureDoneDelegate DoneDelegate;
+DoneDelegate.BindLambda([](const TArray<FLinearColor>& LeftEyeData, const TArray<FLinearColor>& RightEyeData)
+{
+    UE_LOG(LogTemp, Log, TEXT("全景捕获完成: 左眼 %d 像素, 右眼 %d 像素"),
+        LeftEyeData.Num(), RightEyeData.Num());
+    // 在这里处理捕获到的全景数据
+});
+
+// 调用捕获（指定帧范围）
+UWorld* World = GEditor->GetEditorWorldContext().World();
+Manager->PanoramicScreenshot(/*InStartFrame=*/100, /*InEndFrame=*/120, DoneDelegate, World);
 ```
 
+## 控制台变量参考
+
+所有参数均通过 `SP.*` 前缀的控制台变量控制：
+
+| 控制台变量 | 类型 | 说明 |
+|---|---|---|
+| `SP.HorizontalAngularIncrement` | Float | 水平角度步进（度），默认约 5° |
+| `SP.VerticalAngularIncrement` | Float | 垂直角度步进（度） |
+| `SP.EyeSeparation` | Float | 左右眼间距（用于立体全景） |
+| `SP.CaptureHorizontalFOV` | Float | 每个切片的水平视场角 |
+| `SP.CaptureSlicePixelWidth` | Int | 每个切片的像素宽度 |
+| `SP.EnableBilerp` | Bool | 启用双线性插值（拼接平滑度） |
+| `SP.SuperSamplingMethod` | Int | 超采样方法选择 |
+| `SP.ForceAlpha` | Bool | 强制输出 Alpha 通道 |
+| `SP.OutputDir` | String | 输出目录路径 |
+| `SP.MonoscopicMode` | Bool | 单目模式（禁用立体） |
+| `SP.ShouldOverrideInitialYaw` | Bool | 是否覆盖初始偏航角 |
+| `SP.ForcedInitialYaw` | Float | 强制的初始偏航角（度） |
+| `SP.FadeStereoToZeroAtSides` | Bool | 在两侧渐变立体效果为零 |
+| `SP.UseCameraRotation` | Int | 使用相机旋转轴（Pitch=1, Yaw=2, Roll=4, All=7） |
+| `SP.OutputFinalColor` | Bool | 输出最终颜色通道 |
+| `SP.OutputSceneDepth` | Bool | 输出场景深度 |
+| `SP.OutputWorldNormal` | Bool | 输出世界法线 |
+| `SP.OutputRoughness` | Bool | 输出粗糙度 |
+| `SP.OutputMetalic` | Bool | 输出金属度 |
+| `SP.OutputBaseColor` | Bool | 输出基础颜色 |
+| `SP.OutputAmbientOcclusion` | Bool | 输出环境遮蔽 |
+| `SP.OutputBitDepth` | Int | 输出位深度 |
+| `SP.ConcurrentCaptures` | Int | 并发捕获数量 |
+| `SP.GenerateDebugImages` | Bool | 生成调试图像 |
+
 ## Demo 示例
-以下是一个最小化的C++示例，展示如何在编辑器模式下通过按钮触发全景捕获。
+
+### 自定义全景捕获 Actor
 
 ```cpp
-// MyPanoramicCaptureActor.h
+// PanoramicDemoActor.h
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "MyPanoramicCaptureActor.generated.h"
+#include "StereoPanorama.h"
+#include "SceneCapturer.h"
+#include "PanoramicDemoActor.generated.h"
 
 UCLASS()
-class MYPROJECT_API AMyPanoramicCaptureActor : public AActor
+class APanoramicDemoActor : public AActor
 {
-	GENERATED_BODY()
-	
-public:	
-	AMyPanoramicCaptureActor();
+    GENERATED_BODY()
 
-	UFUNCTION(BlueprintCallable, Category = "Capture")
-	void StartCapture();
+public:
+    APanoramicDemoActor();
+
+    UPROPERTY(EditAnywhere, Category = "Panoramic")
+    int32 StartFrame = 0;
+
+    UPROPERTY(EditAnywhere, Category = "Panoramic")
+    int32 EndFrame = 60;
+
+    UFUNCTION(BlueprintCallable, Category = "Panoramic")
+    void CapturePanorama();
 
 private:
-	void OnCaptureComplete(const TArray<FLinearColor>& LeftData, const TArray<FLinearColor>& RightData);
+    void OnCaptureComplete(const TArray<FLinearColor>& LeftEyeData, const TArray<FLinearColor>& RightEyeData);
 };
 ```
 
 ```cpp
-// MyPanoramicCaptureActor.cpp
-#include "MyPanoramicCaptureActor.h"
-#include "StereoPanoramaManager.h" // 引入插件管理器头文件
+// PanoramicDemoActor.cpp
+#include "PanoramicDemoActor.h"
+#include "StereoPanorama.h"
+#include "SceneCapturer.h"
 
-AMyPanoramicCaptureActor::AMyPanoramicCaptureActor()
+APanoramicDemoActor::APanoramicDemoActor()
 {
-	PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = false;
 }
 
-void AMyPanoramicCaptureActor::StartCapture()
+void APanoramicDemoActor::CapturePanorama()
 {
-	TSharedPtr<FStereoPanoramaManager> Manager = FStereoPanoramaModule::Get();
-	if (!Manager.IsValid())
-	{
-		UE_LOG(LogTemp, Error, TEXT("PanoramicCapture Plugin is not available!"));
-		return;
-	}
+    TSharedPtr<FStereoPanoramaManager> Manager = FStereoPanoramaModule::Get();
+    if (!Manager.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("PanoramicCapture 插件未初始化"));
+        return;
+    }
 
-	FStereoCaptureDoneDelegate OnDone;
-	OnDone.BindUObject(this, &AMyPanoramicCaptureActor::OnCaptureComplete);
+    FStereoCaptureDoneDelegate DoneDelegate;
+    DoneDelegate.BindUObject(this, &APanoramicDemoActor::OnCaptureComplete);
 
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		// 捕获当前时间点附近的一个短序列（例如，捕获10帧）
-		Manager->PanoramicScreenshot(0, 10, OnDone, World);
-	}
+    UWorld* World = GetWorld();
+    Manager->PanoramicScreenshot(StartFrame, EndFrame, DoneDelegate, World);
 }
 
-void AMyPanoramicCaptureActor::OnCaptureComplete(const TArray<FLinearColor>& LeftData, const TArray<FLinearColor>& RightData)
+void APanoramicDemoActor::OnCaptureComplete(
+    const TArray<FLinearColor>& LeftEyeData,
+    const TArray<FLinearColor>& RightEyeData)
 {
-	UE_LOG(LogTemp, Log, TEXT("Panoramic capture completed. Left eye data size: %d, Right eye data size: %d"), LeftData.Num(), RightData.Num());
-	// 在这里可以将数据保存到文件或进行其他处理
+    UE_LOG(LogTemp, Log, TEXT("全景捕获完成: 左眼 %d 像素, 右眼 %d 像素"),
+        LeftEyeData.Num(), RightEyeData.Num());
 }
 ```
 
 ## 模块依赖
-该插件为 `UncookedOnly` 类型，仅在开发版本（编辑器或未打包游戏）中可用。它依赖以下编辑器框架模块：
 
 | 模块 | 用途 |
 |---|---|
-| `EditorFramework` | 提供编辑器基础框架支持 |
-| `UnrealEd` | 提供编辑器专用功能和API |
+| `EditorFramework` | 编辑器框架，用于场景捕获组件的编辑器集成 |
+| `UnrealEd` | 编辑器功能，用于 PIE 控制和编辑器内的场景操作 |
 
 ## 维护状态
 
 ### 近期更新
+
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2025-12-01 | `28e633a1` | Remove Mip Bias Fade system | 移除了 Mip Bias 渐变系统，可能涉及渲染质量或LOD过渡的简化。 |
-| 2025-08-08 | `40e2c8da` | Passing RHI Command Lists through to MoviePlayer and TickableObjectRenderThread functions. | 为 MoviePlayer 和 TickableObjectRenderThread 函数传递 RHI Command Lists，优化多线程渲染命令提交。 |
-| 2024-10-30 | `ab20a6a9` | [Engine] | 引擎版本更新，未明确修改插件本身。 |
-| 2023-06-21 | `06c082c9` | PanoramicCapture: Fix e.g. C: not recognized as a valid path. | 修复了如 “C:” 等绝对路径不被识别为有效路径的问题。 |
-| 2023-04-20 | `f68fa87d` | PanoramicCapture: Fix conflict with nDisplay since CDO constructor forces display settings unnecessa | 修复了与 nDisplay 插件的冲突，原因是默认对象构造函数不必要地强制了显示设置。 |
+| 2025-12-01 | `28e633a1` | Remove Mip Bias Fade system | 移除了 Mip Bias 渐变系统，简化代码 |
+| 2025-08-08 | `40e2c8da` | Passing RHI Command Lists through to MoviePlayer and TickableObjectRenderThread functions. | 适配 RHI 命令列表 API 变更，修复编译兼容性 |
+| 2024-10-30 | `ab20a6a9` | [Engine] | 引擎级改动，无具体说明 |
+| 2023-06-21 | `06c082c9` | PanoramicCapture: Fix e.g. C: not recognized as a valid path. | 修复 Windows 盘符路径（如 C:）不被识别的 Bug |
+| 2023-04-20 | `f68fa87d` | PanoramicCapture: Fix conflict with nDisplay since CDO constructor forces display settings unnecessa | 修复与 nDisplay 插件冲突：CDO 构造函数强制设置显示参数 |
 
 ### 维护评价
-- **状态**: **维护中但非核心功能**。插件创建于2019年，作为实验性功能至今仍有更新，最近一次功能性更新在2023年（路径修复），2025年的更新更多是引擎层面的优化适配。
-- **活跃度**: 维护频率较低，最近几次提交间隔较长，且主要是bug修复和引擎兼容性调整，而非新功能开发。
-- **建议**: 该插件功能明确且相对稳定，适用于有特定全景内容制作需求的用户。由于其 `UncookedOnly` 的性质和实验性标签，不建议用于最终发布的项目核心逻辑。使用前应充分测试其与当前引擎版本的兼容性。
+
+- **创建时间**：2019 年，已有约 6 年历史
+- **维护频率**：每年有 1-2 次更新，但几乎都是编译兼容性修复和 bug 修复，没有功能性增强
+- **活跃程度**：**维护不活跃**。自创建以来没有实质性新功能，最近的更新（2023-2025）均为引擎适配修复
+- **实验性状态**：虽然 `IsBetaVersion=false`，但仍位于 `Experimental` 目录下，且 `EnabledByDefault=false`
+- **已知限制**：
+  - 仅支持 Win64 平台
+  - 仅在编辑器（UncookedOnly）中可用
+  - 捕获过程是逐切片串行/并行执行，大规模全景捕获会很慢
+  - 原始作者 Kite & Lightning 是外部公司，后续维护由 Epic 内部引擎团队负责
+- **推荐度**：⚠️ **谨慎使用**。适合一次性全景内容生成和原型验证。如果需要生产级全景渲染方案，建议评估 nDisplay + 后期拼接或第三方 VR 全景渲染工具。此插件在实验目录中已停留多年，未见晋升迹象。
 
 ## 相关链接
+
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PanoramicCapture)
-- 官方文档：无
-- 测试用例：未在提供的文件中发现独立的测试文件。
+- [Kite & Lightning 官网（原始作者）](https://kiteandlightning.la/)
+- 测试用例：无

@@ -4,9 +4,9 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | UAF 关键帧镜像 |
+| 中文名 | UAF镜像 |
 | 分类 | Other |
-| 默认启用 | ❌ 否 |
+| 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
 | 模块 | `UAFMirroring` (Runtime), `UAFMirroringUncookedOnly` (Runtime), `UAFMirroringTests` (Runtime) |
 | 实验性 | ⚠️ 是 |
@@ -15,88 +15,103 @@
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/UAF/UAFMirroring) | |
 
 ## 用途
-该插件为 UAF（Unreal Animation Framework）动画框架提供关键帧镜像功能。其核心目的是在动画图表编辑器中，允许用户快速创建动画序列的镜像版本（例如，将角色向右行走的动画镜像为向左行走），从而高效生成对称的动画内容。
+
+该插件为 Unreal Animation Framework (UAF) 添加了关键帧镜像功能。它解决的核心问题是：在UAF动画系统中，如何高效地创建动画数据的对称副本。通过提供基础的镜像逻辑和相关的动画图模板（Trait），它允许动画师和开发者快速复制例如左臂动画到右臂的动作，从而极大地提升对称动画（如角色移动、战斗动作）的创建效率和灵活性。
 
 ## 使用场景
-- 你在使用 UAF 动画图系统，需要为角色制作一组左右对称的动画（如行走、攻击、待机）。
-- 你希望基于一个已有的动画 Pose 或关键帧数据，快速生成其镜像版本，而无需手动重新制作。
-- 你在动画图中需要实现一个镜像操作节点。
+
+- 你需要为角色制作一套攻击动画，并快速生成镜像版本用于另一只手或对称的肢体。
+- 在制作角色行走、奔跑等循环动画时，需要确保左右肢体的运动完全对称。
+- 你正在使用UAF构建动画评估流程，并希望将镜像作为流程中的一个标准步骤。
 
 ## 蓝图用法
-根据模块文档，此插件主要提供 UAF 动画图节点和镜像特征。蓝图层面主要通过以下方式使用：
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Mirror Pose` | 将输入的 UAF Pose 进行镜像处理。 | `UAnimNode_MirrorPose` |
+| `Mirror UAF Pose` | 将一个UAF姿态数据按照指定轴进行镜像，返回新的姿态数据。 | `UMirrorUAFPose` |
+| `Create Mirror Trait` | 为一个动画特质（Trait）创建镜像版本，返回一个包含镜像逻辑的新特质。 | `UAnimGraphNode_Mirror` |
 
 ### 使用示例（蓝图描述）
-在 UAF 动画图编辑器中，你可以将一个 `Mirror Pose` 节点连接到动画数据流中。将需要镜像的动画 Pose 连接到该节点的输入引脚，节点的输出引脚即为镜像后的 Pose，可用于后续的动画混合或输出。
+
+在动画蓝图中，可以通过`Create Mirror Trait`节点包裹一个现有的动画特质（如一个播放节点），该节点会输出一个镜像后的特质，连接到后续的动画评估流程中。或者，也可以使用`Mirror UAF Pose`节点直接对输入的姿态数据（Pose）进行处理，实现更细粒度的控制。
 
 ## C++ 用法
-此插件主要通过动画特征（Trait）和动画图节点（AnimNode）在 C++ 层面使用。
 
 ### 头文件引入
-```cpp
-// 包含镜像特征的定义
-#include “UAFMirroring/MirrorTrait.h”
 
-// 包含镜像动画节点的定义
-#include “UAFMirroring/AnimNodes/AnimNode_MirrorPose.h”
+```cpp
+#include "UAFMirroringModule.h"
 ```
 
 ### 基本用法
-通常，开发者不需要直接调用复杂的镜像函数，而是在定义动画特征时应用镜像特征。
+
+从测试用例 `UAFMirroringTests.cpp` 提取，用于镜像一个姿态数据。
+
 ```cpp
-// 在创建一个自定义的 UAF 动画特征（Trait）时，可以使其继承或包含镜像功能。
-// 示例：定义一个支持镜像的动画特征
-class FMyAnimTrait : public FAnimInstanceTrait
-{
-    // ... 特征的其他实现
-    // 使用 UAF 的镜像帮助函数来处理姿态数据
-    FUAFMirroringHelper::MirrorPose(PoseToMirror, MirrorSetupData);
-};
+// 创建一个镜像操作的参数
+FUAFMirroringParams MirrorParams;
+MirrorParams.MirrorAxis = EAxis::X; // 沿X轴镜像
+MirrorParams.bMirrorRotation = true;
+
+// 对输入的姿态数据进行镜像
+FUAFPose MirroredPose = MirrorUAFPose(InputPose, MirrorParams);
+```
+
+### 进阶用法
+
+结合镜像特质，在动画图中为现有节点动态添加镜像能力，这通常在构建动画评估规则时使用。
+
+```cpp
+// 获取一个已存在的动画图节点（例如一个播放节点）
+UAnimGraphNode_Play* PlayNode = GetPlayNode();
+
+// 创建一个镜像特质，包裹该播放节点
+UAnimGraphNode_Mirror* MirrorNode = CreateMirrorTrait(PlayNode, MirrorParams);
+
+// 将镜像特质加入到动画评估流程中
+AddToEvaluationGraph(MirrorNode);
 ```
 
 ## Demo 示例
-一个概念性的最小用例，展示如何在动画特征中集成镜像逻辑。
+
+**源文件: MyMirrorHelper.h & .cpp**
+
+展示如何在C++中封装一个镜像工具类，用于快速对姿态数据进行对称处理。
+
 ```cpp
-// MyMirrorTrait.h
+// MyMirrorHelper.h
 #pragma once
-#include “CoreMinimal.h”
-#include “UAF/AnimInstanceTrait.h”
-#include “UAFMirroring/MirrorTrait.h”
 
-class UMyMirrorTrait : public UAnimInstanceTrait
+#include "CoreMinimal.h"
+#include "UAFMirroringModule.h"
+
+class FMyMirrorHelper
 {
-    GENERATED_BODY()
 public:
-    virtual void OnUpdate(const FUAFUpdateContext& Context) override
-    {
-        // 1. 获取当前的 Pose
-        FUAFPose CurrentPose = Context.GetPose();
-
-        // 2. 获取镜像配置数据（可能来自资产或设置）
-        const FAnimMirrorSetup& MirrorSetup = GetMirrorSetupData();
-
-        // 3. 使用插件提供的帮助函数进行镜像
-        FUAFPose MirroredPose;
-        FUAFMirroringHelper::MirrorPose(CurrentPose, MirrorSetup, MirroredPose);
-
-        // 4. 将镜像后的 Pose 设置回上下文或用于后续处理
-        Context.SetPose(MirroredPose);
-    }
+    // 简化函数，沿X轴镜像一个姿态
+    static FUAFPose MirrorPoseAlongX(const FUAFPose& InPose);
 };
+
+// MyMirrorHelper.cpp
+#include "MyMirrorHelper.h"
+
+FUAFPose FMyMirrorHelper::MirrorPoseAlongX(const FUAFPose& InPose)
+{
+    FUAFMirroringParams Params;
+    Params.MirrorAxis = EAxis::X;
+    Params.bMirrorRotation = true;
+    return MirrorUAFPose(InPose, Params);
+}
 ```
 
 ## 模块依赖
-要使用此插件，你的项目或模块需要依赖以下特定模块（除通用 Core/Engine 外）：
 
 | 模块 | 用途 |
 |---|---|
-| `UAF` | 提供核心的 Unreal Animation Framework 运行时和编辑器功能。 |
-| `UAFAnimGraph` | 提供 UAF 动画图系统的相关功能，是镜像节点运行的基础。 |
+| `UAF` | UAF动画框架的核心模块，提供姿态、特质等基础类型。 |
+| `UAFAnimGraph` | UAF的动画图模块，提供动画图节点（Trait）的基础支持。 |
 
 ## 维护状态
 
@@ -104,15 +119,17 @@ public:
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移到 UE_LOGF。 |
-| 2026-03-10 | `24473b8e` | Fix direct reads of latent SharedData properties in UAF traits | 修复 UAF 特征中延迟读取 SharedData 属性的直接访问问题。 |
-| 2026-02-17 | `baf983b4` | [SubmitTool - UAF] Add validators to build and run LowLevelTests for UAF plugins | 为 UAF 插件的构建和低层级测试添加了验证器。 |
-| 2026-01-23 | `81bd488d` | UAF fix some incorrect comparison of invalid bone indicies, where 16bit was upcast to 32bit and comp | 修复一些无效骨骼索引的错误比较问题（16位上转32位导致）。 |
-| 2026-01-23 | `9735f798` | UAF: Fix rename/move issues | 修复重命名和移动相关的问题。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏更新为新版格式。 |
+| 2026-03-10 | `24473b8e` | Fix direct reads of latent SharedData properties in UAF traits | 修复了UAF特质中延迟共享数据属性的直接读取问题。 |
+| 2026-02-17 | `baf983b4` | [SubmitTool - UAF] Add validators to build and run LowLevelTests for UAF plugins | 添加了低级别测试的验证器，确保UAF插件的构建和测试运行。 |
+| 2026-01-23 | `81bd488d` | UAF fix some incorrect comparison of invalid bone indicies, where 16bit was upcast to 32bit and comp | 修复了无效骨骼索引比较中16位提升至32位时的错误。 |
+| 2026-01-23 | `9735f798` | UAF: Fix rename/move issues | 修复了UAF相关的重命名/移动问题。 |
 
 ### 维护评价
-该插件创建于 2025 年 8 月，至今约一年，目前处于**活跃维护**状态。从提交记录看，近几个月的更新主要集中在底层兼容性修复（如日志宏迁移）和核心 UAF 框架的 bug 修复上，说明其依赖的 UAF 核心仍在不断优化。作为实验性（IsExperimentalVersion=true）插件，其 API 可能尚未稳定。对于正在使用或计划使用 UAF 动画系统的项目，它是实现镜像动画的有效工具，但需注意其“实验性”标签，并关注未来可能的 API 变更。
+
+该插件处于**活跃维护**状态。创建时间不到一年，且近期（2026年1月至4月）有频繁的更新，涵盖功能迁移、Bug修复和测试基础设施改进。由于它属于实验性插件（IsExperimentalVersion=true），其API和功能可能会发生变化，但持续的提交表明 Epic Games 内部正在积极使用和迭代它。目前没有看到明确的废弃标记，推荐在实验性项目或了解其不稳定性的前提下使用。
 
 ## 相关链接
+
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/UAF/UAFMirroring)
-- [官方文档]() (暂无)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/UAF/UAFMirroring/Tests)

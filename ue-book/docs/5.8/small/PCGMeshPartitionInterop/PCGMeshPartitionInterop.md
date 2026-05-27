@@ -1,225 +1,236 @@
-# PCG Mesh Partition Interop
+# Procedural Content Generation Framework (PCG) Mesh Partition Interop
 
 > Interoperability of Mesh Partition with PCG.
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 网格分区PCG桥接 |
+| 中文名 | PCG网格分区互操作 |
 | 分类 | Mesh Partition |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、PCG节点） |
+| 包含内容 | ✅ 有（蓝图资产、材质模板） |
 | 模块 | `PCGMeshPartitionInterop` (Runtime), `PCGMeshPartitionInteropEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-03-05 |
-| 年龄标签 | 🆕（约 1 年） |
+| 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PCGMeshPartitionInterop) | |
 
 ## 用途
 
-这个插件的核心功能是建立 **PCG（程序化内容生成）框架** 与 **Mesh Partition（网格分区）系统** 之间的双向数据桥梁。它解决了两个关键问题：
+该插件旨在为 **PCG (Procedural Content Generation)** 框架与 **Mesh Partition (网格分区，又称 Mega Mesh)** 系统之间建立桥梁。它解决的核心问题是：**如何在 PCG 生成流程中程序化地采样、修改和查询由网格分区系统构建的大型网格（Mega Mesh）**。
 
-1.  **数据读取 (PCG -> Mesh Partition)**：允许 PCG 图表查询 Mesh Partition 系统中的几何体信息（如地形、大型建筑）。通过射线检测或空间查询，PCG 可以获取网格表面的位置、法线、UV 坐标等属性，从而在正确的位置和朝向上生成点、实例或其它内容。
-2.  **数据写入 (PCG -> Mesh Partition)**：允许 PCG 图表通过生成并应用 **修改器 (Modifier)** 来反向影响 Mesh Partition 系统。例如，使用 PCG 生成的点来移动网格顶点、写入权重通道数据、或植入投影网格实例，从而实现程序化的地形塑形、纹理绘制或细节添加。
+Mesh Partition 系统用于管理大型、可变形的地形或建筑网格，并支持基于层的修改器栈。本插件通过提供专门的 PCG 节点和数据类型，允许 PCG 图：
+1.  **查询** Mega Mesh 的表面信息（如高度、法线、权重通道），用于生成点集（如植被、道具）。
+2.  **写入** 数据到 Mega Mesh 的修改器中，从而动态地变形或绘制权重。
+3.  **监听** Mega Mesh 层的变更，以触发 PCG 图的重新生成。
 
-简而言之，它让 PCG 不仅能“读取”大型程序化网格世界，还能“写入”并改变这个世界。
+它使得开放世界内容生成能够与动态修改的网格地形或建筑结构进行深度交互。
 
 ## 使用场景
 
-*   **程序化地形与环境生成**：你使用 Mesh Partition 创建了一个大型可编辑地形。现在想用 PCG 在上面程序化地生成树木、岩石或道路。你需要 **PCG Query** 节点来采样地形表面位置，以确保生成物附着在地面上。
-*   **程序化地形塑形**：你希望根据某种规则（如噪声函数、或依据已有的植被分布）动态调整地形高度或形状。你可以使用 PCG 生成点，然后通过 **Mesh Partition Write** 节点将这些点作为源/目标位置，驱动网格顶点移动。
-*   **程序化纹理/权重绘制**：你正在制作一个支持多层纹理混合的地形。希望 PCG 能根据生物群落、海拔等规则，自动将混合权重（如“草地”、“岩石”通道的权重）绘制到地形网格上。这可以通过 **Sculpt Layer Write** 或 **Write** 节点的通道写入功能实现。
-*   **动态投影与实例化**：需要在地形表面特定区域（如道路、平台）上投影网格或实例化物体。使用 **Projection Spawner** 或 **Patch Instance Spawner** 节点，根据 PCG 点的属性来放置和控制这些修改器实例。
+-   你需要基于一个大型、可程序化修改的网格（如动态地形）生成植被或建筑群 → 使用 `Mesh Partition Query` 节点采样表面。
+-   你需要通过 PCG 图将散布的物体“绘制”或“雕刻”到网格表面上 → 使用 `Mesh Partition Write` 或 `Sculpt Layer Write` 节点。
+-   你需要将预制的网格模型（如岩石、树木模型）投影到 Mega Mesh 表面上，并遵循其法线 → 使用 `Projection Instance Spawner` 节点。
+-   你的 PCG 流程需要在 Mega Mesh 的某个修改层完成后才能执行 → 使用基于层的监听选择键（`FPCGLayerSelectionKey`）。
 
 ## 蓝图用法
 
-插件的核心蓝图 API 集中在数据采样和 PCG 节点上。
+本插件的核心功能通过 **PCG 图节点** 在蓝图编辑器中使用。这些节点基于源码中的 `UPCGSettings` 类，提供了丰富的参数供调整。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Sample Point` | 在 Mesh Partition 数据上采样一个点，返回位置、法线等 | `UPCGMeshPartitionData` |
-| `Create Point Data` | 将 Mesh Partition 数据（在指定边界内）转换为 PCG 点数据 | `UPCGMeshPartitionData` |
-
-### 核心 PCG 节点（设置类）
-
-这些类在 PCG 图表编辑器中作为节点使用：
-
-| 功能分类 | 节点设置类 | 节点名（在编辑器中） |
-|---|---|---|
-| **查询数据** | `UPCGQuerySettings` | Mesh Partition Query |
-| **查询地形段** | `UPCGGetMeshTerrainSectionSettings` | Get Mesh Terrain Section |
-| **获取通道纹理** | `UPCGGetMeshTerrainSectionChannelTexturesSettings` | Get Mesh Terrain Section Channel Textures |
-| **获取植被类型** | `UPCGGetMeshPartitionGrassTypesSettings` | Get Mesh Partition Grass Types |
-| **获取像素尺寸** | `UPCGGetMeshPartitionTexelSizesSettings` | Get Mesh Partition Texel Sizes |
-| **烘焙网格纹理** | `UPCGGBakeMeshTerrainSectionMeshSettings` | Bake Mesh Terrain Section Mesh |
-| **写入顶点/通道** | `UPCGWriteSettings` | Mesh Partition Write |
-| **雕刻层写入** | `UPCGSculptLayerWriteSettings` | Mesh Partition Sculpt Layer Write |
-| **生成投影修改器** | `UPCGProjectionSpawnerSettings` | Mesh Partition Projection Instance Spawner |
-| **生成斑块修改器** | `UPCGPatchInstanceSpawnerSettings` | Mesh Partition Patch Instance Spawner |
+| `Mesh Partition Query` | 从 Mega Mesh 中采样表面数据（点、法线、通道）并输出为 PCG 点集。 | `UPCGQuerySettings` |
+| `Mesh Partition Write` | 将 PCG 点数据写入到 Mega Mesh 的指定修改器中，用于移动顶点或设置权重通道。 | `UPCGWriteSettings` |
+| `Mesh Partition Sculpt Layer Write` | 通过雕刻层修改器直接编辑 Mega Mesh 的顶点位置和权重通道。 | `UPCGSculptLayerWriteSettings` |
+| `Projection Instance Spawner` | 将动态网格数据（如模型）作为实例投影到 Mega Mesh 表面上。 | `UPCGProjectionSpawnerSettings` |
+| `Patch Instance Spawner` | 在 Mega Mesh 表面上基于点数据生成“补丁”形状的修改器实例。 | `UPCGPatchInstanceSpawnerSettings` |
+| `Get Mesh Terrain Section` | 获取与生成体积重叠的网格地形分区数据。 | `UPCGGetMeshTerrainSectionSettings` |
+| `Get Mesh Partition Grass Types` | 从网格分区定义的材质中读取景观草地类型信息。 | `UPCGGetMeshPartitionGrassTypesSettings` |
+| `Bake Mesh Terrain Section Mesh` | 将网格地形分区的网格通过 UV 展开渲染到纹理中。 | `UPGBakeMeshTerrainSectionMeshSettings` |
 
 ### 使用示例（蓝图描述）
 
-**示例：在地形表面采样位置来放置物体**
+在 PCG 图中，典型流程如下：
 
-1.  在 PCG 图表中，添加一个 **Get Mesh Terrain Section** 节点来获取地形段数据。
-2.  将其输出连接到一个 **Get Mesh Terrain Section Channel Textures** 节点，以获取纹理信息。
-3.  添加一个 **Mesh Partition Query** 节点。
-4.  配置 `Query Params`：设置 `Query Type` 为 `Final` 以获取最终网格。在 `Attributes` 分类下，勾选 `bGetImpactPoint` 和 `bGetImpactNormal` 以获取命中点的世界位置和法线。
-5.  使用 `Sample Point` 函数（在代码中）或通过后续的 **Create Point Data** 节点，将查询结果转换为 PCG 点。
-6.  将这些点用于生成物体（如 Static Mesh Spawner），确保物体放置在地形表面并朝向正确。
+1.  **采样并生成点**：添加一个 `Mesh Partition Query` 节点。在节点的 `QueryParams` 设置中，指定查询类型（如 `Base` 或 `Final`）、射线参数和所需通道。将其输出连接到需要基于表面生成内容的后续节点（如筛选器、点操作器）。
+2.  **修改网格**：添加一个 `Mesh Partition Write` 节点。通过输入引脚连接一个包含点数据（或包含源/目标位置属性的属性集）的 PCG 数据流。在节点设置中指定要影响的 Mega Mesh Actor 和修改器参数。
+3.  **响应变更**：对于需要实时更新的 PCG 图，在图的触发器或属性绑定中，可以设置监听由 `FPCGLayerSelectionKey` 或 `FPCGGlobalSelectionKey` 标识的事件，当对应的 Mega Mesh 层发生变化时自动重新生成图。
 
 ## C++ 用法
+
+对于需要高级控制或集成到自定义系统中的情况，可以通过 C++ 使用本插件提供的数据类和组件。
 
 ### 头文件引入
 
 ```cpp
-#include "PCGMeshPartitionData.h" // 核心数据类
-#include "PCGMeshPartitionQuery.h" // 查询节点相关
-#include "PCGMeshPartitionWrite.h" // 写入节点相关
+#include "PCGMeshPartitionInteropModule.h"
+#include "PCGMeshPartitionData.h"
+#include "PCGDataComponent.h"
 ```
 
 ### 基本用法
 
-从测试用例或使用场景中，我们通常需要先获取 `UPCGMeshPartitionData`，然后采样或创建点数据。
-
+以下示例展示了如何手动创建和使用一个 `UPCGMeshPartitionData` 对象来执行查询。
 ```cpp
-// 假设我们有一个已经初始化好的 UPCGMeshPartitionData* MeshPartitionData
-// （例如，通过 FPCGMeshPartitionElementContext 获得）
+// 假设你已有一个 UWorld、变换和包围盒
+UWorld* MyWorld = GetWorld();
+FTransform MyTransform = ...;
+FBox MyBounds = ...;
 
-// 1. 设置查询参数
-MeshPartition::FPCGQueryParams QueryParams;
-QueryParams.QueryType = MeshPartition::EPCGQueryType::Final;
-QueryParams.bGetImpactPoint = true;
-QueryParams.bGetImpactNormal = true;
+// 创建数据对象
+UPCGMeshPartitionData* PartitionData = NewObject<UPCGMeshPartitionData>();
 
-// 2. 采样单个点
-FPCGPoint SampledPoint;
-FTransform SampleTransform = FTransform(FVector(1000, 500, 0)); // 世界坐标系下的一个位置
-FBox SampleBounds = FBox(SampleTransform.GetLocation() - FVector(100), SampleTransform.GetLocation() + FVector(100));
+// 配置查询参数
+MeshPartition::FPCGQueryParams& Params = PartitionData->QueryParams;
+Params.QueryType = MeshPartition::EPCGQueryType::Final;
+Params.bGetImpactPoint = true;
+Params.bGetImpactNormal = true;
+// ... 设置其他参数
 
-// 采样函数会执行射线检测或其他查询
-if (MeshPartitionData->SamplePoint(SampleTransform, SampleBounds, SampledPoint, nullptr))
+// 初始化（内部会开始异步收集 Section 数据）
+PartitionData->Initialize(nullptr /* InPCGContext */, MyWorld, MyTransform, MyBounds);
+
+// 等待数据准备就绪（简化示例，实际需要检查 IsDataReady）
+// 注意：在游戏线程中轮询或使用回调
+if (PartitionData->IsDataReady())
 {
-    // 使用 SampledPoint.Transform.GetLocation() 获取命中位置
-    // 使用 SampledPoint.Transform.GetRotation() 获取法线方向（假设法线存储在旋转中）
-}
-
-// 3. 创建整个区域的点数据
-FBox QueryBounds = FBox(FVector(-5000, -5000, 0), FVector(5000, 5000, 10000));
-const UPCGPointData* PointData = MeshPartitionData->CreatePointData(Context, QueryBounds);
-
-if (PointData)
-{
-    const TArray<FPCGPoint>& Points = PointData->GetPoints();
-    for (const FPCGPoint& Point : Points)
+    // 执行一次采样
+    FPCGPoint SampledPoint;
+    UPCGMetadata* SampledMetadata = nullptr;
+    FTransform SampleTransform = ...;
+    FBox SampleBounds = ...;
+    
+    bool bHit = PartitionData->SamplePoint(SampleTransform, SampleBounds, SampledPoint, SampledMetadata);
+    if (bHit)
     {
-        // 遍历所有生成在指定边界内的点
+        // 使用采样到的点数据
+        FVector ImpactLocation = SampledPoint.Transform.GetLocation();
+        // ... 处理其他属性
     }
 }
 ```
-*来源推断：基于 `PCGMeshPartitionData.h` 中 `SamplePoint` 和 `CreatePointData` 的声明。*
+*（参考 `Private/Data/PCGMeshPartitionData.h` 中的 `UPCGMeshPartitionData` 类定义）*
 
 ### 进阶用法
 
-C++ 中更常见的用途是与 PCG 框架深度集成，特别是当需要自定义 PCG 节点或处理修改器资源时。核心在于通过 `GetPCGMegaMeshModifierResource` 等辅助函数管理修改器组件的生命周期。
-
+监听 Mega Mesh 的层变化事件，以触发自定义逻辑。
 ```cpp
-#include "MeshPartitionPCGUtils.h" // 包含修改器资源管理
+#include "PCGMeshPartitionSelectionKey.h"
 
-// 在一个自定义的 PCG Element 中，你可能需要获取或创建一个修改器资源
-UPCGManagedModifierResource* ModifierResource = GetPCGMegaMeshModifierResource<UPCGManagedModifierResource>(Context, SettingsCrc, ModifierType, Priority, bSupportsComponentReset);
+// 在某个需要监听的上下文类（如自定义的 PCG Settings 或 Manager）中
+FPCGLayerSelectionKey MyListenerKey(
+    MeshPartition::EPCGQueryType::Intermediate,
+    FName("MyLayer"),
+    0.0, // SubPriority
+    false,
+    EPCGLayerSelectionKeyType::Listener // 标记为监听键
+);
 
-if (ModifierResource)
-{
-    // 获取或设置实际的修改器组件
-    MeshPartition::UModifierComponent* ModComp = ModifierResource->GetComponent();
-    if (!ModComp)
-    {
-        // 如果组件不存在，可能需要创建
-        // ... 创建逻辑 ...
-        ModifierResource->Initialize(NewModComp, SettingsCrc);
-    }
-
-    // 使用 ModifierComponent 进行网格修改操作
-    // ... ModComp->SetSomeParameter(...); ...
-}
+// 注册到 PCG 的选择系统（具体 API 需参考 PCG 框架）
+// 当名为 “MyLayer” 的层或更高层级发生修改时，PCG 框架会通过此键通知依赖的节点进行重新生成。
 ```
-*来源：基于 `MeshPartitionPCGUtils.h` 中 `UPCGManagedModifierResource` 的声明和使用模式推断。*
+*（参考 `Private/Data/PCGMeshPartitionSelectionKey.h` 中的 `FPCGLayerSelectionKey` 定义）*
 
 ## Demo 示例
 
-以下是一个最小化的 C++ 示例，展示如何在自定义 Actor 中集成 PCG 组件，并触发一个使用 `PCGMeshPartitionQuery` 节点的 PCG 图表。
-
+一个最小的 PCG 图操作示例，展示如何在 C++ 中配置并执行一个查询节点。
 ```cpp
-// MyPCGActor.h
+// MegaMeshDemo.h
 #pragma once
-
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "PCGComponent.h"
-#include "MyPCGActor.generated.h"
+#include "Components/ActorComponent.h"
+#include "PCGMeshPartitionQuery.h"
+#include "MegaMeshDemo.generated.h"
 
-UCLASS()
-class AMyPCGActor : public AActor
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+class UMegaMeshDemoComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
-    AMyPCGActor();
-
-protected:
     virtual void BeginPlay() override;
 
-    // PCG 组件，用于驱动程序化生成
-    UPROPERTY(VisibleAnywhere, Category = "PCG")
-    TObjectPtr<UPCGComponent> PCGComponent;
+    UPROPERTY(EditAnywhere, Category = "Demo")
+    TSoftObjectPtr<AMeshPartition> TargetMegaMesh;
 
-    // 触发 PCG 生成的函数
-    UFUNCTION(BlueprintCallable, Category = "PCG")
-    void TriggerPCGGeneration();
+private:
+    void ExecuteMeshQuery();
+
+    UPROPERTY()
+    TObjectPtr<UPCGQuerySettings> QuerySettings;
+    
+    UPROPERTY()
+    TObjectPtr<FPCGMeshPartitionQueryElement> QueryElement;
 };
 
-// MyPCGActor.cpp
-#include "MyPCGActor.h"
-#include "PCGGraph.h"
-#include "PCGSubsystem.h"
+// MegaMeshDemo.cpp
+#include "MegaMeshDemo.h"
+#include "MeshPartitionPCGUtils.h"
 
-AMyPCGActor::AMyPCGActor()
-{
-    PCGComponent = CreateDefaultSubobject<UPCGComponent>(TEXT("PCGComponent"));
-    PCGComponent->SetIsPartitioned(false); // 根据需要设置
-    // 设置一个包含 “Mesh Partition Query” 节点的 PCG 图表资产
-    // PCGComponent->SetGraph(LoadObject<UPCGGraph>(nullptr, TEXT("/Game/PCGGraphs/PG_MyMeshPartitionQuery")));
-}
-
-void AMyPCGActor::BeginPlay()
+void UMegaMeshDemoComponent::BeginPlay()
 {
     Super::BeginPlay();
-    // 游戏开始时可以自动生成，或由其他逻辑触发
-    // PCGComponent->Generate();
+    ExecuteMeshQuery();
 }
 
-void AMyPCGActor::TriggerPCGGeneration()
+void UMegaMeshDemoComponent::ExecuteMeshQuery()
 {
-    if (PCGComponent && PCGComponent->GetGraph())
+    if (!TargetMegaMesh.IsValid())
     {
-        // 清理并重新生成，确保应用最新的 Mesh Partition 数据
-        PCGComponent->Cleanup();
-        PCGComponent->Generate();
+        UE_LOG(LogTemp, Warning, TEXT("MegaMeshDemo: Target Mega Mesh is not valid."));
+        return;
     }
+
+    // 创建查询设置对象
+    QuerySettings = NewObject<UPCGQuerySettings>(GetTransientPackage());
+    QuerySettings->QueryParams.QueryType = MeshPartition::EPCGQueryType::Final;
+    QuerySettings->QueryParams.bGetImpactPoint = true;
+
+    // 创建执行元素
+    QueryElement = new FPCGMeshPartitionQueryElement();
+
+    // 创建执行上下文并初始化（需要手动管理生命周期）
+    FPCGMeshPartitionElementContext* Context = static_cast<FPCGMeshPartitionElementContext*>(QueryElement->CreateContext());
+    // ... 配置 Context（例如绑定到当前世界）
+
+    // 执行查询（注意：实际执行是分帧和异步的，此为简化演示）
+    QueryElement->ExecuteInternal(Context);
+    
+    // 从 Context 中获取结果
+    if (Context->SurfaceData)
+    {
+        // 使用 QueryElement 生成的 SurfaceData 进行后续操作...
+        // 例如，可以调用 SurfaceData->CreatePointData() 来获取查询结果点。
+    }
+    
+    // 清理
+    delete Context;
+    QueryElement = nullptr;
 }
 ```
 
 ## 模块依赖
 
-使用此插件时，你的游戏模块需要在 `.Build.cs` 文件中添加以下独特依赖：
+要在你的模块中使用此插件的功能，需要在 `.Build.cs` 文件中添加以下依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `PCG` | PCG 框架核心模块 |
-| `MeshPartition` | 网格分区系统核心模块 |
-| `PCGGeometryScriptInterop` | PCG 与 Geometry Script 的桥接，可能用于网格处理 |
+| `PCG` | 核心的 PCG 框架，所有 PCG 节点和数据类型的基础。 |
+| `MeshPartition` | 网格分区（Mega Mesh）系统的核心模块，提供 `AMeshPartition`、修改器等基础类。 |
+| `PCGGeometryScriptInterop` | 提供 PCG 与 Geometry Script 的互操作支持，本插件的某些几何处理功能可能依赖它。 |
+| `PCGMeshPartitionInterop` | 本插件的运行时模块，包含数据类型、查询/写入元素等。如果你的模块需要在运行时与网格分区 PCG 数据交互，必须依赖此模块。 |
+| `PCGMeshPartitionInteropEditor` | 本插件的编辑器模块。如果你的模块是一个编辑器工具，需要集成或扩展这些 PCG 节点，则依赖此模块。 |
+
+**示例 Build.cs 片段**:
+```csharp
+PublicDependencyModuleNames.AddRange(new string[] {
+    "Core",
+    "PCG",
+    "MeshPartition",
+    "PCGMeshPartitionInterop" // 如果需要运行时功能
+});
+```
 
 ## 维护状态
 
@@ -227,21 +238,24 @@ void AMyPCGActor::TriggerPCGGeneration()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `99ccb29e` | [PCG] Fix crash in BakeMeshAttr/BakeMeshTerrainSection reading RHI resources that either aren't resi | 修复烘焙节点读取未驻留 RHI 资源导致的崩溃。 |
-| 2026-05-14 | `82d81c0e` | [PCG] Add Bake Mesh Terrain Section Mesh node | 新增“烘焙地形段网格”节点，可将网格渲染为纹理。 |
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下双精度常量截断为浮点数的编译警告。 |
-| 2026-05-13 | `0fc2fa0f` | [PCG] Track Final layer key for refresh on modifier changes in Get Mesh Terrain Section node | 在获取地形段节点中，跟踪最终层以在修改器变化时刷新。 |
-| 2026-05-13 | `6cf8f045` | [PCG] Fix GPU crash arising from binding a compressed texture as a UAV which is not supported. | 修复将压缩纹理绑定为 UAV 导致的 GPU 崩溃。 |
+| 2026-05-22 | `99ccb29e` | [PCG] Fix crash in BakeMeshAttr/BakeMeshTerrainSection reading RHI resources that either aren't resi | 修复了在烘焙网格属性或地形网格时，因读取未驻留RHI资源导致的崩溃。 |
+| 2026-05-14 | `82d81c0e` | [PCG] Add Bake Mesh Terrain Section Mesh node | 新增“烘焙网格地形分区网格”节点，支持将网格渲染到纹理。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下，双精度常量截断为浮点数产生的警告代码。 |
+| 2026-05-13 | `0fc2fa0f` | [PCG] Track Final layer key for refresh on modifier changes in Get Mesh Terrain Section node | 使“获取网格地形分区”节点能监听最终层修改器的变化以触发刷新。 |
+| 2026-05-13 | `6cf8f045` | [PCG] Fix GPU crash arising from binding a compressed texture as a UAV which is not supported. | 修复了因将压缩纹理绑定为UAV（不支持）而导致的GPU崩溃。 |
 
 ### 维护评价
 
-*   **创建时间**：插件于 **2026年3月** 创建，非常新。
-*   **维护活跃度**：**非常活跃**。从提交记录看，在 **2026年5月** 仍有密集的功能开发（新增节点）和关键性 Bug 修复。
-*   **状态**：**实验性**（`IsExperimentalVersion: true`），且**默认禁用**（`EnabledByDefault: false`）。这表明它是 Epic 内部正在积极开发但尚未稳定的前沿功能。
-*   **推荐度**：适合对最新 PCG 与网格分区集成技术有探索兴趣，或正在开发需要该特定功能的项目的开发者。由于处于实验阶段，在生产项目中使用需谨慎，可能面临 API 变更、不完善或性能问题。建议关注其后续的版本迭代。
+该插件于 **2026年3月** 创建，是**全新的实验性插件**。
+从近期提交记录（截至2026年5月）来看，它正处于**非常活跃的开发阶段**。更新内容主要是**功能添加**（如新节点）和**稳定性修复**（关键崩溃修复、GPU兼容性问题）。
+
+**注意事项**：
+1.  **实验性**：该插件标记为 `IsExperimentalVersion: true` 且 `EnabledByDefault: false`，这意味着其API和行为可能在未通知的情况下发生重大变更。
+2.  **依赖关系**：它深度依赖同样可能处于实验阶段的 `MeshPartition` 插件。
+3.  **推荐**：对于**研究、原型开发或内部项目**，如果希望利用PCG与大型可修改网格交互，可以谨慎尝试。对于**生产环境**，建议等待其从实验阶段毕业，或密切关注其变更日志。
 
 ## 相关链接
 
-*   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PCGMeshPartitionInterop)
-*   [官方文档](https://docs.unrealengine.com/latest/en-US/procedural-content-generation--framework-in-unreal-engine/)
-*   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PCGMeshPartitionInterop/Tests) （如果存在）
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PCGMeshPartitionInterop)
+- [官方文档](https://docs.unrealengine.com/latest/en-US/procedural-content-generation--framework-in-unreal-engine/)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PCGMeshPartitionInterop/Tests)（如果存在）

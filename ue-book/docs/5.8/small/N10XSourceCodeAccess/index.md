@@ -1,4 +1,4 @@
-# N10X Source Code Access
+# 10X Editor Integration
 
 > Allows access to source code in the 10X Editor .
 
@@ -16,124 +16,53 @@
 
 ## 用途
 
-此插件为 Unreal Engine 编辑器提供了与 **10X Editor** 代码编辑器的集成能力。它实现了一个 `ISourceCodeAccessor` 接口，使得在虚幻编辑器中进行代码导航（如“跳转到定义”、“打开文件”）时，可以直接在已安装的 10X 编辑器中打开相应的源代码文件和行号，而不是使用默认的 Visual Studio 或其他编辑器。它解决了使用 10X 作为主要 IDE 的开发者在虚幻工作流中的代码跳转体验问题。
+该插件为 **10X Editor** 提供源代码访问集成。10X 是一款新兴的高性能代码编辑器，此插件实现了 UE5 的 `ISourceCodeAccessor` 接口，允许开发者在使用 10X Editor 时，能够从虚幻编辑器内部直接打开源代码文件、定位到特定行，并与引擎的编辑器工具链（如蓝图编译、错误定位、调试等）无缝集成。它解决了在自定义编辑器环境下开发 UE 项目时的源代码跳转与管理问题。
 
 ## 使用场景
 
-- 你在 Windows 平台上使用 10X Editor 作为你的主要 C++ IDE。
-- 你希望从虚幻编辑器的蓝图节点、错误日志或调试器中双击源代码文件时，能在 10X 编辑器中直接打开并定位到对应行。
+- 当你主要使用 **10X Editor** 进行 C++ 开发，但希望在虚幻编辑器中点击错误或蓝图节点时，能自动在 10X 中打开对应文件并定位。
+- 你希望将 10X Editor 设置为项目的默认源代码访问器，替代 Visual Studio 或 Xcode。
+- 你的开发环境仅限于 Windows（Win64），因为该插件仅支持此平台。
 
 ## 蓝图用法
 
-此插件主要在编辑器和模块层面工作，不直接暴露蓝图节点。其功能通过虚幻编辑器的“源代码访问”设置自动激活。
-
-### 核心节点
-
-无公开的蓝图节点。
-
-### 使用示例（蓝图描述）
-
-无需蓝图设置。安装并启用插件后，通过编辑器菜单 `编辑 -> 编辑器偏好设置 -> 通用 -> 源代码 -> 源代码编辑器` 选择 “10X Editor” 即可。
+此插件不提供任何蓝图可调用节点。它通过编辑器设置（`Editor Preferences -> Source Code`）进行配置，一旦被选为默认的源代码访问器，其功能将自动在后台运行。
 
 ## C++ 用法
 
-此插件主要提供模块级服务，C++ 代码通常不需要直接引用它，除非你需要编写类似的源代码访问器或与之交互。
+该插件的核心是 `F10XSourceCodeAccessor` 类，它实现了 `ISourceCodeAccessor` 接口。通常不需要直接在项目代码中调用，而是通过编辑器设置选择。
 
 ### 头文件引入
 
+要以编程方式与该插件交互，你可能需要引入其模块头文件，但这在常规项目中不常见。
 ```cpp
+// 如果需要直接访问插件模块，可以引入
 #include "N10XSourceCodeAccessModule.h"
 ```
 
-### 基本用法
+### 基本用法（配置）
 
-获取源代码访问器实例并调用其方法。以下示例展示了如何检查访问器是否可用并尝试打开一个文件。
+该插件通过编辑器偏好设置激活。在 C++ 中，没有直接调用的必要 API，其行为由引擎的源代码访问器管理系统统一调度。
 
-```cpp
-// 包含模块头文件
-#include "N10XSourceCodeAccessModule.h"
+### 进阶用法（接口参考）
 
-void ExampleOpenFile()
-{
-    // 获取模块实例
-    FN10XSourceCodeAccessModule& Module = FModuleManager::LoadModuleChecked<FN10XSourceCodeAccessModule>(TEXT("N10XSourceCodeAccess"));
-    
-    // 获取具体的访问器
-    F10XSourceCodeAccessor& Accessor = Module.GetAccessor();
-    
-    // 检查是否可以访问源代码（即 10X 编辑器是否就绪）
-    if (Accessor.CanAccessSourceCode())
-    {
-        // 尝试在指定行打开文件
-        FString FilePath = TEXT("/Game/Path/To/Your/File.cpp");
-        int32 LineNumber = 42;
-        Accessor.OpenFileAtLine(FilePath, LineNumber);
-    }
-}
-```
-
-### 进阶用法
-
-通常，你不直接调用这些方法。虚幻引擎的源代码导航系统（如错误列表的双击事件、蓝图节点的“跳转到源代码”）会在内部通过 `ISourceCodeAccessor` 接口自动调用这些方法。插件的功能体现在对编辑器集成的无缝替换上。
+从 `F10XSourceCodeAccessor` 的实现可以看到它支持以下核心操作，这些操作由引擎在需要时调用：
+- `OpenSolution`: 打开整个解决方案。
+- `OpenFileAtLine`: 在指定文件和行号处打开。
+- `OpenSourceFiles`: 打开多个源文件。
+- `SaveAllOpenDocuments`: 保存所有在 10X 中打开的文档。
 
 ## Demo 示例
 
-以下是一个最小的、演示如何访问和使用此插件提供的 `F10XSourceCodeAccessor` 的 C++ 类。
-
-**MySourceCodeUser.h**
-```cpp
-// Copyright Epic Games, Inc. All Rights Reserved.
-
-#pragma once
-
-#include "CoreMinimal.h"
-
-class F10XSourceCodeAccessor;
-
-class FMySourceCodeUser
-{
-public:
-    void Initialize();
-    void TryOpenFile(const FString& InFilePath, int32 InLineNumber);
-
-private:
-    F10XSourceCodeAccessor* AccessorPtr = nullptr;
-};
-```
-
-**MySourceCodeUser.cpp**
-```cpp
-// Copyright Epic Games, Inc. All Rights Reserved.
-
-#include "MySourceCodeUser.h"
-#include "N10XSourceCodeAccessModule.h"
-#include "N10XSourceCodeAccessor.h"
-
-void FMySourceCodeUser::Initialize()
-{
-    if (FModuleManager::Get().IsModuleLoaded("N10XSourceCodeAccess"))
-    {
-        FN10XSourceCodeAccessModule& Module = FModuleManager::GetModuleChecked<FN10XSourceCodeAccessModule>("N10XSourceCodeAccess");
-        AccessorPtr = &Module.GetAccessor();
-    }
-}
-
-void FMySourceCodeUser::TryOpenFile(const FString& InFilePath, int32 InLineNumber)
-{
-    if (AccessorPtr && AccessorPtr->CanAccessSourceCode())
-    {
-        AccessorPtr->OpenFileAtLine(InFilePath, InLineNumber);
-    }
-}
-```
+该插件是一个编辑器集成模块，没有面向游戏运行时或蓝图使用的公开 API 示例。其使用方式是通过编辑器设置进行配置。
 
 ## 模块依赖
 
-此插件的 `Build.cs` 文件仅依赖 `HotReload` 模块。对于使用者而言，无需特殊依赖。要使用此插件的服务，你的模块只需要标准的引擎模块依赖即可。
+从 Build.cs 中的依赖关系来看，该插件仅依赖于一个非标准模块：
 
 | 模块 | 用途 |
 |---|---|
-| `HotReload` | 插件内部用于热重载支持 |
+| `HotReload` | 用于支持代码热重载功能，这是源代码访问器与引擎编译系统交互的关键。 |
 
 ## 维护状态
 
@@ -141,18 +70,20 @@ void FMySourceCodeUser::TryOpenFile(const FString& InFilePath, int32 InLineNumbe
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2025-10-31 | `bbe97454` | Fix mismatched LOCTEXT_NAMESPACE and AllowWindowsPlatformTypes | 修复了本地化宏命名空间不匹配和Windows平台类型允许问题 |
-| 2025-03-25 | `3395567a` | PR #13018: 10x Source Code Editor: Fix files not opening when file path contains spaces | 修复了当文件路径包含空格时无法在10X编辑器中打开文件的bug |
-| 2024-10-07 | `d69a4c88` | [UE] Fix 10x source code accessor to pull the correct solution file name | 修复了获取错误解决方案文件名的问题 |
-| 2024-07-18 | `9eaacc95` | [Backout] - CL34912307 - CIS Valk Error | 回滚了之前的更改 |
-| 2024-07-18 | `413ba815` | [AutoRTFM] Migrate more critical sections to using the transactionally safe variants. | 将关键部分迁移到事务安全版本 |
+| 2025-10-31 | `bbe97454` | Fix mismatched LOCTEXT_NAMESPACE and AllowWindowsPlatformTypes | 修复本地化命名空间不匹配，并处理Windows平台特定类型 |
+| 2025-03-25 | `3395567a` | PR #13018: 10x Source Code Editor: Fix files not opening when file path contains spaces | 修复当文件路径包含空格时无法打开文件的问题 |
+| 2024-10-07 | `d69a4c88` | [UE] Fix 10x source code accessor to pull the correct solution file name | 修复获取正确解决方案文件名的问题 |
+| 2024-07-18 | `9eaacc95` | [Backout] - CL34912307 - CIS Valk Error | 回退一次提交以修复CI错误 |
+| 2024-07-18 | `413ba815` | [AutoRTFM] Migrate more critical sections to using the transactionally safe variants. | 将更多关键代码段迁移到事务安全变体 |
 
 ### 维护评价
 
-此插件创建于 2023 年中，是一个相对较新的集成插件。从 git 历史看，**仍在持续维护中**，最近一次更新在 2025 年 10 月，修复了本地化相关问题。维护频率不高，但修复都是针对具体问题的实质性改进（如路径空格处理）。鉴于其功能相对独立且专一，目前没有发现已知的重大问题或限制。**推荐使用 10X Editor 的 Windows 平台开发者启用此插件**。
+- **活跃维护**：插件创建于 2023 年，最新更新在 2025 年 10 月，间隔不足一年，且修复了具体的使用问题（如路径空格、解决方案文件名），表明仍在积极维护。
+- **状态稳定**：没有标记为实验性或测试版，且默认启用。
+- **平台限制**：仅支持 Win64，使用其他平台的开发者无法使用。
+- **推荐使用**：如果你在 Windows 上使用 **10X Editor** 作为主编辑器，这是一个推荐的、功能完善的集成插件。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/N10XSourceCodeAccess)
-- [官方文档]() （无）
-- [测试用例]() （未在提供的信息中发现测试文件）
+- [官方文档](https://epicgames.com)（无特定文档页，可参考编辑器源代码访问器通用文档）
