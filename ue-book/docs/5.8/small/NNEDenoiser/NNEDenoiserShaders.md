@@ -1,112 +1,204 @@
 # NNEDenoiser
 
-> Neural denoiser for the Unreal Path Tracer based on the Neural Network Engine (NNE).
+> Neural denoiser for the Unreal Path Tracer based on the Neural Network Engine (NNE).（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 神经网络降噪器 |
+| 中文名 | 神经去噪器 |
 | 分类 | Denoising |
 | 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（测试资产） |
+| 包含内容 | ✅ 有（计算着色器） |
 | 模块 | `NNEDenoiser` (Runtime), `NNEDenoiserShaders` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-08-26 |
-| 年龄标签 | 🆕（约 0 年） |
+| 年龄标签 | 🆕（约 2 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNEDenoiser) | |
 
 ## 用途
 
-本插件是一个利用神经网络（通过 NNE - 神经网络引擎）对 Unreal Engine 的路径追踪器（Path Tracer）输出进行实时降噪的工具。路径追踪渲染在计算收敛（收敛到无噪点）前会产生大量噪点，此插件旨在利用经过训练的神经网络模型，在路径追踪的中间结果上快速推断出干净的图像，从而让美术师能在编辑器中实时预览接近最终效果的渲染视图，极大地提升了交互式工作流的效率。
+此插件解决了 Unreal Engine **路径追踪器（Path Tracer）** 在渲染过程中产生大量噪点的问题。路径追踪通过模拟光线物理行为实现高质量渲染，但需要大量样本（SPP）才能获得干净结果，这导致渲染非常缓慢。
+
+NNEDenoiser 的核心作用是将 **神经网络推理** 与 **GPU 计算着色器** 结合，对路径追踪器的低样本（噪点）输出进行实时或近实时的去噪处理。它不仅仅是简单的降噪滤波，而是一个完整的图像处理管线，包括：
+1.  **输入预处理**：将路径追踪器输出的 RGB 颜色、反照率（Albedo）、法线（Normal）等数据，通过特定的转移函数（Transfer Function）转换为适合神经网络处理的格式。
+2.  **自动曝光计算**：通过分桶（Binning）和归约（Reduce）算法在 GPU 上高效计算场景平均亮度，用于自适应缩放输入数据。
+3.  **通道映射复制**：高效地在 GPU 纹理和缓冲区（NNE 张量）之间映射并复制数据，支持灵活的通道重排。
+4.  **神经网络推理**：调用 NNE（Neural Network Engine）运行时，执行用户提供的预训练神经网络模型。
+5.  **输出后处理**：将神经网络输出的张量数据转换回标准的渲染输出格式（如 HDR 颜色）。
+
+本质上，它为路径追踪器提供了一个 **AI 去噪后端**，使得在较低的 SPP 下也能获得接近收敛的高质量画面，显著提升了创作迭代效率。
 
 ## 使用场景
 
-- 你在进行建筑可视化、产品设计或电影预渲染时，使用路径追踪器（Path Tracer）进行交互式渲染预览。
-- 你希望在路径追踪尚未完全收敛（例如，仅用少量采样）时，就能看到一个干净的预览图，以便快速调整灯光、材质和构图。
-- 你需要一个与引擎深度集成的、基于GPU加速的降噪方案，而不是依赖第三方后处理软件。
+-   **你在使用 Unreal 的路径追踪器进行电影级渲染或产品可视化**：路径追踪质量高但慢，使用此插件可以在 1/4 甚至更低的样本数下，通过 AI 去噪获得干净的预览，极大加速灯光和材质的调优过程。
+-   **你需要在编辑器中实时预览路径追踪的最终效果**：启用此去噪器后，即使在 “进程式”（Progressive）模式下，画面也能快速变得清晰，提供更接近最终渲染的实时反馈。
+-   **你计划开发自定义的去噪后处理管线**：此插件的架构（预处理 -> 推理 -> 后处理）和模块化设计，可以作为开发自定义 AI 去噪方案的参考框架。
 
 ## 蓝图用法
 
-本插件主要作为路径追踪器的一个集成组件，不直接暴露蓝图可调用函数或属性。其降噪功能通常通过**项目设置**（Project Settings）或**渲染设置**（如 `r.PathTracer.Denoiser` 控制台变量）来启用和配置。
+**注意**：当前版本的 `NNEDenoiserShaders` 模块主要封装底层 GPU 计算逻辑，并未暴露任何 `BlueprintCallable` 或 `BlueprintReadWrite` 节点。去噪功能的配置和使用主要通过项目设置和 C++ API 进行。
 
-要启用此降噪器，请确保：
-1. 项目中启用了 `NNEDenoiser` 插件（默认已启用）。
-2. 在项目设置或控制台命令中将路径追踪的降噪器设置为 `NNEDenoiser`。
-3. 渲染视口使用路径追踪模式（例如，切换到“Path Tracing”视图模式）。
+### 核心配置（项目设置）
+
+插件的启用和模型选择通过编辑器中的 **项目设置** 完成：
+1.  打开 **项目设置（Project Settings）**。
+2.  导航至 **引擎（Engine） -> 渲染（Rendering） -> 去噪（Denoising）**。
+3.  你可以在此处为路径追踪器（Path Tracer）选择并配置一个基于 NNE 的去噪器。你需要提供一个包含合适神经网络模型的 `UNNEModelData` 资产。
+
+### 使用示例（蓝图描述）
+
+虽然无法在蓝图中直接调用去噪函数，但你可以通过蓝图控制渲染设置：
+1.  在蓝图中，通过 `Get Game User Settings` 节点获取 `UGameUserSettings` 对象。
+2.  使用 `Get Path Tracer Settings` 或类似节点访问路径追踪设置。
+3.  通常，去噪器的启用状态是绑定在路径追踪器整体设置上的，无法通过蓝图为单个视口独立开关。你需要确保在项目设置中已正确配置去噪器。
 
 ## C++ 用法
 
-本插件的核心功能作为引擎渲染模块的一部分，与路径追踪管线深度集成。对于大多数用户而言，无需直接进行 C++ 编程。其集成和使用主要通过引擎的渲染系统完成。
+用法主要涉及配置项目以使用特定的去噪模型，并可能实现自定义的去噪处理器。
 
 ### 头文件引入
 
-若需在自定义渲染通道或相关模块中使用本插件提供的特定着色器或功能，可引入以下头文件：
-
 ```cpp
-// 来自 NNEDenoiser 模块
-#include "NNEDenoiserModule.h"
-
-// 来自 NNEDenoiserShaders 模块 (用于自定义计算着色器)
-#include "Internal/NNEDenoiserShadersDefaultIOProcessCS.h"
+#include "NNEDenoiser.h"
+#include "NNERuntimeORT.h"
 ```
 
-### 基本用法
+### 基本用法：配置使用 NNE 去噪器
 
-以下代码片段展示了如何在引擎中引用 `NNEDenoiser` 模块。`NNEDenoiser` 本身是一个运行时模块，它的主要功能在引擎启动时由路径追踪系统自动加载和使用。开发者通常需要在 `Build.cs` 中声明依赖，而不是直接实例化它。
+此示例展示如何在 C++ 中设置路径追踪器使用 NNE 去噪器（通常已在项目设置中完成）。
+**来源参考**：测试用例通常模拟项目设置流程。
 
 ```cpp
-// 在你的模块构建脚本 (.Build.cs) 中添加对 NNEDenoiser 的依赖
-PublicDependencyModuleNames.AddRange(new string[] {
-    "NNEDenoiser" // 如果你需要访问该模块导出的特定接口或函数
-});
+// 1. 获取路径追踪设置（通常通过配置系统）
+// FPathTracingSettings& PathTracingSettings = GetMutableDefault<URendererSettings>()->PathTracing;
+// 2. 确保启用了 NNE 去噪器。这通常通过 CVar 控制。
+// 例如，设置控制台变量：
+// IConsoleManager::Get().SetConsoleVariableRef(TEXT("r.PathTracing.Denoiser"), 1);
+// IConsoleManager::Get().SetConsoleVariableRef(TEXT("r.PathTracing.Denoiser.NNE.Model"), TEXT("/Game/Denoiser/MyModel.MyModel"));
 ```
 
-### 进阶用法
+### 进阶用法：创建自定义的去噪处理器（概要）
 
-`NNEDenoiserShaders` 模块包含多个计算着色器，用于在GPU上高效执行降噪所需的预处理和后处理步骤，例如自动曝光计算（AutoExposure）、色调映射函数应用（TransferFunction）以及通道映射复制（MappedCopy）。这些着色器被 `NNEDenoiser` 的运行时模块调用，通常不会由游戏代码直接发起调用。
+插件架构允许继承自定义处理器。核心基类是 `FNNEDenoiserDenoiser`。
+**来源参考**：源码中的 `FNNEDenoiserDenoiser` 类。
+
+```cpp
+// 自定义去噪器处理器，需实现 IImagePassProcessor 接口或类似抽象
+class FMyCustomDenoiserProcessor : public FSceneViewFamilyViewFamilyExtension // 或相关基类
+{
+public:
+    // 初始化时，可能需要创建 NNE 模型实例
+    virtual void Setup(const FViewFamilyInfo& InViewFamily) override;
+
+    // 执行去噪，通常是一个后渲染阶段
+    virtual void Render(FRHICommandListImmediate& RHICmdList, const FSceneView& View) override;
+
+private:
+    // 持有 NNE 模型和运行时句柄
+    TUniquePtr<UE::NNE::IModelInstance> ModelInstance;
+};
+```
 
 ## Demo 示例
 
-由于本插件是渲染管线的一部分，其“使用”并非通过编写代码来触发降噪过程，而是通过配置渲染设置。以下是一个最小化配置示例，展示如何在 C++ 代码中通过控制台命令启用基于 NNEDenoiser 的路径追踪降噪。
+一个展示如何创建和初始化 NNE 去噪模型实例的最小示例。
+**注意**：实际的去噪过程涉及复杂的渲染通道交互，此示例仅展示 NNE 模型初始化部分。
 
-**MyGameMode.cpp**
 ```cpp
-#include "GameFramework/GameModeBase.h"
-#include "HAL/IConsoleManager.h"
-#include "MyGameMode.h"
+// MyDenoiserExample.h
+#pragma once
+#include "CoreMinimal.h"
 
-void AMyGameMode::BeginPlay()
+class FMyDenoiserExample
 {
-    Super::BeginPlay();
+public:
+    void InitializeDenoiser(const FString& ModelAssetPath);
+    void RunInference(const TArray<float>& InputData, TArray<float>& OutputData);
 
-    // 获取并设置路径追踪降噪器的控制台变量
-    IConsoleVariable* DenoiserCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.PathTracer.Denoiser"));
-    if (DenoiserCVar)
+private:
+    TSharedPtr<UE::NNE::IModel> NNEModel;
+    TUniquePtr<UE::NNE::IModelInstance> NNEModelInstance;
+};
+```
+
+```cpp
+// MyDenoiserExample.cpp
+#include "MyDenoiserExample.h"
+#include "NNE.h"
+#include "NNERuntimeORT.h"
+
+void FMyDenoiserExample::InitializeDenoiser(const FString& ModelAssetPath)
+{
+    // 加载模型资产
+    const UNNEModelData* ModelData = LoadObject<UNNEModelData>(nullptr, *ModelAssetPath);
+    if (!ModelData)
     {
-        // 设置为使用 NNEDenoiser (值为 1，具体值取决于引擎版本和实现)
-        DenoiserCVar->Set(TEXT("1"), EConsoleVariableFlags::ECVF_SetByCode);
-        UE_LOG(LogTemp, Log, TEXT("Path Tracer Denoiser set to NNEDenoiser."));
+        UE_LOG(LogTemp, Error, TEXT("Failed to load NNE model data from: %s"), *ModelAssetPath);
+        return;
     }
 
-    // 可选：确保路径追踪启用
-    IConsoleVariable* PathTracerCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.PathTracer"));
-    if (PathTracerCVar)
+    // 获取默认运行时（通常是 ONNX Runtime）
+    TArray<UE::NNE::ERuntimeType> RuntimeTypes;
+    RuntimeTypes.Add(UE::NNE::ERuntimeType::ONNX);
+    const TWeakInterfacePtr<UE::NNE::IRuntime> Runtime = UE::NNE::GetRuntime(RuntimeTypes);
+    if (!Runtime.IsValid())
     {
-        PathTracerCVar->Set(TEXT("1"), EConsoleVariableFlags::ECVF_SetByCode);
+        UE_LOG(LogTemp, Error, TEXT("Failed to get NNE runtime."));
+        return;
     }
+
+    // 创建模型和模型实例
+    NNEModel = Runtime->CreateModel(ModelData->GetModelData());
+    if (!NNEModel.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create NNE model."));
+        return;
+    }
+
+    NNEModelInstance = NNEModel->CreateModelInstance();
+    if (!NNEModelInstance.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create NNE model instance."));
+        return;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("NNE Denoiser model initialized successfully."));
+}
+
+void FMyDenoiserExample::RunInference(const TArray<float>& InputData, TArray<float>& OutputData)
+{
+    if (!NNEModelInstance.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Model instance not initialized."));
+        return;
+    }
+
+    // 设置输入张量（尺寸需要与模型匹配）
+    UE::NNE::FTensorBindingInput InputBinding;
+    InputBinding.Data = InputData.GetData();
+    InputBinding.SizeInBytes = InputData.Num() * sizeof(float);
+
+    // 设置输出张量缓冲区
+    const int32 OutputSize = /* 根据模型输出形状计算 */ 1024; // 示例值
+    OutputData.SetNum(OutputSize);
+    UE::NNE::FTensorBindingOutput OutputBinding;
+    OutputBinding.Data = OutputData.GetData();
+    OutputBinding.SizeInBytes = OutputData.Num() * sizeof(float);
+
+    // 执行推理
+    NNEModelInstance->RunSync({InputBinding}, {OutputBinding});
 }
 ```
 
 ## 模块依赖
 
-要使用本插件提供的功能（主要是通过路径追踪降噪），你的项目模块通常需要依赖以下独特的引擎/插件模块。这是本插件正常工作所必需的：
+从 `NNEDenoiserShaders.Build.cs` 分析，此插件依赖以下非标准模块：
 
 | 模块 | 用途 |
 |---|---|
-| `NNE` | 核心的神经网络引擎，用于加载、管理和运行降噪模型。 |
-| `NNERuntimeORT` | （插件依赖）提供 ONNX Runtime 后端，用于执行神经网络推理。 |
-| `RHI` | 渲染硬件接口，用于GPU计算资源的创建和管理。 |
-| `RenderCore` | 核心渲染功能，包括渲染命令队列和资源描述符。 |
-| `RHICore` | RHI 的核心实现，提供底层渲染资源。 |
+| `NNERuntimeORT` | NNE 的 ONNX Runtime 运行时实现，负责加载和执行 ONNX 神经网络模型。 |
+| `RenderCore` | 提供渲染核心类型和工具（如 `FRDGBuilder`， RDG 资源）。 |
+| `Renderer` | 提供场景渲染器和渲染通道支持。 |
+| `RHICore` | RHI (Render Hardware Interface) 核心层。 |
 
 ## 维护状态
 
@@ -114,20 +206,21 @@ void AMyGameMode::BeginPlay()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-15 | `2a295e97` | - Removed BlockUntilGPUIdle and SubmitCommandsAndFlushGPU in place of SubmitAndBlockUntilGPUIdle | 统一GPU同步操作，使用 `SubmitAndBlockUntilGPUIdle` 替换旧函数，可能提升稳定性或性能。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 `UE_LOG` 宏迁移到新的 `UE_LOGF` 格式，属于日志系统内部更新。 |
-| 2026-03-15 | `2caebd20` | Add more missing includes and forward declarations for various rendering headers to files that have... | 修复头文件依赖，为渲染相关的头文件添加缺失的包含和前置声明，增强编译稳定性。 |
-| 2026-03-14 | `95105f12` | Split PooledRenderTarget and SceneRenderingAllocator off into separate header and add explicit inclu... | 重构渲染头文件，将 `PooledRenderTarget` 和 `SceneRenderingAllocator` 分离到独立头文件，优化编译依赖。 |
-| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修复一次失败的查找替换操作后的再次提交，通常是对前一次代码重构的修正。 |
+| 2026-04-15 | `2a295e97` | - Removed BlockUntilGPUIdle and SubmitCommandsAndFlushGPU in place of SubmitAndBlockUntilGPUIdle | 优化 GPU 同步原语，将两个函数合并为更高效的 `SubmitAndBlockUntilGPUIdle`。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将过时的 `UE_LOG` 宏迁移到新的、功能更强的 `UE_LOGF` 宏。 |
+| 2026-03-15 | `2caebd20` | Add more missing includes and forward declarations for various rendering headers to files that have | 修复编译依赖，为渲染相关头文件添加了缺失的 `#include` 和前向声明。 |
+| 2026-03-14 | `95105f12` | Split PooledRenderTarget and SceneRenderingAllocator off into separate header and add explicit inclu | 重构渲染资源分配，将 `PooledRenderTarget` 和 `SceneRenderingAllocator` 拆分到独立头文件。 |
+| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修复了一次错误的全局查找替换导致的代码问题。 |
 
 ### 维护评价
 
-- **活跃维护**：该插件自 2024 年 8 月创建以来，一直有持续的维护活动。最近的更新（截至 2026 年 4 月）集中在代码健壮性、编译优化和底层API的现代化上。
-- **状态**：插件在 `.uplugin` 中标记为 `IsBetaVersion: true`，表明它仍处于测试阶段，可能存在不稳定或接口变化。
-- **推荐度**：作为 Epic Games 官方推出的前沿功能，**强烈推荐**在需要路径追踪交互预览的项目中启用和使用。尽管是 Beta 版，但更新积极，且集成度高。使用者应关注引擎更新日志，因为其API和行为可能在未来版本中调整。
+-   **活跃维护**：插件自 2024 年 8 月从实验文件夹移出并标记为 Beta 以来，一直保持**非常频繁的更新**。最近一次更新距今仅数月。
+-   **内容分析**：近期的提交主要集中在**底层优化**（GPU 同步、编译修复、头文件重构）和**代码现代化**（宏迁移），表明开发团队正在积极巩固代码基础、提升性能和可维护性，为正式发布做准备。
+-   **已知限制**：当前为 **Beta** 状态（`IsBetaVersion=true`），意味着 API 可能发生变化，且可能包含未发现的缺陷。
+-   **推荐使用**：**强烈推荐**给所有使用 Unreal 路径追踪器并寻求实时预览工作流的用户。尽管是 Beta，但作为 Epic 官方维护的核心组件，其稳定性和质量有保障。在生产环境中使用时，请关注 Beta 状态的更新日志。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNEDenoiser)
-- [官方文档]() (插件元数据中未提供)
-- [测试用例]() (基于插件结构，相关测试可能位于 `Engine/Tests/` 目录下)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNEDenoiser)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNEDenoiser/Tests)（如果存在）
+-   [依赖的 NNERuntimeORT 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNERuntimeORT)

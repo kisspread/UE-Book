@@ -16,155 +16,157 @@
 
 ## 用途
 
-Alembic（.abc）是影视和视觉特效行业广泛使用的开放标准几何缓存格式，用于在不同 DCC 工具（Maya、Houdini、Blender 等）之间交换动画几何体数据。
+AlembicImporter 插件的核心功能是将 Alembic (.abc) 格式的文件导入到 Unreal Engine 中。Alembic 是一个开源的计算机图形学数据交换格式，广泛用于在不同的数字内容创建 (DCC) 软件（如 Maya, Houdini, Blender）之间传递复杂的几何体和动画数据。
 
-本插件为 UE5 提供 `.abc` 文件的导入能力，支持将 Alembic 中的多边形网格导入为三种资产类型：
+该插件的存在解决了以下问题：
+1.  **工作流程集成**：允许艺术家将在外部 DCC 软件中创建的复杂动画、模拟效果（如布料、流体）和角色动画无缝地带入 UE5 项目。
+2.  **数据保真**：确保高精度的几何体拓扑、顶点位置动画（变形动画）和骨骼动画在导入过程中得以保留。
+3.  **资产优化**：支持将 Alembic 文件中的动画数据转换为 UE5 原生的“几何缓存”（Geometry Cache）资产或骨骼网格体，便于在引擎内高效使用。
 
-1. **Static Mesh** — 将 Alembic 中的静态网格提取为普通静态网格资产
-2. **Geometry Cache** — 将逐帧变化的网格数据导入为几何缓存资产（需要依赖 GeometryCache 插件）
-3. **Skeletal Mesh** — 将带有骨骼动画的网格数据导入为骨骼网格资产
-
-此外，所有导入的资产都支持**重新导入（Reimport）**，当源 Alembic 文件更新后可以在编辑器中一键刷新。
+它通常作为 GeometryCache 插件的前置依赖，为其提供源数据。
 
 ## 使用场景
 
-- 你在 Houdini 中制作了程序化动画缓存（如破碎、流体网格），需要导入 UE5 做实时渲染 → 用 Geometry Cache 导入模式
-- 你从 Maya 导出了带有骨骼绑定的角色动画 Alembic → 用 Skeletal Mesh 导入模式
-- 你有一个静态的高模资产以 Alembic 格式交付 → 用 Static Mesh 导入模式
-- 你的美术团队频繁迭代 Alembic 文件，需要在引擎中快速刷新 → 使用重新导入功能
+-   你需要将角色在 Maya 或 Houdini 中制作的复杂面部动画或身体变形动画导入到 UE5 项目中。
+-   你在 DCC 软件中模拟了一个布料飘动或毛发摆动的效果，希望将其作为动画资产在引擎中回放。
+-   你从其他软件导出了一个带有复杂拓扑变化的静态模型，希望将其作为带动画的网格体导入。
+-   你需要将一系列逐帧变化的几何体数据（如流体模拟）导入引擎，用作特效或环境动画。
 
 ## 蓝图用法
 
-本插件是纯编辑器插件（模块类型为 Editor），**没有暴露任何蓝图可调用节点**。所有操作通过编辑器 UI 完成。
+AlembicImporter 主要是一个编辑器导入工厂，其核心功能（如导入窗口、选项设置）通常通过编辑器的“导入”操作触发，而不是通过蓝图节点直接调用。它没有暴露用于运行时蓝图交互的 `BlueprintCallable` 函数。
 
-### 导入流程
-
-1. 在内容浏览器中右键 → **Import**，或直接拖拽 `.abc` 文件到内容浏览器
-2. 弹出 **Alembic Import Options** 窗口，可配置：
-   - 导入类型（Static Mesh / Geometry Cache / Skeletal Mesh）
-   - 是否导入特定网格轨道（通过勾选框逐轨道选择）
-   - 帧范围、采样设置等
-3. 点击 **Import** 完成导入
-
-### 重新导入
-
-1. 在内容浏览器中右键已导入的资产 → **Reimport**
-2. 插件会自动关联原始 `.abc` 文件路径并重新解析
+**核心交互**：当在内容浏览器中右键选择“导入”并选择一个 .abc 文件时，引擎会调用此插件的 `UAlembicImportFactory` 来处理导入流程。
 
 ## C++ 用法
 
-本插件的核心类 `UAlembicImportFactory` 继承自 `UFactory` 和 `FReimportHandler`，是编辑器导入流程的标准实现。开发者通常不需要直接调用 C++ API，但可以通过继承或引用工厂类来扩展自定义导入管线。
-
 ### 头文件引入
+
+在需要以编程方式控制 Alembic 导入的模块中，可以引入工厂类的头文件。
 
 ```cpp
 #include "AlembicImportFactory.h"
 ```
 
-### 基本用法 — 程序化导入 Alembic 文件
+### 基本用法
+
+以下是如何在 C++ 代码中创建一个 Alembic 导入工厂实例并触发导入流程的简化示例。
 
 ```cpp
-// 通过工厂类手动触发 Alembic 导入
-// 来源: Classes/AlembicImportFactory.h
-UAlembicImportFactory* Factory = NewObject<UAlembicImportFactory>();
+// 假设在某个编辑器工具或自定义资产处理器中
+#include "AlembicImportFactory.h"
+#include "AbcImportSettings.h"
 
-// 检查文件是否可导入
-FString FilePath = TEXT("/path/to/your/file.abc");
-if (Factory->FactoryCanImport(FilePath))
+void ImportAlembicFile(const FString& FilePath)
 {
-    bool bCancelled = false;
-    FFeedbackContext Warn;
-    
-    // 执行导入，会根据 ImportSettings 自动选择导入模式
-    UObject* ImportedAsset = Factory->FactoryCreateFile(
-        nullptr,                    // InClass
-        GetTransientPackage(),      // InParent
-        FName("ImportedAsset"),     // InName
-        RF_NoFlags,                 // Flags
-        FilePath,                   // Filename
-        nullptr,                    // Parms
-        &Warn,                      // Warn
-        bCancelled                  // bOutOperationCanceled
-    );
+    // 1. 创建导入工厂实例
+    UAlembicImportFactory* ImportFactory = NewObject<UAlembicImportFactory>();
+    if (ImportFactory)
+    {
+        // 2. (可选) 配置导入设置，通常由导入对话框完成
+        //    UAbcImportSettings* Settings = NewObject<UAbcImportSettings>();
+        //    ImportFactory->ImportSettings = Settings;
+
+        // 3. 设置导入参数
+        UClass* ClassToCreate = UStaticMesh::StaticClass(); // 或 UGeometryCache, USkeletalMesh
+        UObject* ParentPackage = GetTransientPackage();
+        FName ObjectName = FPackageName::GetLongPackageAssetName(FilePath);
+        EObjectFlags Flags = RF_Public | RF_Standalone;
+
+        // 4. 执行导入
+        bool bOperationCanceled = false;
+        FFeedbackContext Warn;
+        TArray<UObject*> ImportedObjects = ImportFactory->FactoryCreateFile(
+            ClassToCreate,
+            ParentPackage,
+            ObjectName,
+            Flags,
+            FilePath,
+            nullptr, // Parms
+            &Warn,
+            bOperationCanceled
+        );
+
+        // 5. 处理导入结果
+        if (!bOperationCanceled && ImportedObjects.Num() > 0)
+        {
+            UE_LOG(LogTemp, Log, TEXT("Successfully imported %d objects from %s"), ImportedObjects.Num(), *FilePath);
+            // 对 ImportedObjects 进行后续处理，如保存到磁盘
+        }
+    }
 }
 ```
-
-### 进阶用法 — 分类型导入
-
-```cpp
-// 来源: Classes/AlembicImportFactory.h
-
-// 如果需要明确指定导入类型，可以使用以下专用方法：
-
-// 导入为静态网格（可能产生多个子对象）
-TArray<UObject*> StaticMeshes = Factory->ImportStaticMesh(Importer, Parent, Flags);
-
-// 导入为几何缓存
-UGeometryCache* Cache = Cast<UGeometryCache>(Factory->ImportGeometryCache(Importer, Parent, Flags));
-
-// 导入为骨骼网格
-TArray<UObject*> SkeletalMeshes = Factory->ImportSkeletalMesh(Importer, Parent, Flags);
-```
+*注意：此代码为概念示例，实际生产环境使用中，通常依赖编辑器完整的导入管线来确保设置正确和资源注册。*
 
 ## Demo 示例
 
-本插件为编辑器导入工具，不提供运行时 API。典型使用方式是通过编辑器 UI 操作，以下展示如何在编辑器工具中程序化触发重新导入：
+以下是一个最小化的自定义资产导入器示例，演示了如何在编辑器扩展中触发 Alembic 导入。
 
+**MyAssetImportTool.h**
 ```cpp
-// MyAlembicReimportTool.h
 #pragma once
 
 #include "CoreMinimal.h"
 
-class FMyAlembicReimportTool
+class FMyAssetImportTool
 {
 public:
-    /** 批量重新导入内容浏览器中选中的 Alembic 资产 */
-    static void BatchReimportSelectedAssets(const TArray<UObject*>& Assets);
+    static void RunImport(const FString& AlembicFilePath);
 };
 ```
 
+**MyAssetImportTool.cpp**
 ```cpp
-// MyAlembicReimportTool.cpp
-#include "MyAlembicReimportTool.h"
+#include "MyAssetImportTool.h"
 #include "AlembicImportFactory.h"
-#include "GeometryCache.h"
-#include "StaticMesh.h"
-#include "SkeletalMesh.h"
+#include "AbcImportSettings.h"
 
-void FMyAlembicReimportTool::BatchReimportSelectedAssets(const TArray<UObject*>& Assets)
+void FMyAssetImportTool::RunImport(const FString& AlembicFilePath)
 {
+    // 获取或创建导入工厂
     UAlembicImportFactory* Factory = NewObject<UAlembicImportFactory>();
 
-    for (UObject* Asset : Assets)
+    // 创建默认导入设置（模拟点击“导入”时的默认行为）
+    UAbcImportSettings* DefaultSettings = NewObject<UAbcImportSettings>();
+    // 可以在此处修改 DefaultSettings 的成员来调整默认导入参数
+    // DefaultSettings->ImportType = EAlembicImportType::GeometryCache;
+    Factory->ImportSettings = DefaultSettings;
+
+    // 设置导入目标
+    UObject* ImportRoot = GetTransientPackage(); // 或指定一个内容浏览器路径下的包
+    FName DesiredName = FPaths::GetBaseFilename(AlembicFilePath);
+    EObjectFlags Flags = RF_Public | RF_Standalone;
+
+    // 执行导入
+    FFeedbackContext Context;
+    bool bCanceled = false;
+    TArray<UObject*> Assets = Factory->FactoryCreateFile(
+        UStaticMesh::StaticClass(), // 注意：Factory会根据设置和文件内容自动解析实际类型
+        ImportRoot,
+        DesiredName,
+        Flags,
+        AlembicFilePath,
+        nullptr,
+        &Context,
+        bCanceled
+    );
+
+    if (!bCanceled && Assets.Num() > 0)
     {
-        // 检查该资产是否支持重新导入
-        TArray<FString> OutFilenames;
-        if (Factory->CanReimport(Asset, OutFilenames) && OutFilenames.Num() > 0)
-        {
-            // 根据资产类型调用对应的重新导入方法
-            if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(Asset))
-            {
-                Factory->ReimportStaticMesh(StaticMesh);
-            }
-            else if (UGeometryCache* Cache = Cast<UGeometryCache>(Asset))
-            {
-                Factory->ReimportGeometryCache(Cache);
-            }
-            else if (USkeletalMesh* SkelMesh = Cast<USkeletalMesh>(Asset))
-            {
-                Factory->ReimportSkeletalMesh(SkelMesh);
-            }
-        }
+        UE_LOG(LogTemp, Display, TEXT("Import tool created %d asset(s)."), Assets.Num());
+        // 这里可以将资产移动到内容浏览器中的指定路径并保存
     }
 }
 ```
 
 ## 模块依赖
 
+该插件自身包含两个编辑器模块。要在你的项目或插件中使用其 C++ 类，需要添加以下依赖。
+
 | 模块 | 用途 |
 |---|---|
-| `GeometryCache` | 几何缓存资产类型，Alembic 动画网格导入的目标类型 |
+| `AlembicLibrary` | 提供 Alembic 文件解析和数据转换的核心库 |
+| `GeometryCache` | 插件声明依赖，用于将动画数据存储为几何缓存资产 |
 
 ## 维护状态
 
@@ -172,20 +174,22 @@ void FMyAlembicReimportTool::BatchReimportSelectedAssets(const TArray<UObject*>&
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复格式化字符串中 32/64 位不匹配的平台兼容问题 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 宏迁移到新的 UE_LOGF 宏 |
-| 2026-02-27 | `8ce7ca27` | AlembicImporter: Fixed import failure when it couldn't retrieve velocities even though those should | 修复无法获取速度数据时的导入失败问题 |
-| 2026-02-25 | `74e86b93` | Alembic Import: Fixed out of bouds access (potentially due to negative times). | 修复因负时间值导致的数组越界访问 |
-| 2026-02-03 | `88ba268b` | Fix unreachable code errors | 修复不可达代码编译错误 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了日志格式化说明符在 32 位和 64 位系统上的兼容性问题。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将插件内的日志调用从 UE_LOG 迁移到更现代的 UE_LOGF 宏。 |
+| 2026-02-27 | `8ce7ca27` | AlembicImporter: Fixed import failure when it couldn't retrieve velocities even though those should | 修复了在无法获取速度数据（理论上应该能获取）时导致导入失败的问题。 |
+| 2026-02-25 | `74e86b93` | Alembic Import: Fixed out of bounds access (potentially due to negative times). | 修复了一个可能由负时间值引起的数组越界访问错误。 |
+| 2026-02-03 | `88ba268b` | Fix unreachable code errors | 修复了编译时可能产生的“不可达代码”警告或错误。 |
 
 ### 维护评价
 
-- **创建历史**：该插件在 2022 年从 Experimental 目录迁移到正式目录，但 Alembic 导入功能在 UE4 时代就已存在
-- **维护状态**：活跃维护。2026 年 2-4 月期间有多次 bug 修复，包括数据导入稳定性修复和代码现代化（UE_LOG → UE_LOGF）
-- **更新内容**：以 bug 修复和代码质量改进为主，功能已趋于稳定
-- **推荐使用**：✅ 推荐。作为 Epic 官方维护的 Alembic 导入方案，功能成熟、持续维护，是 UE5 中处理 Alembic 文件的标准选择
+AlembicImporter 插件目前处于 **活跃维护** 状态。
+-   **创建时间**：约 4 年前（2022 年），作为正式功能从 Experimental 目录迁移出来。
+-   **更新频率**：在 2026 年初至今有持续的更新，修复了多个 bug 和兼容性问题，表明 Epic 仍在积极维护。
+-   **功能状态**：核心功能稳定，近期的提交主要集中在 bug 修复、代码现代化和格式化上，没有新增重大功能，但修复了影响稳定性的关键问题。
+-   **推荐使用**：**是**。作为官方提供的标准 Alembic 导入解决方案，它是将 DCC 动画数据引入 UE5 的首选工具。虽然近期没有新功能，但持续的维护保证了其可靠性和与最新引擎版本的兼容性。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/AlembicImporter)
-- [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/AlembicImporter/)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/AlembicImporter)
+-   [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/AlembicImporter/)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Tests/EditorTests/FunctionalTesting/FunctionalTest/Alembic) (推断路径，通常功能测试位于此区域)

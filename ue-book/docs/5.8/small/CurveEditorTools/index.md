@@ -11,103 +11,83 @@
 | 模块 | `CurveEditorTools` (Editor) |
 | 实验性 | 否 |
 | 创建时间 | 2019-05-24 |
-| 年龄标签 | 👴 老古董（约 7 年） |
+| 年龄标签 | 👴 老古董（约 5 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/CurveEditorTools) | |
 
 ## 用途
 
-Curve Editor Tools 是一个编辑器插件，为 UE 的曲线编辑器提供了一套**核心的、可扩展的交互式编辑工具集**。它解决了在 Sequencer、UMG 或曲线资产编辑器中手动调整关键帧时操作繁琐、效率低下的问题。
+本插件并非简单地为曲线编辑器提供额外工具，而是**彻底重构了 UE 的曲线编辑器**，为其建立了一个基于插件的、可扩展的架构。它解决了在 Sequencer 或 UMG 等场景中编辑复杂动画曲线时，功能单一、操作低效的问题。其核心价值在于：
 
-**为什么存在？**
-该插件的诞生是为了将曲线编辑器的工具架构从单体式重构为**插件式**。通过此架构，第三方开发者可以轻松扩展或替换默认工具。插件内置了最常用的编辑工具（如平移、缩放、重定时、网格变形、滤波等），并提供了树形视图、多视图模式（绝对、堆叠、归一化）等管理功能，极大地增强了曲线编辑的生产力和灵活性。
+1.  **模块化与可扩展性**：允许开发者通过插件添加新的编辑工具、视图和滤镜。
+2.  **高效的批量编辑**：提供了变换工具（Transform Tool）和重定时工具（Retime Tool），允许用户框选关键帧并进行平移、缩放，或使用一维晶格来调整关键帧时间，支持非线性衰减。
+3.  **强大的数据可视化**：支持绝对视图、堆叠视图和归一化视图，方便处理范围差异大的曲线数据。
+4.  **便捷的管理工具**：引入了树形视图来管理大量曲线，并支持曲线固定、聚焦播放时间/范围、以及基于时间范围的选择等扩展功能。
+5.  **内置高级滤镜**：通过 FFT 滤镜（支持 Butterworth 和 Chebyshev 响应）提供低通/高通平滑功能。
+6.  **无缝集成**：其工具、视图和滤镜同样适用于独立的曲线资产编辑器（浮点、向量、颜色曲线）。
 
 ## 使用场景
 
-- **动画师调整动画曲线**：使用平移、缩放工具快速调整关键帧的位置和时间。
-- **调整事件曲线的时间节奏**：使用重定时工具（Retime Tool）通过拖拽锚点来非线性地调整事件发生的时间。
-- **批量编辑多条曲线**：使用多缩放工具（Multi Scale Tool）同时缩放多条曲线的关键帧。
-- **平滑或锐化曲线**：使用内置的 FFT 滤波器（低通/高通）对曲线进行频率域处理。
-- **精确的网格变形**：使用网格工具（Lattice Tool）创建一个二维网格，通过移动网格控制点来平滑地变形曲线形状。
-- **在 Sequencer 或 UMG 中管理大量曲线**：使用树形视图（Tree View）来组织、搜索和固定（Pin）需要编辑的曲线。
+*   你在 Sequencer 中为一个角色制作了复杂的骨骼动画，需要批量移动或缩放一组关键帧的时间位置 → 使用 **变换工具 (Transform Tool)**。
+*   你需要调整一段动画的节奏，或实现更自然的动画混合效果 → 使用 **重定时工具 (Retime Tool)** 的晶格变形功能。
+*   你的曲线数据范围差异巨大（例如，一条曲线在0-1，另一条在0-1000），直接查看重叠在一起很难分析 → 切换到 **归一化视图 (Normalized View)** 或 **堆叠视图 (Stacked View)**。
+*   你需要对动画曲线进行平滑处理以消除抖动 → 应用 **FFT 滤镜** 的低通功能。
+*   在编辑大量曲线（如物理动画数据）时，需要快速找到并固定关键曲线 → 使用 **树形视图 (Tree View)**。
 
 ## 蓝图用法
 
-插件主要通过编辑器工具栏按钮和快捷键激活，不提供大量蓝图可调用节点。核心操作在曲线编辑器UI中完成。
+本插件的核心工具类是 C++ 编写的编辑器扩展，其工具选项（如变换工具、多缩放工具的选项）通过 `USTRUCT` 暴露为蓝图可编辑的属性。滤镜类（如 `UCurveEditorFFTFilter`）是蓝图类型，可在滤镜选择器中找到并配置。
 
-### 核心工具激活节点
+### 核心节点/属性
 
-| 节点 | 说明 | 所在类 |
+| 工具/滤镜 | 可配置属性 | 所在类/结构体 |
 |---|---|---|
-| `ActivateTransformTool` | 激活变换工具（移动/缩放选中的关键帧） | `FCurveEditorToolCommands` |
-| `ActivateRetimeTool` | 激活重定时工具（调整时间节奏） | `FCurveEditorToolCommands` |
-| `ActivateMultiScaleTool` | 激活多缩放工具（独立缩放X/Y轴） | `FCurveEditorToolCommands` |
-| `ActivateLatticeTool` | 激活网格工具（二维网格变形） | `FCurveEditorToolCommands` |
+| **变换工具** | `FalloffInterpType` (衰减插值类型), `ScaleCenterX/Y` (缩放中心), `LeftBound/RightBound` (边界) | `FTransformToolOptions` |
+| **多缩放工具** | `XScale/YScale` (缩放值), `PivotType` (枢轴类型：平均、边界中心、首/末关键帧) | `FMultiScaleToolOptions` |
+| **FFT 滤镜** | `CutoffFrequency` (截止频率), `Type` (低通/高通), `Response` (Butterworth/Chebyshev), `Order` (阶数) | `UCurveEditorFFTFilter` |
 
 ### 使用示例（蓝图描述）
 
-在曲线编辑器中，可以通过以下方式使用工具：
-1.  打开曲线编辑器（例如在 Sequencer 中）。
-2.  在工具栏中找到新出现的工具图标（移动、重定时、多缩放、网格）。
-3.  点击图标激活对应工具。
-4.  在曲线视图区：
-    *   **变换工具**：框选关键帧，拖拽移动，或拖拽边角缩放。按住 Ctrl 可进行软选择（Falloff）。
-    *   **重定时工具**：在时间轴上点击添加锚点，拖动锚点来压缩或拉伸其影响范围内的关键帧。
-    *   **网格工具**：选中一组关键帧后激活，会出现一个四边形网格。拖动网格点或边来变形选中的关键帧。
-5.  在工具栏或细节面板中，可以调整活动工具的选项（如缩放中心、软选择衰减类型等）。
+在 Sequencer 或 UMG 的曲线编辑器中，工具栏上会自动出现“Transform”、“Retime”、“Multi Scale”和“Lattice”等工具按钮。点击激活对应工具后，可以在编辑器的详细信息面板或工具栏下拉菜单中修改上述属性值（如调整缩放比例、选择衰减类型等）。对于滤镜，通常在工具栏或菜单中找到“Filter”选项，选择“Fourier Transform (FFT)”即可看到并调整其属性。
 
 ## C++ 用法
 
-插件通过 `ICurveEditorToolExtension` 接口注册工具。要扩展曲线编辑器，可以实现该接口或使用其子类。
+本插件的核心是其可扩展的架构。开发者可以基于 `ICurveEditorToolExtension` 接口创建自定义的曲线编辑工具。
 
 ### 头文件引入
 
 ```cpp
+#include "CurveEditorToolsModule.h"
 #include "ICurveEditorToolExtension.h"
-#include "CurveEditorToolCommands.h"
+#include "CurveEditor.h"
 ```
 
-### 基本用法：注册自定义工具
+### 基本用法：创建一个自定义的曲线编辑工具
 
-（来源：插件自身工具注册逻辑 `FCurveEditorToolsModule::StartupModule`）
-
-```cpp
-// 获取曲线编辑器工具管理器
-TSharedPtr<FExtensibilityManager> ToolManager = FCurveEditorModule::Get().GetToolsExtensibilityManager();
-
-// 创建并注册一个自定义工具
-TSharedPtr<ICurveEditorToolExtension> MyCustomTool = MakeShared<FMyCurveEditorTool>(CurveEditor);
-ToolManager->AddTool(MyCustomTool);
-```
-
-### 进阶用法：实现工具接口
-
-（来源：`FCurveEditorTransformTool` 类定义）
-
-一个完整的工具需要实现 `ICurveEditorToolExtension` 接口，处理绘制、鼠标输入和工具选项。
+1.  **创建工具类**：继承 `ICurveEditorToolExtension` 接口。
+2.  **实现必要方法**：如 `OnPaint`、`OnMouseButtonDown` 等，以处理绘制和用户输入。
+3.  **注册工具**：在模块启动时，通过 `FCurveEditorToolsModule` 注册你的工具。
 
 ```cpp
 // MyCurveEditorTool.h
 #pragma once
+
 #include "ICurveEditorToolExtension.h"
 
 class FMyCurveEditorTool : public ICurveEditorToolExtension
 {
 public:
     explicit FMyCurveEditorTool(TWeakPtr<FCurveEditor> InCurveEditor);
-    
-    // ICurveEditorToolExtension 接口
-    virtual void OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, 
-                         const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, 
-                         int32 PaintOnLayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
-    virtual FReply OnMouseButtonDown(TSharedRef<SWidget> OwningWidget, const FGeometry& MyGeometry, 
-                                     const FPointerEvent& MouseEvent) override;
-    virtual void OnToolActivated() override;
-    virtual void OnToolDeactivated() override;
-    virtual TSharedPtr<FStructOnScope> GetToolOptions() const override;
+
+    // ICurveEditorToolExtension Interface
+    virtual void OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, ...) const override;
+    virtual FReply OnMouseButtonDown(TSharedRef<SWidget> OwningWidget, const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
+    virtual FText GetLabel() const override;
+    virtual FSlateIcon GetIcon() const override;
+    // ... 其他重写方法
 
 private:
     TWeakPtr<FCurveEditor> WeakCurveEditor;
-    // 工具状态...
+    // ... 工具内部数据
 };
 ```
 
@@ -120,63 +100,128 @@ FMyCurveEditorTool::FMyCurveEditorTool(TWeakPtr<FCurveEditor> InCurveEditor)
 {
 }
 
-void FMyCurveEditorTool::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry,
-                                 const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements,
-                                 int32 PaintOnLayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
+void FMyCurveEditorTool::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, ...) const
 {
-    // 在这里绘制自定义工具的视觉元素
-    // 例如：绘制选择框、控制手柄等
-}
-
-FReply FMyCurveEditorTool::OnMouseButtonDown(TSharedRef<SWidget> OwningWidget, const FGeometry& MyGeometry,
-                                             const FPointerEvent& MouseEvent)
-{
-    if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
-    {
-        // 处理鼠标点击，开始操作
-        return FReply::Handled();
-    }
-    return FReply::Unhandled();
-}
-
-void FMyCurveEditorTool::OnToolActivated()
-{
-    // 工具激活时初始化状态
+    // 在这里绘制你的自定义工具界面（例如，选中框、控制柄等）
     if (TSharedPtr<FCurveEditor> CurveEditor = WeakCurveEditor.Pin())
     {
-        // 可以访问和操作曲线编辑器
-        CurveEditor->GetSelection();
+        // ... 使用 CurveEditor 获取选中的关键帧等信息
     }
 }
 
-void FMyCurveEditorTool::OnToolDeactivated()
+FReply FMyCurveEditorTool::OnMouseButtonDown(TSharedRef<SWidget> OwningWidget, const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
-    // 清理工作
+    // 处理鼠标点击，实现你的工具逻辑
+    return FReply::Handled();
 }
 
-TSharedPtr<FStructOnScope> FMyCurveEditorTool::GetToolOptions() const
+FText FMyCurveEditorTool::GetLabel() const
 {
-    // 返回用于在细节面板中显示选项的 UStruct
-    struct FMyToolOptions
+    return NSLOCTEXT("MyTools", "MyCurveTool", "My Tool");
+}
+
+FSlateIcon FMyCurveEditorTool::GetIcon() const
+{
+    return FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Plus");
+}
+
+// 在模块启动时注册工具
+void FMyCurveEditorToolsModule::StartupModule()
+{
+    // ... 其他初始化代码
+    if (CurveEditorToolsModule)
     {
-        UPROPERTY(EditAnywhere)
-        float MyFloatValue = 1.0f;
-    };
-    
-    static UScriptStruct* OptionsStruct = FMyToolOptions::StaticStruct();
-    TSharedPtr<FStructOnScope> Options = MakeShared<FStructOnScope>(OptionsStruct);
-    // 填充默认值...
-    return Options;
+        CurveEditorToolsModule->RegisterToolExtensionFactory<FMyCurveEditorTool>();
+    }
+}
+```
+
+### 进阶用法：使用晶格变形器 (Lattice Deformer)
+
+晶格工具（`FCurveEditorLatticeTool`）是复杂工具的一个典范，它展示了如何与曲线编辑器数据、绘制系统和撤销系统深度集成。开发者可以参考其源码实现自己的高级变形工具。
+
+*   **核心类**：`FLatticeDeformer2D` 实现了二维晶格变形的数学逻辑。
+*   **状态管理**：`FLatticeDeformerState` 持有晶格状态、每条曲线的变换矩阵以及视图监听器。
+*   **交互处理**：通过 `FLatticeDragOp` 及其子类（如 `FLatticeDragOp_MoveControlPoints`）处理拖拽控制点、边或单元格的交互。
+*   **镜像操作**：`FLatticeEdgeTangentsMirrorOp` 和 `FLatticePointTangentsMirrorOp` 实现了拖拽边或点时的切线镜像功能。
+
+## Demo 示例
+
+以下是一个极简的“框选计数”工具示例，它会在工具激活时显示选中关键帧的数量。
+
+```cpp
+// SelectionCounterTool.h
+#pragma once
+
+#include "ICurveEditorToolExtension.h"
+
+class FSelectionCounterTool : public ICurveEditorToolExtension
+{
+public:
+    explicit FSelectionCounterTool(TWeakPtr<FCurveEditor> InCurveEditor);
+
+    //~ ICurveEditorToolExtension Interface
+    virtual void OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 PaintOnLayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
+    virtual FText GetLabel() const override { return NSLOCTEXT("CounterTool", "Label", "Selection Counter"); }
+    virtual FSlateIcon GetIcon() const override;
+    //~
+
+private:
+    TWeakPtr<FCurveEditor> WeakCurveEditor;
+};
+
+// SelectionCounterTool.cpp
+#include "SelectionCounterTool.h"
+#include "CurveEditor.h"
+
+FSelectionCounterTool::FSelectionCounterTool(TWeakPtr<FCurveEditor> InCurveEditor)
+    : WeakCurveEditor(InCurveEditor)
+{
+}
+
+FSlateIcon FSelectionCounterTool::GetIcon() const
+{
+    return FSlateIcon(FAppStyle::GetAppStyleSetName(), "GenericCurveEditor.Filter");
+}
+
+void FSelectionCounterTool::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 PaintOnLayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
+{
+    if (TSharedPtr<FCurveEditor> CurveEditor = WeakCurveEditor.Pin())
+    {
+        // 获取所有选中的关键柄数量
+        int32 TotalSelectedKeys = 0;
+        for (const TTuple<FCurveModelID, FKeyHandleSet>& Pair : CurveEditor->GetSelection())
+        {
+            TotalSelectedKeys += Pair.Value.Num();
+        }
+
+        // 在视图左上角绘制文本
+        if (TotalSelectedKeys > 0)
+        {
+            const FVector2D TextLocation(10.0f, 10.0f);
+            FSlateDrawElement::MakeText(
+                OutDrawElements,
+                PaintOnLayerId,
+                AllottedGeometry.ToPaintGeometry(TextLocation, FVector2D(200.0f, 30.0f)),
+                FText::Format(NSLOCTEXT("CounterTool", "Display", "Selected Keys: {0}"), TotalSelectedKeys),
+                FAppStyle::GetFontStyle("NormalFont"),
+                ESlateDrawEffect::None,
+                FLinearColor::White
+            );
+        }
+    }
 }
 ```
 
 ## 模块依赖
 
-插件依赖于 `TweeningUtils` 插件。
+本插件依赖一个独特的插件：
 
-| 模块 | 用途 |
+| 模块/插件 | 用途 |
 |---|---|
-| `TweeningUtils` | 提供关键帧混合（Tweening）功能，用于缓动工具。 |
+| `TweeningUtils` | 提供缓动（Tweening）功能的基础框架，用于曲线关键帧的混合操作。 |
+
+无其他特殊依赖（仅标准 Core/Engine/Slate 等）。
 
 ## 维护状态
 
@@ -184,22 +229,21 @@ TSharedPtr<FStructOnScope> FMyCurveEditorTool::GetToolOptions() const
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-12 | `51e61d5d` | Curve Editor: Lattice tool now mirrors user tangents on x-axis | 网格工具支持沿X轴镜像用户切线 |
-| 2026-03-30 | `17e19999` | Tweening Utils: Add hotkeys to change slider position. By default: | 为缓动工具添加改变滑块位置的快捷键 |
-| 2026-03-27 | `f6f50393` | Anim In Engine: Hotkeys for 1) Zoom To/Frame Selection Range Command in Sequencer and Curve Editor, | 在 Sequencer 和曲线编辑器中添加缩放至/框选选择范围的快捷键 |
-| 2026-03-23 | `979bfe32` | Curve Editor: Fix non-unity compile issue. | 修复非统一编译时的编译错误 |
-| 2026-03-23 | `c3b4873e` | Curve Editor: Fix lattice tool flipping bool values on bool curves, like IK switches, when only movi | 修复网格工具在仅移动关键帧时错误地翻转布尔曲线（如IK开关）值的问题 |
+| 2026-05-12 | `51e61d5d` | Curve Editor: Lattice tool now mirrors user tangents on x-axis | 晶格工具新增功能：在X轴上镜像用户设置的切线 |
+| 2026-03-30 | `17e19999` | Tweening Utils: Add hotkeys to change slider position. By default: | 缓动工具新增快捷键以更改滑块位置（默认键位已设定） |
+| 2026-03-27 | `f6f50393` | Anim In Engine: Hotkeys for 1) Zoom To/Frame Selection Range Command in Sequencer and Curve Editor, | 新增快捷键用于在序列器和曲线编辑器中缩放至/框选选择范围 |
+| 2026-03-23 | `979bfe32` | Curve Editor: Fix non-unity compile issue. | 修复非统一编译（non-unity build）的编译问题 |
+| 2026-03-23 | `c3b4873e` | Curve Editor: Fix lattice tool flipping bool values on bool curves, like IK switches, when only movi | 修复晶格工具在布尔曲线（如IK开关）上仅移动时会反转布尔值的问题 |
 
 ### 维护评价
 
-该插件处于**活跃维护**状态。
-1.  **年龄**：插件创建于 2019 年，已有 7 年历史，属于成熟的核心编辑器工具。
-2.  **近期更新**：最近 3 个月内有 5 次提交，内容包括新功能开发（网格工具镜像切线、快捷键增强）和关键 Bug 修复（布尔曲线翻转、编译问题），表明 Epic 持续投入维护。
-3.  **状态**：作为 UnrealEd 和 Sequencer 工作流的核心组成部分，插件被深度集成并依赖，不太可能被废弃。
-4.  **已知限制**：无。
-5.  **推荐使用**：**强烈推荐**。这是进行任何曲线编辑工作的基础，所有使用曲线编辑器（动画、音频、事件等）的用户都会直接或间接受益于这些工具。
+*   **维护状态**：**活跃维护**。从提交历史看，2026年仍有新功能开发（晶格工具切线镜像、缓动工具快捷键）和持续的 Bug 修复。
+*   **创建时间**：2019年创建，是较早期的引擎插件，功能成熟稳定。
+*   **架构价值**：作为曲线编辑器的核心重构，其插件化架构影响深远，是 UE 编辑器扩展的优秀范例。
+*   **推荐使用**：**强烈推荐**。该插件是 UE5 中进行高级动画曲线编辑不可或缺的工具，功能强大且维护良好。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/CurveEditorTools)
-- [官方文档]()（无专用文档，功能集成于[曲线编辑器文档](https://docs.unrealengine.com/5.8/en-US/curve-editor-in-unreal-engine/)）
+- [官方文档]()（暂无）
+- [测试用例]()（暂无独立测试用例，功能测试通常集成在引擎的自动化测试中）

@@ -16,37 +16,29 @@
 
 ## 用途
 
-PerformanceMonitor 是一个**运行时性能数据采集工具**，用于在游戏运行过程中自动记录各类性能计时器（stat）的数值，并输出为 CSV 格式的文本文件。
+这是一个用于在游戏运行时收集性能统计数据并导出为 CSV 文件的工具插件。它通过控制台命令（Console Command）驱动，允许开发者指定要追踪的统计项（如帧时间、渲染线程耗时等），按设定间隔采样，并将结果写入文件。主要用于自动化性能测试、CI/CD 流水线中的帧率基准测试，以及 QA 团队在特定场景下的性能数据收集。
 
-与内置的 `stat` 命令不同，这个插件专注于：
-- **自动化采集**：按可配置的时间间隔自动记录性能数据，无需手动截图
-- **批量导出**：将数据直接写入 CSV 文件，便于后续用 Excel 或 Python 分析
-- **CI/CD 集成**：支持设置超时自动退出（`bExitOnCompletion`），适合在自动化测试流水线中使用
-
-插件本身默认不启用，是一个面向开发和 QA 团队的辅助工具。
+插件设计为**默认关闭**，需要手动启用后通过 `PerformanceMonitor` 控制台命令交互。
 
 ## 使用场景
 
-- 你需要在连续的游戏流程中收集帧率、渲染耗时等性能指标 → 用 PerformanceMonitor 自动记录到 CSV
-- 你在做性能回归测试，需要对比两个版本的性能数据 → 让插件输出 CSV 后用脚本 diff
-- 你在 CI 流水线中跑自动化性能测试，希望跑完后自动退出 → 使用 `bExitOnCompletion` 模式
-- 你需要在特定地图上跑固定时长的性能基准测试 → 配合 `MapToTest` 和 `NumOfFramesToCapture`
+- 你需要在自动化测试中收集帧率和 GPU 时间数据并导出 CSV → 用 PerformanceMonitor
+- QA 团队需要在特定地图上运行固定时长的性能基准测试 → 用 PerformanceMonitor
+- 你希望在 CI 流水线中自动收集性能指标用于回归检测 → 用 PerformanceMonitor
 
 ## 蓝图用法
 
-该插件**没有暴露任何蓝图接口**。所有功能通过控制台命令（Console Command）访问。
+该插件没有暴露任何蓝图可调用接口。所有功能通过控制台命令（Console Command）访问。
 
 ### 控制台命令
 
-启用插件后，在控制台输入 `PerformanceMonitor help` 查看详细用法。
+启用插件后，在控制台输入以下命令：
 
 | 命令 | 说明 |
 |---|---|
-| `PerformanceMonitor help` | 显示使用帮助 |
-| `PerformanceMonitor start` | 开始录制性能数据 |
-| `PerformanceMonitor stop` | 停止录制并写入文件 |
-
-录制的数据会写入 `Saved/Profiling/` 目录下的 CSV 文件。
+| `PerformanceMonitor help` | 显示使用帮助和可用选项 |
+| `PerformanceMonitor start <文件名> [统计项列表]` | 开始录制性能数据到指定文件 |
+| `PerformanceMonitor stop` | 停止录制并最终化输出文件 |
 
 ## C++ 用法
 
@@ -58,49 +50,138 @@ PerformanceMonitor 是一个**运行时性能数据采集工具**，用于在游
 
 ### 基本用法
 
-该插件的核心类是 `FPerformanceMonitorModule`，它同时实现了 `IModuleInterface` 和 `FSelfRegisteringExec`（注册控制台命令）。
+通过模块接口访问性能监控功能：
 
 ```cpp
-// 检查插件是否可用
+#include "PerformanceMonitor.h"
+
+// 检查模块是否可用
 if (FPerformanceMonitorModule::IsAvailable())
 {
-    // 获取插件实例
-    FPerformanceMonitorModule& PerfMon = FPerformanceMonitorModule::Get();
-
+    FPerformanceMonitorModule& PerfMonitor = FPerformanceMonitorModule::Get();
+    
     // 检查当前是否正在录制
-    bool bRecording = PerfMon.IsRecordingPerfTimers();
+    if (!PerfMonitor.IsRecordingPerfTimers())
+    {
+        // 开始录制，指定输出文件和要追踪的统计项
+        TArray<FString> StatsToRecord;
+        StatsToRecord.Add(TEXT("STAT_FrameTime"));
+        StatsToRecord.Add(TEXT("STAT_GPUFrameTime"));
+        StatsToRecord.Add(TEXT("STAT_GameThreadTime"));
+        
+        PerfMonitor.StartRecordingPerfTimers(TEXT("PerfTest_Output.csv"), StatsToRecord);
+    }
 }
 ```
 
 ### 进阶用法
 
-通过 C++ 可以直接调用录制 API，无需通过控制台命令：
+配置录制间隔和停止录制：
 
 ```cpp
-FPerformanceMonitorModule& PerfMon = FPerformanceMonitorModule::Get();
+#include "PerformanceMonitor.h"
 
-// 配置录制参数
-TArray<FString> StatsToRecord;
-StatsToRecord.Add(TEXT("STAT_FrameTime"));
-StatsToRecord.Add(TEXT("STAT_GameThreadTime"));
-StatsToRecord.Add(TEXT("STAT_RenderThreadTime"));
+FPerformanceMonitorModule& PerfMonitor = FPerformanceMonitorModule::Get();
 
-PerfMon.SetRecordInterval(1.0f); // 每秒记录一次
+// 设置采样间隔（秒），默认可能较短
+PerfMonitor.SetRecordInterval(0.5f); // 每 0.5 秒记录一次
 
-// 开始录制，指定输出文件名
-PerfMon.StartRecordingPerfTimers(TEXT("MyPerformanceLog"), StatsToRecord);
+// 手动触发一帧数据记录（通常由 Tick 自动处理）
+PerfMonitor.RecordFrame();
 
-// ... 游戏运行中，插件会自动按间隔采集数据 ...
+// 停止录制，触发数据汇总和文件最终化
+PerfMonitor.StopRecordingPerformanceTimers();
+```
 
-// 停止录制
-PerfMon.StopRecordingPerformanceTimers();
+## Demo 示例
+
+```cpp
+// MyPerfTest.h
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "MyPerfTest.generated.h"
+
+UCLASS()
+class MYGAME_API UMyPerfTestSubsystem : public UGameInstanceSubsystem
+{
+    GENERATED_BODY()
+
+public:
+    virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+    virtual void Deinitialize() override;
+
+    UFUNCTION(BlueprintCallable, Category = "Performance")
+    void StartPerfCapture(const FString& OutputPath);
+
+    UFUNCTION(BlueprintCallable, Category = "Performance")
+    void StopPerfCapture();
+};
+```
+
+```cpp
+// MyPerfTest.cpp
+#include "MyPerfTest.h"
+#include "PerformanceMonitor.h"
+
+void UMyPerfTestSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+    Super::Initialize(Collection);
+}
+
+void UMyPerfTestSubsystem::Deinitialize()
+{
+    // 确保退出时停止录制
+    if (FPerformanceMonitorModule::IsAvailable() &&
+        FPerformanceMonitorModule::Get().IsRecordingPerfTimers())
+    {
+        FPerformanceMonitorModule::Get().StopRecordingPerformanceTimers();
+    }
+    Super::Deinitialize();
+}
+
+void UMyPerfTestSubsystem::StartPerfCapture(const FString& OutputPath)
+{
+    if (!FPerformanceMonitorModule::IsAvailable())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("PerformanceMonitor module not available"));
+        return;
+    }
+
+    FPerformanceMonitorModule& PerfMon = FPerformanceMonitorModule::Get();
+    if (PerfMon.IsRecordingPerfTimers())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Already recording performance data"));
+        return;
+    }
+
+    TArray<FString> Stats;
+    Stats.Add(TEXT("STAT_FrameTime"));
+    Stats.Add(TEXT("STAT_GameThreadTime"));
+    Stats.Add(TEXT("STAT_RenderThreadTime"));
+    Stats.Add(TEXT("STAT_GPUFrameTime"));
+
+    PerfMon.StartRecordingPerfTimers(OutputPath, Stats);
+    UE_LOG(LogTemp, Log, TEXT("Started performance capture to: %s"), *OutputPath);
+}
+
+void UMyPerfTestSubsystem::StopPerfCapture()
+{
+    if (FPerformanceMonitorModule::IsAvailable() &&
+        FPerformanceMonitorModule::Get().IsRecordingPerfTimers())
+    {
+        FPerformanceMonitorModule::Get().StopRecordingPerformanceTimers();
+        UE_LOG(LogTemp, Log, TEXT("Performance capture stopped and file finalized"));
+    }
+}
 ```
 
 ## 模块依赖
 
-无特殊依赖（仅标准 Core/Engine/Slate 等）。
-
-该插件的 Build.cs 使用了标准的 `Core`、`CoreUObject`、`Engine`、`Stats` 等基础模块。
+| 模块 | 用途 |
+|---|---|
+| 无特殊依赖（仅标准 Core/Engine 等） | |
 
 ## 维护状态
 
@@ -108,23 +189,24 @@ PerfMon.StopRecordingPerformanceTimers();
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 为即将到来的头文件清理补充 include |
-| 2026-03-15 | `2caebd20` | Add more missing includes and forward declarations for various rendering headers | 补充缺失的头文件包含和前向声明 |
-| 2025-09-12 | `fd5c41be` | Addressing instances "ignoring return value of function declared with 'nodiscard' attribute" issue | 修复 nodiscard 属性相关的编译警告 |
+| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 为即将到来的头文件清理添加必要的 include 引用 |
+| 2026-03-15 | `2caebd20` | Add more missing includes and forward declarations for various rendering headers | 补充缺失的头文件引用和前向声明 |
+| 2025-09-12 | `fd5c41be` | Addressing instances "ignoring return value of function declared with 'nodiscard' attribute" issue f | 修复 nodiscard 属性相关的编译警告 |
 | 2025-04-23 | `b6f496e4` | Remove timestamp-based dynamic resolution heuristic method | 移除基于时间戳的动态分辨率启发式方法 |
-| 2025-03-14 | `9ccff8c3` | [Backout] - CL40651793 - needs further discussing | 回退一个需要进一步讨论的改动 |
+| 2025-03-14 | `9ccff8c3` | [Backout] - CL40651793 - needs further discussing | 回滚一次改动，需要进一步讨论 |
 
 ### 维护评价
 
-⚠️ **该插件维护不活跃，不推荐用于新项目。**
+PerformanceMonitor 是一个功能完整但较为简单的工具插件，自 2017 年创建以来一直作为 Runtime 模块存在。近期更新均为**编译维护性改动**（头文件清理、警告修复、代码回滚），没有任何功能性增强。
 
-- **年龄**：2017 年创建，至今约 8 年
-- **更新内容**：最近的提交全部是编译修复和头文件清理，没有任何功能性更新
-- **活跃程度**：最后一次功能性改动（移除 dynamic resolution 启发式）也不是核心功能，且已回退
-- **代码规模**：仅 2 个源文件（1 个头文件 + 1 个实现文件），功能非常有限
-- **推荐程度**：作为 Epic 内部遗留工具仍可使用，但对于新项目建议使用 Unreal Insights 等更现代的性能分析工具。Unreal Insights 提供了更强大的数据采集、可视化和分析能力。
+**关键观察**：
+- 最近 2 年内无实质性功能更新
+- 该插件默认禁用，属于冷门工具
+- 插件规模极小（仅 2 个源文件），维护负担低
+- `Win32` 平台在早期版本已被排除支持（CL 3265330）
+
+⚠️ **注意**：该插件超过 8 年未有实质性功能更新，属于 Epic 内部遗留工具。虽然仍能编译，但可能不适用于新项目。如果需要性能数据收集，建议考虑 Unreal Insights（UE5 内置的现代化性能分析工具）作为替代方案。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Performance/PerformanceMonitor)
-- 官方文档：无

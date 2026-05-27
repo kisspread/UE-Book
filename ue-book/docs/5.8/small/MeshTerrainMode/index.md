@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 网格地形模式 |
+| 中文名 | 网格分区模式 |
 | 分类 | Mesh Partition |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
+| 包含内容 | ✅ 有（编辑器工具、资产、UI组件） |
 | 模块 | `MeshTerrainMode` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-03-05 |
@@ -16,293 +16,249 @@
 
 ## 用途
 
-Mesh Terrain Mode 是一个面向 **Mesh Partition（网格分区）** 工作流的专用编辑器模式。它为用户提供了一整套交互式工具，用于在编辑器中创建和编辑 Mesh Partition 资产。
+Mesh Terrain Mode 是 UE 内置 Modeling Tools Editor Mode 的一个定制化和扩展实现，专门用于 **Mesh Partition** 的工作流。它提供了一个完整的、交互式的编辑器模式，包含了一整套工具，用于在编辑器中创建、编辑、管理和优化“网格分区”（Mesh Partition）资产。
 
-这个插件的核心目标是解决**大型地形网格的分区管理问题**——将一个巨大的地形网格拆分成多个可独立管理的分区（Mesh Partition），支持对每个分区进行雕刻、修改器堆叠、高度图导入等操作。它提供了丰富的子模式（Shapes、Create、Edit、Sculpt、Bake、Paint、Modifiers），每个子模式包含一组相关的工具。
-
-从架构上看，它复用了 UE5 Modeling Tools 框架的大量基础设施（如 `UGeometrySelectionManager`、`UInteractiveToolManager`、`UTransformProxy` 等），但专注于地形/网格分区场景，并增加了 Mesh Partition 特有的工具，如高度雕刻、修改器系统、MegaMesh 工具等。
+这个插件解决的核心问题是：**如何在大型世界（如开放世界地形）中高效地创建、管理和编辑大型、复杂的网格资产**。它提供了从基础形状创建（立方体、圆柱体）、多边形建模（拉伸、切割、平滑）、雕刻（移动、平滑、膨胀）、网格操作（布尔运算、简化、重新拓扑、UV编辑）到资产转换（合并、拆分、转换为静态网格/体积/动态网格）的完整工具链。它还集成了专门的子模式（Submodes）、自定义的属性面板、预设系统和资产自动生成管理，旨在为网格分区工作流提供一个高度优化和集成的创作环境。
 
 ## 使用场景
 
-- 你在制作大型开放世界地形，需要将巨型网格拆分成多个独立的 Mesh Partition → 用 Mesh Terrain Mode
-- 你需要对地形分区进行交互式雕刻（高度雕刻、平滑、侵蚀等）→ 进入 Sculpt 子模式
-- 你需要为地形分区添加非破坏性修改器（重网格化、投影、噪声、布尔等）→ 进入 Modifiers 子模式
-- 你需要从外部导入高度图数据来生成地形 → 使用 Heightmap Import 工具
-- 你需要将多个静态网格合并为一个 MegaMesh 或将其拆分 → 使用 MegaMesh 工具集
+- **创建和编辑大型地形网格**：使用`BeginAddBoxPrimitiveTool`、`BeginDrawSplineTool`等创建基础地形形状，再用`BeginSculptMeshTool`、`BeginHeightSculptTool`等进行地形雕刻和编辑。
+- **管理复杂的网格资产**：使用`BeginCombineMeshesTool`、`BeginSplitMeshesTool`、`BeginConvertMeshesTool`等工具对网格进行合并、拆分和格式转换。
+- **优化网格性能**：使用`BeginSimplifyMeshTool`、`BeginRemeshMeshTool`、`BeginLODManagerTool`来简化网格拓扑、重新网格化和管理LOD。
+- **快速原型化与布尔操作**：使用`BeginMeshBooleanTool`、`BeginMeshTrimTool`、`BeginCutMeshWithMeshTool`进行复杂的布尔和切割操作。
+- **自动生成和管理资产**：插件内置了资产自动生成系统，可以根据设置（`UMeshTerrainModeSettings`）自动创建和保存静态网格、动态网格或体积资产。
 
 ## 蓝图用法
 
-此插件主要作为编辑器模式运行，不暴露 `BlueprintCallable` 或 `BlueprintReadWrite` API。所有交互通过编辑器 UI 工具面板完成。
+该插件主要作为编辑器模式运行，其核心蓝图可调用功能主要通过命令系统暴露。以下是从源码中提取的核心功能节点。
 
-### 核心交互节点（编辑器 UI）
+### 核心节点
 
-| 功能 | 说明 | 所在类 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| 子模式切换 | Shapes/Create/Edit/Sculpt/Bake/Paint/Modifiers | `FSubmode` 派生类 |
-| 高度图导入 | 导入外部高度图数据 | `BeginHeightmapImport` |
-| 高度雕刻画笔 | 高度雕刻、平滑、展平、坡度侵蚀 | `BeginHeightSculptBrushTool` 等 |
-| 修改器添加/追加 | 添加或追加非破坏性修改器 | `BeginAddModifierTool` / `BeginAppendModifierTool` |
-| 网格选择模式 | 三角形/顶点/边/组选择 | `MeshSelectionModeAction_*` |
-| 接受/取消工具 | 结束当前活动工具 | `AcceptActiveTool` / `CancelActiveTool` |
+| `BeginAddBoxPrimitiveTool` | 启动添加立方体图元工具 | `FMeshTerrainModeManagerCommands` |
+| `BeginSculptMeshTool` | 启动网格雕刻工具 | `FMeshTerrainModeManagerCommands` |
+| `BeginCubeGridTool` | 启动立方体网格工具 | `FMeshTerrainModeManagerCommands` |
+| `BeginMeshBooleanTool` | 启动网格布尔运算工具 | `FMeshTerrainModeManagerCommands` |
+| `BeginSimplifyMeshTool` | 启动网格简化工具 | `FMeshTerrainModeManagerCommands` |
+| `BeginCombineMeshesTool` | 启动合并网格工具 | `FMeshTerrainModeManagerCommands` |
+| `BeginSplitMeshesTool` | 启动拆分网格工具 | `FMeshTerrainModeManagerCommands` |
+| `BeginConvertMeshesTool` | 启动网格转换工具 | `FMeshTerrainModeManagerCommands` |
+| `BeginHeightSculptTool` | 启动高度雕刻工具 | `FMeshTerrainModeManagerCommands` |
+| `BeginAddModifierTool` | 启动添加修改器工具 | `FMeshTerrainModeManagerCommands` |
+| `EnterSculptSubmode` | 切换到雕刻子模式 | `FMeshTerrainModeManagerCommands` |
+| `EnterCreateSubmode` | 切换到创建子模式 | `FMeshTerrainModeManagerCommands` |
+| `EnterEditSubmode` | 切换到编辑子模式 | `FMeshTerrainModeManagerCommands` |
+| `BeginSelectionAction_Delete` | 删除当前选择 | `FMeshTerrainModeManagerCommands` |
+| `BeginSelectionAction_ExpandToConnected` | 选择所有连接元素 | `FMeshTerrainModeManagerCommands` |
+| `LaunchUVEditor` | 启动 UV 编辑器 | `FMeshTerrainModeManagerCommands` |
 
-### 使用示例（编辑器操作描述）
-
-1. 在编辑器顶部工具栏中找到 **Mesh Terrain Mode** 标签页，点击切换到该编辑器模式
-2. 左侧面板会显示子模式选择器，选择你需要的工作流（如 **Sculpt**）
-3. 子模式下的工具面板会显示可用工具（如 Height Sculpt Brush、Smooth、Flatten 等）
-4. 点击工具按钮启动工具，在视口中直接交互
-5. 使用 **Accept**（✓）或 **Cancel**（✗）按钮结束当前工具
+**使用示例（蓝图描述）**
+在蓝图中，你通常不会直接调用这些命令来启动工具。更常见的用法是：
+1.  **通过编辑器模式面板操作**：用户通过编辑器顶部的模式（Mode）选项卡切换到“Mesh Terrain Mode”，然后通过右侧的子模式面板（如创建、编辑、雕刻）选择具体的工具按钮。
+2.  **通过控制台命令**：某些工具可能注册了控制台命令，可以在关卡视口底部的控制台输入。
+3.  **通过C++扩展**：开发者可以通过实现 `IMeshTerrainModeToolExtension` 接口来为该模式添加自定义工具和子模式。
 
 ## C++ 用法
+
+该插件的 C++ 接口主要用于**扩展**和**自定义**编辑器模式的行为。
 
 ### 头文件引入
 
 ```cpp
+#include "MeshTerrainModeModule.h"
 #include "MeshTerrainMode.h"
-#include "MeshTerrainModeToolkit.h"
+#include "MeshTerrainModeToolExtensions.h"
 ```
 
-### 基本用法 — 注册模式扩展
+### 基本用法（注册自定义工具扩展）
 
-通过 `IMeshTerrainModeToolExtension` 接口为 Mesh Terrain Mode 注册自定义工具和子模式。
+（示例来源于 `IMeshTerrainModeToolExtension` 接口定义）
+
+你可以创建一个插件来为 Mesh Terrain Mode 添加自定义工具。这需要实现 `IMeshTerrainModeToolExtension` 接口，并将其作为模块化特性注册。
 
 ```cpp
-// 来源: Source/MeshTerrainMode/Private/MeshTerrainModeToolExtensions.h
+// MyCustomExtension.h
+#pragma once
+#include "MeshTerrainModeToolExtensions.h"
 
-#include "IMeshTerrainModeToolExtension.h"
-
-// 实现 IModelingModeToolExtension 的模块化功能接口
-// 注册自定义工具扩展到 Mesh Terrain Mode
-class FMyMeshTerrainExtension : public UE::IMeshTerrainModeToolExtension
+class FMyCustomToolExtension : public IMeshTerrainModeToolExtension
 {
 public:
-    // 为现有子模式添加额外工具
-    virtual void GetExtensionSubmodeAddons(
-        TArray<FExtensionSubmodeAddon>& AddonsOut) override
-    {
-        // 获取目标子模式的工具面板
-        UE::MeshTerrain::FSubmodeToolPalette MyPalette(
-            NSLOCTEXT("MyExt", "MyTools", "My Tools"),
-            { MyToolCommand1, MyToolCommand2 }
-        );
-        
-        // 将工具面板追加到 Sculpt 子模式
-        AddonsOut.Add(FExtensionSubmodeAddon(
-            FName("Sculpt"), MyPalette));
-    }
-
-    // 注册全新的子模式
-    virtual void GetExtensionSubmodes(
-        TArray<FExtensionSubmodeDescription>& SubmodesOut) override
-    {
-        FExtensionSubmodeDescription Desc;
-        Desc.MakeNewSubmode = []() -> TSharedPtr<UE::MeshTerrain::FSubmode>
-        {
-            // 创建并返回自定义子模式
-            return MakeShared<FMyCustomSubmode>();
-        };
-        SubmodesOut.Add(Desc);
-    }
-
-    // 注册自定义工具（带可选的执行/检查覆盖）
-    virtual void GetExtensionCustomTools(
-        const FExtensionToolQueryInfo& QueryInfo,
-        TArray<FExtensionCustomToolDescription>& OutTools) override
-    {
-        FExtensionCustomToolDescription ToolDesc;
-        ToolDesc.ToolName = TEXT("MyCustomTool");
-        ToolDesc.ToolBuilder = MyToolBuilder;
-        
-        // 可选: 覆盖默认的 ExecuteAction 行为
-        ToolDesc.ExecuteAction = [](UInteractiveToolManager* Manager,
-            EToolSide Side) -> bool
-        {
-            // 自定义执行逻辑
-            return true;
-        };
-        
-        OutTools.Add(ToolDesc);
-    }
+    // 返回要添加到现有子模式的工具
+    virtual void GetExtensionSubmodeAddons(TArray<FExtensionSubmodeAddon>& AddonsOut) override;
+    
+    // 返回要作为新子模式暴露的工具集
+    virtual void GetExtensionSubmodes(TArray<FExtensionSubmodeDescription>& SubmodesOut) override;
+    
+    // 返回自定义工具，可覆盖默认的执行、检查和选中行为
+    virtual void GetExtensionCustomTools(const FExtensionToolQueryInfo& QueryInfo, TArray<FExtensionCustomToolDescription>& OutTools) override;
 };
 
-// 在模块启动时注册（通过 IModularFeatures）
-IModularFeatures::Get().RegisterModularFeature(
-    UE::IMeshTerrainModeToolExtension::GetModularFeatureName(),
-    &MyExtension
-);
+// MyCustomExtension.cpp
+#include "MyCustomExtension.h"
+#include "IModularFeatures.h"
+
+void FMyCustomToolExtension::GetExtensionSubmodeAddons(TArray<FExtensionSubmodeAddon>& AddonsOut)
+{
+    // 示例：向“创建”子模式添加一个自定义工具
+    FSubmodeToolPalette MyPalette(LOCTEXT("MyPalette", "My Tools"), { /* ... 命令列表 ... */ });
+    AddonsOut.Emplace(FName("CreateSubmode"), MyPalette);
+}
+
+void FMyCustomToolExtension::GetExtensionSubmodes(TArray<FExtensionSubmodeDescription>& SubmodesOut)
+{
+    // 创建一个全新的子模式
+    FExtensionSubmodeDescription Desc;
+    Desc.MakeNewSubmode = [this]() -> TSharedPtr<FSubmode> { /* ... 创建并返回你的 FSubmode 子类 ... */ };
+    SubmodesOut.Add(Desc);
+}
+
+void FMyCustomToolExtension::GetExtensionCustomTools(const FExtensionToolQueryInfo& QueryInfo, TArray<FExtensionCustomToolDescription>& OutTools)
+{
+    // 定义一个自定义工具
+    FExtensionCustomToolDescription ToolDesc;
+    ToolDesc.ToolName = TEXT("MyCustomTool");
+    ToolDesc.ToolBuilder = /* ... 你的 UInteractiveToolBuilder 实例 ... */;
+    // 可选：覆盖默认行为
+    ToolDesc.ExecuteAction = [](UInteractiveToolManager* Manager, EToolSide Side) -> bool { /* ... 自定义执行逻辑 ... */ return true; };
+    OutTools.Add(ToolDesc);
+}
+
+// 在你的模块 StartupModule 中注册
+void FMyExtensionModule::StartupModule()
+{
+    IModularFeatures::Get().RegisterModularFeature(
+        IMeshTerrainModeToolExtension::GetModularFeatureName(),
+        &MyExtensionInstance);
+}
 ```
 
-### 进阶用法 — 配置模式设置
+### 进阶用法（监听模式事件）
+
+你可以通过 `UMeshTerrainMode` 类来监听模式进入、退出以及工具启动等事件。
 
 ```cpp
-// 来源: Source/MeshTerrainMode/Private/MeshTerrainModeSettings.h
-
-#include "MeshTerrainModeSettings.h"
-
-// 获取 Mesh Terrain Mode 设置（项目级别配置）
-UMeshTerrainModeSettings* Settings = GetMutableDefault<UMeshTerrainModeSettings>();
-
-// 配置资产生成行为
-Settings->SetAssetGenerationLocation(
-    EMeshTerrainModeAssetGenerationLocation::AutoGeneratedWorldRelativeAssetPath);
-Settings->SetAssetGenerationMode(
-    EMeshTerrainModeAssetGenerationBehavior::AutoGenerateButDoNotAutosave);
-
-// 配置默认网格对象类型
-Settings->DefaultMeshObjectType = EMeshTerrainModeDefaultMeshObjectType::DynamicMeshActor;
-
-// 启用网格选择系统
-Settings->SetMeshSelectionsEnabled(true);
-
-// 启用限制模式（强制使用全局资产路径、关闭自动保存等）
-Settings->SetRestrictiveMode(true);
-Settings->SetRestrictiveModeAutoGeneratedAssetPath(TEXT("Meshes/Terrain"));
-
-// 监听设置变更
-Settings->OnModified.AddLambda(
-    [](UObject* Obj, FProperty* Prop)
+// 假设你有对 UMeshTerrainMode 实例的引用（例如通过 GetMutableDefault<UMeshTerrainMode>()）
+UMeshTerrainMode* MeshTerrainMode = /* ... */;
+if (MeshTerrainMode)
+{
+    // 监听工具启动
+    MeshTerrainMode->OnToolStarted.AddLambda([](UInteractiveToolManager* Manager, UInteractiveTool* Tool)
     {
-        UE_LOG(LogTemp, Log, TEXT("MeshTerrain setting changed: %s"),
-            *Prop->GetName());
+        UE_LOG(LogTemp, Log, TEXT("Mesh Terrain Mode tool started: %s"), *Tool->GetClass()->GetName());
     });
-```
-
-```cpp
-// 获取 Mesh Terrain Mode 自定义设置（编辑器级别配置）
-UMeshTerrainModeCustomizationSettings* CustomSettings =
-    GetMutableDefault<UMeshTerrainModeCustomizationSettings>();
-
-// 自定义选择颜色
-CustomSettings->GeometrySelectedColor = FLinearColor(1.0f, 0.5f, 0.0f, 0.5f);
-CustomSettings->UnselectedColor = FLinearColor(0.1f, 0.3f, 0.8f, 0.5f);
-
-// 配置 UI 行为
-CustomSettings->bEscapeAcceptsToolResult = true;
-CustomSettings->bExitModeAcceptsToolResult = true;
-CustomSettings->bShowCategoryButtonLabels = true;
-
-// 注册自定义画笔 Alpha 集合
-FMeshTerrainModeAssetCollectionSet AlphaSet;
-AlphaSet.Name = TEXT("MyBrushAlphas");
-AlphaSet.Collections.Add(FCollectionReference(TEXT("TerrainAlphas")));
-CustomSettings->BrushAlphaSets.Add(AlphaSet);
+}
 ```
 
 ## Demo 示例
 
-以下示例展示如何实现一个简单的 Mesh Terrain Mode 工具扩展：
+一个最小化的、用于向 Mesh Terrain Mode 添加自定义工具扩展的 C++ 模块示例。
 
 ```cpp
-// MyMeshTerrainExtension.h
+// CustomMeshTerrainToolExtension.h
 #pragma once
-
-#include "CoreMinimal.h"
 #include "MeshTerrainModeToolExtensions.h"
+#include "UObject/NoExportTypes.h"
 
-class FMyMeshTerrainModeToolExtension : public UE::IMeshTerrainModeToolExtension
+class UCustomToolBuilder;
+
+class FCustomMeshTerrainToolExtension : public IMeshTerrainModeToolExtension
 {
 public:
-    virtual void GetExtensionSubmodeAddons(
-        TArray<FExtensionSubmodeAddon>& AddonsOut) override;
+    virtual ~FCustomMeshTerrainToolExtension() override;
 
-    virtual void GetExtensionSubmodes(
-        TArray<FExtensionSubmodeDescription>& SubmodesOut) override;
+    virtual void GetExtensionCustomTools(const FExtensionToolQueryInfo& QueryInfo, TArray<FExtensionCustomToolDescription>& OutTools) override;
+
+    static FName GetExtensionName() { return TEXT("CustomMeshTerrainToolExtension"); }
+
+private:
+    // 持有工具构建器，确保生命周期
+    UPROPERTY()
+    TObjectPtr<UCustomToolBuilder> CustomToolBuilder;
 };
 ```
 
 ```cpp
-// MyMeshTerrainExtension.cpp
-#include "MyMeshTerrainExtension.h"
-#include "Submodes/Submode.h"
+// CustomMeshTerrainToolExtension.cpp
+#include "CustomMeshTerrainToolExtension.h"
+#include "CustomToolBuilder.h" // 假设这是你定义的工具构建器
+#include "IModularFeatures.h"
 
-// 自定义子模式
-class FMyTerrainSubmode : public UE::MeshTerrain::FSubmode
+FCustomMeshTerrainToolExtension::~FCustomMeshTerrainToolExtension()
 {
-public:
-    FMyTerrainSubmode(const TSharedPtr<FModeToolkit>& InToolkit)
-        : FSubmode(InToolkit)
+    // 反注册
+    IModularFeatures::Get().UnregisterModularFeature(IMeshTerrainModeToolExtension::GetModularFeatureName(), this);
+}
+
+void FCustomMeshTerrainToolExtension::GetExtensionCustomTools(const FExtensionToolQueryInfo& QueryInfo, TArray<FExtensionCustomToolDescription>& OutTools)
+{
+    if (!CustomToolBuilder)
     {
-        // 添加工具面板
-        TArray<TSharedPtr<FUICommandInfo>> Tools;
-        // Tools.Add(MyCustomToolCommand);
-        AddToolPalette(UE::MeshTerrain::FSubmodeToolPalette(
-            NSLOCTEXT("MySubmode", "Tools", "My Terrain Tools"),
-            Tools));
+        CustomToolBuilder = NewObject<UCustomToolBuilder>();
     }
 
-    virtual FName GetName() const override { return FName("MyTerrain"); }
-};
-
-void FMyMeshTerrainModeToolExtension::GetExtensionSubmodeAddons(
-    TArray<FExtensionSubmodeAddon>& AddonsOut)
-{
-    // 为空，不向现有子模式添加工具
+    FExtensionCustomToolDescription ToolDesc;
+    ToolDesc.ToolName = TEXT("MyAwesomeTool");
+    ToolDesc.ToolBuilder = CustomToolBuilder;
+    // 可以添加到特定的子模式
+    // ToolDesc.SubmodeName = FName("EditSubmode");
+    OutTools.Add(ToolDesc);
 }
 
-void FMyMeshTerrainModeToolExtension::GetExtensionSubmodes(
-    TArray<FExtensionSubmodeDescription>& SubmodesOut)
+// 在某个模块的 StartupModule 中，创建并注册这个扩展实例
+static FCustomMeshTerrainToolExtension* CustomExtension = nullptr;
+
+void FMyCustomToolsModule::StartupModule()
 {
-    FExtensionSubmodeDescription Desc;
-    Desc.MakeNewSubmode = []() -> TSharedPtr<UE::MeshTerrain::FSubmode>
+    CustomExtension = new FCustomMeshTerrainToolExtension();
+    IModularFeatures::Get().RegisterModularFeature(IMeshTerrainModeToolExtension::GetModularFeatureName(), CustomExtension);
+}
+
+void FMyCustomToolsModule::ShutdownModule()
+{
+    if (CustomExtension)
     {
-        // 注意：需要传入有效的 Toolkit 指针
-        return nullptr; // 简化示例，实际需实现创建逻辑
-    };
-    SubmodesOut.Add(Desc);
-}
-
-// 模块启动时注册扩展
-void FMyModule::StartupModule()
-{
-    IModularFeatures::Get().RegisterModularFeature(
-        UE::IMeshTerrainModeToolExtension::GetModularFeatureName(),
-        &MyExtensionInstance);
-}
-
-void FMyModule::ShutdownModule()
-{
-    IModularFeatures::Get().UnregisterModularFeature(
-        UE::IMeshTerrainModeToolExtension::GetModularFeatureName(),
-        &MyExtensionInstance);
+        IModularFeatures::Get().UnregisterModularFeature(IMeshTerrainModeToolExtension::GetModularFeatureName(), CustomExtension);
+        delete CustomExtension;
+        CustomExtension = nullptr;
+    }
 }
 ```
 
 ## 模块依赖
 
-该插件仅有一个 Runtime 模块（`MeshTerrainMode`），但从头文件引用推断其依赖于以下 UE 子系统（均为常见建模工具框架依赖）：
+从源码结构和典型UE编辑器模式插件推断，使用该插件或对其进行扩展时，你的模块可能需要依赖以下模块（除了常见的Core/Engine等）：
 
 | 模块 | 用途 |
 |---|---|
-| `GeometryFramework` | `UGeometrySelectionManager`、动态网格 Actor 支持 |
-| `ModelingToolsEditorMode` | 编辑器模式基础设施、工具管理器、`IModelingModeToolExtension` 接口 |
-| `InteractiveToolsFramework` | `UInteractiveTool`、`UInteractiveToolManager`、输入行为系统 |
-| `MeshModelingTools` | 具体的建模工具实现（雕刻、布尔、重网格化等） |
-| `MeshModelingToolsSet` | 集合工具（MegaMesh、UV 编辑等） |
-| `ToolWidgets` | `SDraggableBoxOverlay`、工具 UI 控件 |
-| `ToolPresetAsset` | 工具预设集合资产 |
-| `StylusInput` | 数位板输入支持（条件编译 `ENABLE_STYLUS_SUPPORT`） |
-
-> 由于这是实验性插件，模块的 Build.cs 未完整暴露。实际编译时可能还有其他依赖。
+| `MeshTerrainMode` | 核心模式模块，包含编辑器模式定义、工具注册、UI等。 |
+| `ModelingTools` | 提供基础的建模工具框架（UInteractiveTool等），Mesh Terrain Mode 的工具大量基于此。 |
+| `GeometryProcessing` | 提供几何处理算法（网格简化、重新网格化、布尔运算等）。 |
+| `InteractiveToolsFramework` | 提供交互工具框架和输入行为系统。 |
+| `GeometryFramework` | 提供动态网格（UDynamicMesh）相关支持。 |
+| `UnrealEd` | 提供编辑器模式（UEdMode）、工具包（FModeToolkit）等基础支持。 |
+| `Slate` / `SlateCore` | 用于构建复杂的编辑器UI，如工具面板、属性自定义。 |
 
 ## 维护状态
 
 ### 近期更新
 
 | 日期 | Hash | 原文 | 中文解读 |
-|---||---|---|
-| 2026-05-22 | `29739ffe` | Mesh Terrain: guard against auto-accepting a tool result during level Reload operation | 修复关卡重载时工具结果被意外自动接受的问题 |
-| 2026-05-20 | `5c588ff7` | MeshPartition: Block editor duplicating the active tool's target actors in mesh terrain mode | 阻止编辑器在地形模式下复制活动工具的目标 Actor |
-| 2026-05-19 | `a261fff3` | Fix editor shutdown crash: Use SP-lambda + weak-capture Slate widgets in MeshTerrainMode OnModified | 修复编辑器关闭崩溃：OnModified 中改用弱捕获防止悬垂引用 |
-| 2026-05-15 | `0ddb912e` | [Mesh Partition] Fixed MeshTerrainMode pulling Mesh Partition as plugin dependency only for editor t | 修复仅编辑器构建时错误引入 Mesh Partition 依赖的问题 |
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 常量截断为 float 的编译警告 |
+|---|---|---|---|
+| 2026-05-22 | `29739ffe` | Mesh Terrain: guard against auto-accepting a tool result during level Reload operation | 防止在关卡重载时工具结果被意外自动接受 |
+| 2026-05-20 | `5c588ff7` | MeshPartition: Block editor duplicating the active tool's target actors in mesh terrain mode | 阻止编辑器在网格地形模式中复制活动工具的目标Actor |
+| 2026-05-19 | `a261fff3` | Fix editor shutdown crash: Use SP-lambda + weak-capture Slate widgets in MeshTerrainMode OnModified | 修复编辑器关闭崩溃：在OnModified中使用智能指针Lambda并弱捕获Slate控件 |
+| 2026-05-15 | `0ddb912e` | [Mesh Partition] Fixed MeshTerrainMode pulling Mesh Partition as plugin dependency only for editor t | 修复了网格地形模式将网格分区作为插件依赖项仅用于编辑器的拉取问题 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下双精度常量截断为浮点数时产生警告的代码 |
 
 ### 维护评价
 
-- **状态**：🆕 **全新实验性插件**，创建于 2026 年 3 月
-- **活跃度**：**非常活跃** — 最近一周内有 5 次提交，均为稳定性和兼容性修复
-- **成熟度**：处于早期开发阶段，从提交信息可见仍有不少边界情况（关卡重载、编辑器关闭、构建配置）需要修复
-- **实验性警告**：该插件位于 `Experimental` 目录下，API 和功能可能在后续版本中发生重大变更
-- **推荐**：适合对 Mesh Partition 工作流有需求的项目进行评估和测试，但**不建议在生产环境依赖此插件**，需关注后续版本的稳定性进展
+- **状态**：**活跃维护**
+- **年龄**：🆕（创建于2026年3月，非常新的插件）
+- **频率**：在创建后的2-3个月内有密集的更新（2026年5月），主要修复了多个编辑器稳定性和功能错误。
+- **内容**：更新聚焦于修复使用中的具体问题（崩溃、意外行为），表明插件正在被实际使用和测试。
+- **结论**：该插件处于活跃开发和完善阶段，作为实验性功能正在快速迭代。它提供了一套强大且复杂的网格编辑工具集。虽然作为实验性功能可能存在稳定性风险，但对于需要高级网格分区和编辑工作流的项目来说，**值得尝试和关注**。建议在项目中使用，并密切关注其更新日志。
 
 ## 相关链接
 

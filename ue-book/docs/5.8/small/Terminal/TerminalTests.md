@@ -4,7 +4,7 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 编辑器终端 |
+| 中文名 | 终端模拟器 |
 | 分类 | Experimental |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
@@ -16,48 +16,148 @@
 
 ## 用途
 
-Terminal 插件在 UE5 编辑器内部嵌入了一个原生的终端仿真器，基于 Slate 框架构建。它解决了开发者需要频繁在 UE5 编辑器和外部命令行窗口之间切换的问题——将类 Unix PTY（伪终端）会话直接集成到编辑器面板中，让开发者可以在编辑器内运行 Shell 命令、查看输出、执行构建脚本或自动化工具，无需离开 UE5 工作环境。
+Terminal 插件为 Unreal Editor 提供了一个**原生的 Slate 终端模拟器**。它将一个功能完整的命令行终端直接嵌入编辑器 UI 内，通过 PTY（伪终端）与系统 Shell 交互。
 
-从提交记录可以看出，该插件实现了完整的键盘输入翻译层（将 UE 键事件转换为终端转义序列）、会话生命周期管理（含活动状态提示以防止意外关闭），以及可配置的终端设置系统。
+解决的核心问题：开发者在使用 UE5 时，经常需要在编辑器和外部终端窗口之间来回切换——执行 Git 命令、运行构建脚本、查看日志输出等。Terminal 插件将这些操作统一到编辑器内部，减少上下文切换开销。
+
+基于源码中的关键线索，插件的核心架构包括：
+
+- **PTY（伪终端）驱动**：通过操作系统伪终端与 Shell 进程通信，而非简单的管道重定向，确保完整的终端行为（如颜色、光标移动、信号传递）
+- **ANSI 转义序列渲染**：将终端输出中的 ANSI 控制码翻译为 Slate UI 可渲染的富文本样式（颜色、粗体等）
+- **键盘输入翻译层**：将 Slate 的 `FKeyEvent` 转换为 PTY 可识别的字符序列，支持修饰键组合（Ctrl+C、Alt 序列等）
+- **会话生命周期管理**：追踪终端输出活动，在编辑器关闭前提醒用户仍有进行中的输出
+- **可配置的终端设置**：提供 `UTerminalSettings` 进行自定义配置
 
 ## 使用场景
 
-- 你在 UE5 编辑器内频繁执行命令行操作（如 Git、构建脚本、测试工具）→ 用 Terminal
-- 你需要一个嵌入式终端来运行 UnrealBuildTool 或自动化测试 → 用 Terminal
-- 你希望避免在 UE5 和外部终端之间来回切换 → 用 Terminal
-- 你在开发编辑器扩展，需要集成一个可编程的终端面板 → 用 Terminal
+- 你频繁在 UE5 编辑器和外部终端之间切换执行 Git、构建脚本 → 用 Terminal 在编辑器内直接操作
+- 你需要在编辑器内快速查看实时编译输出或日志流 → 用 Terminal 的内嵌终端窗口
+- 你在开发自定义工具链，需要将命令行交互集成到编辑器工作流中 → 用 Terminal 提供的 Slate 终端组件
 
 ## 蓝图用法
 
-此插件是纯编辑器 UI 工具，主要通过 Slate 面板交互，不暴露蓝图可调用函数。终端的所有交互均通过编辑器内嵌的终端面板完成。
+该插件主要是编辑器 UI 工具，API 以 C++ / Slate 为主。`UTerminalSettings` 提供了可通过编辑器设置面板访问的配置选项。
+
+### 核心节点
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| 终端设置 | 配置终端行为（字体、Shell 路径等） | `UTerminalSettings` |
+
+> ⚠️ 该插件的大部分核心功能（PTY 管理、ANSI 渲染、键入翻译）位于内部实现层，主要通过 Slate UI 暴露而非蓝图函数。建议通过 C++ 用法进行深度集成。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "TerminalModule.h"
+#include "Terminal.h"
 ```
 
 ### 基本用法
 
-该插件通过 Slate 面板集成到编辑器中，核心类 `UTerminalSettings` 提供终端行为配置。以下为典型的 C++ 集成模式：
+该插件的核心功能通过 Slate Widget 体系实现。终端会话通过 PTY 与系统 Shell 通信，键入事件通过专用翻译层转发。
+
+**键盘输入转发**（源自 commit `c9454ad1`）：
 
 ```cpp
-// 访问终端设置（来源：UTerminalSettings 重构提交 2832901f）
-// 终端设置不再使用 defaultconfig，需通过 GetMutableDefault 获取
-UTerminalSettings* Settings = GetMutableDefault<UTerminalSettings>();
+// 将 Slate 键事件转换为 PTY 可识别的终端序列
+// 内部通过专用翻译器处理完整的键/修饰键矩阵
+// 支持：Ctrl+C、Ctrl+Z、Alt+字符、方向键、功能键等
+```
+
+**会话活动监控**（源自 commit `91d5944f`）：
+
+```cpp
+// 在编辑器关闭前检查终端会话是否仍有活动输出
+// 如有未完成的输出，弹出确认对话框提醒用户
+// 防止意外中断长时间运行的命令
 ```
 
 ### 进阶用法
 
-插件内部实现了键位到 PTY 的完整转译层（来源：提交 `c9454ad1`）。如果你需要在自定义终端实现中复用类似的键位翻译逻辑，可以参考 `Terminal` 模块中的专用翻译器类，它将 UE 的 FKey / FModifierKeyState 矩阵完整映射为终端转义序列。
+**设置自定义**（源自 commit `2832901f`）：
+
+```cpp
+// UTerminalSettings 不再使用 defaultconfig 修饰符
+// 意味着配置按项目存储，不会跨项目共享
+// 可通过 UTerminalSettings 自定义 Shell 路径、字体、配色等
+```
+
+## Demo 示例
+
+```cpp
+// TerminalDemo.h
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Widgets/Docking/SDockTab.h"
+
+class FTerminalDemoModule : public IModuleInterface
+{
+public:
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
+
+    void OnSpawnTerminalTab(const FSpawnTabArgs& Args);
+
+    static const FName TerminalTabId;
+
+private:
+    TSharedPtr<SDockTab> TerminalTab;
+};
+```
+
+```cpp
+// TerminalDemo.cpp
+#include "TerminalDemo.h"
+// #include "TerminalModule.h"  // 实际 Terminal 插件模块头文件
+
+const FName FTerminalDemoModule::TerminalTabId("TerminalDemoTab");
+
+void FTerminalDemoModule::StartupModule()
+{
+    // Terminal 插件通过编辑器 Tab 启动
+    // 通常在编辑器菜单中注册"终端"选项卡
+    // 用户点击后打开 Slate 终端 Widget，
+    // 内部自动启动 PTY Shell 进程并开始 I/O 循环
+
+    FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
+        TerminalTabId,
+        FOnSpawnTab::CreateRaw(this, &FTerminalDemoModule::OnSpawnTerminalTab))
+        .SetDisplayName(FText::FromString(TEXT("Terminal")))
+        .SetMenuType(ETabSpawnerMenuType::Hidden);
+}
+
+void FTerminalDemoModule::ShutdownModule()
+{
+    FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(TerminalTabId);
+}
+
+void FTerminalDemoModule::OnSpawnTerminalTab(const FSpawnTabArgs& Args)
+{
+    // 实际终端 Widget 由 Terminal 插件提供
+    // 这里展示的是如何将终端集成到编辑器 Tab 框架中
+    TerminalTab = SNew(SDockTab)
+        .TabRole(ETabRole::NomadTab)
+        [
+            SNew(STextBlock)
+            .Text(FText::FromString(TEXT("Terminal plugin widget would go here")))
+        ];
+}
+
+IMPLEMENT_MODULE(FTerminalDemoModule, TerminalDemo)
+```
 
 ## 模块依赖
 
+从 Terminal 编辑器插件的特性推断（PTY 管理、Slate 渲染、编辑器集成）：
+
 | 模块 | 用途 |
 |---|---|
-| 无特殊依赖（仅标准 Core/Engine/Slate 等） | |
+| 无特殊依赖（仅标准 Core/Engine/Slate 等） | Terminal 作为编辑器插件，依赖 Editor 核心框架和 Slate |
+
+> 注：TerminalTests 模块仅用于插件自身的自动化测试，使用者无需依赖。
 
 ## 维护状态
 
@@ -65,22 +165,21 @@ UTerminalSettings* Settings = GetMutableDefault<UTerminalSettings>();
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 修复函数类型转换警告，兼容 MSVC 和 Clang 编译器 |
-| 2026-05-12 | `91d5944f` | [Terminal] Surface session activity and prompt before closing the editor mid-output. | 关闭编辑器时如有活动会话会弹出确认提示 |
-| 2026-04-28 | `2832901f` | [Terminal] Drop `defaultconfig` from `UTerminalSettings`. | 移除设置类的 defaultconfig 标记，调整配置持久化方式 |
-| 2026-04-20 | `c9454ad1` | [Terminal] Forward full key/modifier matrix to the *PTY* via a dedicated translator. | 实现完整的键盘输入到 PTY 转义序列的转译层 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移至 UE_LOGF |
+| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 修复跨编译器（MSVC/Clang）的类型转换警告 |
+| 2026-05-12 | `91d5944f` | [Terminal] Surface session activity and prompt before closing the editor mid-output. | 添加会话活动检测，关闭编辑器前提示未完成的终端输出 |
+| 2026-04-28 | `2832901f` | [Terminal] Drop `defaultconfig` from `UTerminalSettings`. | 设置类移除 defaultconfig，改为项目级配置 |
+| 2026-04-20 | `c9454ad1` | [Terminal] Forward full key/modifier matrix to the *PTY* via a dedicated translator. | 实现完整的键盘输入翻译层，支持所有修饰键组合 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移到新的 UE_LOGF 格式 |
 
 ### 维护评价
 
-Terminal 是一个**非常新的实验性插件**，于 2026 年 4 月从内部仓库迁移至 `Engine/Plugins/Experimental`。从提交记录来看，该插件处于**活跃开发**状态：
+- **创建时间**：2026-04-08，约 1 个月前，非常新的插件
+- **更新频率**：自创建以来已有 5 次提交，约每周 1-2 次，属于**密集开发期**
+- **功能迭代**：从基础终端实现 → 键盘输入完善 → 设置系统优化 → 会话管理 → 编译器兼容性，开发路径清晰
+- **实验性状态**：标记为 `IsExperimentalVersion=true`，`EnabledByDefault=false`，需要手动启用
+- **编辑器专用**：`EditorOnly=true`，不会被打包到运行时
 
-- **开发节奏密集**：创建后约一个月内有 5 次提交，涵盖功能实现（键位转译）、UX 改进（关闭确认）、代码质量（编译器兼容、日志迁移）和架构调整（设置重构）
-- **实验性标记**：`IsExperimentalVersion=true` 且 `EnabledByDefault=false`，API 可能发生重大变更
-- **不可再分发**：`NoRedist=true`，仅限引擎内部使用
-- **无公开文档**：`DocsURL` 为空
-
-**推荐**：适合对编辑器扩展开发感兴趣的高级开发者提前体验和探索。不建议在生产环境中依赖此插件，API 稳定性无法保证。
+**综合评价**：Terminal 是一个处于**早期密集开发阶段**的实验性插件，功能正在快速完善。当前已具备核心终端能力（PTY、ANSI 渲染、键盘输入、会话管理）。适合愿意尝试新功能的开发者使用，但短期内可能仍有 API 变更。建议关注后续版本的稳定性改进。
 
 ## 相关链接
 

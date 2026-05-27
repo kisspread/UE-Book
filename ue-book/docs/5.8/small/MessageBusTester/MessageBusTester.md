@@ -1,6 +1,6 @@
 # MessageBus Tester
 
-> Plugin to test and monitor message bus reliability
+> Plugin to test and monitor message bus reliability（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
@@ -16,28 +16,27 @@
 
 ## 用途
 
-MessageBusTester 是一个实验性插件，专门用于**测试和监控 UE5 UDP 消息总线的可靠性**。它解决了消息传输系统验证和性能分析的问题。
+该插件是一个专门用于**测试和监控 UE MessageBus 底层 UDP 消息传输可靠性**的调试工具。它并非面向最终用户的功能插件，而是 Epic 内部用来验证 `UdpMessaging` 插件和 MessageBus 基础设施是否正常工作的测试框架。
 
-该插件的核心功能：
-- **分布式测试协调**：允许多个 UE 实例（测试器）通过 UDP 消息总线相互发现和通信
-- **测试计划管理**：定义和执行可配置的测试序列，包括负载大小、发送间隔等参数
-- **可靠性监控**：跟踪消息传输的延迟、丢失率和吞吐量统计
-- **连接状态管理**：监控测试器之间的连接状态，检测失联的测试器
-- **结果导出**：支持将测试结果导出为 CSV 文件进行后续分析
+核心能力包括：
+- **发现机制**：自动发现同一网络上的其他 MessageBusTester 实例（通过周期性广播发现消息）
+- **测试计划**：定义负载大小、发送间隔等测试参数，支持多条测试项组合
+- **负载收发**：在发现的 Tester 之间发送带 payload 的测试消息，跟踪确认（ACK）状态
+- **性能统计**：收集 KeepAlive 间隔、丢包率、传输带宽（MB/s）等关键指标
+- **结果导出**：测试结束后可将结果导出为 CSV 文件
 
-为什么存在：消息总线是 UE5 分布式架构的核心组件，此插件提供了专门的测试框架来验证其在不同网络条件下的表现，确保生产环境中的可靠性。
+> **注意**：该插件通过 `AllowlistPrograms` 限制仅在 `MessageBusTesterApp` 专用测试程序中加载，普通编辑器或游戏项目中不会激活。
 
 ## 使用场景
 
-- **网络消息系统验证**：在开发分布式游戏或多人游戏时，需要验证 UDP 消息传输的可靠性
-- **性能基准测试**：测试消息总线在不同负载下的吞吐量和延迟表现
-- **故障排除**：诊断消息丢失、延迟过高或连接不稳定的问题
-- **回归测试**：在消息总线系统更新后进行回归测试，确保没有引入性能退化
-- **跨进程通信测试**：测试在同一台机器或网络中多个 UE 进程间的消息通信
+- 你在开发跨进程/跨机器的实时通信功能，需要验证 UDP 消息传输的丢包率和延迟
+- 你需要对 `UdpMessaging` 插件的底层传输层进行压力测试或回归测试
+- 你需要在多个 Unreal 实例之间进行消息总线可靠性的端到端测试
+- 你在排查 MessageBus 在高负载或网络抖动场景下的表现
 
 ## 蓝图用法
 
-该插件主要是面向 C++ 的测试工具，没有暴露 `BlueprintCallable` 节点。所有操作都通过 C++ 接口进行。
+该插件主要通过 C++ 接口驱动，**没有暴露 BlueprintCallable 函数**。所有操作均通过 `IMessageBusTester` 接口在 C++ 层完成。
 
 ## C++ 用法
 
@@ -46,432 +45,168 @@ MessageBusTester 是一个实验性插件，专门用于**测试和监控 UE5 UD
 ```cpp
 #include "IMessageBusTesterModule.h"
 #include "IMessageBusTester.h"
-#include "IMessageBusTesterLogger.h"
 #include "MessageBusTesterCommon.h"
+#include "DiscoveredTester.h"
+#include "MessageBusTesterSettings.h"
 ```
 
 ### 基本用法
 
-#### 获取消息总线测试器实例
+从模块获取 Tester 接口并启动系统：
 
 ```cpp
-// 来源：Public/IMessageBusTesterModule.h
-// 获取消息总线测试器模块实例
-IMessageBusTesterModule* MessageBusTesterModule = FModuleManager::GetModulePtr<IMessageBusTesterModule>("MessageBusTester");
+// 获取模块实例
+IMessageBusTesterModule& Module = FModuleManager::Get().LoadModuleChecked<IMessageBusTesterModule>("MessageBusTester");
+IMessageBusTester& Tester = Module.GetMessageBusTester();
 
-if (MessageBusTesterModule)
+// 启动消息总线测试系统
+Tester.StartSystem();
+
+// 配置测试计划
+FTestPlanItem Item;
+Item.NumBytes = 2048;            // 每个 payload 的字节数
+Item.IntervalSeconds = 0.1f;     // 发送间隔（秒）
+Tester.AddTestPlanItem(Item);
+
+// 启动测试
+Tester.StartTest();
+
+// 监听发现的测试者列表变化
+Tester.OnDiscoveredTesterListChanged().AddLambda([]()
 {
-    // 获取测试器实例
-    IMessageBusTester& Tester = MessageBusTesterModule->GetMessageBusTester();
-    
-    // 获取日志记录器
-    IMessageBusTesterLogger& Logger = MessageBusTesterModule->GetLogger();
-}
-```
-
-#### 启动和停止测试系统
-
-```cpp
-// 来源：Public/IMessageBusTester.h
-IMessageBusTester& Tester = MessageBusTesterModule->GetMessageBusTester();
-
-// 启动测试系统
-bool bStarted = Tester.StartSystem();
-
-// 检查是否正在运行
-bool bIsRunning = Tester.IsRunning();
-
-// 停止测试系统
-bool bStopped = Tester.StopSystem();
-```
-
-#### 管理测试计划
-
-```cpp
-// 来源：Public/MessageBusTesterCommon.h + Public/IMessageBusTester.h
-// 创建测试计划项
-FTestPlanItem TestItem;
-TestItem.NumBytes = 1024;          // 负载大小（字节）
-TestItem.IntervalSeconds = 1.0f;   // 发送间隔（秒）
-
-// 添加到测试计划
-Tester.AddTestPlanItem(TestItem);
-
-// 移除测试计划项
-Tester.RemoveTestPlanItem(0);
-
-// 获取当前测试计划
-const FMessageBusTestPlan& CurrentPlan = Tester.GetTestPlan();
-
-// 监听测试计划变化
-Tester.OnTestPlanChanged().AddLambda([]()
-{
-    UE_LOG(LogTemp, Log, TEXT("测试计划已更新"));
+    // 处理新发现或丢失的 Tester
 });
-```
-
-#### 发现和监控测试器
-
-```cpp
-// 来源：Public/IMessageBusTester.h + Public/DiscoveredTester.h
-// 获取已发现的测试器列表
-TConstArrayView<TSharedPtr<FDiscoveredTester, ESPMode::ThreadSafe>> DiscoveredTesters = 
-    Tester.GetDiscoveredTesters();
-
-for (const TSharedPtr<FDiscoveredTester, ESPMode::ThreadSafe>& TesterInstance : DiscoveredTesters)
-{
-    // 获取测试器标识符
-    FGuid Identifier = TesterInstance->Identifier;
-    
-    // 获取测试器描述信息
-    const FTesterInstanceDescriptor& Descriptor = TesterInstance->Descriptor;
-    FString MachineName = Descriptor.MachineName;
-    uint32 ProcessId = Descriptor.ProcessId;
-    
-    // 获取连接状态
-    EDiscoveredTesterConnectionState ConnectionState = TesterInstance->ConnectionState;
-    
-    // 获取统计信息
-    const FMessageTransportStatistics& Stats = TesterInstance->Statistics;
-}
-
-// 监听测试器列表变化
-Tester.OnDiscoveredTesterListChanged().AddLambda([&Tester]()
-{
-    // 重新获取测试器列表
-    TConstArrayView<TSharedPtr<FDiscoveredTester, ESPMode::ThreadSafe>> Testers = 
-        Tester.GetDiscoveredTesters();
-    UE_LOG(LogTemp, Log, TEXT("已发现 %d 个测试器"), Testers.Num());
-});
-
-// 清除失联的测试器
-bool bCleared = Tester.ClearLostTesters();
 ```
 
 ### 进阶用法
 
-#### 完整的测试流程
+监控发现的 Tester 列表及其性能统计：
 
 ```cpp
-// 来源：基于多个头文件的综合用法
-class FMyMessageBusTest
+// 获取所有已发现的 Tester
+TConstArrayView<TSharedPtr<FDiscoveredTester, ESPMode::ThreadSafe>> Testers = Tester.GetDiscoveredTesters();
+
+for (const TSharedPtr<FDiscoveredTester>& DiscoveredTester : Testers)
 {
-public:
-    void RunComprehensiveTest()
+    if (DiscoveredTester.IsValid())
     {
-        IMessageBusTesterModule* Module = FModuleManager::GetModulePtr<IMessageBusTesterModule>("MessageBusTester");
-        if (!Module) return;
-        
-        IMessageBusTester& Tester = Module->GetMessageBusTester();
-        
-        // 1. 配置测试计划
-        ConfigureTestPlan(Tester);
-        
-        // 2. 启动测试系统
-        if (Tester.StartSystem())
-        {
-            // 3. 等待测试器发现
-            WaitForTesters(Tester, 3); // 等待至少3个测试器
-            
-            // 4. 启动测试
-            if (Tester.StartTest())
-            {
-                // 5. 监控测试进度
-                MonitorTestProgress(Tester);
-                
-                // 6. 停止测试
-                Tester.StopTest(false);
-            }
-            
-            // 7. 停止系统
-            Tester.StopSystem();
-        }
+        // 打印 Tester 信息
+        UE_LOG(LogTemp, Log, TEXT("Tester: %s, State: %s, Connection: %s"),
+            *DiscoveredTester->Identifier.ToString(),
+            DiscoveredTester->State == EMessageBusTesterState::Active ? TEXT("Active") : TEXT("Idle"),
+            DiscoveredTester->ConnectionState == EDiscoveredTesterConnectionState::Connected ? TEXT("Connected") : TEXT("Lost"));
+
+        // 检查 KeepAlive 统计
+        const FKeepAliveStatistics& KeepAliveStats = DiscoveredTester->KeepAliveStatistics;
+        UE_LOG(LogTemp, Log, TEXT("  Unreliable KeepAlive Avg: %.4f ms, Reliable KeepAlive Avg: %.4f ms"),
+            KeepAliveStats.AverageUnreliableKeepAliveInterval * 1000.0,
+            KeepAliveStats.AverageReliableKeepAliveInterval * 1000.0);
+
+        // 检查传输带宽
+        UE_LOG(LogTemp, Log, TEXT("  Avg Transfer: %.2f MB/s"), DiscoveredTester->AverageMbPerSecond.Get());
     }
-    
-private:
-    void ConfigureTestPlan(IMessageBusTester& Tester)
-    {
-        // 定义一系列测试项，模拟不同负载
-        TArray<FTestPlanItem> TestItems = {
-            {1024, 1.0f},    // 1KB，每秒发送
-            {4096, 0.5f},    // 4KB，每0.5秒发送
-            {10240, 0.25f}   // 10KB，每0.25秒发送
-        };
-        
-        for (const FTestPlanItem& Item : TestItems)
-        {
-            Tester.AddTestPlanItem(Item);
-        }
-    }
-    
-    void WaitForTesters(IMessageBusTester& Tester, int32 MinTesters)
-    {
-        // 简单的等待逻辑
-        double StartTime = FPlatformTime::Seconds();
-        while (Tester.GetDiscoveredTesters().Num() < MinTesters)
-        {
-            FPlatformProcess::Sleep(0.1f);
-            
-            // 5秒超时
-            if (FPlatformTime::Seconds() - StartTime > 5.0)
-            {
-                UE_LOG(LogTemp, Warning, TEXT("等待测试器超时"));
-                break;
-            }
-        }
-    }
-    
-    void MonitorTestProgress(IMessageBusTester& Tester)
-    {
-        // 监控测试状态变化
-        while (Tester.GetState() == EMessageBusTesterState::Active)
-        {
-            // 这里可以添加监控逻辑
-            FPlatformProcess::Sleep(0.5f);
-        }
-    }
-};
+}
+
+// 清除已丢失的 Tester
+Tester.ClearLostTesters();
+
+// 停止测试（可选参数控制是否退出应用）
+Tester.StopTest(/*bShouldExitOnStop=*/false);
 ```
 
-#### 使用日志记录器
+配置测试会话（通过设置类）：
 
 ```cpp
-// 来源：Public/IMessageBusTesterLogger.h
-IMessageBusTesterLogger& Logger = MessageBusTesterModule->GetLogger();
-
-// 记录日志
-Logger.Log("MyTester", TEXT("测试开始"), EMessageSeverity::Info);
-Logger.Log("MyTester", TEXT("警告信息"), EMessageSeverity::Warning);
-Logger.Log("MyTester", TEXT("错误信息"), EMessageSeverity::Error);
-
-// 监听新日志
-Logger.OnMessageBusTesterNewLogReceived().AddLambda([](TSharedRef<FMessageBusTesterLogEntry> LogEntry)
-{
-    UE_LOG(LogTemp, Log, TEXT("[%s] %s"), *LogEntry->Source.ToString(), *LogEntry->LogMessage);
-});
-
-// 监听日志清除
-Logger.OnMessageBusTesterLogCleared().AddLambda([]()
-{
-    UE_LOG(LogTemp, Log, TEXT("日志已清除"));
-});
-
-// 清除日志
-Logger.ClearLog();
+UMessageBusTesterSettings* Settings = GetMutableDefault<UMessageBusTesterSettings>();
+// 通过命令行 -MessageBusTesterSessionId=1 设置会话 ID
+// 通过命令行 -MessageBusTesterFriendlyName=MyTester 设置友好名称
+int32 SessionId = Settings->GetSessionId();
 ```
 
 ## Demo 示例
 
-以下是一个完整的最小示例，展示如何集成消息总线测试器：
+一个完整的最小可编译示例，展示如何初始化 MessageBusTester 并运行基础测试：
 
 ```cpp
-// MyMessageBusTestActor.h
+// MyBusTest.h
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "IMessageBusTesterModule.h"
 #include "IMessageBusTester.h"
-#include "IMessageBusTesterLogger.h"
-#include "MyMessageBusTestActor.generated.h"
+#include "DiscoveredTester.h"
 
-UCLASS()
-class AMyMessageBusTestActor : public AActor
+class FMyBusTest
 {
-    GENERATED_BODY()
-    
 public:
-    AMyMessageBusTestActor();
-    
-    virtual void BeginPlay() override;
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-    
-    UFUNCTION(BlueprintCallable, Category = "MessageBusTest")
-    void StartTest();
-    
-    UFUNCTION(BlueprintCallable, Category = "MessageBusTest")
-    void StopTest();
-    
+    void Initialize();
+    void Shutdown();
+
 private:
-    void OnDiscoveredTesterListChanged();
-    void OnTestPlanChanged();
-    void OnLogReceived(TSharedRef<FMessageBusTesterLogEntry> LogEntry);
-    
-    void ConfigureDefaultTestPlan();
-    
-    TScriptInterface<IMessageBusTester> MessageBusTester;
-    TScriptInterface<IMessageBusTesterLogger> Logger;
-    
-    FDelegateHandle TesterListChangedHandle;
-    FDelegateHandle TestPlanChangedHandle;
-    FDelegateHandle LogReceivedHandle;
+    void OnTestersChanged();
+    IMessageBusTester* BusTester = nullptr;
 };
 ```
 
 ```cpp
-// MyMessageBusTestActor.cpp
-#include "MyMessageBusTestActor.h"
-#include "IMessageBusTesterModule.h"
+// MyBusTest.cpp
+#include "MyBusTest.h"
 #include "MessageBusTesterCommon.h"
 #include "Modules/ModuleManager.h"
 
-AMyMessageBusTestActor::AMyMessageBusTestActor()
+void FMyBusTest::Initialize()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    // 加载模块
+    IMessageBusTesterModule& Module = FModuleManager::Get().LoadModuleChecked<IMessageBusTesterModule>("MessageBusTester");
+    BusTester = &Module.GetMessageBusTester();
+
+    // 订阅 Tester 列表变化
+    BusTester->OnDiscoveredTesterListChanged().AddRaw(this, &FMyBusTest::OnTestersChanged);
+
+    // 启动系统
+    BusTester->StartSystem();
+
+    // 添加一个测试项：1KB 负载，每 0.5 秒发送一次
+    FTestPlanItem Item;
+    Item.NumBytes = 1024;
+    Item.IntervalSeconds = 0.5f;
+    BusTester->AddTestPlanItem(Item);
+
+    UE_LOG(LogTemp, Log, TEXT("MessageBusTester initialized, waiting for remote testers..."));
 }
 
-void AMyMessageBusTestActor::BeginPlay()
+void FMyBusTest::Shutdown()
 {
-    Super::BeginPlay();
-    
-    // 获取消息总线测试器模块
-    IMessageBusTesterModule* Module = FModuleManager::GetModulePtr<IMessageBusTesterModule>("MessageBusTester");
-    if (Module)
+    if (BusTester)
     {
-        // 获取测试器接口
-        MessageBusTester = Module->GetMessageBusTester();
-        Logger = Module->GetLogger();
-        
-        // 配置默认测试计划
-        ConfigureDefaultTestPlan();
-        
-        // 设置委托
-        if (MessageBusTester)
-        {
-            TesterListChangedHandle = MessageBusTester->OnDiscoveredTesterListChanged().AddUObject(
-                this, &AMyMessageBusTestActor::OnDiscoveredTesterListChanged);
-                
-            TestPlanChangedHandle = MessageBusTester->OnTestPlanChanged().AddUObject(
-                this, &AMyMessageBusTestActor::OnTestPlanChanged);
-        }
-        
-        if (Logger)
-        {
-            LogReceivedHandle = Logger->OnMessageBusTesterNewLogReceived().AddUObject(
-                this, &AMyMessageBusTestActor::OnLogReceived);
-        }
-        
-        UE_LOG(LogTemp, Log, TEXT("消息总线测试器已初始化"));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("消息总线测试器模块未找到，请确保插件已启用"));
+        BusTester->StopTest(false);
+        BusTester->StopSystem();
+        BusTester = nullptr;
     }
 }
 
-void AMyMessageBusTestActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void FMyBusTest::OnTestersChanged()
 {
-    // 清理委托
-    if (MessageBusTester)
-    {
-        MessageBusTester->OnDiscoveredTesterListChanged().Remove(TesterListChangedHandle);
-        MessageBusTester->OnTestPlanChanged().Remove(TestPlanChangedHandle);
-    }
-    
-    if (Logger)
-    {
-        Logger->OnMessageBusTesterNewLogReceived().Remove(LogReceivedHandle);
-    }
-    
-    Super::EndPlay(EndPlayReason);
-}
+    if (!BusTester) return;
 
-void AMyMessageBusTestActor::StartTest()
-{
-    if (MessageBusTester)
-    {
-        // 启动测试系统
-        if (MessageBusTester->StartSystem())
-        {
-            // 短暂等待发现其他测试器
-            FPlatformProcess::Sleep(2.0f);
-            
-            // 启动测试
-            MessageBusTester->StartTest();
-            
-            UE_LOG(LogTemp, Log, TEXT("消息总线测试已启动"));
-        }
-    }
-}
+    TConstArrayView<TSharedPtr<FDiscoveredTester, ESPMode::ThreadSafe>> Testers = BusTester->GetDiscoveredTesters();
+    UE_LOG(LogTemp, Log, TEXT("Discovered %d tester(s)"), Testers.Num());
 
-void AMyMessageBusTestActor::StopTest()
-{
-    if (MessageBusTester)
+    // 当至少发现一个远端 Tester 时，自动启动测试
+    if (Testers.Num() > 0 && BusTester->GetState() == EMessageBusTesterState::Idle)
     {
-        // 停止测试（不退出应用程序）
-        MessageBusTester->StopTest(false);
-        
-        // 停止测试系统
-        MessageBusTester->StopSystem();
-        
-        UE_LOG(LogTemp, Log, TEXT("消息总线测试已停止"));
-    }
-}
-
-void AMyMessageBusTestActor::ConfigureDefaultTestPlan()
-{
-    if (MessageBusTester)
-    {
-        // 添加三个测试项：轻度、中度、重度负载
-        FTestPlanItem LightLoad;
-        LightLoad.NumBytes = 512;
-        LightLoad.IntervalSeconds = 1.0f;
-        
-        FTestPlanItem MediumLoad;
-        MediumLoad.NumBytes = 4096;
-        MediumLoad.IntervalSeconds = 0.5f;
-        
-        FTestPlanItem HeavyLoad;
-        HeavyLoad.NumBytes = 16384;
-        HeavyLoad.IntervalSeconds = 0.25f;
-        
-        MessageBusTester->AddTestPlanItem(LightLoad);
-        MessageBusTester->AddTestPlanItem(MediumLoad);
-        MessageBusTester->AddTestPlanItem(HeavyLoad);
-    }
-}
-
-void AMyMessageBusTestActor::OnDiscoveredTesterListChanged()
-{
-    if (MessageBusTester)
-    {
-        int32 TesterCount = MessageBusTester->GetDiscoveredTesters().Num();
-        UE_LOG(LogTemp, Log, TEXT("已发现 %d 个测试器"), TesterCount);
-    }
-}
-
-void AMyMessageBusTestActor::OnTestPlanChanged()
-{
-    if (MessageBusTester)
-    {
-        const FMessageBusTestPlan& Plan = MessageBusTester->GetTestPlan();
-        UE_LOG(LogTemp, Log, TEXT("测试计划已更新，包含 %d 个测试项"), Plan.TestPlanItems.Num());
-    }
-}
-
-void AMyMessageBusTestActor::OnLogReceived(TSharedRef<FMessageBusTesterLogEntry> LogEntry)
-{
-    // 根据日志严重级别输出到不同日志类别
-    switch (LogEntry->MessageSeverity)
-    {
-        case EMessageSeverity::Info:
-            UE_LOG(LogTemp, Log, TEXT("[%s] %s"), *LogEntry->Source.ToString(), *LogEntry->LogMessage);
-            break;
-        case EMessageSeverity::Warning:
-            UE_LOG(LogTemp, Warning, TEXT("[%s] %s"), *LogEntry->Source.ToString(), *LogEntry->LogMessage);
-            break;
-        case EMessageSeverity::Error:
-            UE_LOG(LogTemp, Error, TEXT("[%s] %s"), *LogEntry->Source.ToString(), *LogEntry->LogMessage);
-            break;
+        BusTester->StartTest();
     }
 }
 ```
 
 ## 模块依赖
 
+该插件依赖 `UdpMessaging` 插件（在 `.uplugin` 中声明）。以下为 C++ 模块层面的依赖：
+
 | 模块 | 用途 |
 |---|---|
-| `UdpMessaging` | UDP 消息传输实现，MessageBusTester 依赖此模块进行实际的消息收发 |
-| `MessageBus` | UE5 消息总线核心框架 |
+| `Messaging` | `FMessageEndpoint`、`FMessageAddress`、`IMessageContext` 等消息总线核心 API |
+| `UdpMessaging`（插件级依赖） | UDP 消息传输层，作为测试目标 |
 
 ## 维护状态
 
@@ -479,33 +214,22 @@ void AMyMessageBusTestActor::OnLogReceived(TSharedRef<FMessageBusTesterLogEntry>
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏到新的 UE_LOGF 格式，适配 UE5 日志系统更新 |
-| 2026-01-15 | `738ab46a` | Fixed localization warnings | 修复本地化相关警告，提升代码质量 |
-| 2025-11-27 | `29081f24` | Fixup API macros | 修复 API 宏定义问题，确保正确的模块导出 |
-| 2025-11-20 | `f8d6103d` | Enable NDK 29 for Android, fix compilation issues | 启用 Android NDK 29 支持并修复编译问题 |
-| 2025-11-10 | `248fda82` | Fix the statistics panel not updating with a remote client resets its UDP Messaging settings. | 修复当远程客户端重置 UDP 消息设置时统计面板不更新的问题 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移到 UE_LOGF 格式 |
+| 2026-01-15 | `738ab46a` | Fixed localization warnings | 修复本地化警告 |
+| 2025-11-27 | `29081f24` | Fixup API macros | 修复 API 导出宏定义 |
+| 2025-11-20 | `f8d6103d` | Enable NDK 29 for Android, fix compilation issues | 修复 Android 编译问题 |
+| 2025-11-10 | `248fda82` | Fix the statistics panel not updating with a remote client resets its UDP Messaging settings. | 修复远端客户端重置 UDP 设置后统计面板不更新的问题 |
 
 ### 维护评价
 
-**实验性插件，维护活跃度中等**
+- **创建时间**：2025-10-24，插件历史不到 1 年
+- **更新频率**：创建后 2 个月内密集修复（4 次提交），之后间隔约 3 个月
+- **维护性质**：所有更新均为编译修复、API 规范化和平台兼容性调整，**无功能性新增**
+- **实验性声明**：`.uplugin` 中 `IsBetaVersion=true`，且首条 commit 明确注明"may be changed or removed in the future"
+- **使用限制**：通过 `AllowlistPrograms` 限定仅在 `MessageBusTesterApp` 专用测试程序中加载
 
-- **创建时间**：2025 年 10 月创建，相对较新
-- **近期更新**：最近一次更新在 2026 年 4 月，主要进行代码现代化和 bug 修复
-- **维护状态**：处于实验阶段，有持续的维护和修复
-- **已知限制**：
-  - 仅支持 UDP 消息传输
-  - 主要面向测试和调试目的，不建议在生产环境中使用
-  - 实验性功能，API 可能在未来版本中发生变化
-- **推荐使用**：
-  - ✅ 推荐用于 UDP 消息系统的开发测试和性能分析
-  - ✅ 推荐用于诊断网络消息传输问题
-  - ❌ 不推荐在最终产品中直接使用
-  - ❌ 不推荐用于生产环境的消息监控
-
-**警告**：该插件标记为实验性（IsBetaVersion=true），默认不启用，且 SupportedPrograms 限制为 MessageBusTesterApp。这意味着它主要设计为独立的测试应用程序，而不是集成到游戏项目中的通用工具。
+**综合评价**：这是一个内部测试工具，处于实验阶段，功能完整但不面向外部使用者。仅推荐在调试 MessageBus/UDP 传输层时使用，**不建议用于生产项目**。由于最近一次更新（2026-04）仍属于维护性更新，插件仍在被维护中，但 Epic 可能在未来任意时间移除它。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MessageBusTester)
-- [官方文档]()（暂无）
-- [测试用例]()（暂无独立测试用例，测试逻辑集成在插件本身）

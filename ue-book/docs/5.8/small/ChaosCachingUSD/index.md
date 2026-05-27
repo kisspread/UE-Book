@@ -4,280 +4,226 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | Chaos缓存USD导出 |
+| 中文名 | 混沌缓存USD支持 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（USD自定义Schema定义） |
+| 包含内容 | ❌ 无 |
 | 模块 | `ChaosCachingUSD` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2023-08-02 |
-| 年龄标签 | 🆕（约 3 年） |
+| 年龄标签 | 🆕（约 2 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosCachingUSD) | |
 
 ## 用途
 
-该插件为 Chaos 物理系统的 **Flesh（软体/肉体）模拟** 提供 USD 文件格式的缓存导出支持。它将 Chaos 物理模拟产生的四面体网格（TetMesh）、顶点位置、速度和肌肉激活数据写入 USD 文件，并支持读取和回放这些缓存数据。
-
-核心问题：Chaos Flesh 模拟计算代价高昂，需要将模拟结果缓存到文件以便回放。该插件利用 USD 的 **Value Clips** 机制将大量帧数据拆分为多个文件，实现高效存储和按需加载。
-
-该插件从 `USDImporter` 插件中独立拆分出来（见首次提交信息），专门处理 Chaos 缓存与 USD 之间的数据转换。
+该插件为 Chaos 布料（Flesh）模拟数据提供了 USD 格式的缓存与读写功能。它允许开发者将 Chaos 物理引擎生成的复杂布料模拟结果（如顶点位置、速度、肌肉激活状态、四面体拓扑结构）序列化为通用的 USD 文件格式，从而实现模拟结果的保存、跨平台交换、以及在不同 DCC 工具中的回放与处理。它特别支持 USD 的 Value Clips 特性，用于将庞大的时序模拟数据分帧存储到多个文件中，优化存储与加载效率。
 
 ## 使用场景
 
-- 你使用 Chaos Flesh 系统进行软体物理模拟（如肌肉、皮肤变形），需要将模拟结果导出为 USD 文件以便离线回放或跨软件交换
-- 你需要将 Chaos 模拟缓存存储为 USD Value Clips 格式，以获得高效的分帧存储能力
-- 你需要从 USD 文件中读取之前缓存的 Chaos 模拟数据并回放
+- 你需要将 UE5 中运行的 Chaos 布料模拟结果导出为 USD 文件，以便在 Maya、Houdini 等第三方软件中进行后期处理或渲染。
+- 你需要一个标准化的文件格式来存储和交换复杂的物理模拟数据，用于技术美术（Tech Art）管线或数据驱动动画工作流。
+- 你的项目使用了 Chaos 的四面体网格（Tetrahedral Mesh）进行模拟，并且需要将其拓扑结构及变形数据持久化保存。
 
 ## 蓝图用法
 
-该插件没有暴露任何蓝图节点。所有 API 均为 C++ 接口，面向编辑器工具和资产导入管线使用。
+此插件主要提供 C++ 接口，用于在编辑器或运行时与 USD 数据交互。未暴露蓝图可用的函数。
 
 ## C++ 用法
 
 ### 头文件引入
 
+使用该插件提供的操作函数，需包含以下头文件：
+
 ```cpp
 #include "ChaosCachingUSD/Operations.h"
 ```
 
-### 基本用法 — USD Stage 管理
+### 基本用法
 
-操作 USD Stage 的基本流程：创建、打开、保存、关闭。
+以下示例展示了如何创建一个 USD 阶段（Stage），并向其中写入模拟数据的点（顶点）和速度信息。
 
+**创建 USD 阶段并写入点数据**
 ```cpp
 #include "ChaosCachingUSD/Operations.h"
+#include "UObject/UObjectGlobals.h"
 
-using namespace UE::ChaosCachingUSD;
-
-// 创建新的 USD Stage
-FUsdStage Stage;
-bool bCreated = NewStage(TEXT("C:/Cache/MySimulation.usd"), Stage);
-
-// 打开已有的 USD Stage
-FUsdStage ExistingStage;
-bool bOpened = OpenStage(TEXT("C:/Cache/MySimulation.usd"), ExistingStage);
-
-// 保存并设置帧范围
-bool bSaved = SaveStage(Stage, 0.0, 100.0);
-
-// 关闭 Stage
-bool bClosed = CloseStage(Stage);
-// 也可以通过名称关闭
-bool bClosedByName = CloseStage(TEXT("C:/Cache/MySimulation.usd"));
-```
-
-### 基本用法 — 写入模拟数据
-
-将 Chaos 模拟数据写入 USD Stage：
-
-```cpp
-#include "ChaosCachingUSD/Operations.h"
-
-using namespace UE::ChaosCachingUSD;
-
-FUsdStage Stage;
-NewStage(TEXT("C:/Cache/FleshSim.usd"), Stage);
-
-FString PrimPath = TEXT("/Root/TetMesh");
-
-// 写入四面体网格拓扑（不随时间变化的几何数据）
-FManagedArrayCollection Collection;
-WriteTetMesh(Stage, PrimPath, Collection, 0);
-
-// 写入顶点位置和速度（随时间变化的每帧数据）
-TArray<Chaos::TVector<float, 3>> Points;
-TArray<Chaos::TVector<float, 3>> Vels;
-// ... 填充 Points 和 Vels 数据 ...
-
-for (double Time = 0.0; Time <= 100.0; Time += 1.0)
+void SaveSimulationToUSD()
 {
-    WritePoints(Stage, PrimPath, Time, Points, Vels);
+    using namespace UE::ChaosCachingUSD;
+
+    UE::FUsdStage Stage;
+    const FString StagePath = FPaths::ProjectSavedDir() / TEXT("SimulationCache.usd");
+
+    // 1. 创建一个新的 USD 阶段
+    if (!NewStage(StagePath, Stage))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create USD stage"));
+        return;
+    }
+
+    // 2. 准备模拟数据（示例数据）
+    const FString PrimPath = TEXT("/World/ClothMesh");
+    const double Time = 0.0; // 使用 USD 的 ‘default’ 时间
+    TArray<Chaos::TVector<float, 3>> Points, Velocities;
+    // ... (此处填充 Points 和 Velocities 数据)
+
+    // 3. 将点与速度数据写入 USD 阶段
+    if (!WritePoints(Stage, PrimPath, Time, Points, Velocities))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to write points to USD stage"));
+    }
+
+    // 4. 保存并关闭阶段
+    const double FirstFrame = 0.0;
+    const double LastFrame = 100.0;
+    SaveStage(Stage, FirstFrame, LastFrame);
+    CloseStage(Stage);
 }
-
-SaveStage(Stage, 0.0, 100.0);
-CloseStage(Stage);
 ```
+*来源参考：`Operations.h` 中 `WritePoints`, `NewStage`, `SaveStage` 的函数声明与注释。*
 
-### 进阶用法 — USD Value Clips
+### 进阶用法
 
-Value Clips 是 USD 的分帧存储机制，将每帧数据存为独立文件，主文件仅做引用。适合大量帧的模拟缓存。
+对于需要分帧存储大量模拟数据的场景，应使用 USD 的 Value Clips 功能。以下示例展示了初始化 Value Clips 模板并写入多帧数据的流程。
 
+**使用 Value Clips 存储分帧数据**
 ```cpp
 #include "ChaosCachingUSD/Operations.h"
 
-using namespace UE::ChaosCachingUSD;
-
-FString ParentName = TEXT("C:/Cache/MySimulation.usd");
-FString TopologyName, TimeVaryingTemplate;
-
-// 根据主文件名生成拓扑文件和帧模板文件名
-// "MySimulation.usd" → "MySimulation.topology.usd" + "MySimulation.###.###.usd"
-GenerateValueClipStageNames(ParentName, TopologyName, TimeVaryingTemplate);
-
-// 创建 Value Clips 的主 Stage 和拓扑 Stage
-FUsdStage ParentStage, TopologyStage;
-NewValueClipsStages(ParentName, TopologyName, ParentStage, TopologyStage);
-
-// 初始化 Value Clips 模板（设置帧范围和步长）
-TArray<FString> PrimPaths = { TEXT("/Root/TetMesh") };
-InitValueClipsTemplate(
-    ParentStageName, TopologyStageName, TimeVaryingTemplate,
-    PrimPaths, 0.0, 100.0, 1.0  // StartTime, EndTime, Stride
-);
-
-// 为每一帧创建独立的 Stage 并写入数据
-for (double Time = 0.0; Time <= 100.0; Time += 1.0)
+void SaveSimulationWithValueClips()
 {
-    FString FrameStageName;
-    FUsdStage FrameStage;
-    NewValueClipsFrameStage(TimeVaryingTemplate, Time, FrameStageName, FrameStage);
-    
-    // 写入该帧的顶点数据
-    WritePoints(FrameStage, PrimPath, Time, Points, Vels);
-    
-    // 每帧单独保存并关闭
-    SaveStage(FrameStage, -DBL_MAX, -DBL_MAX);
-    CloseStage(FrameStage);
+    using namespace UE::ChaosCachingUSD;
+
+    const FString ParentStagePath = FPaths::ProjectSavedDir() / TEXT("ClothSim.usd");
+    FString TopologyPath, TimeVaryingTemplate;
+
+    // 1. 根据父阶段路径生成拓扑阶段和时间模板文件名
+    GenerateValueClipStageNames(ParentStagePath, TopologyPath, TimeVaryingTemplate);
+
+    UE::FUsdStage ParentStage, TopologyStage;
+    // 2. 创建父阶段和拓扑阶段（存储不变的拓扑数据，如网格连接关系）
+    if (!NewValueClipsStages(ParentStagePath, TopologyPath, ParentStage, TopologyStage))
+    {
+        return;
+    }
+
+    // 3. 将拓扑数据写入 TopologyStage
+    const FString PrimPath = TEXT("/World/ClothMesh");
+    FManagedArrayCollection Collection; // 包含网格拓扑信息
+    // ... (此处从模拟器获取拓扑数据到 Collection)
+    WriteTetMesh(TopologyStage, PrimPath, Collection); // 示例：写入四面体网格
+
+    // 4. 初始化 Value Clips 元数据
+    const TArray<FString> PrimPaths = { PrimPath };
+    const double StartTime = 0.0, EndTime = 10.0, Stride = 0.033; // 30FPS
+    InitValueClipsTemplate(
+        ParentStage, TopologyStage,
+        ParentStagePath, TopologyPath, TimeVaryingTemplate,
+        PrimPaths, StartTime, EndTime, Stride
+    );
+
+    // 5. 循环写入每一帧的点数据
+    for (double CurrentTime = StartTime; CurrentTime <= EndTime; CurrentTime += Stride)
+    {
+        FString FrameStageName;
+        UE::FUsdStage FrameStage;
+        // 为当前帧创建单独的 USD 文件
+        if (!NewValueClipsFrameStage(TimeVaryingTemplate, CurrentTime, FrameStageName, FrameStage))
+        {
+            continue;
+        }
+
+        // 获取当前帧的模拟结果
+        TArray<Chaos::TVector<float, 3>> Points, Velocities;
+        // ... (此处获取当前帧数据)
+        WritePoints(FrameStage, PrimPath, CurrentTime, Points, Velocities);
+        
+        // 保存并关闭当前帧的阶段
+        SaveStage(FrameStage, -DBL_MAX, -DBL_MAX);
+        CloseStage(FrameStage);
+    }
+
+    // 6. 保存并关闭父阶段和拓扑阶段
+    SaveStage(ParentStage, StartTime, EndTime);
+    SaveStage(TopologyStage, -DBL_MAX, -DBL_MAX);
+    CloseStage(ParentStage);
+    CloseStage(TopologyStage);
 }
-
-// 保存主 Stage
-SaveStage(ParentStage, 0.0, 100.0);
-CloseStage(ParentStage);
-CloseStage(TopologyStage);
 ```
-
-### 进阶用法 — 读取缓存数据
-
-从 USD 文件读取之前缓存的模拟数据：
-
-```cpp
-#include "ChaosCachingUSD/Operations.h"
-
-using namespace UE::ChaosCachingUSD;
-
-FUsdStage Stage;
-OpenStage(TEXT("C:/Cache/FleshSim.usd"), Stage);
-
-FString PrimPath = TEXT("/Root/TetMesh");
-
-// 获取所有可用的时间采样点
-TArray<double> TimeSamples;
-ReadTimeSamples(Stage, PrimPath, TimeSamples);
-
-// 读取特定时间的顶点位置和速度
-pxr::VtArray<pxr::GfVec3f> Points, Vels;
-ReadPoints(Stage, PrimPath, 50.0, Points, Vels);
-
-// 读取肌肉激活数据
-pxr::VtArray<float> Activations;
-ReadMuscleActivation(Stage, PrimPath, 50.0, Activations);
-
-// 获取包围时间采样（用于插值）
-double Lower, Upper;
-GetBracketingTimeSamples(Stage, PrimPath, GetPointsAttrName(), 49.5, &Lower, &Upper);
-
-CloseStage(Stage);
-```
+*来源参考：`Operations.h` 中 `GenerateValueClipStageNames`, `NewValueClipsStages`, `InitValueClipsTemplate`, `NewValueClipsFrameStage`, `WriteTetMesh` 的组合使用。*
 
 ## Demo 示例
 
-以下是一个完整的最小示例，演示如何将 Chaos 模拟数据缓存到 USD 并读取回来：
+一个完整的、可编译的最小 C++ 示例，演示如何利用 `UE::ChaosCachingUSD` 命名空间中的函数创建一个 USD 文件并写入基础数据。
 
+**ChaosCachingUSDDemo.h**
 ```cpp
-// SimCacheToUSD.h
 #pragma once
+#include "CoreMinimal.h"
+#include "ChaosCachingUSD/Operations.h"
 
-class FSimCacheToUSDExample
+class FChaosCachingUSDDemo
 {
 public:
-    /** 将模拟数据导出到 USD 文件 */
-    static bool ExportSimulationCache(const FString& USDFilePath, int32 NumFrames);
-    
-    /** 从 USD 文件读取模拟数据 */
-    static bool ImportSimulationCache(const FString& USDFilePath);
+    static void RunDemo();
 };
 ```
 
+**ChaosCachingUSDDemo.cpp**
 ```cpp
-// SimCacheToUSD.cpp
-#include "SimCacheToUSD.h"
-#include "ChaosCachingUSD/Operations.h"
+#include "ChaosCachingUSDDemo.h"
+#include "HAL/FileManager.h"
 
-using namespace UE::ChaosCachingUSD;
-
-bool FSimCacheToUSDExample::ExportSimulationCache(const FString& USDFilePath, int32 NumFrames)
+void FChaosCachingUSDDemo::RunDemo()
 {
-    FUsdStage Stage;
-    if (!NewStage(USDFilePath, Stage))
+    using namespace UE::ChaosCachingUSD;
+    
+    const FString DemoFilePath = FPaths::ProjectSavedDir() / TEXT("ChaosCacheUSD_Demo.usd");
+    UE::FUsdStage Stage;
+
+    // 创建阶段
+    if (!NewStage(DemoFilePath, Stage))
     {
-        return false;
+        UE_LOG(LogTemp, Warning, TEXT("ChaosCachingUSDDemo: Failed to create stage."));
+        return;
     }
 
-    const FString PrimPath = TEXT("/Root/SimMesh");
+    // 写入一些示例点数据（一个三角形）
+    const FString DemoPrimPath = TEXT("/DemoPrim");
+    TArray<Chaos::TVector<float, 3>> DemoPoints = {
+        Chaos::TVector<float, 3>(0.f, 0.f, 0.f),
+        Chaos::TVector<float, 3>(1.f, 0.f, 0.f),
+        Chaos::TVector<float, 3>(0.f, 1.f, 0.f)
+    };
+    TArray<Chaos::TVector<float, 3>> DemoVelocities = {
+        Chaos::TVector<float, 3>(0.f, 0.f, 0.f),
+        Chaos::TVector<float, 3>(0.f, 0.f, 0.f),
+        Chaos::TVector<float, 3>(0.f, 0.f, 0.f)
+    };
 
-    // 写入拓扑数据（第一帧）
-    FManagedArrayCollection Collection;
-    // ... 填充 Collection ...
-    WriteTetMesh(Stage, PrimPath, Collection, INDEX_NONE);
-
-    // 逐帧写入位置和速度
-    for (int32 Frame = 0; Frame < NumFrames; ++Frame)
+    if (WritePoints(Stage, DemoPrimPath, -DBL_MAX, DemoPoints, DemoVelocities))
     {
-        TArray<Chaos::TVector<float, 3>> Points, Vels;
-        // ... 模拟或获取第 Frame 帧的数据 ...
-        const double Time = static_cast<double>(Frame);
-        
-        if (!WritePoints(Stage, PrimPath, Time, Points, Vels))
-        {
-            CloseStage(Stage);
-            return false;
-        }
+        // 保存并关闭
+        SaveStage(Stage, -DBL_MAX, -DBL_MAX);
+        CloseStage(Stage);
+        UE_LOG(LogTemp, Log, TEXT("ChaosCachingUSDDemo: Successfully created USD file at %s"), *DemoFilePath);
     }
-
-    SaveStage(Stage, 0.0, static_cast<double>(NumFrames - 1));
-    CloseStage(Stage);
-    return true;
-}
-
-bool FSimCacheToUSDExample::ImportSimulationCache(const FString& USDFilePath)
-{
-    FUsdStage Stage;
-    if (!OpenStage(USDFilePath, Stage))
+    else
     {
-        return false;
+        CloseStage(Stage);
+        UE_LOG(LogTemp, Error, TEXT("ChaosCachingUSDDemo: Failed to write points."));
     }
-
-    const FString PrimPath = TEXT("/Root/SimMesh");
-
-    // 获取所有时间采样
-    TArray<double> TimeSamples;
-    ReadTimeSamples(Stage, PrimPath, TimeSamples);
-
-    // 读取每一帧的数据
-    for (double Time : TimeSamples)
-    {
-        pxr::VtArray<pxr::GfVec3f> Points, Vels;
-        if (ReadPoints(Stage, PrimPath, Time, Points, Vels))
-        {
-            // 处理 Points 和 Vels ...
-        }
-    }
-
-    CloseStage(Stage);
-    return true;
 }
 ```
 
 ## 模块依赖
 
+此插件本身依赖于 `ChaosCaching` 和 `USDImporter` 插件，并在 `.uplugin` 文件中声明了这些依赖。
+
 | 模块 | 用途 |
 |---|---|
-| `USDUtilities` | USD 工具函数，提供 Stage 管理等基础能力 |
-| `UnrealUSDWrapper` | UE 对 USD SDK 的封装层 |
-
-该插件还依赖以下插件：
-- **ChaosCaching** — Chaos 模拟缓存系统，提供 `FManagedArrayCollection` 等数据结构
-- **USDImporter** — USD 导入基础功能
+| `ChaosCaching` | 提供核心的 Chaos 模拟缓存框架和数据结构（如 `FManagedArrayCollection`）。 |
+| `USDImporter` | 提供底层的 USD SDK 封装（`UE::FUsdStage`）、导入导出基础功能以及 USD 基础设施。 |
 
 ## 维护状态
 
@@ -285,25 +231,20 @@ bool FSimCacheToUSDExample::ImportSimulationCache(const FString& USDFilePath)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏到新的 UE_LOGF 宏 |
-| 2026-02-03 | `20825e79` | Fix duplicate symbol linker errors | 修复链接器重复符号错误 |
-| 2025-10-29 | `470e8976` | USDCore: remove use of deprecated Usd-level file format headers | 移除已弃用的 USD 文件格式头文件引用 |
-| 2025-10-24 | `19dfa25d` | USD: Centralized and exposed a single function to check if the USD SDK is enabled in UnrealUSDWrappe | 集中化 USD SDK 启用检查功能 |
-| 2025-10-17 | `b322ef48` | [Backout] - CL47041219 | 回退一次代码提交 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从UE_LOG迁移至新的UE_LOGF格式。 |
+| 2026-02-03 | `20825e79` | Fix duplicate symbol linker errors | 修复了因符号重复导致的链接错误。 |
+| 2025-10-29 | `470e8976` | USDCore: remove use of deprecated Usd-level file format headers | 移除了对已弃用的USD文件格式头文件的使用。 |
+| 2025-10-24 | `19dfa25d` | USD: Centralized and exposed a single function to check if the USD SDK is enabled in UnrealUSDWrappe | 将检查USD SDK是否启用的功能集中并暴露为一个函数。 |
+| 2025-10-17 | `b322ef48` | [Backout] - CL47041219 | 回滚了编号为CL47041219的改动。 |
 
 ### 维护评价
 
-该插件创建于 2023 年 8 月，处于**实验性**阶段（`IsExperimentalVersion=true`），且默认未启用。近期更新以**维护性修复**为主（日志迁移、链接错误修复、弃用 API 清理），未见功能性更新。
+该插件创建于 2023 年 8 月，**处于活跃维护中**。从近期提交记录可以看出，虽然其核心功能（模拟数据USD读写）已基本稳定，但开发团队仍在持续进行维护工作，包括修复编译链接问题、跟进上游USD SDK的API变更（如移除弃用头文件）、以及改进内部代码（日志宏迁移）。由于其依赖的`USDImporter`和`ChaosCaching`插件本身也在积极更新，此插件得以保持兼容性。
 
-- **活跃度**：低频维护，最近一次功能性 commit 需追溯到更早版本
-- **稳定性**：实验性插件，API 可能发生变化
-- **平台限制**：仅支持 Win64 平台
-- **风险提示**：该插件仍标记为实验性，且自 2025 年 10 月起仅有被动维护（跟随 UE 代码库整体变更），未来可能被移除或合并
-
-**建议**：仅在 Chaos Flesh 相关开发中按需启用，不建议用于生产环境的核心功能依赖。
+**推荐使用**，尤其是在需要与第三方DCC工具进行Chaos模拟数据交换的USD工作流中。需要注意的是，该插件被标记为`IsExperimentalVersion=true`且`EnabledByDefault=false`，属于实验性功能，未来API或有变动。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosCachingUSD)
-- [ChaosCaching 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosCaching)
-- [USDImporter 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/USDImporter)
+- [官方文档]() (无)
+- [测试用例]() (源码中未发现独立的测试文件)

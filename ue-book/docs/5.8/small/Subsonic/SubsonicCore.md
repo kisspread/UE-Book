@@ -6,222 +6,291 @@
 |---|---|
 | 中文名 | 次声波音频系统 |
 | 分类 | Audio |
-| 默认启用 | ✅ 是 |
+| 默认启用 | ❌ 否 |
 | 包含内容 | ✅ 有（音频资产） |
 | 模块 | `SubsonicCore` (Runtime), `SubsonicEditor` (Runtime), `SubsonicEngine` (Runtime), `SubsonicEngineTest` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-01-12 |
-| 年龄标签 | 🆕（约 1 年） |
+| 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic) | |
 
 ## 用途
 
-Subsonic 是一个基于事件驱动的音频创作与播放框架。它旨在为复杂音频场景提供一种结构化、可配置且可维护的解决方案。与传统的直接播放音源不同，Subsonic 通过“事件集合”、“事件”和“动作”的层次结构来组织音频逻辑，允许开发者（特别是设计师）在编辑器中参数化地定义音频行为，而无需编写大量代码。它解决了在大型项目中，音频触发逻辑分散、参数管理混乱、难以调试和复用的问题，通过数据驱动的方式提高了音频设计的迭代效率。
+Subsonic 是一套**基于事件的高层音频创作与播放系统**。它解决的核心问题是：如何将复杂的音频播放逻辑抽象为可编辑、可参数化、可复用的事件-动作（Event-Action）体系，并支持运行时动态触发。
+
+具体来说：
+
+- **事件集合（Event Collection）**：将一组音频事件组织为一个集合，每个事件通过 `FGameplayTag` 标识，集合支持在编辑器中可视化编辑。
+- **动作（Action）**：事件触发时执行的具体操作，如播放音效、设置音量、应用滤波器等。动作用 `TInstancedStruct<FSubsonicEventActionBase>` 表示，支持多态扩展。
+- **执行器（Executor）**：RAII 设计的执行上下文，自动注册/注销到全局事件注册表，使订阅者能够按执行器维度追踪和管理数据。
+- **参数系统**：支持在编辑器中将属性绑定到参数，运行时通过 `FSubsonicParameterStore` 动态覆盖参数值（音量、音高、滤波器截止频率、淡出时间等）。
+- **订阅者接口**：任何实现了 `ISubsonicEventSubscriberInterface` 的对象都可以监听事件的注册、执行、注销等生命周期事件。
+
+与 UE 原生的 MetaSound 和 SoundCue 系统不同，Subsonic 更偏向于**程序化音频创作流程**——它将音频播放逻辑封装为可在编辑器中编辑的数据结构，同时保留了 C++ 层面的高度可编程性。
 
 ## 使用场景
 
-- 你正在开发一个需要精细控制音频参数（如音高、滤波、淡出）的恐怖游戏，希望在编辑器中为不同的环境或事件（如“玩家靠近怪物”、“开门声”）配置不同的音频效果混合。
-- 你需要为游戏中的技能、武器或 UI 交互创建丰富的音效变体，这些音效的行为依赖于游戏状态参数（如玩家距离、武器等级）。
-- 你的项目需要音频逻辑能够被设计师在编辑器中独立创建、测试和调整，而无需程序员每次修改后都重新编译代码。
-- 你需要一个音频系统能够支持“试听”功能，以便在编辑器中快速预览复杂音频事件的效果。
+- 你需要构建一个参数化的音频事件系统，例如根据游戏状态动态触发不同的环境音组合 → 用 Subsonic 的 Event Collection + Parameter Store
+- 你需要按执行器维度隔离音频数据，例如多个 NPC 同时播放各自的对话音频且互不干扰 → 用 FSubsonicExecutor + TSubscriberDataStore
+- 你需要在编辑器中可视化编辑音频事件和参数绑定，运行时动态覆盖参数（音量、音高、滤波器等） → 用 Subsonic 的参数绑定系统
+- 你需要监听音频事件的生命周期来做可视化反馈或调试 → 实现 ISubsonicEventSubscriberInterface
 
 ## 蓝图用法
 
-根据提供的 SubsonicCore 模块源码分析，其核心的蓝图暴露主要集中在数据结构（`USTRUCT`）上，而具体的执行和注册逻辑更多由 C++ 模块（如 SubsonicEngine）驱动。蓝图用户通常会与 `FSubsonicParameterStore` 和定义好的事件资源交互。
+Subsonic 的核心数据结构（`FSubsonicEventCollectionDefinition`、`FSubsonicEvent`、`FSubsonicParameterStore` 等）均标记为 `BlueprintType`，但大部分编辑器操作函数标记为 `UE_INTERNAL`，对外暴露的 Blueprint API 集中在执行器和参数存储上。
 
-### 核心结构体
+### 核心节点
 
-| 结构体 | 说明 | 所在类/文件 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `FSubsonicParameterStore` | 用于存储和传递音频参数的包。可包含音量、音高等内置或自定义参数。 | `SubsonicParameterStore.h` |
-| `FSubsonicEvent` | 代表一个可触发的音频事件，包含一组要执行的动作。 | `SubsonicEventCollection.h` |
-| `FSubsonicEventCollectionDefinition` | 事件的集合定义，是组织和注册事件的核心容器。 | `SubsonicEventCollection.h` |
+| `ExecuteEvent` | 通过名称触发事件 | `FSubsonicExecutor` |
+| `SetParameters` | 设置执行器的触发时参数 | `FSubsonicExecutor` |
+| `GetParameters` | 获取当前参数存储 | `FSubsonicExecutor` |
+| `HasParameter` | 检查参数是否存在 | `FSubsonicParameterStore` |
+| `RemoveParameter` | 移除指定参数 | `FSubsonicParameterStore` |
+| `Reset` | 重置所有参数 | `FSubsonicParameterStore` |
+| `MergeFrom` | 用另一个参数存储覆盖合并 | `FSubsonicParameterStore` |
 
-### 内置参数名称
+### 内置参数常量
 
-在蓝图中设置参数时，可以使用以下预定义的参数名（`FName`）：
-- `Volume`
-- `PitchShift`
-- `HighpassCutoff`
-- `LowpassCutoff`
-- `FadeOutTime`
-（来自 `SubsonicBuiltInParameters.h`）
+| 常量名 | 说明 |
+|---|---|
+| `Volume` | 音量 |
+| `PitchShift` | 音高偏移 |
+| `HighpassCutoff` | 高通滤波器截止频率 |
+| `LowpassCutoff` | 低通滤波器截止频率 |
+| `FadeOutTime` | 淡出时间 |
 
 ### 使用示例（蓝图描述）
 
-虽然无法直接展示蓝图节点图，但典型的蓝图使用流程如下：
-1.  在 C++ 或通过资产创建一个 `FSubsonicEventCollectionDefinition`。
-2.  在该定义中，使用 `GameplayTag` 定义不同的事件（如 `Gameplay.Impact.Heavy`）。
-3.  在每个事件下，添加多个动作（`FSubsonicEventActionDefinition`）。动作类型可能包括播放声音、设置参数等。
-4.  为动作配置参数，这些参数可以绑定到事件或集合级别的 `FInstancedPropertyBag`（在编辑器中可视化为参数列表）。
-5.  在游戏中，创建 `FSubsonicExecutor`（执行器）来触发事件。执行器可以携带触发时的参数（`FSubsonicParameterStore`）。
-6.  调用执行器的 `ExecuteEvent(FName EventName)` 或 `ExecuteEvent(FGameplayTag EventTag)` 来触发事件，系统将自动合并参数并执行所有绑定的动作。
+1. **创建执行器并触发事件**：使用 `FSubsonicExecutor::Create` 创建执行器实例，传入音频设备 ID 和集合访问器。然后在蓝图中调用 `ExecuteEvent`，传入事件的 `FGameplayTag` 对应的名称。
+2. **动态参数覆盖**：在调用 `ExecuteEvent` 之前，先调用 `SetParameters` 设置一个 `FSubsonicParameterStore`，其中包含 `Volume`、`PitchShift` 等参数的运行时值。这些值会在执行时与编辑器中创作的参数合并。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-// 使用事件系统核心
 #include "SubsonicEventCollection.h"
 #include "SubsonicExecutor.h"
 #include "SubsonicParameterStore.h"
-#include "ISubsonicEventRegistry.h"
-```
-
-### 基本用法：创建并触发一个事件
-
-此示例展示了如何用代码定义一个简单的事件集合，并通过执行器触发它。
-（灵感来源于 `SubsonicEventCollection.h` 和 `SubsonicExecutor.h` 中的结构）
-
-```cpp
-// 假设我们有一个音频设备ID，通常在运行时获取
-Audio::FDeviceId MyAudioDeviceId = 0;
-
-// 1. 创建一个事件集合定义
-UE::Subsonic::Core::FSubsonicEventCollectionDefinition MyCollection =
-    UE::Subsonic::Core::FSubsonicEventCollectionDefinition::Create(
-        FName("MyGameSounds"),
-        {}， // 初始为空的事件映射
-        MyAudioDeviceId
-    );
-
-// 2. 向集合中添加一个事件（通常在编辑器中完成，代码演示原理）
-FGameplayTag ImpactTag = FGameplayTag::RequestGameplayTag(FName("Gameplay.Impact"));
-MyCollection.AddEvent(ImpactTag);
-
-// 3. 为事件添加动作（简化，实际动作类型需要继承自 FSubsonicEventActionBase）
-// UE::Subsonic::Core::FEventHandle EventHandle = ...; // 通过事件标签获取句柄
-// MyCollection.AddAction(EventHandle);
-
-// 4. 创建执行器来触发事件
-TSharedRef<UE::Subsonic::Core::FSubsonicExecutor> Executor =
-    UE::Subsonic::Core::FSubsonicExecutor::Create(MyAudioDeviceId, /* ... Collection Accessor ... */);
-
-// 5. （可选）设置触发时的参数
-UE::Subsonic::FSubsonicParameterStore TriggerParams;
-TriggerParams.Bag.AddProperty(FName("Volume"), EPropertyBagPropertyType::Float);
-TriggerParams.Bag.SetValueFloat(FName("Volume"), 0.7f);
-Executor->SetParameters(TriggerParams);
-
-// 6. 触发事件
-bool bSuccess = Executor->ExecuteEvent(FName("Gameplay.Impact"));
-
-// 7. 执行器在其生命周期结束后会自动注销。也可以手动调用 Executor->Unregister();
-```
-
-### 进阶用法：实现事件订阅者接口
-
-通过实现 `ISubsonicEventSubscriberInterface`，你的类可以在音频事件的生命周期中收到回调，用于实现自定义逻辑（如UI反馈、游戏状态检查）。
-（来源：`SubsonicEventSubscriberInterface.h`）
-
-```cpp
-// MyAudioSubscriber.h
-#pragma once
+#include "SubsonicBuiltInParameters.h"
 #include "SubsonicEventSubscriberInterface.h"
-#include "MyAudioSubscriber.generated.h"
+#include "SubsonicHandles.h"
+```
 
-UCLASS()
+### 基本用法：创建事件集合定义
+
+```cpp
+using namespace UE::Subsonic::Core;
+
+// 创建一个事件集合定义，包含两个事件
+TMap<FGameplayTag, FSubsonicEvent> Events;
+FSubsonicEvent AmbientEvent;
+FSubsonicEvent ImpactEvent;
+Events.Add(FGameplayTag::RequestGameplayTag(TEXT("Audio.Ambient")), MoveTemp(AmbientEvent));
+Events.Add(FGameplayTag::RequestGameplayTag(TEXT("Audio.Impact")), MoveTemp(ImpactEvent));
+
+// 创建集合定义（需传入音频设备 ID）
+FSubsonicEventCollectionDefinition CollectionDef = FSubsonicEventCollectionDefinition::Create(
+    TEXT("MyAudioCollection"),
+    MoveTemp(Events),
+    Audio::FDefaultDeviceId
+);
+
+// 验证集合是否有效
+ensure(CollectionDef.IsValid());
+```
+
+### 基本用法：创建执行器并触发事件
+
+```cpp
+using namespace UE::Subsonic::Core;
+
+// 创建执行器（需要实现 ICollectionAccessor）
+auto CollectionAccessor = MakeUnique<FMyCollectionAccessor>();
+TSharedRef<FSubsonicExecutor> Executor = FSubsonicExecutor::Create(
+    Audio::FDefaultDeviceId,
+    MoveTemp(CollectionAccessor)
+);
+
+// 设置触发时参数
+FSubsonicParameterStore Params;
+Params.Bag.AddProperty(UE::Subsonic::BuiltInParameters::Volume, EPropertyBagPropertyType::Float);
+Params.Bag.SetValueFloat(UE::Subsonic::BuiltInParameters::Volume, 0.8f);
+Executor->SetParameters(MoveTemp(Params));
+
+// 触发事件
+Executor->ExecuteEvent(FGameplayTag::RequestGameplayTag(TEXT("Audio.Impact")).GetTagName());
+```
+
+### 进阶用法：实现自定义事件订阅者
+
+```cpp
+#include "SubsonicEventSubscriberInterface.h"
+#include "SubsonicSubscriberDataStore.h"
+
 class UMyAudioSubscriber : public UObject, public ISubsonicEventSubscriberInterface
 {
     GENERATED_BODY()
 
 public:
-    // 在对象初始化时注册
-    virtual void BeginDestroy() override
+    // 当事件执行前调用
+    virtual void OnEventPreExecute(const FSubsonicExecutor& InExecutor, const FEventHandle& InHandle) override
     {
-        Unregister(); // 确保反注册
-        Super::BeginDestroy();
+        UE_LOG(LogSubsonic, Log, TEXT("Event %s about to execute from executor %s"),
+            *InHandle.EventName.ToString(), *InExecutor.ToString());
     }
 
-    // 重写接口方法
-    virtual void OnEventPreExecute(const UE::Subsonic::Core::FSubsonicExecutor& InExecutor, const UE::Subsonic::Core::FEventHandle& InHandle) override
+    // 当事件执行后调用
+    virtual void OnEventPostExecute(const FSubsonicExecutor& InExecutor, const FEventHandle& InHandle) override
     {
-        // 在事件触发前执行逻辑，例如检查游戏状态
-        UE_LOG(LogTemp, Log, TEXT("事件 %s 即将执行，来自执行器 %s"), *InHandle.EventName.ToString(), *InExecutor.ToString());
+        UE_LOG(LogSubsonic, Log, TEXT("Event %s finished executing"), *InHandle.EventName.ToString());
     }
 
-    virtual void OnEventPostExecute(const UE::Subsonic::Core::FSubsonicExecutor& InExecutor, const UE::Subsonic::Core::FEventHandle& InHandle) override
+    // 当执行器注册时调用——可用于初始化执行器级别的数据
+    virtual void OnExecutorRegistered(const FSubsonicExecutor& InExecutor) override
     {
-        // 在事件触发后执行逻辑，例如更新UI
-        UE_LOG(LogTemp, Log, TEXT("事件 %s 执行完成"), *InHandle.EventName.ToString());
+        FExecutorScopeKey Key(InExecutor);
+        DataStore.FindOrAdd(Key, TEXT("PlayCount")) = 0;
     }
 
-    // 构造时或合适时机调用
-    void Activate()
+    // 当执行器注销时调用——清理执行器级别的数据
+    virtual void OnExecutorUnregistered(const FSubsonicExecutor& InExecutor) override
     {
-        Register(); // 调用基类的 Register 向注册中心订阅
+        FExecutorScopeKey Key(InExecutor);
+        DataStore.Remove(Key);
     }
 
-    void Deactivate()
-    {
-        Unregister();
-    }
+private:
+    // 使用 TSubscriberDataStore 管理全局和执行器级别的数据
+    TSubscriberDataStore<int32> DataStore;
 };
 ```
 
 ## Demo 示例
 
-一个最小化、可编译的示例，展示如何创建一个简单的事件订阅者。
-（注意：实际创建和执行事件通常需要 SubsonicEngine 模块的支持，此处仅展示订阅者结构）
+### .h 文件
 
-**MyMinimalSubscriber.h**
 ```cpp
+// MySubsonicExample.h
 #pragma once
+
+#include "CoreMinimal.h"
+#include "SubsonicExecutor.h"
+#include "SubsonicEventCollection.h"
 #include "SubsonicEventSubscriberInterface.h"
-#include "MyMinimalSubscriber.generated.h"
+#include "SubsonicSubscriberDataStore.h"
 
-UCLASS()
-class UMyMinimalSubscriber : public UObject, public ISubsonicEventSubscriberInterface
+namespace UE::Subsonic::Core
 {
-    GENERATED_BODY()
+    // 最简的 ICollectionAccessor 实现
+    class FSimpleCollectionAccessor : public FSubsonicExecutor::ICollectionAccessor
+    {
+    public:
+        FSimpleCollectionAccessor(FSubsonicEventCollectionDefinition* InDef, FCollectionHandle InHandle)
+            : Definition(InDef), Handle(InHandle) {}
 
+        virtual const FSubsonicEventCollectionDefinition* GetDefinition() const override { return Definition; }
+        virtual FCollectionHandle GetHandle() const override { return Handle; }
+
+    private:
+        FSubsonicEventCollectionDefinition* Definition;
+        FCollectionHandle Handle;
+    };
+}
+
+// 简单的事件订阅者
+class FSimpleAudioSubscriber : public ISubsonicEventSubscriberInterface
+{
 public:
-    UMyMinimalSubscriber();
-    virtual ~UMyMinimalSubscriber();
+    FSimpleAudioSubscriber();
+    virtual ~FSimpleAudioSubscriber();
 
-    virtual void OnCollectionRegistered(const UE::Subsonic::Core::FCollectionHandle& InCollection) override;
-    virtual void OnEventPreExecute(const UE::Subsonic::Core::FSubsonicExecutor& InExecutor, const UE::Subsonic::Core::FEventHandle& InHandle) override;
+    virtual void OnEventPreExecute(const FSubsonicExecutor& InExecutor, const FEventHandle& InHandle) override;
+    virtual void OnEventPostExecute(const FSubsonicExecutor& InExecutor, const FEventHandle& InHandle) override;
+
+private:
+    UE::Subsonic::Core::TSubscriberDataStore<int32> ExecutionCounts;
 };
 ```
 
-**MyMinimalSubscriber.cpp**
+### .cpp 文件
+
 ```cpp
-#include "MyMinimalSubscriber.h"
-#include "SubsonicCoreLog.h" // 用于 LogSubsonic
+// MySubsonicExample.cpp
+#include "MySubsonicExample.h"
+#include "SubsonicBuiltInParameters.h"
+#include "SubsonicParameterStore.h"
 
-UMyMinimalSubscriber::UMyMinimalSubscriber()
+using namespace UE::Subsonic::Core;
+
+FSimpleAudioSubscriber::FSimpleAudioSubscriber()
 {
-    // 在构造函数中注册自己
-    Register();
+    Register(); // 注册到 SubsonicEventRegistry
 }
 
-UMyMinimalSubscriber::~UMyMinimalSubscriber()
+FSimpleAudioSubscriber::~FSimpleAudioSubscriber()
 {
-    Unregister();
+    Unregister(); // 从 SubsonicEventRegistry 注销
 }
 
-void UMyMinimalSubscriber::OnCollectionRegistered(const UE::Subsonic::Core::FCollectionHandle& InCollection)
+void FSimpleAudioSubscriber::OnEventPreExecute(const FSubsonicExecutor& InExecutor, const FEventHandle& InHandle)
 {
-    UE_LOG(LogSubsonic, Log, TEXT("集合 '%s' 已注册。"), *InCollection.ToString());
+    FExecutorScopeKey Key(InExecutor);
+    int32& Count = ExecutionCounts.FindOrAdd(Key, InHandle.EventName);
+    Count++;
+
+    UE_LOG(LogSubsonic, Log, TEXT("'%s' pre-execute (count: %d) [executor: %s]"),
+        *InHandle.EventName.ToString(), Count, *InExecutor.ToString());
 }
 
-void UMyMinimalSubscriber::OnEventPreExecute(const UE::Subsonic::Core::FSubsonicExecutor& InExecutor, const UE::Subsonic::Core::FEventHandle& InHandle)
+void FSimpleAudioSubscriber::OnEventPostExecute(const FSubsonicExecutor& InExecutor, const FEventHandle& InHandle)
 {
-    UE_LOG(LogSubsonic, Log, TEXT("准备执行事件: %s (来自: %s)"), *InHandle.EventName.ToString(), *InExecutor.ToString());
-    // 在这里可以添加你的自定义逻辑
+    UE_LOG(LogSubsonic, Log, TEXT("'%s' post-execute [executor: %s]"),
+        *InHandle.EventName.ToString(), *InExecutor.ToString());
+}
+
+// 演示完整流程
+void ExampleSubsonicUsage()
+{
+    // 1. 创建事件集合
+    TMap<FGameplayTag, FSubsonicEvent> Events;
+    Events.Add(FGameplayTag::RequestGameplayTag(TEXT("FX.Explosion")), FSubsonicEvent());
+
+    FSubsonicEventCollectionDefinition Collection = FSubsonicEventCollectionDefinition::Create(
+        TEXT("GameplayAudio"), MoveTemp(Events), Audio::FDefaultDeviceId);
+
+    // 2. 创建订阅者
+    FSimpleAudioSubscriber Subscriber;
+
+    // 3. 创建执行器
+    auto Accessor = MakeUnique<FSimpleCollectionAccessor>(&Collection, FCollectionHandle{});
+    TSharedRef<FSubsonicExecutor> Executor = FSubsonicExecutor::Create(
+        Audio::FDefaultDeviceId, MoveTemp(Accessor));
+
+    // 4. 设置参数并触发事件
+    FSubsonicParameterStore Params;
+    Params.Bag.AddProperty(BuiltInParameters::Volume, EPropertyBagPropertyType::Float);
+    Params.Bag.SetValueFloat(BuiltInParameters::Volume, 0.5f);
+    Executor->SetParameters(MoveTemp(Params));
+
+    Executor->ExecuteEvent(TEXT("FX.Explosion"));
+
+    // 5. 清理（Executor 析构时自动注销）
+    Executor->Unregister();
 }
 ```
 
 ## 模块依赖
 
-从 SubsonicCore 的 `Build.cs` 文件分析，其除了标准依赖外，还依赖于以下音频相关模块。
-
 | 模块 | 用途 |
 |---|---|
-| `MetasoundFrontend` | 集成 MetaSound 节点图系统，可能用于将 Subsonic 事件映射为 MetaSound 图的输入。 |
-| `AudioExtensions` | 提供音频扩展功能，是 Unreal 音频系统的基础组件。 |
-| `AudioMixer` | 底层的音频混音器实现。 |
+| `GameplayTags` | 用于事件标识的 FGameplayTag |
+| `PropertyBag` | 用于参数存储的 FInstancedPropertyBag |
+| `AudioMixer` | 音频设备 ID 和音频系统集成 |
+
+> 注：以上为从源码头文件推断的核心依赖。完整依赖列表请参考各模块的 `.Build.cs` 文件。
 
 ## 维护状态
 
@@ -229,24 +298,25 @@ void UMyMinimalSubscriber::OnEventPreExecute(const UE::Subsonic::Core::FSubsonic
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `0ad6a1ff` | [Audio, CIS] Fixup bad merge: Revert wholesale Subsonic Subscriber stomp; apply minimal non-deprecating fixup. | 修复一次错误的合并，回退了对订阅者逻辑的大范围覆盖，只应用了最小必要的、非废弃性的修正。 |
-| 2026-05-13 | `f91eb8fe` | Resolved merge conflict with FSoundWaveData api deprecation fixup. | 解决了与 `FSoundWaveData` API 废弃修复相关的合并冲突。 |
-| 2026-04-23 | `129c3dc2` | Fix/silence PVS warnings | 修复或静音了来自 PVS 静态代码分析工具的警告。 |
-| 2026-04-14 | `01c9ce5d` | [ContentBrowser] New Add Menu Audio Menu | 为内容浏览器的“新增资产”菜单添加了音频相关的子菜单。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 `UE_LOG` 迁移到新的 `UE_LOGF` 格式。 |
+| 2026-05-13 | `0ad6a1ff` | [Audio, CIS] Fixup bad merge: Revert wholesale Subsonic Subscriber stomp; apply minimal non-deprecat | 修复合并冲突：回退对 Subscriber 的大面积改动，应用最小非废弃修复 |
+| 2026-05-13 | `f91eb8fe` | Resolved merge conflict with FSoundWaveData api deprecation fixup. | 解决与 FSoundWaveData API 废弃相关的合并冲突 |
+| 2026-04-23 | `129c3dc2` | Fix/silence PVS warnings | 修复/静默 PVS 静态分析警告 |
+| 2026-04-14 | `01c9ce5d` | [ContentBrowser] New Add Menu Audio Menu | 内容浏览器新增音频菜单分类 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移到 UE_LOGF 新日志宏 |
 
 ### 维护评价
 
-Subsonic 是一个相对较新的插件（创建于 2026 年初），目前处于**实验性**阶段（`IsExperimentalVersion = true`）。从 git 记录看，它仍在进行活跃的开发和维护，近期的提交主要包括合并冲突修复、代码清理和工具链适配。
-
-**需要注意的限制**：
-1.  **实验性**：官方明确表示不保证向后兼容性，API 和行为可能在后续版本中发生变化。
-2.  **功能不完整**：根据有限的源码分析，核心的“动作”类型和具体的播放实现可能分散在其他模块（如 SubsonicEngine）中，当前提供的核心模块更偏向于数据结构和框架定义。
-3.  **学习曲线**：它引入了一套新的音频创作范式（事件-动作-参数），需要团队学习和适应。
-
-**推荐建议**：如果你的项目需要高度参数化、事件驱动的音频系统，并且愿意接受实验性 API 可能带来的风险，Subsonic 值得尝试和关注。它特别适合大型团队中希望分离游戏逻辑和音频设计的场景。对于独立开发者或简单项目，传统的 `Play Sound at Location` 等方法可能更直接。
+- **状态**：🆕 全新实验性插件，创建于 2026 年 1 月，距今约 4 个月
+- **活跃度**：**活跃开发中**。最近 1 个月内有更新（5 月合并冲突修复），2-3 个月内有功能迭代（编辑器菜单集成、PVS 修复、日志宏迁移）
+- **实验性**：标记为 `IsExperimentalVersion=true`，`EnabledByDefault=false`，**无向后兼容保证**
+- **已知限制**：
+  - 所有 `UE_INTERNAL` 标记的函数均为模块内部 API，外部使用者不应直接调用
+  - `FSubsonicEventCollectionDefinition` 禁用了拷贝构造（`WithCopy = false`），只能移动
+  - 参数绑定（Property Binding）系统仅在编辑器构建中可用（`WITH_EDITOR`）
+- **推荐**：该插件处于早期实验阶段，API 可能发生重大变化。适合在实验性项目中探索使用，不建议在生产环境中依赖。关注 Epic 的后续更新以追踪 API 稳定性。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic)
-- [官方文档]（无，.uplugin 中 DocsURL 为空）
+- [官方文档]()（暂无）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic/Source/SubsonicEngineTest)

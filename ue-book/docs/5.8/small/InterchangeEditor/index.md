@@ -4,187 +4,167 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 交换编辑器 |
+| 中文名 | 资产交换编辑器 |
 | 分类 | Importers |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
 | 模块 | `InterchangeEditor` (Runtime), `InterchangeEditorPipelines` (Runtime), `InterchangeEditorUtilities` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2022-06-22 |
-| 年龄标签 | 👴 老古董（约 4 年） |
+| 创建时间 | ~2022 |
+| 年龄标签 | 🆕（约 4 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Editor) | |
 
 ## 用途
 
-InterchangeEditor 是 UE 下一代资产导入系统（Interchange）在编辑器中的用户界面和集成层。它解决了在编辑器内可视化、配置和执行资产导入流程的问题。具体来说，它为美术师和技术美术提供了一个集中式的界面，用于：
-1.  **可视化管线**：将抽象的导入管线和节点（如 Mesh 转换、材质创建、动画处理）以直观的方式暴露在编辑器中。
-2.  **自定义与调试**：允许用户创建、修改和调试自定义的导入管线，以满足特定项目资产的工作流需求。
-3.  **批量处理**：集成到编辑器的资产导入（Import）和内容浏览器（Content Browser）上下文菜单中，实现批量、标准化的资产导入。
+InterchangeEditor 是 Unreal Engine 中负责将资产从外部格式（如 FBX、glTF、OBJ）导入编辑器的核心框架的**编辑器端实现**。它的核心作用是将 Interchange 运行时框架（负责解析和转换资产数据）与 Unreal Editor 的用户界面、操作流程和数据管线连接起来。该插件使得开发者可以通过蓝图或 C++ 自定义导入设置、处理导入事件、创建导入管线，并将这些自定义逻辑无缝集成到编辑器的资产导入对话框和拖放导入流程中。
 
-简而言之，它是 `Interchange` 框架的“遥控器”，让开发者和艺术家能够控制和优化资产如何进入 Unreal 项目。
+简单来说，它解决了“**如何在编辑器中配置和触发自定义的资产导入流程**”这个问题。
 
 ## 使用场景
 
--   **导入复杂 FBX 模型**：当你导入一个包含复杂骨骼、蒙皮和LOD的 FBX 文件时，`InterchangeEditor` 允许你通过其管线UI，逐节点检查和调整 Mesh 的转换选项、骨骼的创建规则以及材质的查找或创建逻辑。
--   **创建标准化资产管线**：你可以利用 `InterchangeEditorPipelines` 模块创建一套自定义的导入管线模板（Pipeline Presets），然后将其应用到整个项目的资产导入过程中，确保所有同类资产（如角色、道具）遵循统一的导入标准。
--   **批量更新资产设置**：当项目美术规范变化时（例如，所有模型现在需要启用 Nanite），你可以修改对应的导入管线预设，然后重新导入大批量资产，而不是手动逐个调整。
--   **调试导入问题**：当资产导入后出现异常（如材质丢失、动画错误），你可以使用此插件提供的调试工具，在导入前预览管线执行的中间结果和日志，快速定位问题节点。
+- **从外部 DCC 工具（如 Maya, Blender）导入动画、网格体等资产时**：使用 Interchange 框架进行标准化、可扩展的导入，并通过此插件在编辑器中进行配置。
+- **需要为特定项目或资产类型创建完全自定义的导入逻辑时**：通过实现自己的 Importer 和 Pipeline，并在编辑器中注册它们。
+- **需要批量重新导入大量资产，并希望统一修改导入设置时**：利用此插件提供的工具函数和界面来操作资产的 Interchange 源数据。
+- **开发需要深度集成导入流程的编辑器工具或插件时**：作为依赖的基础框架。
 
 ## 蓝图用法
 
-此插件主要面向编辑器工具开发，其核心蓝图功能集成在 `InterchangeEditorScriptLibrary` 中，供编辑器工具蓝图和 Python 脚本调用。
+蓝图功能主要通过 `UInterchangeEditorScriptLibrary` 和相关资产操作类暴露。使用前需在项目设置中启用 Interchange 插件。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Import Scene` | 执行一个场景或一组资产文件的导入流程，可指定自定义管线。 | `UInterchangeEditorScriptLibrary` |
-| `Get Importers` | 获取当前注册的所有 Interchange 资产导入器。 | `UInterchangeEditorScriptLibrary` |
-| `Reimport With Settings` | 使用新的设置重新导入指定的资产。 | `UInterchangeEditorScriptLibrary` |
-| `Get Actors In Level Instance Without Loading` | 获取关卡实例中的 Actor 信息，而无需加载该关卡实例。 | `UInterchangeEditorScriptLibrary` |
+| `Reimport Asset with Interchange` | 使用 Interchange 框架重新导入指定资产 | `UInterchangeEditorScriptLibrary` |
+| `Import Scene with Interchange` | 触发一个文件的 Interchange 导入流程 | `UInterchangeEditorScriptLibrary` |
+| `Get Import Scene Dialog Settings` | 获取当前导入对话框的设置对象 | `UInterchangeEditorScriptLibrary` |
+| `Set Import Scene Dialog Settings` | 修改导入对话框的设置 | `UInterchangeEditorScriptLibrary` |
 
 ### 使用示例（蓝图描述）
 
-一个典型的用法是创建一个“重新导入并应用新设置”的工具：
-1.  使用 `Get Importers` 节点获取一个 FBX 导入器。
-2.  调用导入器上的函数获取或修改其导入设置（如网格体导入选项）。
-3.  使用 `Reimport With Settings` 节点，传入要重新导入的资产和修改后的设置，即可触发重新导入。
+1. **自动重新导入**：
+   - 在 `Event Tick` 或自定义事件中，通过 `Make Asset Data` 节点创建一个资产数据结构。
+   - 连接到 `Reimport Asset with Interchange` 节点。可选择传入一个 `UInterchangePipelineConfigurationBase` 来覆盖默认的管线设置。
+   - 处理 `On Reimport Completed` 委托来确认结果。
+
+2. **自定义导入流程**：
+   - 调用 `Import Scene with Interchange` 节点，传入源文件路径。
+   - 可连接一个自定义的 `UInterchangeSceneImportAsset` 对象来进一步处理导入事件。
 
 ## C++ 用法
+
+核心 API 用于程序化地触发导入、查询导入状态和管理导入管线。
 
 ### 头文件引入
 
 ```cpp
-#include "InterchangeEditorModule.h" // 核心模块
-#include "InterchangeManager.h"      // 主要管理器
-#include "InterchangePipelineBase.h" // 管线基类
+#include "InterchangeEditorScriptLibrary.h"
+#include "InterchangeManager.h" // 运行时框架，通常也需要
 ```
 
-### 基本用法：触发一次导入
+### 基本用法
 
-以下代码片段展示了如何通过 C++ 代码触发一次资产导入，这通常用于自动化工具或自定义编辑器命令。
-
+触发一个文件的导入，并处理结果。
 ```cpp
-// 来源: InterchangeEditor 模块测试或示例代码
-#include "InterchangeManager.h"
-#include "InterchangeImportTestUtilities.h"
+// 假设已经获取了 FInterchangeManager
+FInterchangeManager& InterchangeManager = FInterchangeManager::Get();
 
-void ImportAssetWithInterchange()
-{
-    // 1. 获取全局的 Interchange 管理器
-    UInterchangeManager& InterchangeManager = UInterchangeManager::GetInterchangeManager();
+// 准备导入参数
+FInterchangeImportArguments ImportArgs;
+ImportArgs.ImportFilename = TEXT("/path/to/your/mesh.fbx");
 
-    // 2. 准备导入参数
-    FInterchangeImportData ImportData;
-    ImportData.AssetName = TEXT("MyImportedMesh");
-    ImportData.SourcePath = TEXT("/Path/To/Your/Asset.fbx");
-    // ... 设置其他导入参数
+// 触发异步导入
+FInterchangeTaskData TaskData = InterchangeManager.ImportScene(ImportArgs);
 
-    // 3. 定义一个简单的导入完成回调
-    FInterchangeImportCompletedParams CompletedParams;
-    CompletedParams.ImportData = ImportData;
-    CompletedParams.OnImportCompleted = FOnInterchangeImportCompleted::CreateLambda(
-        [](const FInterchangeImportCompletedParams& Params)
-        {
-            if (Params.ImportData.AssetName.IsSet())
-            {
-                UE_LOG(LogTemp, Log, TEXT("Successfully imported: %s"), *Params.ImportData.AssetName.GetValue());
-            }
-        }
-    );
-
-    // 4. 启动异步导入
-    InterchangeManager.ImportAsset(CompletedParams);
-}
+// 通过 TaskData 或回调监控进度和结果
 ```
 
-### 进阶用法：自定义管线节点
+### 进阶用法
 
-`InterchangeEditorPipelines` 模块允许你创建自己的管线节点来处理特定类型的资产数据。你需要继承自 `UInterchangePipelineBase` 并注册。
-
+重新导入一个已有的资产，并指定自定义管线。
 ```cpp
-// 来源: InterchangeEditorPipelines 模块中自定义节点的通用模式
-#include "InterchangePipelineBase.h"
-#include "InterchangeSourceData.h"
-#include "InterchangeTranslatorBase.h"
+// 获取要重新导入的资产
+UStaticMesh* ExistingMesh = /* ... */;
 
-UCLASS(BlueprintType)
-class UMyCustomMaterialPipeline : public UInterchangePipelineBase
-{
-    GENERATED_BODY()
+// 创建或获取自定义管线实例
+UMyCustomPipeline* MyPipeline = NewObject<UMyCustomPipeline>();
 
-public:
-    // 定义管线处理顺序，数值越小越早执行
-    virtual int32 GetPipelinePriority() const override { return 50; }
+// 使用蓝图库中的函数触发重新导入
+FInterchangeReimportArguments ReimportArgs;
+ReimportArgs.Asset = ExistingMesh;
+ReimportArgs.PipelineOverride = MyPipeline;
 
-    // 执行转换的主要逻辑
-    virtual bool ExecutePipeline(UInterchangeBaseNodeContainer* BaseNodeContainer, const TArray<UInterchangeSourceData*>& SourceDatas) override
-    {
-        // 在这里遍历 BaseNodeContainer 中的节点
-        // 查找你关心的节点类型（例如材质节点）
-        // 对其属性进行修改或附加额外信息
-        // 返回 true 表示处理成功
-        return true;
-    }
-};
+UInterchangeEditorScriptLibrary::ReimportAssetWithInterchange(ReimportArgs);
 ```
 
 ## Demo 示例
 
-一个可编译的最小示例，展示如何创建一个简单的编辑器菜单按钮，点击后触发对指定路径资产的 Interchange 导入。
+以下示例演示如何在 C++ 中创建一个简单的编辑器工具按钮，用于重新导入指定的静态网格体。
 
-**MyEditorButton.h**
+**MyReimportTool.h**
 ```cpp
 #pragma once
 #include "CoreMinimal.h"
-#include "EditorUtilityWidget.h"
-#include "MyEditorButton.generated.h"
+#include "Subsystems/EditorSubsystem.h"
+#include "MyReimportTool.generated.h"
 
 UCLASS()
-class UMyEditorButton : public UEditorUtilityWidget
+class UMyReimportTool : public UEditorSubsystem
 {
     GENERATED_BODY()
-
 public:
-    UFUNCTION(BlueprintCallable, Category = "InterchangeDemo")
-    void ImportDemoAsset();
+    void Initialize(FSubsystemCollectionBase& Collection) override;
+    void Deinitialize() override;
+    void ReimportSelectedStaticMesh();
+
+private:
+    TSharedPtr<FUICommandList> CommandList;
+    TSharedPtr<FExtender> MenuExtender;
 };
 ```
 
-**MyEditorButton.cpp**
+**MyReimportTool.cpp**
 ```cpp
-#include "MyEditorButton.h"
-#include "InterchangeManager.h"
+#include "MyReimportTool.h"
+#include "InterchangeEditorScriptLibrary.h"
+#include "Engine/StaticMesh.h"
 
-void UMyEditorButton::ImportDemoAsset()
+void UMyReimportTool::Initialize(FSubsystemCollectionBase& Collection)
 {
-    UInterchangeManager& Manager = UInterchangeManager::GetInterchangeManager();
+    // 创建命令列表和菜单项等初始化代码（省略）
+    // ...
+}
 
-    FInterchangeImportData Data;
-    Data.AssetName = TEXT("InterchangeDemoMesh");
-    Data.SourcePath = TEXT("/Game/Demo/ExampleModel.fbx");
+void UMyReimportTool::ReimportSelectedStaticMesh()
+{
+    // 假设有一个选择的静态网格体资产
+    UStaticMesh* MeshToReimport = /* 从内容浏览器获取 */;
 
-    FInterchangeImportCompletedParams Params;
-    Params.ImportData = Data;
-    Params.OnImportCompleted = FOnInterchangeImportCompleted::CreateLambda([](const auto& P)
+    if (MeshToReimport)
     {
-        FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Interchange Import Completed!")));
-    });
+        FInterchangeReimportArguments Args;
+        Args.Asset = MeshToReimport;
 
-    Manager.ImportAsset(Params);
+        // 调用 Interchange 重新导入
+        UInterchangeEditorScriptLibrary::ReimportAssetWithInterchange(Args);
+        UE_LOG(LogTemp, Log, TEXT("Triggered Interchange reimport for: %s"), *MeshToReimport->GetName());
+    }
+}
+
+void UMyReimportTool::Deinitialize()
+{
+    // 清理命令列表等
+    CommandList.Reset();
 }
 ```
 
 ## 模块依赖
 
-要使用此插件的功能，你的模块通常需要依赖以下模块：
-
 | 模块 | 用途 |
 |---|---|
-| `InterchangeCore` | 提供 Interchange 框架的核心接口（`UInterchangeManager`, `UInterchangeBaseNode` 等）。 |
-| `InterchangeEngine` | 引擎层对 Interchange 框架的集成。 |
-| `InterchangeImport` | 实现具体的资产导入和转换逻辑。 |
-| `InterchangeNodes` | 定义 Interchange 用于描述资产数据的各种节点类型（网格体、材质、纹理节点等）。 |
+| `InterchangeCore` | 提供 Interchange 框架的基础运行时接口和管理器 |
+| `InterchangeNodes` | 定义用于表示资产和场景的通用中间节点类型 |
+| `InterchangePipelines` | 提供基础的导入/导出管线框架和常用内置管线 |
 
 ## 维护状态
 
@@ -192,20 +172,19 @@ void UMyEditorButton::ImportDemoAsset()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-12 | `fb1426e8` | [PackageAutoSaver] Add the ability to temporarily suspend the autosaver. | 功能更新：在导入等长时间操作期间，可临时暂停自动保存。 |
-| 2026-05-12 | `099f7387` | [Interchange] Animation frame alignment and glTF translator frame aligner removed. | 行为变更：移除了动画帧对齐和 glTF 转换器的帧对齐器。 |
-| 2026-04-22 | `cc360b1e` | Add accessor to InterchangeEditorScriptLibrary that returns actors in a level instance without loadi... | 功能新增：添加了无需加载关卡实例即可获取其中Actor列表的API。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 代码维护：将日志宏从 UE_LOG 迁移到更现代的 UE_LOGF。 |
-| 2026-04-13 | `05458c60` | [Interchange] Reworking Static and Skeletal Mesh import settings | 重大重构：重新设计了静态网格体和骨骼网格体的导入设置体系。 |
+| 2026-05-12 | `fb1426e8` | [PackageAutoSaver] Add the ability to temporarily suspend the autosaver. | 为自动保存器添加临时挂起功能，影响导入时的自动保存行为。 |
+| 2026-05-12 | `099f7387` | [Interchange] Animation frame alignment and glTF translator frame aligner removed. | 移除动画帧对齐和glTF转换器帧对齐器，属于功能清理。 |
+| 2026-04-22 | `cc360b1e` | Add accessor to InterchangeEditorScriptLibrary that returns actors in a level instance without loadi | 向脚本库添加新访问器，可获取关卡实例中的Actor而不加载整个关卡，提升查询效率。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏迁移到UE_LOGF，属于代码质量改进。 |
+| 2026-04-13 | `05458c60` | [Interchange] Reworking Static and Skeletal Mesh import settings | 重新设计静态和骨骼网格体的导入设置，是重要的功能更新。 |
 
 ### 维护评价
 
--   **活跃维护**：从提交记录来看，此插件在近一个月内（2026年4月至5月）有持续的更新，包括功能添加、重大重构和代码维护，表明它处于**活跃维护**状态。
--   **已知问题/限制**：作为 Interchange 框架的一部分，其复杂性可能带来学习曲线。近期重构（如网格体导入设置）可能导致旧的工作流或自定义管线需要适配。
--   **推荐使用**：**推荐**。对于新项目或计划采用标准化、可定制资产导入管线的团队，InterchangeEditor 是官方推荐的解决方案，其活跃维护保证了功能的持续改进和问题修复。
+**活跃维护**。Interchange 是 Epic Games 当前主推的下一代资产导入框架，用以替代旧的 FBX 导入器。此编辑器插件是该框架不可或缺的一部分，持续获得实质性更新（如新功能、API 重构、性能优化）。从提交记录看，它与运行时框架紧密同步开发，修复及时，新特性不断。它是官方推荐使用的资产导入通道，强烈建议在新项目中使用。虽然框架成熟度可能还在完善中，但其作为未来标准的地位明确，无废弃风险。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Editor)
--   [官方文档](https://docs.unrealengine.com/5.8/en-US/interchange-in-unreal-engine/)（官方 Interchange 框架文档，涵盖了此插件的基础）
--   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Tests)（注意：测试用例位于独立的插件目录下）
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Editor)
+- [子模块文档: InterchangeEditor](InterchangeEditor.md)
+- [子模块文档: InterchangeEditorPipelines](InterchangeEditorPipelines.md)
+- [子模块文档: InterchangeEditorUtilities](InterchangeEditorUtilities.md)

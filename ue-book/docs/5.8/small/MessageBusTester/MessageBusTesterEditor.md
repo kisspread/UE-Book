@@ -16,124 +16,50 @@
 
 ## 用途
 
-MessageBus Tester 是一个专用于开发和测试阶段的实验性插件。它的核心功能并非作为通用的消息总线监控工具，而是为 `MessageBusTesterApp` 这个特定的应用程序提供一套完整的测试用例和调试界面。其目的是通过模拟各种场景（如不同的负载大小、发送间隔），系统性地验证 Unreal Engine 底层 UDP 消息传输（由 `UdpMessaging` 插件提供）的可靠性、稳定性和性能。它帮助开发者分析消息总线的用例，并确保底层网络代码在最优状态下运行。此插件**不适合用于生产环境的实时监控**。
+MessageBusTester 是一个用于**测试和监控 Unreal Engine UDP 消息总线（UdpMessaging）可靠性**的内部实验性工具。它不是一个面向最终用户的通用功能插件，而是一个为引擎网络团队设计的**自动化压力测试和诊断工具**。
+
+**核心问题解决**：UE 的底层 UDP 消息传输系统在复杂的网络环境（如高丢包、高延迟、大负载）下的稳定性和性能表现，需要通过特定的测试用例来验证和优化。此插件提供了这些标准化的测试用例和配套的监控界面。
+
+**存在意义**：它允许开发者（主要是引擎网络团队）创建、执行并监控各种“测试计划”，以模拟不同负载下的消息传输场景，从而：
+1.  验证 UDP 消息传输的可靠性保证（如重传、确认机制）。
+2.  收集并分析网络传输统计数据（如吞吐量、往返时延、丢包率）。
+3.  为底层网络代码的优化和 bug 修复提供定量的测试依据。
 
 ## 使用场景
 
-- 你正在开发或维护 Unreal Engine 的底层消息系统或网络传输层，需要进行压力测试和回归测试。
-- 你需要为 `MessageBusTesterApp` 这个独立工具提供测试界面和用例，以评估 UDP 消息传输在各种条件下的表现。
-- 你怀疑 UDP 消息传输存在丢包、延迟或性能问题，需要一个工具来系统性地复现和诊断问题。
+-   **引擎网络开发**：你是 Epic 或自定义引擎的网络模块开发者，在修改或优化 `UdpMessaging` 模块后，需要运行回归测试来确保改动没有引入性能回退或功能故障。
+-   **多人游戏底层网络调试**：你在开发对网络性能要求极高的多人游戏（如竞技 FPS 或大规模 MMO），需要模拟极端网络条件来测试客户端/服务器通信的边界情况。
+-   **构建自定义消息传输系统**：你在基于 UE 的消息总线架构构建自定义的网络层，需要一个基准测试框架来评估你的实现。
+
+**注意**：此插件默认未启用（`Installed: false`），且仅供名为 `MessageBusTesterApp` 的特定程序使用，这意味着它通常不会出现在标准的游戏项目中。
 
 ## 蓝图用法
 
-经过源码分析，该插件主要提供编辑器 UI 和应用程序逻辑，**未发现面向蓝图公开的 `UFUNCTION(BlueprintCallable)` 或 `UPROPERTY(BlueprintReadWrite)` 接口**。它的所有功能都通过其配套的 `MessageBusTesterApp` 程序和编辑器标签页 `SMessageBusTesterPanel` 来操作，无法在游戏逻辑或通用蓝图中直接调用。
+此插件主要提供**编辑器 UI 和独立的测试应用框架**，不包含任何公开的蓝图可调用节点（BlueprintCallable）或属性（BlueprintReadWrite）。所有功能都通过其专用的编辑器面板和独立的测试应用程序界面来操作。
 
 ## C++ 用法
 
-**重要提示：** 此插件的模块 (`MessageBusTester`, `MessageBusTesterEditor`) 的 `AllowlistPrograms` 设置为 `["MessageBusTesterApp"]`。这意味着这些模块**只会在 `MessageBusTesterApp` 这个程序中加载**，在编辑器、独立运行或打包的游戏程序中不会加载。因此，其 C++ API 主要供插件内部和 `MessageBusTesterApp` 使用，普通项目无法直接调用。
+此插件**不提供供外部项目集成的公共 C++ API**。它的设计目标是作为一个自包含的测试工具。主要的代码结构是：
+-   `MessageBusTester` 模块：包含测试逻辑的核心运行时代码。
+-   `MessageBusTesterEditor` 模块：包含用于显示测试状态、网络统计和测试计划管理的 Slate UI。
 
-### 头文件引入
-
-如果需要在 `MessageBusTesterApp` 的开发中引用，可使用：
-```cpp
-#include "MessageBusTesterEditorModule.h"
-```
-
-### 基本用法（内部/调试）
-
-一个典型的内部用法是获取当前的网络消息统计信息扩展。以下示例展示了如何通过 `FMessageBusTesterEditorModule` 的静态方法安全地获取该接口：
-
-```cpp
-// 来源: Private/MessageBusTesterEditorModule.h
-// 用途：获取用于监控消息统计的 INetworkMessagingExtension 接口
-if (INetworkMessagingExtension* StatsProvider = FMessageBusTesterEditorModule::GetMessagingStatistics())
-{
-    // 使用 StatsProvider 查询网络传输统计信息
-    // 例如：RTT, 窗口大小, 已发送/丢失分段等
-}
-else
-{
-    // 特征不可用，可能在非测试上下文或模块未加载时
-    UE_LOG(LogMessageBusTesterEditor, Warning, TEXT("Network Messaging Extension is not available."));
-}
-```
-
-### 进阶用法
-
-更高级的用法涉及启动该插件的编辑器模块并显示其测试面板，但这通常由 `MessageBusTesterApp` 的入口点自动完成。
+因此，无法在游戏项目或编辑器插件中直接调用其功能。用法是编译并运行 `MessageBusTesterApp`。
 
 ## Demo 示例
 
-由于插件的特殊性，下面提供一个最小的示例，展示如何在另一个编辑器模块中（假设上下文允许）引用并调用 `MessageBusTester` 的辅助函数。这仅用于说明原理，实际中很少这样使用。
-
-**MessageBusTestConsumer.h**
-```cpp
-#pragma once
-#include "CoreMinimal.h"
-#include "Modules/ModuleManager.h"
-
-// 前置声明，避免不必要的头文件包含
-class INetworkMessagingExtension;
-
-class FMessageBusTestConsumerModule : public IModuleInterface
-{
-public:
-    virtual void StartupModule() override;
-    virtual void ShutdownModule() override;
-
-    // 示例函数：尝试获取并使用消息统计接口
-    void QueryNetworkStats();
-
-private:
-    // 缓存接口指针，避免频繁查询
-    INetworkMessagingExtension* CachedStatsProvider = nullptr;
-};
-```
-
-**MessageBusTestConsumer.cpp**
-```cpp
-#include "MessageBusTestConsumerModule.h"
-#include "MessageBusTesterEditorModule.h" // 引入插件模块
-#include "INetworkMessagingExtension.h" // 引入统计接口类型
-
-#define LOCTEXT_NAMESPACE "FMessageBusTestConsumerModule"
-
-void FMessageBusTestConsumerModule::StartupModule()
-{
-    // 模块启动时尝试缓存接口
-    CachedStatsProvider = FMessageBusTesterEditorModule::GetMessagingStatistics();
-}
-
-void FMessageBusTestConsumerModule::ShutdownModule()
-{
-    CachedStatsProvider = nullptr;
-}
-
-void FMessageBusTestConsumerModule::QueryNetworkStats()
-{
-    if (CachedStatsProvider)
-    {
-        // 此处可以使用 CachedStatsProvider 调用其方法，获取统计数据
-        // 例如：FMessageTransportStatistics Stats = CachedStatsProvider->GetTransportStatistics(...);
-        UE_LOG(LogTemp, Log, TEXT("Successfully queried network messaging stats via MessageBusTester helper."));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("MessageBusTester network stats interface is not available in this context."));
-    }
-}
-
-#undef LOCTEXT_NAMESPACE
-
-IMPLEMENT_MODULE(FMessageBusTestConsumerModule, MessageBusTestConsumer)
-```
+由于这是一个独立的测试应用而非功能库，无法提供一个集成到游戏中的最小代码示例。要使用此工具，你需要：
+1.  在 UE 源码环境中启用并编译此插件。
+2.  编译并运行 `MessageBusTesterApp` 目标。
+3.  在该应用程序中，通过其内置 UI 管理测试计划、发现网络中的其他测试器实例，并观察传输统计数据。
 
 ## 模块依赖
 
+从 `MessageBusTesterEditor.Build.cs` 分析，要使用此插件的编辑器部分，你的模块需要依赖：
+
 | 模块 | 用途 |
 |---|---|
-| `UdpMessaging` | 提供底层的 UDP 消息传输实现，是此插件测试的核心对象。 |
-| `INetworkMessagingExtension` | (通过 `INetworkMessagingExtension.h`) 提供网络消息统计的抽象接口，插件通过 `IModularFeatures` 获取具体实现。 |
+| `MessageBusTester` | 提供核心的测试器逻辑和接口 |
+| `UdpMessaging` | 提供底层的 UDP 消息传输实现，是被测试的对象 |
 
 ## 维护状态
 
@@ -141,17 +67,19 @@ IMPLEMENT_MODULE(FMessageBusTestConsumerModule, MessageBusTestConsumer)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏以使用新的格式化功能。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 `UE_LOG` 迁移到新的 `UE_LOGF` 格式。 |
 | 2026-01-15 | `738ab46a` | Fixed localization warnings | 修复了本地化相关的编译警告。 |
-| 2025-11-27 | `29081f24` | Fixup API macros | 修正了 API 导出宏的使用。 |
-| 2025-11-20 | `f8d6103d` | Enable NDK 29 for Android, fix compilation issues | 启用 Android NDK 29 并修复相关编译问题。 |
-| 2025-11-10 | `248fda82` | Fix the statistics panel not updating with a remote client resets its UDP Messaging settings. | 修复了当远程客户端重置其 UDP 消息设置时，统计面板未更新的问题。 |
+| 2025-11-27 | `29081f24` | Fixup API macros | 修正了 API 导出宏的使用问题。 |
+| 2025-11-20 | `f8d6103d` | Enable NDK 29 for Android, fix compilation issues | 为 Android 平台启用 NDK 29，并修复相关编译问题。 |
+| 2025-11-10 | `248fda82` | Fix the statistics panel not updating with a remote client resets its UDP Messaging settings. | 修复了当远程客户端重置其 UDP 消息设置时，统计面板不更新的问题。 |
 
 ### 维护评价
 
-该插件创建于 2025 年 10 月，相对“年轻”。从提交历史看，它处于**活跃维护**中，近期的更新包括编译修复、平台兼容性改进（Android NDK 29）和 bug 修复（统计面板更新）。作为实验性 (`IsBetaVersion=true`) 和特定工具 (`MessageBusTesterApp`) 的插件，其核心功能稳定，但 API 和设计未来可能会有变动。**仅推荐在开发 `MessageBusTesterApp` 或对 UE 消息总线进行深度调试时使用**。
+-   **活跃维护**：尽管是实验性插件，但最近的提交记录显示（截至 2026 年 4 月），它仍在持续进行更新和维护，包括编译修复、平台适配和 bug 修复。
+-   **内部工具**：它服务于特定的内部团队（UE 网络团队），因此更新可能与底层网络模块的改动紧密相关。
+-   **实验性/测试专用**：由于 `.uplugin` 中 `IsBetaVersion: true` 且 `SupportedPrograms` 限制，这表明它是一个内部测试工具，其 API 和行为在未来可能会发生变化，甚至被移除。
+-   **推荐使用**：仅推荐给需要进行 UE 底层 UDP 消息总线性能与可靠性基准测试的高级开发者或引擎程序员。对于大多数游戏项目，此插件没有直接用途。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MessageBusTester)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MessageBusTester/Tests) (如果存在)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MessageBusTester)

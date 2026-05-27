@@ -11,25 +11,23 @@
 | 模块 | `TemplateSequence` (Runtime), `TemplateSequenceEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2019-10-02 |
-| 年龄标签 | 👴 老古董（约 6 年） |
+| 年龄标签 | 👴 老古董（约 7 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MovieScene/TemplateSequence) | |
 
 ## 用途
 
-Template Sequence 解决的核心问题是 **Sequencer 动画的可复用实例化**。
+`TemplateSequence` 插件的核心是**模板序列 (Template Sequence)** 的运行时支持。模板序列是一种特殊的 `UMovieSceneSequence`，它定义了一个可重复使用的动画蓝图（例如镜头动画、对象动画），并可以在场景中多次实例化。
 
-在标准的 Level Sequence 中，动画是"一对一"绑定的——一个序列绑定到一组特定对象。而 Template Sequence 允许你创建一个**模板化的动画资产**，其中包含一个根可生成对象（Spawnable），这个模板可以在多个 Level Sequence 中被多次实例化，每次实例可以绑定到不同的目标对象。
-
-最典型的应用场景是 **摄像机动画**：`UCameraAnimationSequence` 继承自 `UTemplateSequence`，专门用于创建可复用的摄像机摇晃/运镜动画。配合 `USequenceCameraShakePattern`，可以用 Sequencer 动画替代传统的程序化 Camera Shake，实现更精细的摄像机效果控制。
-
-简而言之：**模板序列 = 可复用的 Sequencer 动画模板 + 实例化时绑定到不同对象**。
+插件主要解决以下问题：
+1.  **序列复用**：允许将一段复杂的动画（如摄像机运动）定义为模板，并在多个地方以不同的配置（如绑定到不同的对象）重复播放，而无需复制序列本身。
+2.  **相机抖动与动画**：提供专门的 `UCameraAnimationSequence` 类及其播放器，用于高效地播放基于序列的相机抖动效果。这通过一个全局的 `UCameraAnimationSequenceSubsystem` 进行管理，优化了性能。
+3.  **序列内属性缩放**：允许在父序列中嵌入模板序列时，对其内部的特定属性（如浮点数、变换的平移或旋转部分）进行缩放，提供了更灵活的动画控制。
 
 ## 使用场景
 
-- 你有一段精心设计的摄像机运镜动画，需要在多个关卡/多个场景中复用 → 创建 CameraAnimationSequence 模板
-- 你需要基于 Sequencer 动画制作真实的摄像机摇晃效果（爆炸、撞击、脚步等）→ 使用 SequenceCameraShakePattern
-- 你需要在 Sequencer 中嵌套可复用的子动画，每次实例可以绑定到不同角色/物体 → 使用 TemplateSequenceTrack
-- 你需要对模板序列中的属性进行缩放（如不同强度的摄像机摇晃）→ 使用 PropertyScale 系统
+-   你制作了一个精致的过场镜头动画，并希望在不同关卡、不同摄像机位置重复使用它 → 将动画定义为 `UCameraAnimationSequence`。
+-   你需要为游戏中的爆炸、命中等事件创建可配置且性能良好的相机抖动效果 → 使用 `USequenceCameraShakePattern`。
+-   你有一个控制车辆或角色动画的序列，并希望在游戏逻辑中通过代码或蓝图控制其播放，同时能将动画效果应用到场景中的不同实例上 → 使用 `ATemplateSequenceActor`。
 
 ## 蓝图用法
 
@@ -37,208 +35,225 @@ Template Sequence 解决的核心问题是 **Sequencer 动画的可复用实例�
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Create Template Sequence Player` | 静态函数：创建模板序列播放器并生成对应的 Actor | `UTemplateSequencePlayer` |
-| `Get Sequence` | 获取正在播放的模板序列（软引用自动加载） | `ATemplateSequenceActor` |
-| `Load Sequence` | 加载并返回正在播放的模板序列 | `ATemplateSequenceActor` |
-| `Set Sequence` | 设置要播放的模板序列 | `ATemplateSequenceActor` |
-| `Get Sequence Player` | 获取序列播放器实例 | `ATemplateSequenceActor` |
-| `Set Binding` | 设置模板序列根对象的绑定覆盖（将动画应用到指定 Actor） | `ATemplateSequenceActor` |
+| `Create Template Sequence Player` | 静态函数，为指定的模板序列创建播放器和对应的 Actor，返回播放器引用 | `UTemplateSequencePlayer` |
+| `Get Sequence` | 获取 Actor 当前关联的模板序列资产 | `ATemplateSequenceActor` |
+| `Load Sequence` | 异步加载并返回 Actor 关联的模板序列 | `ATemplateSequenceActor` |
+| `Set Sequence` | 设置 Actor 需要播放的模板序列资产 | `ATemplateSequenceActor` |
+| `Get Sequence Player` | 获取 Actor 内部的序列播放器 | `ATemplateSequenceActor` |
+| `Set Binding` | 设置模板序列的根对象绑定覆盖，将序列动画应用到指定的 Actor 上 | `ATemplateSequenceActor` |
 
-### 创建并播放模板序列（蓝图）
+### 使用示例（蓝图描述）
 
-1. **方式一：通过 `CreateTemplateSequencePlayer` 节点**
-   - 输入：World Context Object、UTemplateSequence 资产、PlaybackSettings
-   - 输出：UTemplateSequencePlayer 引用 + ATemplateSequenceActor 引用
-   - 调用播放器的 `Play` 方法开始播放
+1.  **动态创建并播放模板序列**：
+    *   使用 `Create Template Sequence Player` 节点，传入你的 `UTemplateSequence` 资产和播放设置。
+    *   该节点会输出一个 `ATemplateSequenceActor` 和对应的 `UTemplateSequencePlayer`。
+    *   可以直接使用返回的播放器调用 `Play`、`Stop` 等控制函数。
 
-2. **方式二：放置 ATemplateSequenceActor**
-   - 在场景中放置 `ATemplateSequenceActor`
-   - 在 Details 面板中设置 `Template Sequence` 属性（指定模板序列资产）
-   - 配置 `Playback Settings`（是否循环、播放速率等）
-   - 通过 `Set Binding` 节点将动画绑定到场景中的目标 Actor
-   - 调用播放器的 `Play` 开始播放
-
-### 配置 Camera Shake（蓝图）
-
-1. 在 Camera Shake 配置中选择 `SequenceCameraShakePattern` 类型
-2. 设置 `Sequence` 属性为一个 `UCameraAnimationSequence` 资产
-3. 调整 `PlayRate`（播放速率）、`Scale`（强度缩放）、`BlendInTime`/`BlendOutTime`（混合时间）
-4. 可选：启用 `bRandomSegment` 播放随机片段
+2.  **在场景中放置并配置模板序列 Actor**：
+    *   在场景中放置一个 `ATemplateSequenceActor`。
+    *   在其细节面板中，设置 `Template Sequence` 属性为你想要的序列资产。
+    *   使用 `Set Binding` 节点或其 `Binding Override` 属性，将序列绑定到场景中的另一个 Actor（`Target Actor`）。
+    *   使用返回的 `Sequence Player` 或 Actor 本身的播放设置来控制播放。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "TemplateSequencePlayer.h"
-#include "TemplateSequenceActor.h"
 #include "TemplateSequence.h"
-#include "CameraAnimationSequence.h"
-#include "SequenceCameraShake.h"
+#include "TemplateSequenceActor.h"
+#include "TemplateSequencePlayer.h"
+#include "SequenceCameraShake.h" // 用于相机抖动
 ```
 
-### 基本用法：创建并播放模板序列
+### 基本用法
+
+**创建并播放一个模板序列**
 
 ```cpp
-// 基于 Public/TemplateSequencePlayer.h 中的 CreateTemplateSequencePlayer 接口
+// 假设 TemplateSequenceAsset 是一个已加载的 UTemplateSequence* 指针
+// World 是当前的 UWorld* 指针
 
-UTemplateSequence* MyTemplateSequence = LoadObject<UTemplateSequence>(nullptr, TEXT("/Game/MyAnimations/MyTemplateSequence"));
 FMovieSceneSequencePlaybackSettings Settings;
-Settings.bAutoPlay = false;
-Settings.LoopCount.Value = 0;  // 无限循环
+Settings.bAutoPlay = true;
 
-ATemplateSequenceActor* SpawnedActor = nullptr;
+ATemplateSequenceActor* OutActor = nullptr;
 UTemplateSequencePlayer* Player = UTemplateSequencePlayer::CreateTemplateSequencePlayer(
-    GetWorld(), MyTemplateSequence, Settings, SpawnedActor);
+    World,
+    TemplateSequenceAsset,
+    Settings,
+    OutActor
+);
 
 if (Player)
 {
-    // 将模板序列绑定到场景中的某个 Actor
-    SpawnedActor->SetBinding(MyTargetActor, true);
-
-    // 开始播放
-    Player->Play();
+    // 播放器已自动开始播放，也可以手动控制
+    // Player->Play();
+    // Player->Stop();
 }
 ```
+*（参考 `Public/TemplateSequencePlayer.h` 中的 `CreateTemplateSequencePlayer` 函数）*
 
-### 进阶用法：使用 Camera Animation Sequence Player
-
-```cpp
-// 基于 Public/CameraAnimationSequencePlayer.h 的接口
-// 用于低级别的摄像机动画播放控制
-
-UCameraAnimationSequencePlayer* CameraPlayer = NewObject<UCameraAnimationSequencePlayer>();
-CameraPlayer->Initialize(MyCameraAnimSequence, /*StartOffset=*/ 0, /*DurationOverride=*/ 2.0f);
-
-// 设置绑定对象覆盖（将摄像机动画应用到指定对象）
-CameraPlayer->SetBoundObjectOverride(MyCameraActor);
-
-// 开始播放（循环 + 随机起始时间）
-CameraPlayer->Play(/*bLoop=*/true, /*bRandomStartTime=*/true);
-
-// 每帧更新（获取当前时间并推进）
-FFrameTime CurrentTime = CameraPlayer->GetCurrentPosition();
-CameraPlayer->Update(CurrentTime + FFrameTime(1));
-
-// 跳转到指定时间
-CameraPlayer->Jump(FFrameTime(30));
-
-// 停止播放
-CameraPlayer->Stop();
-```
-
-### 进阶用法：Camera Animation Sequence Subsystem
+**使用 ATemplateSequenceActor 绑定到目标**
 
 ```cpp
-// 基于 Public/CameraAnimationSequenceSubsystem.h 的接口
-// 用于管理全局的摄像机动画运行器和链接器
+// 假设已在场景中获取或 Spawn 了 ATemplateSequenceActor* SequenceActor
+// TargetActor 是你希望应用动画效果的 AActor* 指针
 
-UCameraAnimationSequenceSubsystem* Subsystem =
-    UCameraAnimationSequenceSubsystem::GetCameraAnimationSequenceSubsystem(GetWorld());
+// 设置要播放的序列
+SequenceActor->SetSequence(MyTemplateSequence);
 
-if (Subsystem)
+// 将序列的根对象绑定覆盖设置为目标 Actor
+SequenceActor->SetBinding(TargetActor, true);
+
+// 获取播放器并控制播放
+if (UTemplateSequencePlayer* Player = SequenceActor->GetSequencePlayer())
 {
-    // 获取 Sequencer 链接器
-    UMovieSceneEntitySystemLinker* Linker = Subsystem->GetLinker(/*bAutoCreate=*/true);
-
-    // 获取摄像机动画运行器
-    TSharedPtr<FMovieSceneEntitySystemRunner> Runner = Subsystem->GetRunner();
+    Player->PlayLooping();
 }
 ```
+*（参考 `Public/TemplateSequenceActor.h` 中的 `SetSequence` 和 `SetBinding` 函数）*
+
+### 进阶用法
+
+**创建序列化相机抖动 (Camera Shake)**
+
+```cpp
+// 在配置相机抖动效果的类中（如 APlayerCameraManager 或自定义抖动配置）
+UCameraShakeBase* CreateCameraShakeInstance()
+{
+    USequenceCameraShakePattern* ShakePattern = NewObject<USequenceCameraShakePattern>();
+    ShakePattern->Sequence = MyCameraAnimationSequence; // UCameraAnimationSequence*
+    ShakePattern->PlayRate = 1.0f;
+    ShakePattern->Scale = 1.0f;
+    ShakePattern->BlendInTime = 0.2f;
+    ShakePattern->BlendOutTime = 0.5f;
+
+    UCameraShakeBase* CameraShake = UCameraShakeBase::StartCameraShake(
+        PlayerCameraManager,
+        UCameraShakeBase::StaticClass(),
+        1.0f, // Scale
+        ECameraShakePlaySpace::World,
+        FRotator::ZeroRotator
+    );
+
+    if (CameraShake)
+    {
+        // 将配置好的模式应用到抖动实例上
+        CameraShake->SetRootShakePattern(ShakePattern);
+    }
+
+    return CameraShake;
+}
+```
+*（参考 `Public/SequenceCameraShake.h` 中的 `USequenceCameraShakePattern` 类及其属性）*
 
 ## Demo 示例
 
-一个完整的最小示例：创建一个自定义 Camera Shake Pattern 并触发摄像机摇晃。
-
+**MyTemplateSequenceDemo.h**
 ```cpp
-// MyCameraShakeComponent.h
 #pragma once
 
-#include "Components/ActorComponent.h"
-#include "MyCameraShakeComponent.generated.h"
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "MyTemplateSequenceDemo.generated.h"
 
-class UCameraAnimationSequence;
+class UTemplateSequence;
+class ATemplateSequenceActor;
+class UTemplateSequencePlayer;
 
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class MYGAME_API UMyCameraShakeComponent : public UActorComponent
+UCLASS()
+class AMyTemplateSequenceDemo : public AActor
 {
     GENERATED_BODY()
 
 public:
-    UMyCameraShakeComponent();
-
-    /** 触发摄像机摇晃 */
-    UFUNCTION(BlueprintCallable, Category = "Camera")
-    void TriggerCameraShake(float InScale = 1.0f);
-
-    /** 要播放的摄像机动画序列 */
-    UPROPERTY(EditAnywhere, Category = "Camera")
-    TObjectPtr<UCameraAnimationSequence> CameraAnimationSequence;
+    AMyTemplateSequenceDemo();
 
 protected:
     virtual void BeginPlay() override;
+
+    UPROPERTY(EditAnywhere, Category = "Demo")
+    TObjectPtr<UTemplateSequence> DemoSequence;
+
+    UPROPERTY()
+    TObjectPtr<ATemplateSequenceActor> SequenceActor;
+
+    UPROPERTY()
+    TObjectPtr<UTemplateSequencePlayer> SequencePlayer;
+
+    UFUNCTION()
+    void OnSequenceFinished();
 };
 ```
 
+**MyTemplateSequenceDemo.cpp**
 ```cpp
-// MyCameraShakeComponent.cpp
-#include "MyCameraShakeComponent.h"
-#include "CameraAnimationSequence.h"
-#include "SequenceCameraShake.h"
-#include "GameFramework/PlayerController.h"
-#include "Camera/CameraModifier_CameraShake.h"
+#include "MyTemplateSequenceDemo.h"
+#include "TemplateSequence.h"
+#include "TemplateSequenceActor.h"
+#include "TemplateSequencePlayer.h"
+#include "MovieSceneSequencePlayer.h"
 
-UMyCameraShakeComponent::UMyCameraShakeComponent()
+AMyTemplateSequenceDemo::AMyTemplateSequenceDemo()
 {
-    PrimaryComponentTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = false;
 }
 
-void UMyCameraShakeComponent::BeginPlay()
+void AMyTemplateSequenceDemo::BeginPlay()
 {
     Super::BeginPlay();
+
+    if (!DemoSequence || !GetWorld())
+    {
+        return;
+    }
+
+    // 配置播放设置
+    FMovieSceneSequencePlaybackSettings Settings;
+    Settings.bAutoPlay = false; // 我们手动控制开始
+    Settings.LoopCount.Value = 0; // 播放一次
+
+    // 创建播放器和 Actor
+    SequencePlayer = UTemplateSequencePlayer::CreateTemplateSequencePlayer(
+        GetWorld(),
+        DemoSequence,
+        Settings,
+        SequenceActor
+    );
+
+    if (SequencePlayer && SequenceActor)
+    {
+        // 可以选择绑定到自身或其他 Actor
+        // SequenceActor->SetBinding(AnotherActor);
+
+        // 监听播放完成事件
+        SequencePlayer->OnFinished.AddDynamic(this, &AMyTemplateSequenceDemo::OnSequenceFinished);
+
+        // 开始播放
+        SequencePlayer->Play();
+
+        UE_LOG(LogTemp, Log, TEXT("Template Sequence Demo Started: %s"), *DemoSequence->GetName());
+    }
 }
 
-void UMyCameraShakeComponent::TriggerCameraShake(float InScale)
+void AMyTemplateSequenceDemo::OnSequenceFinished()
 {
-    if (!CameraAnimationSequence)
-    {
-        return;
-    }
-
-    APlayerController* PC = GetWorld()->GetFirstPlayerController();
-    if (!PC)
-    {
-        return;
-    }
-
-    // 创建 Sequence Camera Shake Pattern
-    USequenceCameraShakePattern* ShakePattern = NewObject<USequenceCameraShakePattern>();
-    ShakePattern->Sequence = CameraAnimationSequence;
-    ShakePattern->PlayRate = 1.0f;
-    ShakePattern->Scale = InScale;
-    ShakePattern->BlendInTime = 0.2f;
-    ShakePattern->BlendOutTime = 0.5f;
-
-    // 启动摄像机摇晃
-    PC->ClientStartCameraShake(ShakePattern->GetClass(), InScale);
+    UE_LOG(LogTemp, Log, TEXT("Template Sequence Demo Finished."));
 }
 ```
 
 ## 模块依赖
 
-该插件依赖以下非标准模块（`TemplateSequence.Build.cs` 推断）：
+该插件依赖于 MovieScene 和 LevelSequence 生态系统。要使用此插件，你的模块通常需要依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `MovieScene` | Sequencer 核心运行时，提供序列、轨道、通道等基础设施 |
-| `MovieSceneTracks` | Sequencer 标准轨道实现（Transform、Float 等轨道） |
-| `LevelSequence` | Level Sequence 运行时，提供 Spawn Register 和序列播放支持 |
+| `MovieScene` | 核心序列框架，提供序列、轨道、节等基础类 |
+| `LevelSequence` | 提供关卡序列播放器、Spawn Register 等基础运行时功能 |
+| `CameraShakeBase` (Engine) | 提供 `UCameraShakePattern` 基类，用于 `USequenceCameraShakePattern` |
 
-插件级依赖：
-
-| 插件 | 用途 |
-|---|---|
-| `LevelSequenceEditor` | 编辑器中的 Level Sequence 编辑功能（TemplateSequenceEditor 模块需要） |
+*注：标准依赖如 `Core`, `CoreUObject`, `Engine` 等已省略。*
 
 ## 维护状态
 
@@ -246,26 +261,21 @@ void UMyCameraShakeComponent::TriggerCameraShake(float InScale)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 常量截断为 float 的警告 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移到 UE_LOGF 宏 |
-| 2026-04-10 | `c03b3afd` | PR #14610: Rep layout mismatch in level sequence player due to with editoronly data property | 修复 Level Sequence Player 中因 editoronly 属性导致的复制布局不匹配问题 |
-| 2026-02-20 | `49054c9f` | Sequencer: Add Bake Transform to object binding menu | Sequencer 对象绑定菜单新增烘焙变换功能 |
-| 2026-02-11 | `5919e4fa` | Remove 7 virtual functions in UObject (either deprecated or toolonly) | 移除 UObject 中 7 个已废弃或仅工具使用的虚函数 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量转为浮点数时产生的编译器警告。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将过时的 `UE_LOG` 宏迁移至新的 `UE_LOGF` 宏。 |
+| 2026-04-10 | `c03b3afd` | PR #14610: Rep layout mismatch in level sequence player due to with editoronly data property | 修复因仅编辑器属性导致关卡序列播放器复制布局不匹配的问题。 |
+| 2026-02-20 | `49054c9f` | Sequencer: Add Bake Transform to object binding menu | 在序列器对象绑定菜单中添加“烘焙变换”功能。 |
+| 2026-02-11 | `5919e4fa` | Remove 7 virtual functions in UObject (either deprecated or toolonly) | 移除 UObject 中的 7 个虚函数（已弃用或仅工具函数）。 |
 
 ### 维护评价
 
-**状态：活跃维护中**
+`TemplateSequence` 插件创建于 **2019年**，已有约 7 年历史。从 git 历史看，它在 **2026 年仍有持续的功能性更新和编译修复**（如修复浮点警告、迁移日志宏、修复复制问题），表明它**仍在活跃维护中**，是引擎动画和相机系统的重要组成部分。
 
-该插件创建于 2019 年（UE 4.24 时期），至今约 6 年历史。从近期提交记录看，2026 年 2-5 月持续有更新，主要集中在：
-- 代码现代化（UE_LOG 迁移、废弃函数清理）
-- 编译警告修复（浮点精度问题）
-- Bug 修复（复制同步问题）
+**注意**：该插件在 `.uplugin` 中标记为 **`IsBetaVersion: true`** 且 **`EnabledByDefault: false`**，这意味着它仍处于**实验性阶段**，API 和功能可能在未来版本中发生变化。使用前需在项目设置中手动启用。
 
-值得注意的是，该插件至今仍标记为 `IsBetaVersion = true` 且 `EnabledByDefault = false`，说明 Epic 将其视为实验性功能。这可能意味着 API 可能在未来版本中发生变化。
-
-**推荐程度：可用但需谨慎**。功能成熟稳定，在 Sequencer 摄像机系统中被广泛使用（Camera Animation 是其核心应用场景），但由于 Beta 标记和 `EnabledByDefault=false`，正式项目中需要手动启用并做好版本升级时 API 变动的准备。
+**推荐**：如果你需要实现可复用的动画序列或高级相机抖动，该插件是官方提供的强大工具。鉴于其仍在维护且为 Epic 官方插件，可以放心用于生产环境，但需注意其实验性状态，并关注后续版本更新日志中的兼容性说明。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MovieScene/TemplateSequence)
-- 官方文档（无）
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MovieScene/TemplateSequence)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MovieScene/TemplateSequence/Source/TemplateSequence/Private/Tests)

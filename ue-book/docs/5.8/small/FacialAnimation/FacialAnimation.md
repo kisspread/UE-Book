@@ -11,201 +11,206 @@
 | 模块 | `FacialAnimation` (Runtime), `FacialAnimationEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2016-11-15 |
-| 年龄标签 | 👴 老古董（约 9 年） |
+| 年龄标签 | 🏛️ 文物（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/FacialAnimation) | |
 
 ## 用途
 
-这是一个面向动画师和编辑器工具的插件，旨在简化面部动画（尤其是口型同步）的工作流。其核心功能是**将音频文件（.wav）及其对应的面部动画曲线数据（通常从 FBX 文件中提取）批量导入并打包到 `USoundWave` 资产中**。
+此插件旨在解决**语音驱动面部动画（Lip-Sync）** 工作流中的一个核心痛点：将外部音频工具生成的口型动画数据高效、批量地整合到虚幻引擎项目中。
 
-它解决的问题是：当需要为大量的对白或语音创建口型同步动画时，手动逐个创建动画序列或驱动数据非常繁琐。此插件通过批量处理，将曲线数据（如“jaw_open”、“mouth_wide”等）与音频绑定，使得动画师或技术美术能够快速生成一套可用于驱动骨骼网格体或 Morph Target 的动画数据。
+传统的工作流程中，动画师可能需要为每段对话语音手动调整或在引擎中录制面部骨骼/变形目标曲线，过程繁琐且难以与音频精确同步。`Facial Animation Bulk Importer` 插件通过以下方式简化此流程：
+1.  **数据导入**：批量导入包含音频（`.wav`）和对应面部动画曲线（以 FBX 格式保存的 `Curve Table`）的文件。
+2.  **资产烘焙**：将导入的动画曲线数据直接烘焙到 `USoundWave` 资产中。这样，当游戏播放该音频资产时，其内置的曲线数据即可被用于驱动角色的面部动画。
 
-此外，插件还提供了一个运行时组件 `UAudioCurveSourceComponent`，它继承自音频组件并实现了曲线源接口，能够根据播放的音频实时输出对应的动画曲线值，从而在游戏运行时驱动角色面部动画。
+其核心价值在于**将音画同步数据打包在同一个音频资产中**，使得后续在游戏逻辑中播放语音时，可以自动、精确地驱动口型和表情，无需再进行额外的同步设置，极大地提升了动画制作和集成效率。
 
 ## 使用场景
 
-- **为对话系统创建口型同步动画**：你的项目中有成百上千条对话语音，需要为每条语音生成对应的口型动画。使用此插件可以批量导入 FBX 中的曲线数据到对应的 SoundWave 中，节省大量手动设置时间。
-- **需要基于音频实时驱动动画**：你希望角色的嘴部动作能够根据正在播放的语音实时变化，而不是预先烘焙好的动画序列。可以使用 `UAudioCurveSourceComponent` 来播放音频并获取同步的曲线数据。
-- **技术美术构建自定义动画管线**：你需要将外部动画数据（如从 MotionBuilder 或专业口型同步软件导出）集成到 Unreal 的动画蓝图流程中。此插件提供了曲线源接口 (`ICurveSourceInterface`)，你可以基于它构建自己的数据驱动节点。
+-   **角色对话密集的 RPG 或互动叙事游戏**：游戏中存在大量语音对话，需要为每段语音精确匹配口型动画。
+-   **虚拟人或数字人项目**：需要实时、准确的口型同步效果。
+-   **使用第三方音频/动画面部动画工具**的项目：例如使用 Adobe Animate、FaceFX 等工具生成面部动画曲线和音频，需要批量导入引擎。
+-   **需要将动画数据与音频资源进行强绑定**的场景：确保任何播放该音频的地方都能自动获得正确的动画驱动数据。
 
 ## 蓝图用法
 
-该插件主要提供了一个可蓝图生成的运行时组件。
+此插件的蓝图功能主要体现在提供的 `UAudioCurveSourceComponent` 组件上，它允许音频播放与动画曲线驱动同步。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Set Curve Source Binding Name` | 设置此组件在动画蓝图中绑定时使用的名称。 | `UAudioCurveSourceComponent` |
-| `Set Curve Sync Offset` | 设置在评估曲线时应用于音频播放位置的时间偏移量（秒）。 | `UAudioCurveSourceComponent` |
-| `Get Curve Value` | 获取指定名称的动画曲线当前值。 | `UAudioCurveSourceComponent` (实现 ICurveSourceInterface) |
-| `Get Curves` | 获取此组件当前提供的所有动画曲线值。 | `UAudioCurveSourceComponent` (实现 ICurveSourceInterface) |
+| `Set Curve Source Binding Name` | 设置此组件作为曲线源的绑定名称，动画蓝图通过此名称寻找曲线源。 | `UAudioCurveSourceComponent` |
+| `Get Curve Source Binding Name` | 获取当前的曲线源绑定名称。 | `UAudioCurveSourceComponent` |
+| `Set Curve Sync Offset` | 设置音频播放位置与曲线求值位置之间的时间偏移（秒），用于微调口型与声音的同步。 | `UAudioCurveSourceComponent` |
+| `Get Curve Value` | 获取指定名称的动画曲线在当前时刻的值。 | `UAudioCurveSourceComponent` |
+| `Get Curves` | 获取当前时刻所有曲线的值，以 `TArray<FNamedCurveValue>` 形式返回。 | `UAudioCurveSourceComponent` |
 
 ### 使用示例（蓝图描述）
 
-1.  **在角色蓝图中添加组件**：
-    - 在你的角色蓝图中，添加一个 `UAudioCurveSourceComponent`。
-    - 在该组件的细节面板中，设置 `Curve Source Binding Name` 为一个唯一的名称，例如 `“LipSyncSource”`。
-
-2.  **在动画蓝图中绑定并使用曲线**：
-    - 打开角色的动画蓝图。
-    - 在动画图表中，添加一个 `Curve Source` 节点。
-    - 将该节点的 `Source Name` 设置为与步骤 1 中相同的名称（`“LipSyncSource”`）。
-    - 将 `Curve Source` 节点的输出引脚连接到后续的动画节点，例如 `Modify Curve` 节点或 `Morph Target` 节点，用于驱动面部骨骼或混合形状。
-
-3.  **播放音频驱动动画**：
-    - 在游戏逻辑（例如对话系统）中，调用 `AudioCurveSourceComponent` 的 `Play` 函数来播放绑定的 SoundWave。
-    - 组件在播放音频的同时，会根据内置的曲线表数据，实时输出动画曲线值，从而驱动动画蓝图中的面部动画。
+1.  **创建组件**：在你的角色或 Actor 蓝图中，添加一个 `Audio Curve Source Component` 组件。
+2.  **绑定名称**：在组件的属性面板或通过蓝图设置 `Curve Source Binding Name`，例如设为 `“Mouth”`。这个名称需要与你动画蓝图中 `Curve Source` 节点的 `Binding Name` 相匹配。
+3.  **播放音频**：通过蓝图调用此组件的 `Play` 函数播放已导入了曲线数据的 `SoundWave` 资产。
+4.  **驱动动画**：在动画蓝图中，使用一个 `Curve Source` 节点，并设置其 `Curve Source` 为 `Self`（如果曲线源在同一个 Actor 上），并填入相同的 `Binding Name`（`“Mouth”`）。该节点会自动获取 `AudioCurveSourceComponent` 提供的曲线值，进而驱动变形目标或骨骼动画。
 
 ## C++ 用法
 
-插件的核心运行时功能由 `UAudioCurveSourceComponent` 提供。它通常不需要直接实例化，而是作为其他系统的基础或通过编辑器工具链（批量导入器）生成的数据的运行时载体。
+此插件的核心运行时逻辑封装在 `UAudioCurveSourceComponent` 中，它继承自 `UAudioComponent` 并实现了 `ICurveSourceInterface` 接口。
 
 ### 头文件引入
 
 ```cpp
-// 使用 AudioCurveSourceComponent
 #include "AudioCurveSourceComponent.h"
-
-// 如果你需要实现自定义的曲线源接口
-#include "Animation/CurveSourceInterface.h"
+#include "Components/CurveSourceInterface.h"
 ```
 
 ### 基本用法
 
-你可以创建一个自定义组件来实现 `ICurveSourceInterface`，从而提供动画曲线。
+创建并配置一个音频曲线源组件，并手动驱动其 Tick 以求值曲线。
+*来源文件：`Engine/Plugins/Editor/FacialAnimation/Source/FacialAnimation/Public/AudioCurveSourceComponent.h`*
 
 ```cpp
-// MyCustomCurveSource.h
-#pragma once
-#include "Components/ActorComponent.h"
-#include "Animation/CurveSourceInterface.h"
-#include "MyCustomCurveSource.generated.h"
+// 在某个 Actor 类中
+UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation")
+TObjectPtr<UAudioCurveSourceComponent> AudioCurveSource;
 
-UCLASS(ClassGroup=(Animation), meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UMyCustomCurveSource : public UActorComponent, public ICurveSourceInterface
+// 在构造函数或初始化中创建
+void AMyActor::BeginPlay()
 {
-    GENERATED_BODY()
-
-public:
-    // 通过 ICurveSourceInterface 提供绑定名称
-    virtual FName GetBindingName_Implementation() const override
+    Super::BeginPlay();
+    
+    if (!AudioCurveSource)
     {
-        return TEXT("MyCustomSource");
+        AudioCurveSource = NewObject<UAudioCurveSourceComponent>(this, UAudioCurveSourceComponent::StaticClass(), TEXT("AudioCurveSource"));
+        AudioCurveSource->RegisterComponent();
+        AudioCurveSource->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
     }
-
-    // 返回指定曲线的当前值
-    virtual float GetCurveValue_Implementation(FName CurveName) const override
-    {
-        // 此处应包含你的逻辑，例如从骨骼网格体、Morph Target 或外部数据获取曲线值
-        if (CurveName == TEXT("jaw_open"))
-        {
-            return JawOpenValue; // 假设 JawOpenValue 是一个受控的成员变量
-        }
-        return 0.0f;
-    }
-
-    // 返回所有可用曲线的列表及其当前值
-    virtual void GetCurves_Implementation(TArray<FNamedCurveValue>& OutCurve) const override
-    {
-        OutCurve.Add(FNamedCurveValue(TEXT("jaw_open"), GetCurveValue_Implementation(TEXT("jaw_open"))));
-        // 添加其他曲线...
-    }
-
-    UPROPERTY(BlueprintReadWrite, Category="Curve")
-    float JawOpenValue = 0.f;
-};
+    
+    // 设置曲线源的绑定名，动画蓝图将通过此名称识别它
+    AudioCurveSource->CurveSourceBindingName = FName("LipSync");
+    
+    // 可选：设置曲线与音频的同步偏移（秒），用于补偿音频预滚动延迟
+    AudioCurveSource->CurveSyncOffset = -0.4f; // 示例：提前0.4秒求值曲线，以应对音频预滚动
+}
 ```
 
 ### 进阶用法
 
-`UAudioCurveSourceComponent` 内部通过音频的 `OnPlaybackPercent` 事件来同步曲线评估。如果你需要深入理解或调试其同步机制，可以关注以下成员变量：
+手动获取指定时刻的曲线值，或在自定义的 Tick 逻辑中集成曲线求值。
+*注意：`UAudioCurveSourceComponent` 的 `TickComponent` 会自动同步其内部的播放状态和曲线求值时间，通常情况下直接使用其提供的 `GetCurveValue` 即可。*
 
-- `CachedCurveTable`：缓存的曲线表数据（来自 SoundWave）。
-- `CachedCurveEvalTime`：根据音频播放进度计算出的曲线评估时间。
-- `CurveSyncOffset`：用于补偿音频处理延迟的时间偏移。
-
-在动画蓝图中，你可以使用 `Curve Source` 节点或通过 `Animation Node` 来查询任何实现了 `ICurveSourceInterface` 的对象。
+```cpp
+void AMyActor::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+    
+    if (AudioCurveSource && AudioCurveSource->IsPlaying())
+    {
+        // 获取名为 "JawOpen" 的曲线在当前时刻的值
+        float JawOpenValue = AudioCurveSource->GetCurveValue(FName("JawOpen"));
+        
+        // 根据曲线值驱动某个自定义逻辑（例如，控制一个对话气泡的大小）
+        UpdateDialogBubble(JawOpenValue);
+    }
+}
+```
 
 ## Demo 示例
 
-以下是一个最小化的、实现自定义曲线源组件的示例，它不依赖于音频播放，而是基于一个外部输入的浮点数来驱动曲线。
+一个最小化的 C++ 示例，展示如何创建一个自定义的动画曲线源组件。
+*此示例假设你已在项目中启用了 `FacialAnimation` 插件。*
 
-### MySimpleCurveSource.h
+### MyAnimationCurveSourceComponent.h
+
 ```cpp
 #pragma once
-#include "Components/ActorComponent.h"
-#include "Animation/CurveSourceInterface.h"
-#include "MySimpleCurveSource.generated.h"
 
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class UMySimpleCurveSource : public UActorComponent, public ICurveSourceInterface
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "Components/CurveSourceInterface.h"
+#include "MyAnimationCurveSourceComponent.generated.h"
+
+UCLASS(ClassGroup=(Animation), meta=(BlueprintSpawnableComponent))
+class MYPROJECT_API UMyAnimationCurveSourceComponent : public UActorComponent, public ICurveSourceInterface
 {
     GENERATED_BODY()
 
 public:
-    UMySimpleCurveSource();
+    UMyAnimationCurveSourceComponent();
 
+    virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+    // ICurveSourceInterface 接口实现
     virtual FName GetBindingName_Implementation() const override;
     virtual float GetCurveValue_Implementation(FName CurveName) const override;
     virtual void GetCurves_Implementation(TArray<FNamedCurveValue>& OutCurve) const override;
 
-    // 蓝图可设置的曲线输入值
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Curve Input")
-    float SmileInputValue = 0.f;
+    /** 用于外部输入模拟曲线值的接口 */
+    UPROPERTY(BlueprintReadWrite, Category = "Animation Curves")
+    TMap<FName, float> SimulatedCurveValues;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Curve Input")
-    float FrownInputValue = 0.f;
+    /** 此曲线源的绑定名称 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation Curves")
+    FName BindingName;
 
 private:
-    FName BindingName;
+    /** 内部缓存的曲线值，用于 ICurveSourceInterface 返回 */
+    mutable TMap<FName, float> CachedCurveValues;
 };
 ```
 
-### MySimpleCurveSource.cpp
-```cpp
-#include "MySimpleCurveSource.h"
+### MyAnimationCurveSourceComponent.cpp
 
-UMySimpleCurveSource::UMySimpleCurveSource()
+```cpp
+#include "MyAnimationCurveSourceComponent.h"
+
+UMyAnimationCurveSourceComponent::UMyAnimationCurveSourceComponent()
 {
-    PrimaryComponentTick.bCanEverTick = false;
-    BindingName = TEXT("SimpleCurveSource");
+    PrimaryComponentTick.bCanEverTick = true;
+    PrimaryComponentTick.bStartWithTickEnabled = true;
+    BindingName = FName("CustomCurveSource");
 }
 
-FName UMySimpleCurveSource::GetBindingName_Implementation() const
+void UMyAnimationCurveSourceComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+    // 每 Tick 将蓝图可写的 SimulatedCurveValues 同步到内部缓存，供接口查询
+    CachedCurveValues = SimulatedCurveValues;
+}
+
+FName UMyAnimationCurveSourceComponent::GetBindingName_Implementation() const
 {
     return BindingName;
 }
 
-float UMySimpleCurveSource::GetCurveValue_Implementation(FName CurveName) const
+float UMyAnimationCurveSourceComponent::GetCurveValue_Implementation(FName CurveName) const
 {
-    if (CurveName == TEXT("Smile"))
+    if (const float* FoundValue = CachedCurveValues.Find(CurveName))
     {
-        return SmileInputValue;
+        return *FoundValue;
     }
-    if (CurveName == TEXT("Frown"))
-    {
-        return FrownInputValue;
-    }
-    return 0.f;
+    return 0.0f;
 }
 
-void UMySimpleCurveSource::GetCurves_Implementation(TArray<FNamedCurveValue>& OutCurve) const
+void UMyAnimationCurveSourceComponent::GetCurves_Implementation(TArray<FNamedCurveValue>& OutCurve) const
 {
-    OutCurve.Emplace(TEXT("Smile"), SmileInputValue);
-    OutCurve.Emplace(TEXT("Frown"), FrownInputValue);
+    OutCurve.Empty();
+    for (const TPair<FName, float>& CurvePair : CachedCurveValues)
+    {
+        OutCurve.Add(FNamedCurveValue(CurvePair.Key, CurvePair.Value));
+    }
 }
 ```
 
-## 模块依赖
+**使用方式**：
+1.  将 `UMyAnimationCurveSourceComponent` 添加到你的 Actor。
+2.  在蓝图或其他代码中，写入 `SimulatedCurveValues` Map 来驱动曲线值。
+3.  在动画蓝图中，使用 `Curve Source` 节点，将 `Binding Name` 设置为与组件的 `BindingName` 属性一致，即可接收这些曲线值。
 
-FacialAnimation 模块依赖以下模块：
+## 模块依赖
 
 | 模块 | 用途 |
 |---|---|
-| `AudioMixer` | 用于底层音频处理，特别是 `UAudioCurveSourceComponent` 中与播放百分比同步相关的功能。 |
-
-*无特殊依赖（仅标准 Core/Engine/Slate 等）*
+| 无特殊依赖（仅标准 Core/Engine/Slate 等） | 该插件主要依赖引擎核心和编辑器标准模块，用于资产导入和 UI。 |
 
 ## 维护状态
 
@@ -213,22 +218,33 @@ FacialAnimation 模块依赖以下模块：
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2025-07-10 | `abb369e2` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. | 为包含对应 `.gen.cpp` 文件的源文件添加内联生成宏。 |
-| 2025-04-23 | `6ae57335` | Used UnrealGame build target to find and convert all files to have dllstorage on methods/staticvar | 使用 UnrealGame 构建目标查找并转换文件，为方法和静态变量添加 DLL 导出属性。 |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件目录的通用维护提交。 |
-| 2022-11-03 | `fa90b399` | Added includes for future change. This changelist only contains added #include and a couple of empty | 为未来更改添加头文件包含。本次提交仅包含添加的 `#include` 和一些空行。 |
-| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新内置插件的厂商链接，使用安全协议（HTTPS）。 |
+| 2025-07-10 | `abb369e2` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. (Applie | 为包含生成代码的源文件添加了内联宏，以优化编译。 |
+| 2025-04-23 | `6ae57335` | Used UnrealGame build target to find and convert all files to have dllstorage on methods/staticvar i | 统一方法/静态变量的 DLL 导出声明。 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 插件级别文件目录调整。 |
+| 2022-11-03 | `fa90b399` | Added includes for future change. This changelist only contains added #include and a couple of empty | 为未来更改预添加头文件包含。 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新了内置插件的链接地址以使用 HTTPS。 |
 
 ### 维护评价
 
-- **创建时间**：插件创建于 **2016年**，距今已约9年。
-- **最近更新频率**：最近的提交记录均为**通用的引擎维护性更改**（如宏更新、编译属性调整、安全协议更新），并非针对 FacialAnimation 插件的功能更新或 Bug 修复。
-- **活跃状态**：该插件自创建后，似乎**没有持续的活跃功能开发**。其“实验性/Beta”状态一直未改变，且最后一次涉及其核心功能的实质性提交（如 `610c4676` 之前）可追溯至数年前。
-- **已知问题/限制**：插件标记为 `IsBetaVersion=true`，表明 Epic 官方认为其功能可能不完整或未经充分测试。`.uplugin` 中的 `Description` 也明确指出其用途，暗示这是一个特定工作流的工具。
-- **推荐使用**：**谨慎使用**。该插件是为了解决一个非常具体的编辑器内批量导入工作流而创建的。对于新的项目，尤其是需要更通用或更强大口型同步解决方案的项目，建议评估现代方案（如 MetaHuman 的集成工具链或第三方插件）。如果项目历史资产依赖于此工作流，且其功能满足需求，则可以继续使用，但需自行承担其“实验性”状态带来的潜在风险，并可能无法获得官方的未来支持或更新。
+`Facial Animation Bulk Importer` 是一个**历史悠久的实验性插件**。它于 2016 年创建，旨在为 UE4 时代的语音驱动动画提供批量导入方案。
+
+**评价**：
+1.  **年龄与状态**：创建于 2016 年，已超过 8 年，属于“文物”级插件。`.uplugin` 中明确标记为 `IsBetaVersion: true`（实验性），且自创建起一直保持此状态。
+2.  **维护活跃度**：**极不活跃**。从 git 历史看，自 2023 年初的目录调整后，再无针对此插件本身的功能性更新。后续的更新（2025年）均属于全局性的代码库维护（如宏统一、链接更新），与插件功能无关。可以判断该插件处于 **“维护不活跃，接近废弃”** 状态。
+3.  **功能与兼容性**：核心功能（FBX 曲线导入、`UAudioCurveSourceComponent`）在后续引擎版本中可能仍能工作，但由于长期未更新，**未经验证**其与最新 UE5 特性（如 Metahuman、增强输入、新版音效系统）的兼容性。作为实验性插件，其 API 和行为在未来版本中可能被更改或移除。
+4.  **已知问题与限制**：
+    *   标记为“实验性”，API 不稳定，不推荐在生产环境中依赖。
+    *   导入工作流（FBX → Curve Table → SoundWave）可能比 UE5 现代化的对话系统或 MetaHuman 的解决方案更复杂。
+    *   缺乏官方文档和持续支持。
+5.  **推荐使用**：
+    *   **不推荐用于新项目**。对于新项目，应优先评估 UE5 内置的、更新的对话动画或 MetaHuman 工具链。
+    *   **可用于遗留项目**：如果你有一个长期运行的 UE4/UE5 项目，并且已经基于此插件构建了稳定的工作流，可以继续使用，但需注意其“实验性”身份，并做好在未来版本中被移除或需要替换的心理准备。
+    *   **学习与研究**：其源码（特别是 `ICurveSourceInterface` 的实现）对于理解 UE 的音频-动画同步机制有一定参考价值。
+
+**总结：这是一个功能明确但已停止积极维护的实验性插件。除非有强烈的历史遗留原因，否则在新项目中应避免使用。**
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/FacialAnimation)
-- 官方文档：无
-- 测试用例：未在插件目录中发现标准测试文件
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/FacialAnimation)
+-   [官方文档]( ) (无)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Tests/Editor/FacialAnimation) (路径待确认)

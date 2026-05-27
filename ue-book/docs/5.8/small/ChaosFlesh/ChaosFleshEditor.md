@@ -1,208 +1,207 @@
 # Chaos Flesh
 
-> Chaos Flesh Simulation
+> Chaos Flesh Simulation（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | Chaos 肉体模拟 |
+| 中文名 | Chaos 布料模拟 |
 | 分类 | Physics |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（图标资源、SVG 素材） |
-| 模块 | `ChaosFlesh` (Runtime), `ChaosFleshDeprecatedNodes` (Runtime), `ChaosFleshEditor` (Runtime), `ChaosFleshEngine` (Runtime), `ChaosFleshNodes` (Runtime) |
+| 包含内容 | ✅ 有（材质模板、渲染资源） |
+| 模块 | `ChaosFlesh` (Runtime), `ChaosFleshDeprecatedNodes` (Runtime), `ChaosFleshEditor` (Editor), `ChaosFleshEngine` (Runtime), `ChaosFleshNodes` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2022-03-26 |
-| 年龄标签 | 🆕（约 4 年） |
+| 年龄标签 | 🆕（约 3 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosFlesh) | |
 
 ## 用途
 
-ChaosFlesh 是基于 Chaos 物理系统的**体积肉体/软体模拟插件**。它使用四面体网格（Tetrahedral Mesh）作为体素化表示，实现可变形物体的物理模拟，典型应用是模拟肌肉、肉体等软组织在外力下的形变行为。
+ChaosFlesh 是一个基于 Chaos Physics 引擎的可变形体（Flesh）模拟插件，使用四面体网格（Tetrahedron Mesh）对肉质/软体物体进行物理模拟。该插件解决的核心问题是：**如何在 Unreal Engine 中对肉质、有机体等软体对象进行基于物理的真实变形模拟**。
 
-核心数据结构是 `FFleshCollection`，存储了四面体化的几何信息（节点、四面体元素、材质绑定等）。插件支持从外部格式（`.tet`、`.geo`）导入四面体网格，通过 Dataflow 节点图驱动模拟流程，并可将模拟结果烘焙为 GeometryCache 供动画回放。
-
-**解决的问题**：在 Chaos 物理框架下提供一套完整的肉体/可变形体模拟管线，包括资产创建、数据导入、模拟求解、结果可视化与缓存导出。
+该插件提供完整的资产管线：
+1. **FleshAsset** — 存储四面体网格数据的资产类型
+2. **ChaosDeformableSolver** — 可变形体求解器资产
+3. **Dataflow 图表** — 通过节点图定义纤维场（Fiber Field）、向量场（Vector Field）等物理属性
+4. **几何缓存导出** — 将模拟结果烘焙为 GeometryCache 资产
+5. **调试可视化** — 在编辑器中查看四面体结构、纤维场、向量场
 
 ## 使用场景
 
-- 你需要模拟角色肌肉在骨骼动画驱动下的体积形变 → 使用 ChaosFlesh 配合 DeformableSolver
-- 你需要从外部 DCC 工具（如 Houdini）导出四面体网格并在 UE 中进行物理模拟 → 使用 `.tet`/`.geo` 导入功能
-- 你需要将物理模拟结果烘焙为 GeometryCache 以便在游戏中回放 → 使用 `CreateGeometryCache` 命令
-- 你需要调试四面体网格质量（查找高纵横比或退化四面体）→ 使用 `FindQualifyingTetrahedra` 命令
+- 你在制作电影级特效或生物模拟 → 用 ChaosFlesh 模拟肌肉、内脏等有机体的变形
+- 你需要对骨骼网格体附加物理驱动的软体变形 → 用 FleshAsset + SkeletalMesh 联动
+- 你需要将模拟结果导出为 GeometryCache 供 Sequencer 使用 → 用 CreateGeometryCache 命令
+- 你需要调试四面体网格质量（如检查高长宽比的四面体） → 用 FindQualifyingTetrahedra 命令
 
 ## 蓝图用法
 
-本插件主要面向编辑器工作流和 C++ 扩展，公开的蓝图 API 较少。核心交互通过编辑器命令和 Dataflow 节点完成。
+ChaosFleshEditor 模块主要面向编辑器扩展，核心功能通过控制台命令和编辑器 UI 暴露，而非蓝图节点。可配置的属性通过 Dataflow 渲染设置类暴露。
 
-### 可渲染类型设置
+### 渲染设置属性
 
 | 属性 | 说明 | 所在类 |
 |---|---|---|
-| `bVisible` (纤维场) | 控制纤维场的可见性 | `UDataflowFleshFiberFieldRenderSettings` |
-| `Color` | 纤维场显示颜色 | `UDataflowFleshFiberFieldRenderSettings` |
+| `bVisible` (FiberField) | 控制纤维场的可见性 | `UDataflowFleshFiberFieldRenderSettings` |
+| `Color` | 纤维场的显示颜色 | `UDataflowFleshFiberFieldRenderSettings` |
 | `LineThickness` | 纤维场线宽 | `UDataflowFleshFiberFieldRenderSettings` |
-| `LengthScalar` | 纤维场矢量长度缩放 | `UDataflowFleshFiberFieldRenderSettings` |
-| `bVisible` (矢量场) | 控制矢量场的可见性 | `UDataflowFleshVectorFieldRenderSettings` |
-| `LineThickness` | 矢量场线宽 | `UDataflowFleshVectorFieldRenderSettings` |
-| `LengthScalar` | 矢量场长度缩放 | `UDataflowFleshVectorFieldRenderSettings` |
-| `bVisible` (四面体) | 控制四面体线框的可见性 | `UDataflowFleshTetrahedronRenderSettings` |
-| `LineThickness` | 四面体线框线宽 | `UDataflowFleshTetrahedronRenderSettings` |
-| `LineColor` | 四面体线框颜色 | `UDataflowFleshTetrahedronRenderSettings` |
+| `LengthScalar` | 纤维场向量长度缩放 | `UDataflowFleshFiberFieldRenderSettings` |
+| `bVisible` (VectorField) | 控制向量场的可见性 | `UDataflowFleshVectorFieldRenderSettings` |
+| `LineThickness` | 向量场线宽 | `UDataflowFleshVectorFieldRenderSettings` |
+| `LengthScalar` | 向量场向量长度缩放 | `UDataflowFleshVectorFieldRenderSettings` |
+| `bVisible` (Tetrahedrons) | 控制四面体网格的可见性 | `UDataflowFleshTetrahedronRenderSettings` |
+| `LineThickness` | 四面体线宽 | `UDataflowFleshTetrahedronRenderSettings` |
+| `LineColor` | 四面体线颜色 | `UDataflowFleshTetrahedronRenderSettings` |
 
-这些设置类继承自 `UDataflowRenderableTypeSettings`，用于在 Dataflow 编辑器中控制模拟结果的可视化效果。
+### 控制台命令
+
+| 命令 | 说明 | 参数 |
+|---|---|---|
+| `ImportFile` | 导入文件 | 文件路径参数 |
+| `FindQualifyingTetrahedra` | 查找符合条件的四面体并输出索引到日志 | `MaxAR`, `MinVol`, `XCoordGT/LT`, `YCoordGT/LT`, `ZCoordGT/LT`, `HideTets` |
+| `CreateGeometryCache` | 将缓存的 Flesh 模拟结果烘焙为 GeometryCache 资产 | `UsdFile`, `FrameRate`, `MaxNumFrames` |
+
+### 使用示例（控制台命令）
+
+```
+# 查找长宽比大于 5.0 的四面体
+FChaosDeformableCommands.FindQualifyingTetrahedra MaxAR 5.0
+
+# 查找体积小于 0.001 的四面体并隐藏
+FChaosDeformableCommands.FindQualifyingTetrahedra MinVol 0.001 HideTets
+
+# 从缓存模拟创建 GeometryCache，帧率 30fps，最多 120 帧
+FChaosDeformableCommands.CreateGeometryCache FrameRate 30 MaxNumFrames 120
+```
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "ChaosFlesh/ChaosFleshEditorPlugin.h"
+// 控制台命令
 #include "ChaosFlesh/Cmd/ChaosFleshCommands.h"
+
+// 资产转换
 #include "ChaosFlesh/Cmd/FleshAssetConversion.h"
+
+// 渲染设置
+#include "ChaosFleshRendering/FleshFiberFieldRenderableType.h"
+#include "ChaosFleshRendering/FleshVectorFieldRenderableType.h"
+#include "ChaosFleshRendering/FleshTetrahedronRenderableType.h"
+
+// 编辑器插件接口
+#include "ChaosFlesh/ChaosFleshEditorPlugin.h"
 ```
 
-### 基本用法 — 四面体网格导入
+### 基本用法
 
-从 `FFleshAssetConversion` 提取的文件导入功能：
+从 `.tet` 或 `.geo` 文件导入四面体网格数据创建 FleshCollection：
 
 ```cpp
-// 从文件导入四面体网格为 FleshCollection
 // 来源: Public/ChaosFlesh/Cmd/FleshAssetConversion.h
-TUniquePtr<FFleshCollection> Collection = FFleshAssetConversion::ImportTetFromFile(TEXT("/path/to/mesh.tet"));
+#include "ChaosFlesh/Cmd/FleshAssetConversion.h"
+
+// 从文件导入四面体网格（支持 .tet 和 .geo 格式，兼容 version 19）
+TUniquePtr<FFleshCollection> FleshCollection = FFleshAssetConversion::ImportTetFromFile(TEXT("/path/to/mesh.tet"));
+if (FleshCollection.IsValid())
+{
+    // 使用 FleshCollection 创建或更新 FleshAsset
+    UE_LOG(LogTemp, Log, TEXT("成功导入四面体网格"));
+}
 ```
 
-> 注意：当前版本中此功能标注为 "Currently disabled"，可能需要在代码中启用。
-
-### 基本用法 — 控制台命令调用
-
-编辑器提供了通过控制台命令驱动的工具集，定义在 `FChaosFleshCommands` 中：
+### 注册自定义渲染设置
 
 ```cpp
-// 查找高纵横比四面体（用于网格质量检查）
-// 来源: Public/ChaosFlesh/Cmd/ChaosFleshCommands.h
-// 控制台命令: FChaosDeformableCommands.FindHighAspectRatioTetrahedra
-// 支持参数:
-//   MaxAR <float>    - 纵横比阈值
-//   MinVol <float>   - 最小体积阈值
-//   XCoordGT/LT等    - 坐标范围过滤
-//   HideTets         - 将选中四面体加入隐藏列表
-FChaosFleshCommands::FindQualifyingTetrahedra(Args, World);
+// 来源: Private/ChaosFleshRendering/FleshFiberFieldRenderableType.h
+#include "ChaosFleshRendering/FleshFiberFieldRenderableType.h"
+
+// 在模块启动时注册 Flesh 渲染类型
+void MyModule::StartupModule()
+{
+    UE::Flesh::Private::RegisterFleshFiberFieldRenderableTypes();
+    UE::Flesh::Private::RegisterFleshVectorFieldRenderableTypes();
+    UE::Flesh::Private::RegisterFleshTetrahedronRenderableTypes();
+}
 ```
 
-### 进阶用法 — 创建 GeometryCache
+### 进阶用法
 
-将缓存的肉体模拟结果烘焙为 GeometryCache 资产：
+使用 `FChaosFleshCommands` 调用编辑器命令进行四面体网格分析和 GeometryCache 创建：
 
 ```cpp
 // 来源: Public/ChaosFlesh/Cmd/ChaosFleshCommands.h
-// 控制台命令: FChaosDeformableCommands.CreateGeometryCache
-// 前提条件:
-//   1. 选中的 Actor 需有 FleshComponent 和 SkeletalMeshComponent
-//   2. FleshComponent 的 RestCollection 需包含 deformer bindings
-// 可选参数:
-//   UsdFile </path/to/file.usd>  - 覆盖 USD 文件路径
-//   FrameRate 24                 - 输出帧率（默认 24）
-//   MaxNumFrames <int>           - 最大帧数限制
-TArray<FString> Args = {TEXT("FrameRate"), TEXT("30"), TEXT("MaxNumFrames"), TEXT("120")};
-FChaosFleshCommands::CreateGeometryCache(Args, World);
+#include "ChaosFlesh/Cmd/ChaosFleshCommands.h"
+
+// 查找高长宽比的四面体
+TArray<FString> FindArgs;
+FindArgs.Add(TEXT("MaxAR"));
+FindArgs.Add(TEXT("10.0"));
+FindArgs.Add(TEXT("HideTets")); // 同时隐藏这些四面体
+FChaosFleshCommands::FindQualifyingTetrahedra(FindArgs, GetWorld());
+
+// 从模拟缓存创建 GeometryCache
+TArray<FString> CacheArgs;
+CacheArgs.Add(TEXT("FrameRate"));
+CacheArgs.Add(TEXT("30"));
+CacheArgs.Add(TEXT("MaxNumFrames"));
+CacheArgs.Add(TEXT("240"));
+CacheArgs.Add(TEXT("UsdFile"));
+CacheArgs.Add(TEXT("/path/to/simulation.usd"));
+FChaosFleshCommands::CreateGeometryCache(CacheArgs, GetWorld());
+```
+
+### 自定义资产缩略图渲染器
+
+```cpp
+// 来源: Public/ChaosFlesh/Asset/FleshAssetThumbnailRenderer.h
+#include "ChaosFlesh/Asset/FleshAssetThumbnailRenderer.h"
+
+// FleshAsset 使用专用的 ThumbnailRenderer 在内容浏览器中显示预览
+// UFleshAssetThumbnailRenderer 继承自 UDefaultSizedThumbnailRenderer
+// 内部使用 FFleshAssetThumbnailScene 创建预览场景
+
+// 来源: Public/ChaosFlesh/Asset/FleshAssetThumbnailScene.h
+#include "ChaosFlesh/Asset/FleshAssetThumbnailScene.h"
+
+// FFleshAssetThumbnailScene 管理预览 Actor (AFleshActor)
+// 通过 SetFleshAsset() 设置要预览的 FleshAsset
+// 自动计算视图矩阵参数用于缩略图渲染
 ```
 
 ## Demo 示例
 
-以下展示 FleshAsset 的资产定义扩展模式（自定义资产在内容浏览器中的展示）：
+以下展示如何创建自定义的 Flesh 资产定义类：
 
 ```cpp
-// FleshAssetDefinition.h
+// MyFleshAssetDefinition.h
 #pragma once
 
-#include "AssetDefinitionDefault.h"
-#include "FleshAssetDefinition.generated.h"
+#include "CoreMinimal.h"
+#include "ChaosFlesh/Asset/AssetDefinition_FleshAsset.h"
 
-UCLASS()
-class UFleshAssetDefinition : public UAssetDefinitionDefault
+class UMyFleshAssetDefinition : public UAssetDefinition_FleshAsset
 {
     GENERATED_BODY()
 
-public:
-    // 资产在内容浏览器中显示的名称
-    virtual FText GetAssetDisplayName() const override;
-    
-    // 关联的资产类
-    virtual TSoftClassPtr<UObject> GetAssetClass() const override;
-    
-    // 内容浏览器中的图标颜色
-    virtual FLinearColor GetAssetColor() const override;
-    
-    // 资产分类（出现在哪个右键菜单分类下）
-    virtual TConstArrayView<FAssetCategoryPath> GetAssetCategories() const override;
-    
-    // 加载缩略图信息
-    virtual UThumbnailInfo* LoadThumbnailInfo(const FAssetData& InAssetData) const override;
-    
-    // 双击资产时的打开行为
-    virtual EAssetCommandResult OpenAssets(const FAssetOpenArgs& OpenArgs) const override;
+    // 可以覆盖父类方法来自定义资产在编辑器中的行为
+    // 例如：修改显示名称、颜色、分类等
 };
-```
-
-```cpp
-// FleshAssetDefinition.cpp
-#include "FleshAssetDefinition.h"
-#include "FleshAsset.h"
-#include "FleshAssetThumbnailRenderer.h"
-
-FText UFleshAssetDefinition::GetAssetDisplayName() const
-{
-    return NSLOCTEXT("AssetTypeActions", "FleshAsset", "Flesh Asset");
-}
-
-TSoftClassPtr<UObject> UFleshAssetDefinition::GetAssetClass() const
-{
-    return UFleshAsset::StaticClass();
-}
-
-FLinearColor UFleshAssetDefinition::GetAssetColor() const
-{
-    return FLinearColor(FColor(255, 100, 100)); // 自定义资产颜色
-}
-
-TConstArrayView<FAssetCategoryPath> UFleshAssetDefinition::GetAssetCategories() const
-{
-    static const TArray<FAssetCategoryPath> Categories = {
-        FAssetCategoryPath(NSLOCTEXT("ChaosFlesh", "PhysicsCategory", "Physics"))
-    };
-    return Categories;
-}
-
-UThumbnailInfo* UFleshAssetDefinition::LoadThumbnailInfo(const FAssetData& InAssetData) const
-{
-    // 返回自定义缩略图渲染器信息
-    return nullptr; // 实际实现中会返回 UFleshAssetThumbnailInfo
-}
-
-EAssetCommandResult UFleshAssetDefinition::OpenAssets(const FAssetOpenArgs& OpenArgs) const
-{
-    // 打开 FleshAsset 编辑器
-    return EAssetCommandResult::Handled;
-}
 ```
 
 ## 模块依赖
 
-基于插件的功能分析（四面体物理模拟、Dataflow 集成、GeometryCache 导出、Slate 编辑器 UI），推断的关键依赖：
+从 `ChaosFleshEditor` 模块的代码分析，该插件依赖以下特殊模块：
 
 | 模块 | 用途 |
 |---|---|
-| `Chaos` | Chaos 物理系统核心 |
-| `ChaosSolverEngine` | Chaos 求解器引擎 |
-| `Dataflow` | Dataflow 节点图框架 |
-| `DataflowEngine` | Dataflow 引擎运行时 |
-| `DataflowEditor` | Dataflow 编辑器集成 |
-| `GeometryCache` | 模拟结果烘焙为 GeometryCache |
-| `GeometryCollectionEngine` | 几何集合引擎（与破碎系统共享基础设施） |
-| `ChaosFlesh` | 肉体模拟运行时核心模块 |
-| `ChaosFleshEngine` | 肉体模拟引擎模块 |
-| `ChaosFleshNodes` | Dataflow 肉体节点 |
-
-> 注：以上依赖基于源码功能推断，实际 Build.cs 可能有差异。
+| `ChaosFlesh` | 运行时核心模块，提供 FleshCollection 数据结构 |
+| `ChaosFleshEngine` | 引擎集成模块 |
+| `ChaosFleshNodes` | Dataflow 节点定义 |
+| `Chaos` | Chaos Physics 物理引擎核心 |
+| `Dataflow` | Dataflow 图表框架 |
+| `GeometryCache` | GeometryCache 资产用于烘焙模拟结果 |
+| `GeometryCollectionEngine` | 几何集合引擎（与可变形体协同工作） |
+| `Slate` / `SlateCore` | 编辑器 UI 样式系统 |
 
 ## 维护状态
 
@@ -211,21 +210,24 @@ EAssetCommandResult UFleshAssetDefinition::OpenAssets(const FAssetOpenArgs& Open
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
 | 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为浮点的编译警告 |
-| 2026-05-12 | `981bc9da` | Dataflow: | Dataflow 相关更新 |
-| 2026-05-12 | `4bb4d4eb` | Flesh : fiber field generation node clean up | 清理纤维场生成节点代码 |
-| 2026-05-12 | `3ee54b1a` | PR #13147: Fix NumMaskBuffer assignment from OffsetsBuffer to MaskBuffer | 修复掩码缓冲区赋值错误 |
+| 2026-05-12 | `981bc9da` | Dataflow: | Dataflow 框架相关更新 |
+| 2026-05-12 | `4bb4d4eb` | Flesh : fiber field generation node clean up | 清理纤维场生成节点的代码 |
+| 2026-05-12 | `3ee54b1a` | PR #13147: Fix NumMaskBuffer assignment from OffsetsBuffer to MaskBuffer | 修复 MaskBuffer 中 NumMaskBuffer 的赋值错误 |
 | 2026-05-12 | `563a0190` | Flesh : deprecate StaticMesh property from the flesh asset | 废弃 FleshAsset 中的 StaticMesh 属性 |
 
 ### 维护评价
 
-- **状态**：🟢 **活跃维护中**
-- **年龄**：约 4 年（2022 年创建），仍处于实验阶段
-- **更新频率**：非常活跃，最近一次更新在 2026-05-13，近期内有多次密集提交
-- **开发方向**：正在清理代码（纤维场节点）、修复 bug（缓冲区赋值）、推进 API 迭代（废弃 StaticMesh 属性）
-- **风险提示**：⚠️ 作为实验性插件（`IsExperimentalVersion=true`，`EnabledByDefault=false`），API 随时可能发生破坏性变更（如废弃 StaticMesh 属性所示）。不建议在生产环境中依赖此插件
-- **推荐**：适合用于研究和原型开发，如需在产品中使用建议持续跟踪上游变更
+**活跃维护中**。ChaosFlesh 插件创建于 2022 年 3 月，是 Epic Games 在 UE5 中推进 Chaos Physics 生态系统的重要实验性组件。从近期 git 记录来看：
+
+- **更新频率**：近期有多次连续提交（2026-05-12/13），说明仍在积极开发
+- **开发方向**：正在进行代码清理（纤维场节点）、废弃旧接口（StaticMesh 属性）、修复兼容性问题
+- **实验性状态**：`IsExperimentalVersion=true` 且 `EnabledByDefault=false`，说明 API 可能随时变化
+- **注意事项**：作为实验性插件，不建议在生产环境中依赖；`FleshAssetConversion::ImportTetFromFile` 的注释中提及相关读取功能"Currently disabled"
+
+**推荐**：适合在实验性/研发项目中使用，用于探索软体物理模拟功能。不建议在生产环境中使用，等待 API 稳定后再考虑。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosFlesh)
 - [官方文档]()（暂无）
+- [测试用例]()（暂未发现独立测试文件）

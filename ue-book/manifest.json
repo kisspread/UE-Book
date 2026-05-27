@@ -300,9 +300,10 @@
       "doc_path": "docs/5.7/small/ChaosFleshGenerator/"
     },
     "ChaosInsights": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ChaosInsights/"
+      "doc_path": "docs/5.8/small/ChaosInsights/",
+      "forced": true
     },
     "ChunkDownloader": {
       "generated_in": "5.7",
@@ -1062,9 +1063,10 @@
       "doc_path": "docs/5.7/small/RenderDocPlugin/"
     },
     "RenderGraphInsights": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/RenderGraphInsights/"
+      "doc_path": "docs/5.8/small/RenderGraphInsights/",
+      "forced": true
     },
     "RenderTrace": {
       "generated_in": "5.7",
@@ -2019,9 +2021,10 @@
       "doc_path": "docs/5.7/large/GameFeatures/"
     },
     "GameplayTagsEditor": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/GameplayTagsEditor/"
+      "doc_path": "docs/5.8/large/GameplayTagsEditor/",
+      "forced": true
     },
     "GeoReferencing": {
       "generated_in": "5.7",
@@ -2087,9 +2090,10 @@
       "forced": true
     },
     "NetcodeUnitTest": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/NetcodeUnitTest/"
+      "doc_path": "docs/5.8/large/NetcodeUnitTest/",
+      "forced": true
     },
     "OnlineSubsystem": {
       "generated_in": "5.7",
@@ -2810,7 +2814,8 @@
     "GDKPlatformDLC": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/GDKPlatformDLC/"
+      "doc_path": "docs/5.8/small/GDKPlatformDLC/",
+      "forced": true
     },
     "ModelContextProtocol": {
       "generated_in": "5.8",
@@ -3158,9 +3163,10 @@
       "forced": true
     },
     "ChaosFlesh": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/ChaosFlesh/"
+      "doc_path": "docs/5.8/xlarge/ChaosFlesh/",
+      "forced": true
     },
     "ChaosModularVehicle": {
       "generated_in": "5.7",
@@ -4540,7 +4546,8 @@
     "InterchangeChaosClothAsset": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/InterchangeChaosClothAsset/"
+      "doc_path": "docs/5.8/small/InterchangeChaosClothAsset/",
+      "forced": true
     },
     "InterchangeOpenUSDChaosClothAsset": {
       "generated_in": "5.8",

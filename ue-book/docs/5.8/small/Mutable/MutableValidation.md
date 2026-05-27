@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 可定制对象 |
+| 中文名 | 可变对象系统 |
 | 分类 | CustomizableObjects |
-| 默认启用 | ✅ 是 |
-| 包含内容 | ❌ 无 |
+| 默认启用 | ❌ 否 |
+| 包含内容 | ✅ 有（运行时、工具、编辑器模块） |
 | 模块 | `MutableRuntime` (Runtime), `CustomizableObject` (Runtime), `MutableTools` (Runtime), `MutableValidation` (Runtime), `CustomizableObjectEditor` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-09-05 |
@@ -15,198 +15,274 @@
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable) | |
 
 ## 用途
-这个插件旨在为 Unreal Engine 5 提供一套完整的系统，用于创建和管理**可定制对象（Customizable Objects）**。它允许开发者在编辑器中通过图表化的方式定义对象的不同变体（例如，角色外观、服装、装备的组成部分），并在运行时根据玩家选择或游戏逻辑，高效地组合这些变体，生成唯一的、最终的游戏资产（如 Skeletal Mesh）。核心解决的问题是**在保证运行时性能和内存效率的前提下，实现大规模、复杂的游戏资产定制化**。
+
+Mutable 是 UE5 中用于创建高度可定制化、动态组合游戏资产（尤其是角色和装备）的系统。它解决的核心问题是：如何在运行时，通过有限的美术资产（基础模型、纹理、材质片段）进行组合、混合和修改，生成几乎无限的、多样化的外观变体，同时保持良好的运行时性能和较低的内存占用。
+
+传统方式下，每个角色变体都需要一个独立的完整资源（SK Mesh + Textures），导致项目资产庞大、管理困难。Mutable 通过一个可定制的对象蓝图（Customizable Object）定义所有可能的部件、纹理、材质等的组合关系和修改规则，然后在运行时根据参数（如是否戴头盔、肤色、装备等级）动态“烘焙”出最终的、优化的网格体和纹理，替代了静态的预烘焙资产。
 
 ## 使用场景
-- **角色创建系统**：允许玩家自由组合发型、五官、肤色、服装、盔甲等部件来创建独一无二的角色外观。
-- **装备外观系统**：同一类武器（如剑）可以有不同的护手、剑刃、宝石镶嵌，通过组合产生大量视觉变体。
-- **程序化生成资产**：根据规则（如怪物等级、地域）动态生成外观各异的敌人或道具模型。
-- **减少美术重复劳动**：美术只需制作基础部件，系统负责组合，极大提升资产制作管线的效率和可维护性。
+
+- **角色定制系统**：在MMORPG或RPG中，允许玩家自由组合发型、面部特征、盔甲、武器等部件。
+- **装备外观组合**：实现装备的部件化，不同部位装备可以独立更换，并且共享基础纹理。
+- **NPC 变体生成**：为大量NPC快速生成差异化外观，避免重复劳动。
+- **美术资产调试与迭代**：在编辑器中快速预览不同材质参数、纹理组合的效果，加速美术流程。
+- **性能优化**：运行时只生成可见部分的完整资源，减少内存消耗。
 
 ## 蓝图用法
-Mutable 插件主要通过 `UCustomizableObject` 和 `UCustomizableObjectInstance` 类向蓝图暴露功能。
+
+Mutable 的核心蓝图交互围绕 `UCustomizableObject` 和 `UCustomizableObjectInstance` 展开。用户主要在编辑器中通过专用编辑器（CustomizableObjectEditor）设计可定制对象的逻辑图，然后在运行时通过蓝图或 C++ 修改实例参数来生成最终外观。
 
 ### 核心节点
+
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Set Parameter Value` (各种参数类型) | 设置可定制对象实例的某个参数值，如整数、浮点、布尔、向量、颜色。 | `UCustomizableObjectInstance` |
-| `Update Customizable Object Instance` | 根据当前设置的参数值，异步更新实例，生成或更新最终的 Skeletal Mesh。 | `UCustomizableObjectInstance` |
-| `Set Skeletal Mesh` | 将更新生成的 Skeletal Mesh 应用到目标 Skeletal Mesh Component 上。 | 应用逻辑（通常由蓝图实现） |
-| `Get Parameter Range` / `Get Parameter Possible Values` | 获取某个参数的可能取值范围或枚举值，用于构建UI。 | `UCustomizableObject` |
+| `UpdateSkeletalMeshAsync` | 异步更新可定制对象实例的网格体。这是生成最终可视化结果的核心异步操作。 | `UCustomizableObjectInstance` |
+| `SetBoolParameterByName` | 通过名称设置实例的布尔参数值（如是否显示头盔）。 | `UCustomizableObjectInstance` |
+| `SetIntParameterByName` | 通过名称设置实例的整型参数值（如选择发型编号）。 | `UCustomizableObjectInstance` |
+| `SetFloatParameterByName` | 通过名称设置实例的浮点参数值（如颜色强度）。 | `UCustomizableObjectInstance` |
+| `SetVectorParameterByName` | 通过名称设置实例的向量参数值（如颜色）。 | `UCustomizableObjectInstance` |
+| `SetProjectorPosition` | 设置实例投影器的位置，用于动态贴花或纹理投射。 | `UCustomizableObjectInstance` |
+| `Compile` | 编辑器专用，编译 CustomizableObject 资源，生成运行时所需的中间数据。 | `UCustomizableObject` |
+
+**注意**：`MutableValidation` 模块提供的 `UCustomizableObjectValidationCommandlet` 等类主要用于资产验证和批量测试，通常不直接暴露为游戏逻辑蓝图节点。
 
 ### 使用示例（蓝图描述）
-1.  **初始化**：在角色蓝图中，有一个 `UCustomizableObjectInstance` 变量，并在 `BeginPlay` 时通过 `Create Customizable Object Instance` 节点（或直接实例化）将其与一个 `UCustomizableObject` 资产关联。
-2.  **参数设置**：当玩家在UI界面选择发型时，通过蓝图调用 `Set Parameter Value (Integer)`，将发型参数的索引设置为玩家选择的ID。
-3.  **触发更新**：设置完一系列参数后，调用 `Update Customizable Object Instance` 节点。这个节点是异步的，会生成一个更新请求。
-4.  **应用结果**：监听实例的更新完成回调（如通过 `Update Completed` 事件）。在回调中，获取更新后的 `Skeletal Mesh` 资产，并使用 `Set Skeletal Mesh` 节点将其设置到角色的 Skeletal Mesh Component 上。
-5.  **优化**：对于频繁变更的参数（如颜色），可以考虑使用 `Set Parameter Value` 后不立即更新，而是设置一个延迟或批量更新，避免频繁生成网格。
+
+1.  **创建可定制对象资产**：在内容浏览器中右键创建 `CustomizableObject` 资源。双击打开专用编辑器，通过节点图定义模型部件、纹理、材质以及它们的组合逻辑。
+2.  **生成实例**：在游戏蓝图中，使用 `Create Customizable Object Instance` 节点基于上一步创建的资产生成一个实例。
+3.  **设置参数并更新**：
+    - 使用 `Set Bool Parameter By Name` (参数名 “HasHelmet”) 设为 `True`。
+    - 使用 `Set Int Parameter By Name` (参数名 “HairStyle”) 设为 `2`。
+    - 调用 `Update Skeletal Mesh Async` 节点，该节点会触发异步编译和烘焙过程。
+4.  **获取结果**：`Update Skeletal Mesh Async` 节点完成后会有一个 `Completed` 输出引脚，通常你会将其连接到一个处理完成回调的逻辑，比如将生成的 `Skeletal Mesh` 赋值给一个 `Skeletal Mesh Component` 用于显示。
 
 ## C++ 用法
-在 C++ 中，主要与 `UCustomizableObject` 和 `UCustomizableObjectInstance` 类交互。以下示例基于 `MutableValidation` 模块中的工具类提炼，展示了核心工作流。
 
 ### 头文件引入
+
 ```cpp
 #include "MuCO/CustomizableObject.h"
 #include "MuCO/CustomizableObjectInstance.h"
+#include "MuCO/CustomizableObjectSystem.h"
 ```
 
 ### 基本用法
-**来源文件**：`Private/MuV/CustomizableObjectCompilationUtility.h`
 
-同步编译一个可定制对象，这在命令行工具或需要确保编译完成后再进行后续操作的场景中非常有用。
+从测试和验证代码中提取的用法示例，展示了如何编译一个可定制对象并更新其实例。
+
 ```cpp
-#include "MuCO/CustomizableObject.h"
-#include "CustomizableObjectCompilationUtility.h" // 假设位于你的项目中
+// 来源: Private/MuV/CustomizableObjectCompilationUtility.h & ValidationUtils.h
 
-// 假设 InCustomizableObject 是一个已加载的 UCustomizableObject 指针
-UCustomizableObject* MyCO = ...;
-bool bSuccess = false;
-
-// 创建编译工具并执行同步编译
-TSharedPtr<FCustomizableObjectCompilationUtility> CompileUtility = MakeShareable(new FCustomizableObjectCompilationUtility());
-bSuccess = CompileUtility->CompileCustomizableObject(*MyCO, true, nullptr);
-
-if (bSuccess)
+// 同步编译一个可定制对象（常用于编辑器工具或测试中）
+UCustomizableObject* MyCO = LoadObject<UCustomizableObject>(nullptr, TEXT("/Game/Characters/BP_CharCustom"));
+if (MyCO)
 {
-    UE_LOG(LogTemp, Log, TEXT("Customizable Object compiled successfully."));
+    // 使用编译工具辅助类进行同步编译
+    FCustomizableObjectCompilationUtility CompilationHelper;
+    bool bCompileSuccess = CompilationHelper.CompileCustomizableObject(*MyCO, true /*bShouldLogMutableLogs*/);
+    
+    if (bCompileSuccess)
+    {
+        // 创建实例并设置参数
+        UCustomizableObjectInstance* Instance = MyCO->CreateInstance();
+        Instance->SetBoolParameterByName(FName("HasHelmet"), true);
+        
+        // 使用实例更新工具辅助类进行同步更新（用于测试/基准）
+        FCustomizableObjectInstanceUpdateUtility UpdateHelper;
+        bool bUpdateSuccess = UpdateHelper.UpdateInstance(*Instance);
+        
+        if (bUpdateSuccess)
+        {
+            // 获取生成的骨骼网格体
+            USkeletalMesh* GeneratedMesh = Instance->GetSkeletalMesh();
+            // 将其应用于组件...
+        }
+    }
 }
 ```
 
 ### 进阶用法
-**来源文件**：`Private/MuV/CustomizableObjectInstanceUpdateUtility.h` & `Private/MuV/ValidationUtils.h`
 
-编译对象后，创建实例、设置参数并更新它。
+结合验证工具，对资产进行批量或自动化测试。
+
 ```cpp
-#include "MuCO/CustomizableObjectInstance.h"
-#include "CustomizableObjectInstanceUpdateUtility.h" // 假设位于你的项目中
+// 来源: Private/MuV/ValidationUtils.h & AssetValidator_CustomizableObjects.h
 
-// 1. 确保 CO 已编译 (使用上面的 CompileUtility)
-// ... 
+// 1. 准备资产注册表（命令行工具中常见）
+void PrepareAssetRegistry(); // 声明于 ValidationUtils.h
 
-// 2. 从编译后的 CO 创建实例
-UCustomizableObject* CompiledCO = ...;
-UCustomizableObjectInstance* MyInstance = CompiledCO->CreateInstance();
+// 2. 查找所有可定制对象资产
+TArray<FAssetData> COAssets = FindAllAssetsAtPath(FName("/Game/Characters"), UCustomizableObject::StaticClass());
 
-// 3. 设置参数（假设知道参数名为 “HairStyle”， 且为整数类型）
-FString ParamName = TEXT("HairStyle");
-int32 SelectedStyleIndex = 2; // 玩家选择的发型索引
-MyInstance->SetIntParameter(ParamName, SelectedStyleIndex);
-
-// 4. 使用工具类同步更新实例
-TSharedPtr<FCustomizableObjectInstanceUpdateUtility> UpdateUtility = MakeShareable(new FCustomizableObjectInstanceUpdateUtility());
-bool bUpdateSuccess = UpdateUtility->UpdateInstance(*MyInstance);
-
-if (bUpdateSuccess)
+// 3. 逐一进行验证测试（模拟资产验证器行为）
+for (const FAssetData& AssetData : COAssets)
 {
-    // 5. 获取更新后的 Skeletal Mesh
-    USkeletalMesh* NewMesh = MyInstance->GetSkeletalMesh();
-    if (NewMesh)
+    UCustomizableObject* CO = Cast<UCustomizableObject>(AssetData.GetAsset());
+    if (CO)
     {
-        // 将新网格应用到某个 SkeletalMeshComponent
-        MySkeletalMeshComponent->SetSkeletalMesh(NewMesh);
+        TArray<FText> Errors, Warnings;
+        // 使用静态验证方法检查对象有效性
+        EDataValidationResult Result = UAssetValidator_CustomizableObjects::IsCustomizableObjectValid(CO, Errors, Warnings);
+        
+        if (Result == EDataValidationResult::Invalid)
+        {
+            // 记录错误日志...
+        }
     }
 }
 ```
 
 ## Demo 示例
-一个最小的 C++ 示例，展示如何在运行时编译、创建实例并应用结果。省略了错误处理的简洁版本。
+
+以下是一个最小化的 C++ 类，演示如何封装一个可定制的对象实例及其异步更新逻辑。
+
+**MyCharacterCustomizationComponent.h**
 ```cpp
-// MyCharacter.h
+// MyCharacterCustomizationComponent.h
 #pragma once
-#include "GameFramework/Character.h"
-#include "MyCharacter.generated.h"
 
-class UCustomizableObject;
-class UCustomizableObjectInstance;
-class USkeletalMeshComponent;
+#include "Components/ActorComponent.h"
+#include "MuCO/CustomizableObjectInstance.h"
+#include "MyCharacterCustomizationComponent.generated.h"
 
-UCLASS()
-class AMyCharacter : public ACharacter
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+class UMyCharacterCustomizationComponent : public UActorComponent
 {
     GENERATED_BODY()
+
 public:
-    AMyCharacter();
+    UMyCharacterCustomizationComponent();
 
-    // 引用在编辑器中创建的可定制对象资产
-    UPROPERTY(EditAnywhere, Category = "Customization")
-    TSoftObjectPtr<UCustomizableObject> CustomizableObjectAsset;
+    // 要使用的可定制对象资产引用
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Customization")
+    UCustomizableObject* CustomizableObjectAsset;
 
-    // 要应用定制外观的网格组件
-    UPROPERTY(VisibleAnywhere)
-    TObjectPtr<USkeletalMeshComponent> CustomizableMeshComponent;
+    // 当前实例
+    UPROPERTY(BlueprintReadOnly, Category = "Customization")
+    UCustomizableObjectInstance* CurrentInstance;
 
-    UFUNCTION(BlueprintCallable)
-    void ApplyCustomization(int32 SkinColorIndex);
+    // 异步更新实例外观
+    UFUNCTION(BlueprintCallable, Category = "Customization")
+    void UpdateCharacterAppearance();
+
+protected:
+    virtual void BeginPlay() override;
 
 private:
-    UPROPERTY()
-    TObjectPtr<UCustomizableObjectInstance> CurrentInstance;
-};
+    // 更新完成的回调
+    UFUNCTION()
+    void OnUpdateCompleted(bool bSuccess);
 
-// MyCharacter.cpp
-#include "MyCharacter.h"
-#include "MuCO/CustomizableObject.h"
-#include "MuCO/CustomizableObjectInstance.h"
+    // 用于显示生成网格体的骨骼网格体组件
+    UPROPERTY()
+    USkeletalMeshComponent* TargetMeshComponent;
+};
+```
+
+**MyCharacterCustomizationComponent.cpp**
+```cpp
+// MyCharacterCustomizationComponent.cpp
+#include "MyCharacterCustomizationComponent.h"
+#include "MuCO/CustomizableObjectSystem.h"
 #include "Components/SkeletalMeshComponent.h"
 
-AMyCharacter::AMyCharacter()
+UMyCharacterCustomizationComponent::UMyCharacterCustomizationComponent()
 {
-    CustomizableMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CustomizableMesh"));
-    CustomizableMeshComponent->SetupAttachment(GetMesh()); // 或根据你的架构设置
+    PrimaryComponentTick.bCanEverTick = false;
 }
 
-void AMyCharacter::ApplyCustomization(int32 SkinColorIndex)
+void UMyCharacterCustomizationComponent::BeginPlay()
 {
-    // 1. 异步加载资产
-    CustomizableObjectAsset.LoadSynchronous();
-    UCustomizableObject* CO = CustomizableObjectAsset.Get();
-    if (!CO) return;
+    Super::BeginPlay();
 
-    // 2. 创建实例 (如果还没有)
-    if (!CurrentInstance)
+    if (CustomizableObjectAsset)
     {
-        CurrentInstance = CO->CreateInstance();
+        // 创建实例
+        CurrentInstance = CustomizableObjectAsset->CreateInstance();
+
+        // 找到目标网格体组件（假设在同一个Actor上）
+        TargetMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>();
+
+        // 设置初始参数（示例）
+        CurrentInstance->SetBoolParameterByName(FName("bIsFemale"), false);
+        CurrentInstance->SetIntParameterByName(FName("SkinTone"), 3);
+
+        // 启动首次更新
+        UpdateCharacterAppearance();
     }
+}
 
-    // 3. 设置参数
-    CurrentInstance->SetIntParameter(TEXT("SkinColor"), SkinColorIndex);
-
-    // 4. 更新实例 (异步)
-    CurrentInstance->UpdateSkeletalMeshAsync(true, true);
-    // 5. 绑定更新完成委托 (在构造函数或BeginPlay中绑定更佳)
-    FSimpleMulticastDelegate::FDelegate UpdateDelegate = FSimpleMulticastDelegate::FDelegate::CreateLambda([this]()
+void UMyCharacterCustomizationComponent::UpdateCharacterAppearance()
+{
+    if (CurrentInstance && CustomizableObjectAsset)
     {
-        if (USkeletalMesh* Mesh = CurrentInstance->GetSkeletalMesh())
-        {
-            CustomizableMeshComponent->SetSkeletalMesh(Mesh);
-        }
-    });
-    CurrentInstance->UpdatedDelegate.Add(UpdateDelegate);
+        // 绑定更新完成回调
+        FOnUpdateContextDelegate OnUpdateDelegate;
+        OnUpdateDelegate.BindDynamic(this, &UMyCharacterCustomizationComponent::OnUpdateCompleted);
+        CurrentInstance->UpdatedDelegate.Add(OnUpdateDelegate);
+
+        // 发起异步更新
+        CurrentInstance->UpdateSkeletalMeshAsync();
+    }
+}
+
+void UMyCharacterCustomizationComponent::OnUpdateCompleted(bool bSuccess)
+{
+    // 解绑回调
+    CurrentInstance->UpdatedDelegate.RemoveAll(this);
+
+    if (bSuccess && TargetMeshComponent)
+    {
+        // 将生成的网格体设置到目标组件
+        USkeletalMesh* GeneratedMesh = CurrentInstance->GetSkeletalMesh();
+        TargetMeshComponent->SetSkeletalMesh(GeneratedMesh);
+        
+        UE_LOG(LogTemp, Log, TEXT("Character customization updated successfully."));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Character customization update failed."));
+    }
 }
 ```
 
 ## 模块依赖
-要使用 Mutable 插件的功能，你的模块需要依赖以下模块：
+
+从 `CustomizableObject.Build.cs` 分析，要使用 Mutable 的核心运行时功能，你的项目模块需要依赖以下**特殊模块**：
+
 | 模块 | 用途 |
 |---|---|
-| `CustomizableObject` | 包含核心运行时类 (`UCustomizableObject`, `UCustomizableObjectInstance`)，是使用 Mutable 功能的必备依赖。 |
-| `MutableTools` | 提供资产编译和处理工具。如果你需要在编辑器工具或命令行中编译 `.uasset` 形式的可定制对象，需要依赖此模块。 |
+| `MutableRuntime` | Mutable 的核心运行时库，处理实例的动态生成。 |
+| `MutableTools` | 提供编辑器和工具链所需的资产处理、编译功能。 |
+| `CustomizableObject` | 封装了 `UCustomizableObject` 和 `UCustomizableObjectInstance` 等核心资产类。 |
+| `DerivedDataCache` | Mutable 编译过程需要与引擎的 DDC 系统交互。 |
+| `UnrealEd` | 编辑器集成（仅编辑器/开发工具模块需要）。 |
+| `MessageLog` | 用于在编辑器中显示编译警告和错误消息。 |
+
+**注意**：`CustomizableObjectEditor` 和 `MutableValidation` 是编辑器专用模块，一般无需在游戏运行时模块中直接依赖。
 
 ## 维护状态
 
 ### 近期更新
+
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `70229bdc` | [Mutable] Fix duplicated Skeletal Mesh geometry if there is multiple SKM with the same name. | 修复当场景中存在多个同名骨骼网格体时，可定制对象生成的几何体重复的问题。 |
-| 2026-05-26 | `2b0ca8bd` | [mutable] Fixed "Clip mesh with UV Mask" op not loading the appropriate mask mip. | 修复了“使用UV遮罩裁剪网格”操作未能加载正确遮罩Mip级别的问题。 |
-| 2026-05-26 | `06ea27d3` | [Mutable] Fix texture parameters using the wrong method to compute the LODBias. | 修复了纹理参数使用错误方法计算LOD偏差的问题。 |
-| 2026-05-26 | `e9c39661` | [Mutable] Allow more clothing asset types by using the ClothingAssetBase interface. | 通过使用ClothingAssetBase接口，现在支持更多种类的布料资产类型。 |
-| 2026-05-25 | `c8ce9ff7` | [Mutable] Fix possible data race when comparing PassthroughObjects. | 修复了比较直通对象（PassthroughObjects）时可能出现的数据竞争问题。 |
+| 2026-05-26 | `70229bdc` | [Mutable] Fix duplicated Skeletal Mesh geometry if there is multiple SKM with the same name. | 修复存在多个同名骨骼网格体时几何体重复的 bug。 |
+| 2026-05-26 | `2b0ca8bd` | [mutable] Fixed "Clip mesh with UV Mask" op not loading the appropriate mask mip. | 修复“使用UV遮罩裁剪网格”操作未加载正确遮罩Mip的问题。 |
+| 2026-05-26 | `06ea27d3` | [Mutable] Fix texture parameters using the wrong method to compute the LODBias. An incorrect LODBias | 修复纹理参数计算LODBias方法错误的问题。 |
+| 2026-05-26 | `e9c39661` | [Mutable] Allow more clothing asset types by using the ClothingAssetBase interface. | 通过使用ClothingAssetBase接口，允许更多类型的服装资产。 |
+| 2026-05-25 | `c8ce9ff7` | [Mutable] Fix possible data race when comparing PassthroughObjects. | 修复比较PassthroughObjects时可能发生的竞态条件。 |
 
 ### 维护评价
-**活跃维护**。尽管插件整体创建于2024年9月，但自2026年5月底以来有非常密集的提交记录，内容集中于**Bug修复和功能改进**（如支持更多布料资产、修复关键的几何体和纹理问题）。这表明该插件正处于积极的开发和完善阶段，团队在积极响应问题和优化功能。作为从实验性状态移出的“Beta”版本，它目前用于生产环境的风险在降低，但仍需关注其Beta标签。**推荐在需要大规模资产定制化的项目中使用，但需留意其Beta版本的稳定性说明和持续更新。**
+
+**维护状态：活跃维护**。
+- Mutable 插件于 **2024年9月** 从实验状态移至 Beta 状态，表明其功能趋于稳定。
+- **最近更新非常活跃**（截至2026年5月底仍有密集的 bug 修复提交），表明 Epic 团队正在积极维护和改进该插件。
+- 主要更新集中在 **Bug 修复** 和 **兼容性改进**（如支持更多服装资产类型），未见功能性废弃标记。
+- 该插件是 UE5 中处理动态资产定制的**核心官方解决方案**，推荐在需要高级角色/装备定制系统的项目中使用。
+- **重要提示**：该插件的 `.uplugin` 中可能未设置 `EnabledByDefault=true`，且依赖关系较复杂。在项目中启用时，需要仔细阅读官方集成指南，并确保编辑器和目标平台的正确配置。
 
 ## 相关链接
+
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/Customizable-Objects-in-Unreal-Engine/)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable/Source/MutableValidation) (Validation模块内含测试命令行工具)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/mutable-plugin-in-unreal-engine/) (链接基于插件类别推测，实际文档请参考 UE 官方发布说明)

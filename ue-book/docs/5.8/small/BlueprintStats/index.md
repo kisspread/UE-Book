@@ -1,6 +1,6 @@
 # Blueprint Stats
 
-> Blueprint Stats
+> Blueprint Stats（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
@@ -9,173 +9,133 @@
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `BlueprintStats` (Editor) |
-| 实验性 | ⚠️ 是 |
+| 实验性 | 否 |
 | 创建时间 | 2014-03-14 |
-| 年龄标签 | 🏛️ 文物（约 12 年） |
+| 年龄标签 | 🏛️ 文物（约 11 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/BlueprintStats) | |
 
 ## 用途
 
-这是一个用于收集和分析蓝图（Blueprint）资产复杂度与结构统计数据的编辑器工具插件。它并非面向最终玩家的运行时功能，而是为开发人员（尤其是技术美术、设计师或需要优化蓝图性能的程序员）提供的诊断和分析工具。
+基于源码分析，`BlueprintStats` 插件的核心功能是**收集和统计单个蓝图资产或整个项目的蓝图数据**。它提供了一个 `FBlueprintStatRecord` 结构，用于遍历一个蓝图中的图表和节点，统计出诸如节点总数、各类节点（纯函数、不纯函数、宏等）的数量、用户自定义函数数量等详细信息。同时，它可以将多个蓝图的统计记录合并，从而获得项目的整体蓝图概况。
 
-其核心功能是解析一个 `UBlueprint` 资产，并统计其中包含的各类节点（Node）、函数（Function）、宏（Macro）、纯/非纯节点等数量，并能将这些统计信息汇总。通过它，开发团队可以：
-1.  **量化蓝图复杂度**：识别过于庞大、难以维护的“巨型蓝图”。
-2.  **辅助性能分析**：评估蓝图中非纯（有副作用）函数和节点的密度，这些节点可能对运行时性能有更大影响。
-3.  **项目健康度检查**：统计数据蓝图（Data-Only Blueprint）和用户自定义函数的数量，帮助理解资产结构。
+这个插件解决了**蓝图资产分析**的需求，通常用于项目优化、性能分析或代码审查，以了解蓝图的使用情况、复杂度和潜在的性能瓶颈。
 
 ## 使用场景
 
-- 你在开发一个大型项目，美术或设计师创建了逻辑复杂、节点数量众多的蓝图，你需要快速了解其复杂度并决定是否需要进行重构。
-- 你正在优化游戏性能，需要找出蓝图中可能导致性能瓶颈的大量非纯函数调用或特定类型的节点。
-- 你需要生成一份项目蓝图资产的报告，用于团队审查或版本管理记录。
+- 你需要评估项目的蓝图整体复杂度，以制定优化策略。
+- 你需要识别包含过多节点或函数的“巨型蓝图”。
+- 你想统计项目中用户创建的函数、宏和数据蓝图的数量。
+- 你需要一个工具来辅助蓝图资产的迁移或重构决策。
 
 ## 蓝图用法
 
-该插件主要提供 C++ 接口和数据结构，用于编辑器工具扩展。经过分析，**该插件未暴露任何蓝图可调用的节点（`UFUNCTION(BlueprintCallable)`）**。它的使用方式是通过 C++ 代码访问其模块接口，创建和操作 `FBlueprintStatRecord` 对象来收集统计数据。
+此插件主要为 C++ 编辑器工具或命令行工具设计，**未暴露任何可供蓝图直接调用的节点** (未在源码中发现 `UFUNCTION(BlueprintCallable)`)。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-// 访问插件模块接口
 #include "IBlueprintStatsModule.h"
-
-// 使用统计数据记录
-#include "BlueprintStats.h"
 ```
 
 ### 基本用法
 
-获取插件模块并为一个蓝图创建统计记录。
+获取模块接口并创建统计记录来分析单个蓝图。
+(来源：源码头文件 `Source/BlueprintStats/Public/IBlueprintStatsModule.h` 和 `Source/BlueprintStats/Private/BlueprintStats.h`)
 
 ```cpp
-// 检查模块是否可用
+// 确保模块已加载
 if (IBlueprintStatsModule::IsAvailable())
 {
-    // 获取模块实例（通常不需要直接操作模块本身，更多是使用其提供的类型）
-    IBlueprintStatsModule& StatsModule = IBlueprintStatsModule::Get();
+    // 创建一个针对目标蓝图的统计记录
+    UBlueprint* TargetBlueprint = ...; // 从资产路径加载或获取
+    FBlueprintStatRecord StatRecord(TargetBlueprint);
 
-    // 假设你有一个指向 UBlueprint 对象的指针（例如从资产编辑器或内容浏览器获取）
-    UBlueprint* MyBlueprint = /* ... */;
-
-    // 为该蓝图创建一个统计记录，构造函数会自动解析蓝图并读取统计数据
-    FBlueprintStatRecord StatRecord(MyBlueprint);
-
-    // 获取一些基本统计信息
-    UE_LOG(LogTemp, Log, TEXT("Blueprint '%s' has %d nodes."), *MyBlueprint->GetName(), StatRecord.NumNodes);
-    UE_LOG(LogTemp, Log, TEXT("User Functions: %d"), StatRecord.NumUserFunctions);
-    UE_LOG(LogTemp, Log, TEXT("Pure Functions: %d"), StatRecord.NumUserPureFunctions);
+    // 输出统计信息到日志
+    UE_LOG(LogTemp, Log, TEXT("Blueprint Stats: %s"), *StatRecord.ToString());
 }
 ```
 
 ### 进阶用法
 
-将多个蓝图的统计记录合并，生成一个汇总报告。
+合并多个蓝图的统计数据以获得项目汇总信息。
+(来源：源码头文件 `Source/BlueprintStats/Private/BlueprintStats.h`)
 
 ```cpp
-// 创建一个用于汇总的“元记录”，其 SourceBlueprint 为 nullptr
-FBlueprintStatRecord SummaryRecord;
+// 创建一个用于汇总的“元记录”
+FBlueprintStatRecord ProjectTotalRecord;
 
-// 假设有一个蓝图资产数组
-TArray<UBlueprint*> AllBlueprints = /* ... */;
-
-for (UBlueprint* Bp : AllBlueprints)
+// 遍历项目中的所有蓝图资产
+for (UBlueprint* Blueprint : AllProjectBlueprints)
 {
-    if (Bp)
-    {
-        // 为每个蓝图创建记录
-        FBlueprintStatRecord SingleRecord(Bp);
-        // 将单个记录合并到汇总记录中
-        SummaryRecord.MergeAnotherRecordIn(SingleRecord);
-    }
+    FBlueprintStatRecord SingleRecord(Blueprint);
+    ProjectTotalRecord.MergeAnotherRecordIn(SingleRecord);
 }
 
-// 使用汇总记录的 ToString 导出为可读的字符串（可进一步写入文件）
-FString StatsText = SummaryRecord.ToString(true); // true 表示包含表头
-UE_LOG(LogTemp, Log, TEXT("Project Summary:\n%s"), *StatsText);
+// 输出带表头的汇总信息
+UE_LOG(LogTemp, Log, TEXT("%s"), *ProjectTotalRecord.ToString(true));
 ```
 
 ## Demo 示例
 
-一个控制台命令（或编辑器工具菜单项），用于对当前编辑器中选中的蓝图资产进行统计。
+一个完整的、可编译的最小示例，在编辑器模块中统计当前打开的蓝图。
 
-**BlueprintStatsDemo.h**
 ```cpp
+// MyBlueprintAnalyzer.h
 #pragma once
-
 #include "CoreMinimal.h"
+#include "BlueprintStats.h" // 包含 FBlueprintStatRecord
 
-class FBlueprintStatsDemo
+class FMyBlueprintAnalyzer
 {
 public:
-    /** 在控制台中运行蓝图统计命令 */
-    static void RunBlueprintStats();
+    void AnalyzeCurrentEditorBlueprint();
 };
 ```
 
-**BlueprintStatsDemo.cpp**
 ```cpp
-#include "BlueprintStatsDemo.h"
+// MyBlueprintAnalyzer.cpp
+#include "MyBlueprintAnalyzer.h"
 #include "IBlueprintStatsModule.h"
-#include "BlueprintStats.h"
-#include "Engine/Blueprint.h"
-#include "Editor.h" // 用于获取编辑器选择
+#include "Kismet2/BlueprintEditorUtils.h"
 
-void FBlueprintStatsDemo::RunBlueprintStats()
+void FMyBlueprintAnalyzer::AnalyzeCurrentEditorBlueprint()
 {
+    // 检查模块是否可用
     if (!IBlueprintStatsModule::IsAvailable())
     {
         UE_LOG(LogTemp, Warning, TEXT("BlueprintStats module is not available."));
         return;
     }
 
-    // 获取编辑器中当前选中的资产
-    USelection* SelectedAssets = GEditor->GetSelectedAssets();
-
-    if (!SelectedAssets || SelectedAssets->Num() == 0)
+    // 获取当前在编辑器中打开的蓝图（示例逻辑）
+    UBlueprint* EditorBlueprint = FBlueprintEditorUtils::FindBlueprintForAsset(/* Some Asset */);
+    if (EditorBlueprint)
     {
-        UE_LOG(LogTemp, Warning, TEXT("No assets selected."));
-        return;
-    }
+        // 创建统计记录，构造函数会自动分析蓝图
+        FBlueprintStatRecord StatRecord(EditorBlueprint);
 
-    // 创建汇总记录
-    FBlueprintStatRecord SummaryRecord;
+        // 获取并打印统计字符串
+        FString StatsString = StatRecord.ToString();
+        UE_LOG(LogTemp, Log, TEXT("Blueprint '%s' Analysis:\n%s"), *EditorBlueprint->GetName(), *StatsString);
 
-    // 遍历所有选中的资产
-    for (FSelectionIterator It(*SelectedAssets); It; ++It)
-    {
-        UObject* Asset = *It;
-        UBlueprint* BlueprintAsset = Cast<UBlueprint>(Asset);
-        if (BlueprintAsset)
-        {
-            UE_LOG(LogTemp, Log, TEXT("Analyzing blueprint: %s"), *BlueprintAsset->GetName());
-            FBlueprintStatRecord Record(BlueprintAsset);
-            SummaryRecord.MergeAnotherRecordIn(Record);
-        }
-    }
-
-    // 输出结果
-    if (SummaryRecord.NumBlueprints > 0)
-    {
-        UE_LOG(LogTemp, Log, TEXT("\n=== Selected Blueprints Stats ===\n%s"), *SummaryRecord.ToString(true));
+        // 也可以直接访问统计成员
+        UE_LOG(LogTemp, Log, TEXT(" - Total Nodes: %d"), StatRecord.NumNodes);
+        UE_LOG(LogTemp, Log, TEXT(" - User Functions: %d"), StatRecord.NumUserFunctions);
     }
     else
     {
-        UE_LOG(LogTemp, Log, TEXT("No blueprints were found in the selection."));
+        UE_LOG(LogTemp, Log, TEXT("No active blueprint found in the editor."));
     }
 }
 ```
 
 ## 模块依赖
 
-从 `Build.cs` 分析，该插件依赖于一些标准模块，但有一个独特的依赖：
-
 | 模块 | 用途 |
 |---|---|
-| `Kismet` | 访问蓝图图表（`UEdGraph`）相关类，这是进行节点和连接分析的核心依赖。 |
-
-其他依赖（如 `Core`, `CoreUObject`, `Engine` 等）属于基础依赖，此处省略。
+| `KismetCompiler` | 用于蓝图编译相关的功能，可能用于在统计前确保蓝图处于可分析状态 |
 
 ## 维护状态
 
@@ -183,23 +143,25 @@ void FBlueprintStatsDemo::RunBlueprintStats()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 `UE_LOG` 迁移到新的 `UE_LOGF` 格式。 |
-| 2024-01-12 | `56a32fea` | Silence false V621, V654, and V1078 warnings mostly caused by TStaticArray, placement new, or popula... | 静默静态代码分析工具产生的假阳性警告（主要与模板、内存操作相关）。 |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 未明确说明的插件范围更新。 |
-| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新插件内置的供应商链接为 HTTPS 安全协议。 |
-| 2020-08-14 | `48113fc7` | Adding EditorFramework to build.cs files | 将 EditorFramework 模块添加到构建文件中。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移至新的 UE_LOGF。 |
+| 2024-01-12 | `56a32fea` | Silence false V621, V654, and V1078 warnings mostly caused by TStaticArray, placement new, or popula | 修复多个静态分析警告，主要与模板和 placement new 有关。 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 插件目录范围的通用提交。 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新插件内链接为 HTTPS 协议。 |
+| 2020-08-14 | `48113fc7` | Adding EditorFramework to build.cs files | 在构建文件中添加 EditorFramework 依赖。 |
 
 ### 维护评价
 
-**维护状态：可能已废弃**
-
--   **年龄**：该插件创建于 **2014 年**，已经超过 12 年。
--   **活动频率**：从 git 历史看，最近几年的提交几乎全部是“维护性”更新，如**迁移日志宏、修复编译警告、更新链接**等，没有涉及功能新增、API 改进或重要的 Bug 修复。
--   **实验性状态**：插件路径位于 `Experimental` 文件夹，且 `EnabledByDefault` 为 `false`，表明 Epic 官方从未将其提升为正式支持的生产功能。
--   **代码规模**：源文件极少（4个），功能非常基础和集中。
-
-**结论**：这是一个非常古老的、实验性的、且长期缺乏实质性功能更新的插件。虽然其核心的 `FBlueprintStatRecord` 类在当前引擎版本中可能仍能编译并工作，但它很可能**不再被 Epic 主动维护**，也未见于官方的生产管线中。对于新项目，**不推荐依赖此插件**。如果需要蓝图分析功能，建议查看更现代的引擎内置功能或第三方解决方案。
+- **年龄**：该插件创建于 2014 年，历史超过 10 年，属于“文物”级别。
+- **更新频率**：最近一次实质性更新（日志宏迁移）在 2026 年 4 月，但之前的大部分更新（2020-2024）都是通用的引擎维护、编译警告修复或链接更新，**没有新功能或核心架构的改动**。
+- **活跃度**：处于**维护不活跃**状态。它似乎是一个功能已完成的工具，在 Epic 的迭代中未被移除，但也未得到积极开发。
+- **已知限制**：
+    1.  默认未启用 (`EnabledByDefault: false`)，需要手动启用。
+    2.  仅提供编辑器功能，没有运行时或蓝图 API。
+    3.  功能较为基础，主要进行简单的计数统计。
+- **推荐度**：**不推荐在新项目中主动启用或依赖**。如果你需要蓝图分析功能，它可能提供一个起点，但其设计和功能深度可能不足以满足现代项目的复杂分析需求。建议考虑更成熟的社区分析工具或自研方案。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/BlueprintStats)
+- 官方文档：无
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Tests/BlueprintStats) (路径为推测)

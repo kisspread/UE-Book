@@ -4,11 +4,11 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman运行时（已弃用） |
+| 中文名 | MetaHuman 运行时（已废弃） |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（重定向） |
-| 模块 | 无（纯内容/重定向插件） |
+| 包含内容 | ❌ 无 |
+| 模块 | 无（纯重定向插件） |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-06-10 |
 | 年龄标签 | 🆕（约 1 年） |
@@ -16,45 +16,50 @@
 
 ## 用途
 
-MetaHumanRuntime 插件最初作为 MetaHuman 角色在 Unreal Engine 中的核心运行时支持组件而创建，主要用于封装和提供 MetaHuman 相关组件（如 MetaHumanComponent）的基础功能。
+**此插件已废弃，请勿使用。**
 
-**当前状态**：该插件已被**弃用**，其功能已完全迁移至新插件 **MetaHumanSDK**（或 MetaHumanSDKRuntime）。它现在仅作为一个“重定向”或“迁移”占位符存在，以确保引用它的旧项目能够平滑过渡，避免立即编译错误。
+MetaHumanRuntime 曾是 MetaHuman 角色的运行时组件插件，用于在 UE 中驱动 MetaHuman 的动画和控制。在 2024 年 8 月，其全部功能已迁移至 `MetaHumanSDK` 插件（重命名为 `MetaHumanSDKRuntime`）。当前版本仅保留 `.uplugin` 文件作为重定向入口，实际依赖 `MetaHumanSDK` 插件。
+
+**存在意义**：为仍引用 `MetaHumanRuntime` 的旧项目提供向后兼容——启用该插件会自动加载 `MetaHumanSDK`，避免 "missing dependency" 错误。
 
 ## 使用场景
 
--   **旧项目维护**：如果你的项目在 2024 年 8 月之前集成了 MetaHumanRuntime 插件，在升级引擎版本后，此插件会引导你转向使用 MetaHumanSDK。
--   **新项目**：**不推荐使用**。新项目应直接使用功能更完整、仍在维护的 **MetaHumanSDK** 插件。
+**不应在新项目中使用此插件。** 仅适用于：
+
+- 从旧版本 UE 升级的项目中存在对 `MetaHumanRuntime` 的硬依赖，短期内无法移除
+
+**正确做法**：直接使用 `MetaHumanSDK` 插件。
 
 ## 蓝图用法
 
-由于该插件已被弃用且没有实际模块，因此**不提供任何蓝图节点**。
-原先属于此插件的 `MetaHumanComponent` 等蓝图节点，现在应从 **MetaHumanSDK** 插件中获取。
-
-### 核心节点
-
-无。
+无。该插件不包含任何模块、蓝图函数或资产。
 
 ## C++ 用法
 
-由于该插件已被弃用且没有实际模块，因此**不提供任何可用的C++ API**。
-原先属于此插件的头文件（如 `MetaHumanComponent.h`）和类，现在应从 **MetaHumanSDK** 插件中引入。
+无。该插件不包含任何源文件或模块。
 
 ### 头文件引入
 
-无。
+不适用。
+
+### 基本用法
+
+不适用。如需 MetaHuman 运行时功能，请使用 `MetaHumanSDK`：
+
+```cpp
+// 使用 MetaHumanSDK 代替
+#include "MetaHumanSDKRuntime.h"
+```
 
 ## Demo 示例
 
-该插件已弃用，没有独立的演示示例。
-如需了解 MetaHuman 在 UE 中的运行时用法，请参考 **MetaHumanSDK** 插件的文档和示例。
+不适用。此插件无任何代码或资产可供演示。
 
 ## 模块依赖
 
-本插件自身没有代码模块，但依赖以下插件：
-
-| 插件 | 用途 |
+| 模块 | 用途 |
 |---|---|
-| `MetaHumanSDK` | 实际提供所有 MetaHuman 运行时功能的新插件，MetaHumanRuntime 是其重定向。 |
+| `MetaHumanSDK` | 实际功能插件，本插件仅作为重定向依赖 |
 
 ## 维护状态
 
@@ -62,19 +67,27 @@ MetaHumanRuntime 插件最初作为 MetaHuman 角色在 Unreal Engine 中的核�
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2024-09-16 | `62f8cc0c` | Unable to load plugin, missing dependency MetaHumanRuntime | 修复无法加载插件的问题，因为缺少依赖 MetaHumanRuntime |
-| 2024-08-19 | `79003ad1` | Move MetaHumanRuntime plugin to MetaHumanSDK plugin and rename it to MetaHumanSDKRuntime | **关键变更**：将 MetaHumanRuntime 功能迁移至 MetaHumanSDK 并重命名为 MetaHumanSDKRuntime |
-| 2024-08-08 | `ea519b5c` | [MH-12702] Unreal Editor crashes after Playing a Level with an Optimized MetaHuman with MetaHuman Co | 修复编辑器在拥有优化后MetaHuman的关卡中运行后崩溃的问题 |
-| 2024-07-31 | `8e8004fd` | MetaHuman component for UE improvements | 对用于UE的MetaHuman组件进行了改进 |
-| 2024-07-24 | `bd22b183` | Fixed issue for control rigs not running on body parts | 修复控制绑定（Control Rig）在身体部件上不运行的问题 |
+| 2024-09-16 | `62f8cc0c` | Unable to load plugin, missing dependency MetaHumanRuntime | 修复依赖缺失问题，添加重定向机制 |
+| 2024-08-19 | `79003ad1` | Move MetaHumanRuntime plugin to MetaHumanSDK plugin and rename it to MetaHumanSDKRuntime | 功能迁移至 MetaHumanSDK，本插件变为废弃壳 |
+| 2024-08-08 | `ea519b5c` | [MH-12702] Unreal Editor crashes after Playing a Level with an Optimized MetaHuman with MetaHuman Co | 修复带优化 MetaHuman 时编辑器崩溃问题 |
+| 2024-07-31 | `8e8004fd` | MetaHuman component for UE improvements | MetaHuman 组件在 UE 中的改进 |
+| 2024-07-24 | `bd22b183` | Fixed issue for control rigs not running on body parts | 修复控制绑定在身体部位不运行的问题 |
 
 ### 维护评价
 
--   **状态**：**已弃用，功能已迁移**。
--   **分析**：该插件在创建仅两个月后（2024年8月），其核心功能就被迁移至新的 `MetaHumanSDK` 插件。目前它仅作为一个兼容性重定向存在，以避免旧项目立即崩溃。最后一次实质性更新停留在 2024 年 8 月。
--   **建议**：**强烈不推荐在新项目中使用**。所有开发者都应迁移到 **MetaHumanSDK** 插件以获取最新功能和持续维护。
+**⚠️ 已废弃 — 不推荐使用。**
+
+- **生命周期极短**：从 2024-06-10 创建到 2024-08-19 被废弃，仅存活约 2 个月
+- **已正式迁移**：全部功能已移至 `MetaHumanSDK`，本插件仅保留兼容性重定向
+- **无源码残留**：当前版本包含 0 个源文件、0 个模块
+- **实验性状态**：标记为 `IsExperimentalVersion`，从未达到正式发布
+- **最后一次改动**（2024-09-16）仅为修复依赖加载问题，非功能性更新
+
+建议直接使用 `MetaHumanSDK` 插件，并在迁移完成后从项目依赖中移除 `MetaHumanRuntime`。
 
 ## 相关链接
 
--   [源码 (已弃用)](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetaHuman/MetaHumanRuntime)
--   **[替代插件：MetaHumanSDK]** (请查找对应的 MetaHumanSDK 插件文档)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetaHuman/MetaHumanRuntime)
+- [MetaHumanSDK（替代插件）](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetaHuman/MetaHumanSDK)
+- 官方文档：无
+- 测试用例：无

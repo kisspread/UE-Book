@@ -4,175 +4,231 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | USD导入器 |
+| 中文名 | USD 导入器 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、材质模板、测试资源） |
+| 包含内容 | ✅ 有（内容资产） |
 | 模块 | `GeometryCacheUSD` (Runtime), `USDClassesEditor` (Runtime), `USDExporter` (Runtime), `USDSchemas` (Runtime), `USDStage` (Runtime), `USDStageEditor` (Runtime), `USDStageEditorViewModels` (Runtime), `USDStageImporter` (Runtime), `USDTests` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-11-19 |
-| 年龄标签 | 👴 老古董（约 8 年） |
+| 年龄标签 | 👴 老古董（约 7 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter) | |
+
+> ⚠️ **注意**：此插件默认未启用（`EnabledByDefault: false`），且标记为 Beta。使用前需在项目设置中手动启用。
+
+## 文档结构
+
+本文档为 USD Importer 插件的汇总页。该插件包含 187 个源文件，属于大型插件，建议结合子模块文档阅读。
+
+| 子模块 | 说明 |
+|---|---|
+| [USDSchemas](USDSchemas.md) | USD Schema 翻译器注册表与核心翻译器实现（详细文档） |
+| USDExporter | USD 导出功能 |
+| USDStage | USD Stage 的运行时表示与管理 |
+| USDStageImporter | USD Stage 的导入流程 |
+| USDStageEditor | USD Stage 编辑器面板 |
+| USDStageEditorViewModels | Stage 编辑器的视图模型层 |
+| USDClassesEditor | USD 相关编辑器类 |
+| GeometryCacheUSD | 几何缓存与 USD 的桥接 |
+| USDTests | 自动化测试 |
 
 ## 用途
 
-本插件的核心功能是将通用场景描述（Universal Scene Description, USD）文件格式导入并转换为 Unreal Engine 内部的资产和场景图。它不仅仅是一个简单的文件解析器，而是一个**基于 Schema 的资产转换框架**。插件定义了一套转换器（Translator）体系，将 USD 中的各种 Schema（如 `UsdGeomMesh`, `UsdSkelSkeleton`, `UsdShadeMaterial` 等）映射为对应的 UE 资产（如 `UStaticMesh`, `USkeleton`, `UMaterialInterface`）和场景组件。它解决了从 DCC（数字内容创作）工具通过 USD 这一标准格式，高效地将复杂资产（包括几何体、材质、骨骼动画、灯光、相机等）引入 UE 并保持数据关联性的问题。
+USD（Universal Scene Description）是由 Pixar 开发的开放标准场景描述格式，广泛用于影视和游戏行业的资产管线中。这个插件为 Unreal Engine 提供了完整的 USD 导入管线，能够将 USD 文件中的 Prim（场景图节点）自动翻译为 Unreal Engine 中对应的资产（StaticMesh、材质、骨骼等）和组件（SceneComponent、MeshComponent、LightComponent 等）。
+
+插件的核心架构是 **Schema Translator 模式**：每种 USD Schema 类型（如 UsdGeomMesh、UsdGeomCamera、UsdLuxLight）都有对应的 Translator 类，负责将该类型的 Prim 创建/更新为 UE 中的对应资产和组件。插件内置了对大量 USD Schema 的支持，包括：
+
+- **几何体**：Mesh → StaticMesh，PointInstancer → 合并网格，GeomPrimitive（BasisCurves 等）
+- **动画**：SkelSkeleton → 骨骼/动画，GeometryCache
+- **材质**：UsdShadeMaterial → UMaterialInterface，支持 MaterialX
+- **光照**：UsdLuxLight → UE 光源组件
+- **摄像机**：UsdGeomCamera → UCameraComponent
+- **毛发**：Groom（基于 GeometryCacheTranslator 扩展）
+- **体积**：OpenVDB 体积
+- **空间音频**：UsdMediaSpatialAudio
+- **Nanite 组装**：NaniteAssembly
 
 ## 使用场景
 
--   **角色与动画流程**：从 Maya、Blender 等软件通过 USD 导入带有骨骼绑定（Skeletal Mesh）、蒙皮权重和动画剪辑的角色模型。
--   **环境与场景构建**：导入从 Houdini 或其他程序化工具生成的、包含大量实例化（Point Instancer）、LOD 和材质分配的复杂场景。
--   **虚拟制片资产交换**：在虚拟制片流水线中，使用 USD 作为交换格式，在 UE 与其它工具（如 Pixar’s Stage、NVIDIA Omniverse）之间同步灯光、相机和场景数据。
--   **程序化资产管线**：集成到自动化脚本中，批量处理并导入 USD 格式的资产，并利用其缓存和重映射系统管理资产引用。
+- 你的资产管线使用 USD 格式（如从 Maya、Houdini、Blender 导出 USD）→ 用此插件将 USD 文件导入 UE
+- 你需要在 UE 中实时查看/编辑 USD Stage（类似 USDView）→ 使用 USDStage 编辑器面板
+- 你需要将 UE 场景导出为 USD 格式供其他 DCC 工具使用 → 使用 USDExporter 模块
+- 你在做虚拟制片（Virtual Production）且需要导入 USD 场景 → 启用此插件
+- 你需要自定义 USD Schema 到 UE 资产的映射关系 → 通过 `FUsdSchemaTranslatorRegistry` 注册自定义 Translator
 
 ## 蓝图用法
 
-USD Importer 的核心功能主要通过 C++ 类和编辑器集成提供。其蓝图用法主要体现在：
-1.  **资产处理器 (Asset Processor)**：导入后的 USD 资产会作为 `UUsdAssetCache` 的一部分被管理，蓝图可通过资产缓存系统查询和操作它们。
-2.  **舞台编辑器 (Stage Editor)**：`USDStageEditor` 模块提供了一套编辑器UI，用于预览、配置和控制 USD 资产的导入过程，这可以视为一个可视化的“蓝图”工作台。
+USDSchemas 模块主要面向 C++ 扩展，提供的公开 API 集中在 Schema Translator 注册系统中。以下是关键蓝图/C++ 扩展点：
 
-### 核心节点（编辑器集成）
+### 核心类
 
-由于翻译器主要为 C++ 运行时设计，无直接暴露的 `BlueprintCallable` 函数。其蓝图/编辑器交互主要通过 `USDStageEditor` 面板实现。
+| 类 | 说明 |
+|---|---|
+| `FUsdSchemaTranslator` | 所有 Translator 的基类，定义了 CreateAssets / CreateComponents / UpdateComponents 接口 |
+| `FUsdGeomXformableTranslator` | 所有可变换（Xformable）Prim 的 Translator 基类 |
+| `FUsdGeomMeshTranslator` | UsdGeomMesh → StaticMesh 的翻译器 |
+| `FUsdGeomCameraTranslator` | UsdGeomCamera → CameraComponent 的翻译器 |
+| `FUsdLuxLightTranslator` | UsdLuxLight → 光源组件的翻译器 |
+| `FUsdShadeMaterialTranslator` | UsdShadeMaterial → UMaterialInterface 的翻译器 |
+| `FUsdSkelSkeletonTranslator` | UsdSkelSkeleton → 骨骼/动画资产的翻译器 |
+| `FUsdGeomPointInstancerTranslator` | UsdGeomPointInstancer → 实例化网格的翻译器 |
+| `FUsdGeometryCacheTranslator` | UsdGeomMesh → GeometryCache 的翻译器 |
+| `FUsdGroomTranslator` | UsdGeomMesh → Groom 资产的翻译器 |
+
+### Translator 层次结构
+
+```
+FUsdSchemaTranslator
+├── FUsdGeomXformableTranslator
+│   ├── FUsdGeomMeshTranslator
+│   │   ├── FUsdGeometryCacheTranslator
+│   │   │   └── FUsdGroomTranslator
+│   │   ├── FBuildStaticMeshTaskChain
+│   │   │   ├── FGeomMeshCreateAssetsTaskChain
+│   │   │   └── FUsdGeomPointInstancerCreateAssetsTaskChain
+│   │   └── FBaseBuildStaticMeshTaskChain
+│   ├── FUsdGeomCameraTranslator
+│   ├── FUsdLuxLightTranslator
+│   ├── FUsdGeomPrimitiveTranslator
+│   ├── FUsdSkelSkeletonTranslator
+│   ├── FUsdGeomPointInstancerTranslator
+│   ├── FUsdMediaSpatialAudioTranslator
+│   └── FUsdVolVolumeTranslator
+├── FUsdShadeMaterialTranslator
+│   └── FMaterialXUsdShadeMaterialTranslator
+└── FUsdNaniteAssemblyTranslator
+```
 
 ## C++ 用法
 
 ### 头文件引入
 
-使用 USD 导入器的核心是使用其提供的翻译器框架。
 ```cpp
-#include "USDGeomMeshTranslator.h"  // 用于导入网格
-#include "USDSkelSkeletonTranslator.h" // 用于导入骨骼
-#include "USDSchemaTranslator.h"     // 已废弃，请用下面的新路径
-// 新路径 (5.6+):
-#include "USDUtilities/Objects/USDSchemaTranslator.h"
-```
+// Schema Translator 基类与注册（已迁移到 USDUtilities，兼容头文件仍可用）
+#include "USDSchemasModule.h"
 
-### 基本用法：处理 USD 几何体
-
-以下示例展示了如何创建一个处理 `UsdGeomMesh` 的自定义任务链，这通常用于扩展或覆盖默认的网格导入行为。
-(基于 `USDGeomMeshTranslator.h` 中的 `FBaseBuildStaticMeshTaskChain` 结构)
-
-```cpp
-// 头文件: MyCustomMeshTranslator.h
-#pragma once
+// 各类型 Translator
 #include "USDGeomMeshTranslator.h"
-#include "MeshDescription.h"
-
-class FMyCustomBuildStaticMeshTask : public FBaseBuildStaticMeshTaskChain
-{
-public:
-    explicit FMyCustomBuildStaticMeshTask(
-        const TSharedRef<FUsdSchemaTranslationContext>& InContext,
-        const UE::FSdfPath& InPrimPath
-    ) : FBaseBuildStaticMeshTaskChain(InContext, InPrimPath)
-    {}
-
-protected:
-    // 重写设置任务的方法，添加自定义处理步骤
-    virtual void SetupTasks() override
-    {
-        FBaseBuildStaticMeshTaskChain::SetupTasks();
-
-        // 在原有的任务链之后，添加一个自定义任务（例如，应用后处理修改）
-        TaskChain->AddTask<FMyCustomPostProcessMeshTask>(...)
-            ->AddPrerequisites(TaskChain->GetTasks()); // 确保在原任务完成后执行
-    }
-};
+#include "USDGeomXformableTranslator.h"
+#include "USDShadeMaterialTranslator.h"
 ```
 
-### 进阶用法：注册自定义 Schema 翻译器
+### 注册自定义 Schema Translator
 
-当导入包含自定义 USD Schema 的资产时，你可以注册自己的翻译器来处理它。
-(基于 `IUsdSchemasModule` 和 `FUsdSchemaTranslatorRegistry` 的模式)
+USDSchemas 模块的核心扩展能力是通过 `FUsdSchemaTranslatorRegistry` 注册自定义 Translator。以下是注册自定义 Translator 的模式：
 
 ```cpp
-// 头文件: MyCustomSchemaTranslator.h
-#pragma once
-#include "USDUtilities/Objects/USDSchemaTranslator.h" // 使用新路径
+// 基于 USDSchemas/Public/USDGeomMeshTranslator.h 和模块接口推断的用法
+#include "Objects/USDSchemaTranslator.h"  // 新的推荐路径（5.6+）
+#include "USDSchemasModule.h"
 
-class FMyCustomSchemaTranslator : public FUsdSchemaTranslator
+// 获取 Translator 注册表（5.6+ 推荐方式）
+FUsdSchemaTranslatorRegistry& Registry = FUsdSchemaTranslatorRegistry::Get();
+```
+
+### 创建自定义 Translator
+
+以下是基于 `FUsdGeomMeshTranslator` 源码推断的自定义 Translator 模式：
+
+```cpp
+// 参考: USDSchemas/Public/USDGeomMeshTranslator.h
+#if USE_USD_SDK
+
+#include "USDGeomXformableTranslator.h"
+
+class FMyCustomMeshTranslator : public FUsdGeomMeshTranslator
 {
 public:
-    FMyCustomSchemaTranslator(
-        TSharedRef<FUsdSchemaTranslationContext> InContext,
-        const UE::FUsdTyped& InSchema
-    ) : FUsdSchemaTranslator(InContext, InSchema)
-    {}
+    using Super = FUsdGeomMeshTranslator;
+    using FUsdGeomMeshTranslator::FUsdGeomMeshTranslator;
 
-    // 实现创建资产（如UObject、UStaticMesh等）
+    // 禁用拷贝
+    FMyCustomMeshTranslator(const FMyCustomMeshTranslator&) = delete;
+    FMyCustomMeshTranslator& operator=(const FMyCustomMeshTranslator&) = delete;
+
+    // 重写核心翻译逻辑
     virtual void CreateAssets() override;
-
-    // 实现创建对应的场景组件（如AActor、USceneComponent等）
     virtual USceneComponent* CreateComponents() override;
-
-    // 实现更新已存在的组件
     virtual void UpdateComponents(USceneComponent* SceneComponent) override;
 
-    // ... 其他必要的重写
+    // 控制折叠行为（决定子 Prim 是否由本 Translator 统一处理）
+    virtual bool CollapsesChildren(ECollapsingType CollapsingType) const override;
+    virtual bool CanBeCollapsed(ECollapsingType CollapsingType) const override;
 };
 
-// 注册翻译器的代码 (通常在模块 Startup 中)
-FUsdSchemaTranslatorRegistry::Get().RegisterTranslator(
-    TEXT("MyCustomSchemaName"), // 你的 USD Schema 类型名
-    FUsdSchemaTranslatorRegistry::FTranslatorFactory::CreateLambda(
-        [](const TSharedRef<FUsdSchemaTranslationContext>& Context, const UE::FUsdTyped& Schema) -> TSharedRef<FUsdSchemaTranslator>
-        {
-            return MakeShared<FMyCustomSchemaTranslator>(Context, Schema);
-        }
-    )
+#endif // USE_USD_SDK
+```
+
+### 材质分配解析
+
+以下代码展示了 USD 中材质绑定如何被解析为 UE 材质（来自 `Private/MeshTranslationImpl.h`）：
+
+```cpp
+// 参考: USDSchemas/Private/MeshTranslationImpl.h
+#include "MeshTranslationImpl.h"
+
+// 解析 USD Prim 的材质分配信息，返回每个材质槽对应的 UMaterialInterface
+TMap<const UsdUtils::FUsdPrimMaterialSlot*, UMaterialInterface*> ResolvedMaterials =
+    MeshTranslationImpl::ResolveMaterialAssignmentInfo(
+        UsdPrim,           // USD Prim
+        AssignmentInfo,    // 材质分配信息数组
+        AssetCache,        // USD 资产缓存
+        PrimLinkCache,     // Prim 到资产的链接缓存
+        ObjectFlags,       // 资产标志
+        bShareAssets       // 是否为相同 Prim 共享资产
+    );
+```
+
+### Groom 绑定创建
+
+```cpp
+// 参考: USDSchemas/Private/USDGroomTranslatorUtils.h
+#include "USDGroomTranslatorUtils.h"
+
+// 为带有 GroomBindingAPI 的 Prim 创建 Groom 绑定资产
+UsdGroomTranslatorUtils::CreateGroomBindingAsset(
+    Prim,
+    AssetCache,
+    PrimLinkCache,
+    ObjectFlags,
+    bShareAssetsForIdenticalPrims
+);
+
+// 将 Groom 资产设置到场景组件上
+UsdGroomTranslatorUtils::SetGroomFromPrim(
+    Prim,
+    PrimLinkCache,
+    SceneComponent
 );
 ```
 
-## Demo 示例
+### 架构分析
 
-一个最小化的、扩展默认网格导入器的示例。
+Translator 的生命周期遵循以下阶段（从源码中 `CreateAssets` / `CreateComponents` / `UpdateComponents` 推断）：
 
-```cpp
-// MyUSDImporterExtension.h
-#pragma once
-#include "CoreMinimal.h"
-#include "USDGeomMeshTranslator.h"
+1. **CreateAssets()** — 创建引擎资产（StaticMesh、材质、动画等），通常通过异步任务链执行
+2. **CreateComponents()** — 创建场景组件（返回 `USceneComponent*`）
+3. **UpdateComponents()** — 更新已有组件的状态
 
-class FMyGeomMeshTranslator : public FUsdGeomMeshTranslator
-{
-public:
-    using FUsdGeomMeshTranslator::FUsdGeomMeshTranslator;
-
-    // 覆盖创建资产，例如强制所有导入的网格启用Nanite
-    virtual void CreateAssets() override
-    {
-        FUsdGeomMeshTranslator::CreateAssets();
-        // 假设我们访问到了生成的StaticMesh
-        // StaticMesh->NaniteSettings.bEnabled = true;
-    }
-
-    // 覆盖组件创建，例如将网格组件类型替换为自定义的
-    virtual USceneComponent* CreateComponents() override
-    {
-        // 可以先调用父类创建默认组件
-        USceneComponent* Component = FUsdGeomMeshTranslator::CreateComponents();
-        // 然后替换或附加自定义逻辑
-        // if (UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(Component))
-        // {
-        //     MeshComp->SetMaterial(0, MyDefaultMaterial);
-        // }
-        return Component;
-    }
-};
-```
+任务链模式（Task Chain）用于处理复杂的异步资产构建，例如 `FBuildStaticMeshTaskChain` 会：
+- 解析 Mesh LOD 描述
+- 收集材质信息
+- 构建 StaticMesh 资产
+- 防止重建期间的渲染冲突（通过 `FStaticMeshComponentRecreateRenderStateContext`）
 
 ## 模块依赖
 
-USD Importer 插件依赖于 Unreal Engine 内部的 USD 库和工具模块。你的项目模块若需与 USD 导入数据深度交互，可能需要依赖以下模块：
+USD Importer 的各模块依赖以下非标准模块（基于源码文件和模块关系推断）：
 
 | 模块 | 用途 |
 |---|---|
-| `USDCore` | 提供底层的 USD SDK 封装和基础类型 (`UE::FUsdStage`, `UE::FUsdPrim` 等)。 |
-| `USDUtilities` | 提供高级工具，如 `FUsdSchemaTranslator` (5.6+新位置)、`FUsdInfoCache`、`FUsdPrimLinkCache`、`USDSchemaTranslatorRegistry`。 |
-| `USDSchemas` | (本插件核心模块) 提供内置 USD Schema 到 UE 资产/组件的具体翻译器实现。 |
-| `USDStage` | 提供 USD Stage 的运行时表示和操作。 |
-| `GeometryCacheUSD` | 专门处理几何缓存（Groom）相关的 USD 导入。 |
+| `USDCore` | UE 的 USD SDK 封装层（提供 `UE::FUsdStage`、`UE::FSdfPath` 等类型） |
+| `USDUtilities` | USD 工具函数，包含 `FUsdSchemaTranslatorRegistry`、`FUsdPrimLinkCache`、`FUsdInfoCache` 等（5.6+ 核心迁移目标） |
+| `USDClasses` | USD 相关的 UObject 类定义 |
+| `GeometryCache` | 几何缓存系统（GeometryCacheTranslator 依赖） |
+| `Groom` | Groom（毛发）资产系统（GroomTranslator 依赖） |
+| `InterchangeCore` | Interchange 框架（USDStageImporter 依赖） |
+| `MeshDescription` | Mesh 描述数据结构 |
 
 ## 维护状态
 
@@ -180,25 +236,184 @@ USD Importer 插件依赖于 Unreal Engine 内部的 USD 库和工具模块。�
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下，代码中将双精度常量截断为浮点数而产生的警告。 |
-| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | USD: 增加对独立于蓝图的 Control Rig 的分配支持。 |
-| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va | USD: 修复了升级到26.03版本后，当LOD变化时AnimQuery内部引用失效的问题。 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修正了格式说明符：当参数为64位时使用64位说明符，反之亦然，解决了32位和64位不匹配的问题。 |
-| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | USD: 烘焙曝光动画轨道的所有帧。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为 float 的编译警告 |
+| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | 支持分配独立于蓝图的 Control Rig |
+| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va | 修复 USD 26.03 更新导致 LOD 变体切换时 AnimQuery 内部引用失效的问题 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复 32/64 位格式说明符与参数不匹配的问题 |
+| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | 烘焙曝光动画轨道的所有帧 |
 
 ### 维护评价
 
--   **创建时间**：插件于 2018 年创建，是 UE 早期对 USD 支持的核心组件之一。
--   **最近更新频率**：近期（2026年4月-5月）有持续的更新，主要集中在**编译修复、平台兼容性**和**功能细节增强**（如动画、Control Rig集成）。没有看到重大架构变更或新功能模块的添加。
--   **维护活跃度**：**维护中**。作为 Epic 官方插件且仍在持续修复问题，表明其仍在维护中。但更新内容以修复和适配为主，处于稳定期。
--   **已知问题与限制**：
-    1.  **实验性**：`.uplugin` 中 `IsBetaVersion=true`，表明 API 和功能可能尚未完全稳定。
-    2.  **架构重构**：代码中存在大量 `UE_DEPRECATED_HEADER` 注释（如 `USDSchemaTranslator.h`、`USDInfoCache.h`），表明核心类正在从 `USDSchemas` 模块向 `USDUtilities` 模块迁移，开发者在引用头文件时需要注意新旧路径。
-    3.  **默认未启用**：需要手动在插件列表中启用。
--   **推荐使用**：**推荐，但需注意版本**。它是 UE 官方提供的、功能全面的 USD 解决方案，适合需要工业级 USD 管线集成的项目。由于是实验性状态，建议在 production 使用前进行充分测试，并关注未来版本的 API 变更。
+**🟢 活跃维护中**
+
+- **创建时间**：2018 年，约 7 年历史，是 UE 引擎中较成熟的插件之一
+- **更新频率**：近期（2026 年 4-5 月）有多次实质性更新，包括功能增强（Control Rig 支持）、USD SDK 版本适配（26.03）和 bug 修复
+- **模块成熟度**：尽管标记为 Beta，但已包含 9 个模块、187 个源文件，覆盖了 USD 导入/导出/编辑的完整管线
+- **API 迁移**：5.6 版本后大量核心类（`FUsdSchemaTranslatorRegistry`、`FUsdPrimLinkCache`、`FUsdInfoCache`）已迁移到 `USDUtilities` 模块（USDCore 插件），旧头文件标记为 `UE_DEPRECATED`
+- **已知限制**：`EnabledByDefault: false` 且 `IsBetaVersion: true`，但鉴于其规模和活跃度，实际功能已相当完整
+- **推荐程度**：如果你的项目需要 USD 支持，强烈推荐启用。注意使用 5.6+ 版本的 API 路径（`USDUtilities` 模块）
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
--   [官方文档](https://dev.epicgames.com/documentation/en-us/unreal-engine/usd-in-unreal-engine) (Epic Games 官方 USD 文档)
--   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests) (USDTests 模块)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
+- [USDSchemas 子模块文档](USDSchemas.md)
+
+---
+
+# USDSchemas
+
+> USD Schema Translator 注册与核心翻译器实现模块
+
+| 属性 | 值 |
+|---|---|
+| 模块名 | USDSchemas |
+| 类型 | Runtime |
+| 源文件数 | ~22（头文件可见） |
+| 核心职责 | 将 USD Prim 类型映射为 UE 资产/组件 |
+
+## 模块概述
+
+USDSchemas 是 USD Importer 插件的核心模块之一，定义了 **Schema Translator 架构**——将 USD 文件中的各类 Prim 自动翻译为 Unreal Engine 对应资产和组件的机制。
+
+### 核心概念
+
+| 概念 | 说明 |
+|---|---|
+| **Schema Translator** | 将特定 USD Schema 类型翻译为 UE 资产/组件的类 |
+| **Task Chain** | 异步资产构建任务链，用于复杂的多步骤资产创建 |
+| **Collapsing** | 折叠机制，允许父 Translator 统一处理子树中的多个 Prim |
+| **Translation Context** | 翻译上下文，包含 Stage、AssetCache、PrimLinkCache 等共享状态 |
+
+## Translator 详解
+
+### 基础层：FUsdSchemaTranslator → FUsdGeomXformableTranslator
+
+`FUsdGeomXformableTranslator` 是所有可渲染（drawable）Prim 的 Translator 基类。除了标准的资产/组件创建，它还支持**替代绘制模式**（Alternative Draw Mode），包括 Bounds（边界框）和 Cards（贴图卡片）模式。
+
+关键方法：
+
+```cpp
+// 核心接口
+virtual void CreateAssets() override;
+virtual USceneComponent* CreateComponents() override;
+virtual void UpdateComponents(USceneComponent* SceneComponent) override;
+
+// 扩展接口
+USceneComponent* CreateComponentsEx(
+    TOptional<TSubclassOf<USceneComponent>> ComponentType,
+    TOptional<bool> bNeedsActor
+);
+
+// 替代绘制模式（Bounds/Cards）
+USceneComponent* CreateAlternativeDrawModeComponents(EUsdDrawMode DrawMode);
+void UpdateAlternativeDrawModeComponents(USceneComponent* SceneComponent, EUsdDrawMode DrawMode);
+void CreateAlternativeDrawModeAssets(EUsdDrawMode DrawMode);
+```
+
+### 几何体翻译器
+
+#### FUsdGeomMeshTranslator
+
+最核心的 Translator，将 `UsdGeomMesh` 转换为 `UStaticMesh`。支持：
+
+- 多 LOD 网格构建
+- 材质分配与覆盖
+- 元数据收集
+- 蒙皮网格检测与跳过（避免与 `FUsdSkelSkeletonTranslator` 重复处理）
+- 子树折叠控制
+
+```cpp
+// 蒙皮网格检测：避免与 SkeletonTranslator 重复
+bool ShouldSkipSkinnablePrim(bool bCheckForComponent = false) const;
+
+// 子树折叠
+bool CollapsesChildren(ECollapsingType CollapsingType) const override;
+bool CanBeCollapsed(ECollapsingType CollapsingType) const override;
+```
+
+#### FUsdGeomPointInstancerTranslator
+
+将 `UsdGeomPointInstancer` 转换为实例化网格。Point Instancer 总是折叠其整个子树，嵌套情况下由最顶层的 PointInstancer 负责。
+
+#### FUsdGeomPrimitiveTranslator
+
+处理 `UsdGeomBasisCurves` 等几何图元类型。
+
+#### FUsdGeomCameraTranslator
+
+将 `UsdGeomCamera` 转换为 `UCameraComponent`。
+
+### 材质翻译器
+
+#### FUsdShadeMaterialTranslator
+
+将 `UsdShadeMaterial` 转换为 `UMaterialInterface`。支持导入后自定义处理：
+
+```cpp
+virtual void PostImportMaterial(const FString& PrefixedMaterialHash, UMaterialInterface* ImportedMaterial);
+```
+
+#### FMaterialXUsdShadeMaterialTranslator
+
+继承自 `FUsdShadeMaterialTranslator`，专门处理 MaterialX 格式的材质描述。
+
+### 动画与骨骼翻译器
+
+#### FUsdSkelSkeletonTranslator
+
+将 `UsdSkelSkeleton` 转换为 UE 的骨骼和动画资产。注释中说明了从已废弃的 `SkelRootTranslator` 到基于 Skeleton 的架构迁移——SkeletonTranslator 能自行查找关联的蒙皮网格。
+
+#### FUsdGeometryCacheTranslator
+
+将 `UsdGeomMesh` 转换为 `GeometryCache` 资产（用于缓存的顶点动画）。
+
+### 特殊用途翻译器
+
+| Translator | USD Schema | UE 对应 |
+|---|---|---|
+| `FUsdLuxLightTranslator` | UsdLuxLight | UE 光源组件 |
+| `FUsdGroomTranslator` | UsdGeomMesh (with Groom) | Groom 资产 + GroomComponent |
+| `FUsdMediaSpatialAudioTranslator` | UsdMediaSpatialAudio | 空间音频组件 |
+| `FUsdVolVolumeTranslator` | OpenVDB Volume | 体积组件 |
+| `FUsdNaniteAssemblyTranslator` | Nanite Assembly | Nanite 组装资产（仅编辑器） |
+
+### MeshTranslationImpl 工具命名空间
+
+提供 Skeleton Translator 和 GeomMesh Translator 共享的实现：
+
+```cpp
+namespace MeshTranslationImpl
+{
+    // 解析材质分配
+    TMap<const UsdUtils::FUsdPrimMaterialSlot*, UMaterialInterface*> ResolveMaterialAssignmentInfo(...);
+
+    // 设置材质覆盖（注意：非线程安全，会临时切换 LOD 变体）
+    void SetMaterialOverrides(...);
+
+    // 记录材质槽的源 Prim 信息
+    void RecordSourcePrimsForMaterialSlots(...);
+}
+```
+
+## 废弃的 API
+
+以下头文件在 5.6+ 版本中已标记为废弃，使用请迁移到 `USDUtilities` 模块：
+
+| 旧路径 | 新路径 |
+|---|---|
+| `USDSchemasModule.h` 中的 `GetTranslatorRegistry()` | `FUsdSchemaTranslatorRegistry::Get()` from `Objects/USDSchemaTranslator.h` (USDUtilities) |
+| `USDSchemaTranslator.h` | `Objects/USDSchemaTranslator.h` (USDUtilities) |
+| `USDPrimLinkCache.h` | `Objects/USDPrimLinkCache.h` (USDUtilities) |
+| `USDInfoCache.h` | `Objects/USDInfoCache.h` (USDUtilities) |
+| `USDSkelRootTranslator.h` | `USDSkelSkeletonTranslator.h` |
+
+## 模块依赖
+
+| 模块 | 用途 |
+|---|---|
+| `USDCore` | USD SDK 封装（`UE::FUsdStage`、`UE::FSdfPath`、`UE::FUsdPrim` 等） |
+| `USDUtilities` | Translator 注册表、资产缓存、Prim 链接缓存、Info 缓存 |
+| `USDClasses` | USD 相关 UObject 类 |
+| `GeometryCache` | 几何缓存资产（GeometryCacheTranslator 依赖） |
+| `Groom` | 毛发资产系统（GroomTranslator 依赖） |
+| `MeshDescription` | 网格描述数据结构 |

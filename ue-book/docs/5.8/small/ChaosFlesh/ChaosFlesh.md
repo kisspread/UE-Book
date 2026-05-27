@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 混沌软体 |
+| 中文名 | Chaos 肉体模拟 |
 | 分类 | Physics |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（实验性代码） |
+| 包含内容 | ✅ 有（蓝图资产、网格模板） |
 | 模块 | `ChaosFlesh` (Runtime), `ChaosFleshDeprecatedNodes` (Runtime), `ChaosFleshEditor` (Runtime), `ChaosFleshEngine` (Runtime), `ChaosFleshNodes` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2022-03-26 |
@@ -16,222 +16,325 @@
 
 ## 用途
 
-ChaosFlesh 是 Unreal Engine 中 Chaos 物理引擎的一个实验性扩展模块，其核心目的是为游戏和模拟提供基于四面体网格的**可控软体（Flesh）物理**能力。它并非一个独立的物理模拟器，而是 Chaos 物理框架的一部分，专注于处理可变形体（如角色肌肉、果冻、布料等）的体积保持、弹性变形和实时物理反馈。
+ChaosFlesh 是基于 Chaos 物理引擎的**软体/肉体物理模拟**插件。它使用四面体网格（Tetrahedral Mesh）来表示可变形的三维物体，实现肌肉、软组织等有机物体的物理模拟效果。
 
-该插件解决了传统刚体或表面布料模拟无法真实表现的柔软物体变形和次表面细节问题，为需要高级软体交互的项目提供了底层数据结构和物理模拟接口。
+核心概念：
+- **四面体化（Tetrahedralization）**：将表面网格转化为由四面体单元组成的体积网格，这是有限元方法（FEM）的基础数据结构
+- **FleshCollection**：基于 GeometryCollection 扩展的数据容器，存储顶点、表面三角形、内部四面体、质量等物理属性
+- **面片网格生成**：提供径向四面体/六面体网格生成工具，用于程序化创建可模拟的肉体几何体
+
+与传统刚体模拟不同，ChaosFlesh 专注于**可变形体**的物理表现——物体在受力后会发生形变而不是保持刚性。
 
 ## 使用场景
 
-- 你需要实现一个角色在受到冲击时，身体部位（如腹部、脸颊）产生符合物理的凹陷和回弹效果。
-- 你正在开发一个需要实时物理交互的果冻或史莱姆类游戏。
-- 你需要模拟一个布娃娃在跌落或碰撞时，其内部结构（如肌肉、脂肪）产生形变。
-- 你正在研究或开发基于物理的次表面散射（Subsurface Scattering）效果，需要物理模拟驱动表面形变。
+- 你需要模拟角色的**肌肉变形**效果（如战斗中受到打击时的身体形变）
+- 你在制作需要**软体物理**的物体（如果冻、内脏等有机物）
+- 你需要基于**有限元方法**的物理模拟来实现可变形物体
+- 你要程序化生成四面体网格用于物理模拟
 
 ## 蓝图用法
 
-根据对 `ChaosFlesh` 核心模块源码的分析，该模块主要提供 C++ 底层数据结构和物理计算接口，**未直接暴露蓝图可调用（BlueprintCallable）的函数**。蓝图层面的节点和可视化脚本集成，很可能封装在 `ChaosFleshNodes` 和 `ChaosFleshEditor` 等其他模块中（当前分析未包含这些模块的头文件）。
+当前 `ChaosFlesh` 核心模块的公共头文件中未暴露 `BlueprintCallable` 函数。蓝图节点功能主要分布在以下子模块中：
 
-### 核心节点
+| 子模块 | 预期功能 |
+|---|---|
+| `ChaosFleshNodes` | Dataflow 蓝图节点（肉体模拟相关） |
+| `ChaosFleshDeprecatedNodes` | 已废弃的蓝图节点 |
+| `ChaosFleshEditor` | 编辑器工具节点 |
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| （无） | 本模块（ChaosFlesh）未提供蓝图接口 | - |
+### 核心概念（蓝图层面）
+
+通过 Dataflow 图表进行肉体模拟配置，主要包括：
+- 纤维场（Fiber Field）生成节点
+- 静态网格到肉体资产的转换
 
 ## C++ 用法
-
-`ChaosFlesh` 模块的核心是定义了软体物理模拟所需的基础数据结构，如 `FFleshCollection`，以及用于访问和操作这些数据的工具类 `FFleshCollectionFacade`。
 
 ### 头文件引入
 
 ```cpp
-#include "ChaosFlesh/ChaosFlesh.h" // 主模块头文件，引入日志分类
-#include "ChaosFlesh/FleshCollection.h" // 核心数据结构
-#include "ChaosFlesh/ChaosFleshCollectionFacade.h" // 便捷访问器
-#include "ChaosFlesh/TetrahedralCollection.h" // 四面体集合基类
-#include "Meshing/ChaosFleshRadialMeshing.h" // 网格生成工具
+#include "ChaosFlesh/ChaosFleshCollectionFacade.h"
+#include "ChaosFlesh/TetrahedralCollection.h"
+#include "ChaosFlesh/FleshCollection.h"
 ```
 
-### 基本用法
+### 基本用法 — 创建四面体集合
 
-以下示例展示了如何创建一个 `FFleshCollection` 并填充四面体网格数据，这是使用 ChaosFlesh 进行物理模拟的第一步。
-
-*（来源：`Public/ChaosFlesh/FleshCollection.h`, `Public/ChaosFlesh/TetrahedralCollection.h`）*
+从顶点和四面体元素创建一个基础的四面体网格。
 
 ```cpp
-// 1. 定义一个简单的四面体网格
+// 来源: Public/ChaosFlesh/TetrahedralCollection.h
+#include "ChaosFlesh/TetrahedralCollection.h"
+
+// 定义顶点和四面体单元
 TArray<FVector> Vertices = {
     FVector(0, 0, 0),
-    FVector(100, 0, 0),
-    FVector(0, 100, 0),
-    FVector(0, 0, 100)
-};
-TArray<FIntVector4> Elements = {
-    FIntVector4(0, 1, 2, 3) // 一个四面体，连接上述四个顶点
+    FVector(1, 0, 0),
+    FVector(0, 1, 0),
+    FVector(0, 0, 1)
 };
 
-// 2. 创建 FFleshCollection 实例
-// FFleshCollection 继承自 FTetrahedralCollection，后者继承自 FGeometryCollection
-Chaos::FFleshCollection* FleshCollection = Chaos::FFleshCollection::NewFleshCollection(
-    Vertices,
-    Elements,
-    true,  // bReverseVertexOrder
-    false, // KeepInteriorFaces
-    false  // InvertFaces
+// 表面三角形（表面网格）
+TArray<FIntVector3> SurfaceElements = {
+    FIntVector3(0, 1, 2),
+    FIntVector3(0, 1, 3),
+    FIntVector3(0, 2, 3),
+    FIntVector3(1, 2, 3)
+};
+
+// 四面体单元（体积网格）
+TArray<FIntVector4> Elements = {
+    FIntVector4(0, 1, 2, 3)
+};
+
+// 创建四面体集合
+FTetrahedralCollection* TetCollection = FTetrahedralCollection::NewTetrahedralCollection(
+    Vertices, SurfaceElements, Elements, true /*bReverseVertexOrder*/
 );
 
-if (FleshCollection)
+// 初始化关联元素（每个顶点关联的四面体列表）
+TetCollection->InitIncidentElements();
+```
+
+### 基本用法 — 创建 FleshCollection
+
+`FFleshCollection` 继承自 `FTetrahedralCollection`，添加了物理模拟所需的额外属性（如质量）。
+
+```cpp
+// 来源: Public/ChaosFlesh/FleshCollection.h
+#include "ChaosFlesh/FleshCollection.h"
+
+// 方式1：从现有的 TetrahedralCollection 创建
+FFleshCollection* Flesh = FFleshCollection::NewFleshCollection(*TetCollection);
+
+// 方式2：直接从顶点和四面体创建
+FFleshCollection* Flesh = FFleshCollection::NewFleshCollection(
+    Vertices, SurfaceElements, Elements
+);
+
+// 方式3：仅从顶点和四面体创建，自动生成表面
+FFleshCollection* Flesh = FFleshCollection::NewFleshCollection(
+    Vertices, Elements,
+    true  /*bReverseVertexOrder*/,
+    false /*KeepInteriorFaces*/,
+    false /*InvertFaces*/
+);
+```
+
+### 进阶用法 — Facade 模式访问属性
+
+`FFleshCollectionFacade` 提供了便捷的接口来读取和修改集合中的各种属性。
+
+```cpp
+// 来源: Public/ChaosFlesh/ChaosFleshCollectionFacade.h
+#include "ChaosFlesh/ChaosFleshCollectionFacade.h"
+
+// 创建 Facade 用于便捷访问
+Chaos::FFleshCollectionFacade Facade(*Flesh);
+
+if (Facade.IsValid())
 {
-    // 3. 使用 Facade 访问和检查数据
-    Chaos::FFleshCollectionFacade Facade(*FleshCollection);
-    if (Facade.IsValid())
-    {
-        UE_LOG(LogChaosFlesh, Log, TEXT("创建了包含 %d 个顶点的 FleshCollection"), Facade.NumVertices());
-        // Facade.Vertex -> TManagedArrayAccessor<FVector3f> 可直接访问顶点数据
-        const TManagedArray<FVector3f>* Verts = Facade.FindAttribute<FVector3f>("Vertex", "Vertices");
-        if (Verts)
-        {
-            // 操作顶点数据...
-        }
-    }
+    // 获取元素数量
+    int32 NumTransforms = Facade.NumTransforms();
+    int32 NumVertices   = Facade.NumVertices();
+    int32 NumFaces      = Facade.NumFaces();
+    int32 NumGeometry   = Facade.NumGeometry();
+
+    // 访问顶点数据
+    TManagedArrayAccessor<FVector3f>& VertexAccessor = Facade.Vertex;
+    
+    // 将顶点转换到组件空间
+    TArray<FVector3f> ComponentSpaceVerts;
+    Facade.ComponentSpaceVertices(ComponentSpaceVerts);
+
+    // 获取全局变换矩阵
+    TArray<FTransform> GlobalTransforms;
+    Facade.GlobalMatrices(GlobalTransforms);
+
+    // 获取单个全局矩阵
+    FTransform3f Matrix = Facade.GlobalMatrix3f(0);
+
+    // 检查特定数据是否有效
+    bool bHasTetrahedron = Facade.IsTetrahedronValid();
+    bool bHasHierarchy   = Facade.IsHierarchyValid();
+    bool bHasGeometry    = Facade.IsGeometryValid();
 }
 ```
 
-### 进阶用法
+### 进阶用法 — 程序化生成网格
 
-结合网格生成工具 `ChaosFleshRadialMeshing`，可以程序化生成复杂的四面体/六面体网格，并将其转换为 `FleshCollection` 所需的格式。
-
-*（来源：`Public/Meshing/ChaosFleshRadialMeshing.h`, `Public/ChaosFlesh/FleshCollection.h`）*
+使用径向网格生成工具创建四面体或六面体网格。
 
 ```cpp
-// 1. 使用径向网格生成工具创建一个圆柱形的四面体网格
+// 来源: Public/Meshing/ChaosFleshRadialMeshing.h
+#include "Meshing/ChaosFleshRadialMeshing.h"
+
+// 生成径向四面体网格（如圆柱形物体）
 TArray<FIntVector4> TetElements;
 TArray<FVector> TetVertices;
 RadialTetMesh(
-    50.0f, // InnerRadius
-    100.0f, // OuterRadius
-    200.0f, // Height
-    8,      // RadialSample
-    16,     // AngularSample
-    4,      // VerticalSample
-    0.0f,   // BulgeDistance
+    0.5,   // InnerRadius
+    1.0,   // OuterRadius
+    2.0,   // Height
+    4,     // RadialSample
+    8,     // AngularSample
+    4,     // VerticalSample
+    0.1,   // BulgeDistance
     TetElements,
     TetVertices
 );
 
-// 2. 从生成的四面体数据创建 FFleshCollection
-// 由于 RadialTetMesh 只输出四面体元素，没有表面，我们让函数自动计算表面
-Chaos::FFleshCollection* ComplexFlesh = Chaos::FFleshCollection::NewFleshCollection(
-    TetVertices,
+// 从生成的网格创建 FleshCollection
+FFleshCollection* Flesh = FFleshCollection::NewFleshCollection(
+    TetVertices, TetElements
+);
+```
+
+### 进阶用法 — 表面元素提取
+
+```cpp
+// 来源: Public/ChaosFlesh/FleshCollectionUtility.h
+#include "ChaosFlesh/FleshCollectionUtility.h"
+
+// 从四面体集合中提取表面三角形
+TArray<FIntVector3> SurfaceElements;
+ChaosFlesh::GetSurfaceElements(
     TetElements,
-    true,  // bReverseVertexOrder
-    true,  // KeepInteriorFaces: 保留内部面，用于可视化或碰撞
-    false  // InvertFaces
+    SurfaceElements,
+    false /*KeepInteriorFaces*/,
+    false /*InvertFaces*/
 );
 
-// 3. 使用 Facade 进行复杂的属性查询和修改
-if (ComplexFlesh)
-{
-    Chaos::FFleshCollectionFacade Facade(*ComplexFlesh);
-    // 获取所有顶点在组件空间的位置
-    TArray<FVector3f> ComponentSpaceVerts;
-    Facade.ComponentSpaceVertices(ComponentSpaceVerts);
-    
-    // 检查数据完整性
-    if (Facade.IsTetrahedronValid() && Facade.IsHierarchyValid())
-    {
-        // 数据可用于物理模拟或渲染
-    }
-}
+// 压缩表面顶点（移除未使用的顶点）
+TArray<FVector3f> CompactVertices;
+TArray<FIntVector3> CompactSurface;
+TArray<int32> OldToNewMap = ChaosFlesh::CompactSurfaceVertices(
+    Vertices, SurfaceElements, CompactVertices, CompactSurface
+);
 ```
 
 ## Demo 示例
 
-以下是一个完整的、可编译的最小 C++ 示例，演示如何创建和操作一个 `FFleshCollection`。
+一个完整的、可编译的最小示例，演示如何创建并验证一个简单的肉体物理集合。
 
-**FleshDemo.h**
+### FleshDemo.h
+
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "FleshDemo.generated.h"
 
-// 前置声明
-namespace Chaos { class FFleshCollection; }
+class FFleshCollection;
 
-class FFleshDemo
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+class YOURPROJECT_API UFleshDemo : public UActorComponent
 {
+    GENERATED_BODY()
+
 public:
-    static void CreateAndInspectFlesh();
+    UFleshDemo();
+
+    virtual void BeginPlay() override;
+
+    /** 创建一个简单的四面体肉体集合 */
+    void CreateSimpleFlesh();
+
+private:
+    TUniquePtr<FFleshCollection> FleshData;
 };
 ```
 
-**FleshDemo.cpp**
+### FleshDemo.cpp
+
 ```cpp
 #include "FleshDemo.h"
+
 #include "ChaosFlesh/FleshCollection.h"
 #include "ChaosFlesh/ChaosFleshCollectionFacade.h"
-#include "ChaosFlesh/ChaosFlesh.h"
+#include "ChaosFlesh/FleshCollectionUtility.h"
+#include "Meshing/ChaosFleshRadialMeshing.h"
 
-void FFleshDemo::CreateAndInspectFlesh()
+DEFINE_LOG_CATEGORY_STATIC(LogFleshDemo, Log, All);
+
+UFleshDemo::UFleshDemo()
 {
-    // 1. 准备一个八面体的顶点和四面体数据（两个金字塔拼接）
-    TArray<FVector> Vertices;
-    Vertices.Add(FVector(0, 0, 50)); // 顶部
-    Vertices.Add(FVector(50, 0, 0)); // 右前
-    Vertices.Add(FVector(0, 50, 0)); // 左后
-    Vertices.Add(FVector(-50, 0, 0)); // 左前
-    Vertices.Add(FVector(0, -50, 0)); // 右后
-    Vertices.Add(FVector(0, 0, -50)); // 底部
+    PrimaryComponentTick.bCanEverTick = false;
+}
 
-    TArray<FIntVector4> Elements;
-    // 上半部
-    Elements.Add(FIntVector4(0, 1, 2, 5));
-    Elements.Add(FIntVector4(0, 2, 3, 5));
-    Elements.Add(FIntVector4(0, 3, 4, 5));
-    Elements.Add(FIntVector4(0, 4, 1, 5));
+void UFleshDemo::BeginPlay()
+{
+    Super::BeginPlay();
+    CreateSimpleFlesh();
+}
 
-    // 2. 创建 FleshCollection
-    Chaos::FFleshCollection* DemoCollection = Chaos::FFleshCollection::NewFleshCollection(
-        Vertices,
-        Elements,
-        true,
-        false,
-        false
+void UFleshDemo::CreateSimpleFlesh()
+{
+    // 1. 程序化生成一个径向四面体网格
+    TArray<FIntVector4> TetElements;
+    TArray<FVector> TetVertices;
+    RadialTetMesh(
+        0.25,   // InnerRadius
+        0.5,    // OuterRadius
+        1.0,    // Height
+        3,      // RadialSample
+        6,      // AngularSample
+        3,      // VerticalSample
+        0.05,   // BulgeDistance
+        TetElements,
+        TetVertices
     );
 
-    if (!DemoCollection)
+    // 2. 提取表面三角形
+    TArray<FIntVector3> SurfaceElements;
+    ChaosFlesh::GetSurfaceElements(TetElements, SurfaceElements, false);
+
+    // 3. 创建 FleshCollection
+    FFleshCollection* RawFlesh = FFleshCollection::NewFleshCollection(
+        TetVertices, SurfaceElements, TetElements
+    );
+
+    if (!RawFlesh)
     {
-        UE_LOG(LogChaosFlesh, Error, TEXT("创建 FleshCollection 失败"));
+        UE_LOG(LogFleshDemo, Error, TEXT("Failed to create FleshCollection"));
         return;
     }
 
-    // 3. 使用 Facade 检查
-    Chaos::FFleshCollectionFacade Facade(*DemoCollection);
-    UE_LOG(LogChaosFlesh, Log, TEXT("--- FleshCollection 创建成功 ---"));
-    UE_LOG(LogChaosFlesh, Log, TEXT("有效性检查: %s"), Facade.IsValid() ? TEXT("通过") : TEXT("失败"));
-    UE_LOG(LogChaosFlesh, Log, TEXT("顶点数: %d"), Facade.NumVertices());
-    UE_LOG(LogChaosFlesh, Log, TEXT("面数: %d"), Facade.NumFaces());
-    UE_LOG(LogChaosFlesh, Log, TEXT("几何体数: %d"), Facade.NumGeometry());
+    FleshData = TUniquePtr<FFleshCollection>(RawFlesh);
 
-    // 4. 可以在此处将 DemoCollection 传递给物理模拟系统或渲染器
+    // 4. 通过 Facade 验证数据
+    Chaos::FFleshCollectionFacade Facade(*FleshData);
 
-    // 注意：实际使用中，FleshCollection 的生命周期管理需要根据上下文决定（如由资产或组件持有）。
-    // 在此演示中，我们创建后仅用于检查，不进行销毁。
+    UE_LOG(LogFleshDemo, Log, TEXT("Flesh created: %d vertices, %d faces, %d geometry"),
+        Facade.NumVertices(),
+        Facade.NumFaces(),
+        Facade.NumGeometry()
+    );
+
+    if (Facade.IsTetrahedronValid())
+    {
+        UE_LOG(LogFleshDemo, Log, TEXT("Tetrahedral data is valid"));
+    }
+
+    // 5. 获取组件空间顶点用于后续处理
+    TArray<FVector3f> ComponentSpaceVerts;
+    Facade.ComponentSpaceVertices(ComponentSpaceVerts);
+    UE_LOG(LogFleshDemo, Log, TEXT("Component space vertices: %d"),
+        ComponentSpaceVerts.Num());
 }
 ```
 
 ## 模块依赖
 
-要使用 `ChaosFlesh` 模块，你的项目模块需要在 `Build.cs` 中添加以下依赖：
+由于 Build.cs 未提供详细内容，以下基于源码推断的依赖关系：
 
 | 模块 | 用途 |
 |---|---|
-| `Chaos` | Chaos 物理引擎核心模块 |
-| `ChaosSolverEngine` | Chaos 求解器引擎 |
-| `GeometryCollectionEngine` | 几何集合引擎，`FFleshCollection` 的基类 `FGeometryCollection` 所在模块 |
-| `ChaosFlesh` | （目标模块本身） |
-| `GeometryCollectionCore` | 几何集合核心数据类型 |
-
-*（注：已省略 Core, CoreUObject, Engine 等几乎每个插件都依赖的常见模块）*
+| `Chaos` | Chaos 物理引擎核心（FChaosArchive 等） |
+| `GeometryCollectionEngine` | 几何体集合基础（FGeometryCollection 基类） |
+| `GeometryCollectionCore` | 几何体集合核心数据结构 |
+| `ChaosSolverEngine` | Chaos 求解器 |
 
 ## 维护状态
 
@@ -239,22 +342,28 @@ void FFleshDemo::CreateAndInspectFlesh()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下，双精度常量截断为浮点数产生的编译警告。 |
-| 2026-05-12 | `981bc9da` | Dataflow: | Dataflow（数据流）相关更新。 |
-| 2026-05-12 | `4bb4d4eb` | Flesh : fiber field generation node clean up | 清理了用于生成纤维场的 Dataflow 节点。 |
-| 2026-05-12 | `3ee54b1a` | PR #13147: Fix NumMaskBuffer assignment from OffsetsBuffer to MaskBuffer | 修复从 OffsetsBuffer 到 MaskBuffer 的 NumMaskBuffer 赋值错误。 |
-| 2026-05-12 | `563a0190` | Flesh : deprecate StaticMesh property from the flesh asset | 废弃了 Flesh 资产上的 StaticMesh 属性。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度截断为单精度的编译警告 |
+| 2026-05-12 | `981bc9da` | Dataflow: | Dataflow 相关更新 |
+| 2026-05-12 | `4bb4d4eb` | Flesh : fiber field generation node clean up | 纤维场生成节点代码清理 |
+| 2026-05-12 | `3ee54b1a` | PR #13147: Fix NumMaskBuffer assignment from OffsetsBuffer to MaskBuffer | 修复 MaskBuffer 的 NumMaskBuffer 赋值问题 |
+| 2026-05-12 | `563a0190` | Flesh : deprecate StaticMesh property from the flesh asset | 废弃 Flesh 资产中的 StaticMesh 属性 |
 
 ### 维护评价
 
-- **创建时间**：约 4 年前（2022-03-26）。
-- **最近更新频率**：近期（2026-05月）有连续的提交，说明仍在积极开发中。
-- **维护状态**：**活跃维护中**。从最近的提交记录看，团队正在持续修复问题、清理代码、重构节点（如废弃旧属性）并集成 Dataflow 系统。
-- **已知问题/限制**：该插件仍标记为 `Experimental`（实验性）且 `EnabledByDefault=false`，表明其 API 和功能可能尚未稳定，不建议用于生产环境。需要手动在插件设置中启用。
-- **推荐**：如果你是 UE 物理开发的研究者或需要早期探索 Chaos 软体模拟，可以启用并研究。对于商业项目，建议等待其转为正式支持或评估其他成熟方案。
+- **状态**：🟢 活跃维护中
+- **创建时间**：2022 年 3 月，至今约 4 年
+- **更新频率**：非常活跃，最近一次更新仅在 1 天前（2026-05-13），多为功能改进和 Bug 修复
+- **实验性标记**：仍标记为 `IsExperimentalVersion: true`，API 可能在未来版本中发生变化
+- **已知注意事项**：
+  - 需要手动启用（`EnabledByDefault: false`）
+  - 正在废弃 StaticMesh 属性，转向新的资产格式
+  - 属于 Chaos 物理生态的一部分，需要 Chaos 模块支持
+- **推荐使用**：适合需要软体物理模拟的项目。由于仍为实验性版本，**生产环境使用需谨慎**，建议关注 API 变更。适合研究原型和实验性项目。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosFlesh)
-- 官方文档：（无）
-- 测试用例：（当前分析未提供具体测试文件路径）
+- 官方文档：无
+- [FleshCollection 源码](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Experimental/ChaosFlesh/Source/ChaosFlesh/Public/ChaosFlesh/FleshCollection.h)
+- [TetrahedralCollection 源码](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Experimental/ChaosFlesh/Source/ChaosFlesh/Public/ChaosFlesh/TetrahedralCollection.h)
+- [Meshing 工具源码](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Experimental/ChaosFlesh/Source/ChaosFlesh/Public/Meshing/ChaosFleshRadialMeshing.h)

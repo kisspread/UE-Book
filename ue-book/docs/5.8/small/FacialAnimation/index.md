@@ -16,29 +16,22 @@
 
 ## 用途
 
-该插件提供 **批量导入面部动画曲线数据并绑定到音频资产** 的功能。它解决了以下问题：
+该插件解决面部动画数据的批量导入问题。它能将 FBX 文件中的面部动画曲线（Morph Target 曲线）导入为 Curve Table 资产，并将这些曲线数据打包到 SoundWave 资产中，实现面部动画与音频的精确同步播放。
 
-- **FBX 面部动画曲线批量导入**：将 FBX 文件中的面部动画曲线数据（如表情混合变形权重曲线）批量导入为 UE 的 Curve Table 资产
-- **曲线与音频同步**：将导入的面部动画曲线表（Curve Table）整合到 SoundWave 资产中，实现口型动画与音频的精确同步
-- **Curve Table 编辑器增强**：扩展了 Curve Table 编辑器，支持以曲线视图（而非纯表格）方式可视化展示，并正确处理稀疏关键帧
-
-该插件还提供了 `ICurveSourceInterface` 接口和 `AudioCurveSourceComponent`，使得任何实现了曲线源接口的组件/Actor 都可以驱动面部动画曲线，音频组件内置了预卷延迟（约 0.4 秒）以确保嘴部在音频播放前就已张开。
+插件基于 `ICurveSourceInterface` 接口体系工作，允许任何实现了该接口的组件或 Actor 驱动面部曲线。它还包含一个特殊的音频组件，能处理音频播放前的预卷延迟（约 0.4 秒），确保嘴型动画在音频播放前就已就位。
 
 ## 使用场景
 
-- 你有一个使用 **Faceware / Dynamixyz / Hype** 等工具导出的 FBX 面部动画表演数据 → 用此插件批量导入
-- 你正在制作需要**口型同步（Lip Sync）**的对话/过场动画 → 用此插件将面部曲线与音频 Waveform 绑定
-- 你需要一次性处理**大量面部表演文件**（数十到数百个）→ 用批量导入功能而非逐个手动导入
-- 你有自定义的曲线驱动源（如实时面捕组件） → 实现 `ICurveSourceInterface` 接口来驱动面部动画
+- 你有一批 FBX 面部动画文件和对应的音频文件，需要批量导入到 UE 中 → 使用批量导入功能
+- 你需要将面部动画曲线与 SoundWave 绑定，通过动画蓝图驱动 Morph Target → 使用曲线到音频的打包功能
+- 你在 Persona 编辑器中预览面部动画与音频的同步效果 → 使用 Persona 中的音频预览功能
 
 ## 模块列表
 
 | 模块 | 类型 | 说明 |
 |---|---|---|
-| [`FacialAnimation`](FacialAnimation.md) | Runtime | 核心运行时模块：曲线源接口、音频曲线组件、Curve Table 数据类型 |
-| [`FacialAnimationEditor`](FacialAnimationEditor.md) | Editor | 编辑器模块：FBX 批量导入器、曲线表编辑器增强、Persona 音频预览集成 |
-
-> 各模块的详细 API、蓝图节点和 C++ 用法请参见对应子模块文档。
+| `FacialAnimation` | Runtime | 核心运行时模块，提供曲线数据、音频组件和曲线源接口 |
+| `FacialAnimationEditor` | Editor | 编辑器模块，提供批量导入工具和 Curve Table 编辑器增强 |
 
 ## 维护状态
 
@@ -46,26 +39,20 @@
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2025-07-10 | `abb369e2` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. | 为源文件添加 UE_INLINE_GENERATED_CPP_BY_NAME 宏（引擎级批量重构） |
-| 2025-04-23 | `6ae57335` | Used UnrealGame build target to find and convert all files to have dllstorage on methods/staticvar i | 引擎级符号导出规范化（DLL 导出声明） |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎级插件批量变更（内容未明确） |
-| 2022-11-03 | `fa90b399` | Added includes for future change. This changelist only contains added #include and a couple of empty | 预添加头文件包含，为未来重构做准备 |
-| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 将内置插件的厂商链接更新为 HTTPS |
+| 2025-07-10 | `abb369e2` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. | 添加 UE_INLINE_GENERATED_CPP_BY_NAME 宏，构建系统维护性更新 |
+| 2025-04-23 | `6ae57335` | Used UnrealGame build target to find and convert all files to have dllstorage on methods/staticvar | 批量修改 DLL 导出宏，编译兼容性维护 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件目录的批量维护提交 |
+| 2022-11-03 | `fa90b399` | Added includes for future change. This changelist only contains added #include and a couple of empty | 预添加头文件引用，为未来编译变更做准备 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新插件内的链接为 HTTPS 安全协议 |
 
 ### 维护评价
 
-⚠️ **该插件自 2016 年创建后基本未进行功能性更新。** 近 9 年的提交记录中没有任何实质性功能改进或 bug 修复，全部为引擎级批量维护性变更（宏添加、符号导出、头文件规范化等）。
+该插件自 2016 年创建以来从未有过功能性更新。所有近期提交均为编译宏、导出符号、头文件引用等机械性维护工作，没有新功能或 bug 修复。插件一直标记为 `IsBetaVersion=true`（实验性），说明 Epic 从未将其视为正式功能。
 
-**关键风险**：
-- `IsBetaVersion=true`，从未毕业为正式版本
-- 仍标记为**实验性**，Epic 可能在任何版本中移除
-- 无官方文档、无 Marketplace 页面、无支持链接
-- 首次提交中的大量 `#jira` 引用表明这是 Epic 内部项目管线的一部分，可能已转向其他方案
-
-**建议**：仅作为参考或临时使用，不建议将其作为长期生产管线的核心依赖。如果需要面部动画与音频同步功能，考虑评估社区方案或 Epic 可能在未来推出的正式解决方案。
+**⚠️ 警告：该插件已超过 9 年未有实质性功能更新，且始终处于实验性状态。建议谨慎使用，考虑自行实现面部动画导入管道。**
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/FacialAnimation)
-- 无官方文档
-- 无已知测试用例目录
+- [运行时模块文档](FacialAnimation.md)
+- [编辑器模块文档](FacialAnimationEditor.md)

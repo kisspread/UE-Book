@@ -1,4 +1,4 @@
-# Editor System Configuration Assistant
+# Editor Sys Config Assistant
 
 > Editor utility for offering system configuration suggestions
 
@@ -7,7 +7,7 @@
 | 中文名 | 编辑器系统配置助手 |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（Slate UI 界面资源） |
+| 包含内容 | ✅ 有（内容资源） |
 | 模块 | `EditorSysConfigAssistant` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2023-10-19 |
@@ -16,189 +16,126 @@
 
 ## 用途
 
-这个插件用于在 UE5 编辑器启动时检测操作系统级别的配置问题，并向开发者提供建议以优化开发体验。
+EditorSysConfigAssistant 是一个**编辑器子系统插件**，用于检测 Windows 系统级配置是否对 UE5 开发体验最优，并在发现问题时向用户展示建议和一键修复按钮。
 
-它解决的核心问题是：某些操作系统默认设置会严重影响 Unreal 项目的文件 I/O 性能，但开发者通常不知道需要调整这些设置。插件通过 **ModularFeature** 架构设计，允许以插件形式注册系统检查项，每个检查项会扫描系统配置并报告潜在问题。当前实现的两个检查项均针对 **Windows/NTFS** 文件系统：
+当前内置了两项 Windows NTFS 文件系统检查：
 
-1. **USN Journal（更新序列号日志）**：NTFS 的变更日志功能，启用后可加速文件监控和资产扫描
-2. **Last Access Time（最后访问时间戳）**：NTFS 默认记录文件最后访问时间，禁用此功能可减少磁盘写入、提升 I/O 性能
+1. **USN Journal** — 检查 NTFS 卷的 USN 日志是否已启用（UE5 的文件监视依赖此功能）
+2. **Last Access Time** — 检查 NTFS 的"最后访问时间"更新是否已禁用（关闭此项可减少不必要的磁盘写入，提升 I/O 性能）
 
-检测到问题后，插件会通过编辑器通知系统提示用户，支持一键自动修复（含提权操作和重启提示）。
+该插件采用**模块化特性（Modular Feature）** 架构，其他插件可以注册自定义的 `IEditorSysConfigFeature` 检查项，扩展系统配置建议的范围。检测到问题后，会在编辑器中弹出通知，用户可以一键应用修复，部分修复需要管理员权限或系统重启。
 
 ## 使用场景
 
-- 你在 Windows 上使用 UE5 进行大型项目开发，编辑器启动缓慢或文件操作卡顿 → 启用此插件检测系统配置瓶颈
-- 你的团队需要统一开发环境配置，确保 NTFS 设置优化到位 → 使用此插件自动检测和修复
-- 你想扩展自定义的系统检查项（如虚拟内存、磁盘空间等）→ 实现 `IEditorSysConfigFeature` 接口并注册为 ModularFeature
+- 你在 Windows 上使用 UE5 开发，希望获得最佳 I/O 性能 → 启用此插件自动检测并修复 NTFS 配置
+- 你正在开发一个需要检查编辑器环境配置的工具插件 → 注册 `IEditorSysConfigFeature` 来添加自定义检查项
+- 你希望通过编辑器通知系统引导用户完成系统级配置优化 → 使用 `AddIssue` + 通知机制
 
 ## 蓝图用法
 
-此插件主要为编辑器内部子系统，不暴露蓝图节点。所有交互通过编辑器 UI 和 C++ API 完成。
-
-### 核心节点
-
-该插件无蓝图可调用函数。功能通过编辑器子系统 API 在 C++ 层面使用。
+此插件**不提供蓝图 API**。所有功能均通过 C++ 接口和模块化特性系统暴露。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "EditorSysConfigAssistantModule.h"
 #include "EditorSysConfigAssistantSubsystem.h"
+#include "EditorSysConfigAssistantModule.h"
 #include "EditorSysConfigFeature.h"
 #include "EditorSysConfigIssue.h"
 ```
 
-### 基本用法
-
-#### 获取模块接口并显示配置助手 UI
+### 基本用法 — 显示配置助手 UI
 
 ```cpp
-// 检查是否可以显示配置助手
-IEditorSysConfigAssistantModule& Module = IEditorSysConfigAssistantModule::Get();
-if (Module.CanShowSystemConfigAssistant())
+// 获取模块接口并显示系统配置助手
+if (IEditorSysConfigAssistantModule::Get().CanShowSystemConfigAssistant())
 {
-    Module.ShowSystemConfigAssistant();
+    IEditorSysConfigAssistantModule::Get().ShowSystemConfigAssistant();
 }
 ```
 
-#### 获取子系统并查询/处理问题
+### 基本用法 — 添加自定义检查项
 
 ```cpp
-// 从编辑器子系统获取实例
+// 在任何线程中向子系统报告一个系统配置问题
 UEditorSysConfigAssistantSubsystem* Subsystem = GEditor->GetEditorSubsystem<UEditorSysConfigAssistantSubsystem>();
 if (Subsystem)
 {
-    // 获取当前所有系统配置问题（线程安全）
-    TArray<TSharedPtr<FEditorSysConfigIssue>> Issues = Subsystem->GetIssues();
-
-    for (const TSharedPtr<FEditorSysConfigIssue>& Issue : Issues)
-    {
-        // 获取问题关联的功能特性
-        IEditorSysConfigFeature* Feature = Issue->Feature;
-        
-        // 获取显示信息
-        FText Name = Feature->GetDisplayName();
-        FText Description = Feature->GetDisplayDescription();
-        
-        // 检查修复标志
-        EEditorSysConfigFeatureRemediationFlags Flags = Feature->GetRemediationFlags();
-        bool bHasAutoRemediation = EnumHasAnyFlags(Flags, EEditorSysConfigFeatureRemediationFlags::HasAutomatedRemediation);
-        bool bRequiresElevation = EnumHasAnyFlags(Flags, EEditorSysConfigFeatureRemediationFlags::RequiresElevation);
-    }
-
-    // 应用修复（必须在游戏线程调用）
-    Subsystem->ApplySysConfigChanges(Issues);
+    FEditorSysConfigIssue Issue;
+    Issue.Feature = this;  // IEditorSysConfigFeature* 指针
+    Issue.Severity = EEditorSysConfigIssueSeverity::High;
+    
+    Subsystem->AddIssue(Issue);
 }
 ```
 
-### 进阶用法
-
-#### 自定义系统检查特性（通过 ModularFeature 注册）
+### 进阶用法 — 实现自定义系统配置检查
 
 ```cpp
-#include "EditorSysConfigFeature.h"
-
-class FMyCustomSysConfigFeature : public IEditorSysConfigFeature
+// 自定义系统配置检查特性
+class FMySysConfigFeature : public IEditorSysConfigFeature
 {
 public:
-    virtual ~FMyCustomSysConfigFeature() = default;
-
     virtual FText GetDisplayName() const override
     {
-        return FText::FromString(TEXT("自定义系统检查"));
+        return NSLOCTEXT("MyConfig", "DisplayName", "My Custom Check");
     }
-
+    
     virtual FText GetDisplayDescription() const override
     {
-        return FText::FromString(TEXT("检查自定义系统配置项"));
+        return NSLOCTEXT("MyConfig", "Desc", "Checks a custom system setting.");
     }
-
+    
     virtual FGuid GetVersion() const override
     {
         return FGuid(0x12345678, 0x1234, 0x1234, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0);
     }
-
+    
     virtual EEditorSysConfigFeatureRemediationFlags GetRemediationFlags() const override
     {
         return EEditorSysConfigFeatureRemediationFlags::HasAutomatedRemediation;
     }
-
+    
     // 从游戏线程调用，鼓励异步执行
     virtual void StartSystemCheck() override
     {
-        Async(EAsyncExecution::Thread, [this]()
-        {
-            // 异步执行系统检查
-            bool bHasIssue = CheckMySystemConfig();
-            
-            if (bHasIssue)
-            {
-                // 通过子系统添加问题（线程安全）
-                UEditorSysConfigAssistantSubsystem* Subsystem = 
-                    GEditor->GetEditorSubsystem<UEditorSysConfigAssistantSubsystem>();
-                if (Subsystem)
-                {
-                    FEditorSysConfigIssue NewIssue;
-                    NewIssue.Feature = this;
-                    NewIssue.Severity = EEditorSysConfigIssueSeverity::Medium;
-                    Subsystem->AddIssue(NewIssue);
-                }
-            }
-        });
+        // 异步检查系统配置...
+        // 检查完成后，如果发现问题，调用 Subsystem->AddIssue()
     }
-
+    
     // 从游戏线程调用，必须同步完成
     virtual void ApplySysConfigChanges(TArray<FString>& OutElevatedCommands) override
     {
-        // 执行修复操作
-        // 如需提权命令，添加到 OutElevatedCommands
-        OutElevatedCommands.Add(TEXT("reg add \"HKLM\\...\" /v SomeValue /t REG_DWORD /d 1 /f"));
-    }
-
-private:
-    bool CheckMySystemConfig()
-    {
-        // 实现你的检查逻辑
-        return false;
+        // 应用系统配置更改
+        // 如果需要管理员权限，将命令追加到 OutElevatedCommands
     }
 };
+```
 
-// 注册为 ModularFeature（在模块 StartupModule 中）
-void FMyModule::StartupModule()
-{
-    static FMyCustomSysConfigFeature Feature;
-    IModularFeatures::Get().RegisterModularFeature(
-        IEditorSysConfigFeature::GetModularFeatureName(), 
-        &Feature
-    );
-}
+注册特性到 Modular Feature 系统：
 
-// 反注册（在模块 ShutdownModule 中）
-void FMyModule::ShutdownModule()
-{
-    IModularFeatures::Get().UnregisterModularFeature(
-        IEditorSysConfigFeature::GetModularFeatureName(), 
-        &Feature
-    );
-}
+```cpp
+// 在模块启动时注册
+FMySysConfigFeature* MyFeature = new FMySysConfigFeature();
+IModularFeatures::Get().RegisterModularFeature(IEditorSysConfigFeature::GetModularFeatureName(), MyFeature);
 ```
 
 ## Demo 示例
 
-一个完整的自定义系统配置检查特性的最小实现：
+完整的自定义系统配置检查特性实现：
 
+**MySysConfigFeature.h**
 ```cpp
-// MySysConfigFeature.h
 #pragma once
 
 #include "EditorSysConfigFeature.h"
 
-class FMyDiskSpaceCheckFeature : public IEditorSysConfigFeature
+class FMySysConfigFeature : public IEditorSysConfigFeature
 {
 public:
-    virtual ~FMyDiskSpaceCheckFeature() = default;
+    virtual ~FMySysConfigFeature() = default;
 
     // IEditorSysConfigFeature 接口
     virtual FText GetDisplayName() const override;
@@ -207,71 +144,59 @@ public:
     virtual EEditorSysConfigFeatureRemediationFlags GetRemediationFlags() const override;
     virtual void StartSystemCheck() override;
     virtual void ApplySysConfigChanges(TArray<FString>& OutElevatedCommands) override;
-
-private:
-    double AvailableSpaceGB = 0.0;
 };
 ```
 
+**MySysConfigFeature.cpp**
 ```cpp
-// MySysConfigFeature.cpp
 #include "MySysConfigFeature.h"
 #include "EditorSysConfigAssistantSubsystem.h"
-#include "Editor.h"
 
-FText FMyDiskSpaceCheckFeature::GetDisplayName() const
+FText FMySysConfigFeature::GetDisplayName() const
 {
-    return FText::FromString(TEXT("磁盘空间不足"));
+    return NSLOCTEXT("MySysConfig", "Name", "Example System Check");
 }
 
-FText FMyDiskSpaceCheckFeature::GetDisplayDescription() const
+FText FMySysConfigFeature::GetDisplayDescription() const
 {
-    return FText::FromString(TEXT("系统盘可用空间低于 10GB，可能影响编辑器性能和编译缓存。"));
+    return NSLOCTEXT("MySysConfig", "Description", 
+        "This is an example system configuration check that demonstrates how to extend the assistant.");
 }
 
-FGuid FMyDiskSpaceCheckFeature::GetVersion() const
+FGuid FMySysConfigFeature::GetVersion() const
 {
     return FGuid(0xAABBCCDD, 0xEEFF, 0x0011, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99);
 }
 
-EEditorSysConfigFeatureRemediationFlags FMyDiskSpaceCheckFeature::GetRemediationFlags() const
+EEditorSysConfigFeatureRemediationFlags FMySysConfigFeature::GetRemediationFlags() const
 {
-    return EEditorSysConfigFeatureRemediationFlags::NoAutomatedRemediation;
+    return EEditorSysConfigFeatureRemediationFlags::HasAutomatedRemediation;
 }
 
-void FMyDiskSpaceCheckFeature::StartSystemCheck()
+void FMySysConfigFeature::StartSystemCheck()
 {
-    // 异步检查磁盘空间
-    Async(EAsyncExecution::ThreadPool, [this]()
+    // 执行系统检查（可异步）
+    bool bSystemNeedsChange = /* 检查逻辑 */;
+    
+    if (bSystemNeedsChange)
     {
-        const FString RootPath = FPaths::ProjectDir();
-        const int64 TotalBytes = 0;
-        const int64 FreeBytes = 0;
-
-        // 使用平台文件系统 API 获取可用空间
-        FPlatformFileManager::Get().GetPlatformFile().GetFileSystemStats().GetFreeSpaceOnDisk(
-            *RootPath, FreeBytes, TotalBytes);
-        AvailableSpaceGB = static_cast<double>(FreeBytes) / (1024.0 * 1024.0 * 1024.0);
-
-        if (AvailableSpaceGB < 10.0)
+        UEditorSysConfigAssistantSubsystem* Subsystem = 
+            GEditor->GetEditorSubsystem<UEditorSysConfigAssistantSubsystem>();
+        
+        if (Subsystem)
         {
-            UEditorSysConfigAssistantSubsystem* Subsystem =
-                GEditor->GetEditorSubsystem<UEditorSysConfigAssistantSubsystem>();
-            if (Subsystem)
-            {
-                FEditorSysConfigIssue Issue;
-                Issue.Feature = this;
-                Issue.Severity = EEditorSysConfigIssueSeverity::Low;
-                Subsystem->AddIssue(Issue);
-            }
+            FEditorSysConfigIssue Issue;
+            Issue.Feature = this;
+            Issue.Severity = EEditorSysConfigIssueSeverity::Medium;
+            Subsystem->AddIssue(Issue);
         }
-    });
+    }
 }
 
-void FMyDiskSpaceCheckFeature::ApplySysConfigChanges(TArray<FString>& OutElevatedCommands)
+void FMySysConfigFeature::ApplySysConfigChanges(TArray<FString>& OutElevatedCommands)
 {
-    // 此检查无法自动修复，仅提示用户
-    UE_LOG(LogTemp, Warning, TEXT("请手动清理磁盘空间，当前可用: %.1f GB"), AvailableSpaceGB);
+    // 应用修复逻辑
+    // 如需管理员权限，追加到 OutElevatedCommands
 }
 ```
 
@@ -279,34 +204,27 @@ void FMyDiskSpaceCheckFeature::ApplySysConfigChanges(TArray<FString>& OutElevate
 
 无特殊依赖（仅标准 Core/Engine/Slate 等）。
 
+该插件依赖的标准模块包括：`Core`, `CoreUObject`, `Engine`, `Slate`, `SlateCore`, `InputCore`, `EditorSubsystem`, `ModularFeatures`, `ToolWidgets`, `StatusBar`。
+
 ## 维护状态
 
 ### 近期更新
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2025-10-30 | `0990a715` | Ran UnrealCodeFixup on Fortnite to change all ~Type() {} to instead be ~Type() = default | 批量将析构函数改为 `= default` 语法 |
-| 2025-07-12 | `3413adf5` | Ran UnrealCodeFixup to fix dll storage | 修复 DLL 导出/存储修饰符问题 |
-| 2025-04-14 | `9cd415be` | Fix parsing of NtfsDisableLastAccessUpdate for EditorSysConfigAssistant | 修复 NTFS 最后访问时间设置的注册表解析逻辑 |
-| 2025-04-08 | `3ec80dc5` | [EditorSysConfigAssistant] | 编辑器系统配置助手相关更新 |
-| 2025-04-08 | `c8a6ed6e` | [EditorSysConfigAssistant] | 编辑器系统配置助手相关更新 |
+| 2025-10-30 | `0990a715` | Ran UnrealCodeFixup on Fortnite to change all ~Type() {} to instead be ~Type() = default | 代码风格修复，析构函数改用 `= default` |
+| 2025-07-12 | `3413adf5` | Ran UnrealCodeFixup to fix dll storage | 修复 DLL 导出宏标记 |
+| 2025-04-14 | `9cd415be` | Fix parsing of NtfsDisableLastAccessUpdate for EditorSysConfigAssistant | 修复 NTFS 最后访问时间配置的解析逻辑 |
+| 2025-04-08 | `3ec80dc5` | [EditorSysConfigAssistant] | 编辑器系统配置助手更新 |
+| 2025-04-08 | `c8a6ed6e` | [EditorSysConfigAssistant] | 编辑器系统配置助手更新 |
 
 ### 维护评价
 
-该插件创建于 2023 年 10 月，标记为**实验性**且**默认未启用**。代码规模较小（17 个源文件），当前仅实现两个 Windows 特定的系统检查项（USN Journal 和 Last Access Time）。
-
-**积极方面**：
-- 架构设计良好，通过 ModularFeature 接口可扩展自定义检查项
-- 2025 年 4 月有实质性 bug 修复（NTFS 设置解析问题），说明仍在被使用和维护
-- 子系统使用读写锁保证线程安全
-
-**注意事项**：
-- ⚠️ 标记为实验性功能（`IsExperimentalVersion=true`），不建议在生产环境中依赖
-- ⚠️ 默认未启用（`EnabledByDefault=false`），需手动在插件设置中开启
-- 当前仅支持 Windows 平台（NTFS 文件系统特性）
-- 无官方文档，蓝图 API 不可用
-
-**总体建议**：适合在 Windows 开发环境中作为性能优化辅助工具使用。如需扩展系统检查项，可参考其 ModularFeature 架构实现自定义特性。不建议将核心逻辑依赖于此插件。
+- **状态**：实验性插件，标记为 `IsExperimentalVersion=true`，默认未启用
+- **年龄**：创建于 2023 年 10 月，约 2 年历史
+- **活跃度**：2025 年 4 月有实质性功能更新和 bug 修复，之后为自动化代码整理，整体处于维护中状态
+- **已知限制**：当前仅包含 Windows 平台的 NTFS 文件系统检查（USN Journal 和 Last Access Time），其他平台暂无实现
+- **推荐**：如果你在 Windows 上开发并希望自动优化系统配置，可以启用此插件。由于仍是实验性功能，建议关注后续更新
 
 ## 相关链接
 

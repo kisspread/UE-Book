@@ -4,7 +4,7 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | Chaos布料 |
+| 中文名 | 混沌布料 |
 | 分类 | Physics |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
@@ -16,199 +16,213 @@
 
 ## 用途
 
-Chaos Cloth 是一个基于 Chaos 物理系统的完整布料模拟解决方案。它取代了旧版的布料系统，提供高性能、高保真的物理模拟，用于模拟角色服装、旗帜、织物、柔性物体等。其核心是将布料网格的顶点视为带有物理属性的粒子，通过求解一系列约束（如边、弯曲、气压等）来模拟布料的动态行为，并能与游戏世界中的碰撞体进行精确交互。它支持复杂的材质属性（如各向异性、弯曲刚度）、先进的风力和空气动力学模型、精确的自碰撞检测、以及与动画驱动的平滑集成。
+ChaosCloth 是 UE5 基于 Chaos 物理引擎的布料模拟系统，用于在运行时和编辑器中模拟角色衣物、旗帜、窗帘等柔性物体的物理行为。它是 UE5 中 PhysX 布料的替代方案，使用 Chaos 求解器提供更精确的布料物理效果。
+
+该插件解决的核心问题：
+- **布料物理模拟**：基于粒子的 XPBD（Extended Position-Based Dynamics）和力约束（Force-based）双求解器架构，模拟布料的拉伸、弯曲、面积保持等物理约束
+- **碰撞检测**：支持布料与角色骨骼碰撞体（Capsule/Sphere/SkinnedTriangleMesh）的交互，以及布料自碰撞
+- **环境交互**：空气动力学模型（阻力/升力）、压力、浮力（与 Buoyancy/Water 插件联动）、重力
+- **动画驱动**：通过 AnimDrive 约束将布料引导回动画姿态，支持权重贴图逐点控制
+
+该插件从 **Experimental** 阶段毕业（2024-03-22），并合并了独立的 ChaosClothEditor 模块，标志着 Chaos 布料已成为 UE5 的正式布料物理方案。
 
 ## 使用场景
 
--   你需要为游戏角色制作逼真的动态服装、披风或布料装饰。
--   你需要模拟旗帜、横幅、窗帘等环境中的织物。
--   你需要实现与布料物理相关的游戏机制，如可被风吹动的旗帜或可被拉扯的织物。
--   你需要记录和回放布料模拟状态，用于动画制作或游戏机制。
+- 你有一个带布料模拟的角色（披风、裙子、衣摆）→ 在 SkeletalMesh 的 Clothing 面板中配置 Chaos Cloth 资产
+- 你需要运行时动态调整布料参数（风力、刚度、重力）→ 通过 `UChaosClothingInteractor` 蓝图接口控制
+- 你需要布料与水面交互（浮力）→ 启用 Buoyancy/Water 依赖，配置浮力参数
+- 你需要高精度的布料与复杂碰撞体交互（蒙皮三角网格碰撞）→ 使用 `FClothComplexColliders` 与 `SkinnedTriangleMesh`
+- 你需要缓存布料动画用于回放 → 通过 ChaosCaching 系统与 `FSkeletalMeshCacheAdapter` 集成
 
 ## 蓝图用法
 
-Chaos Cloth 主要通过 `UChaosClothingInteractor` 和 `UChaosClothingSimulationInteractor` 这两个蓝图交互器对象来控制。通常通过 `GetClothingSimulationInteractor` 节点从绑定了布料资产的骨骼网格组件上获取。
+ChaosCloth 的蓝图接口主要通过 `UChaosClothingInteractor` 暴露，可在运行时动态控制布料模拟参数。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SetMaterial` | 设置边、弯曲、面积等约束的整体刚度参数（支持 Low/High 权重图插值）。 | `UChaosClothingInteractor` |
-| `SetMaterialLinear` | 线性设置边、弯曲、面积刚度（等同于将 Low 和 High 设置为相同值）。 | `UChaosClothingInteractor` |
-| `SetLongRangeAttachment` | 设置长程附着约束（防止布料过度拉伸）的刚度和缩放比例。 | `UChaosClothingInteractor` |
-| `SetCollision` | 设置碰撞厚度、摩擦系数、连续碰撞检测(CCD)以及自碰撞厚度。 | `UChaosClothingInteractor` |
-| `SetBackstop` | 启用或禁用后挡板约束（防止布料穿透身体）。 | `UChaosClothingInteractor` |
-| `SetDamping` | 设置全局和局部阻尼系数。局部阻尼用于减少抖动而不影响整体运动。 | `UChaosClothingInteractor` |
-| `SetWind` | 设置空气动力学参数（阻力、升力、空气密度）和风速。支持内外表面差异化设置。 | `UChaosClothingInteractor` |
-| `SetGravity` | 设置重力缩放或覆盖重力向量。 | `UChaosClothingInteractor` |
-| `SetAnimDrive` | 设置动画驱动的刚度和阻尼，用于将布料拉向目标动画姿势。 | `UChaosClothingInteractor` |
-| `SetVelocityScale` | 设置从参考骨骼传递到布料模拟空间的线性/角速度缩放比例。 | `UChaosClothingInteractor` |
-| `ResetAndTeleport` | 立即重置或传送布料状态。用于角色瞬移或状态剧变时。 | `UChaosClothingInteractor` |
-| `SetNumIterations` | 设置求解器迭代次数（影响约束精度和性能）。 | `UChaosClothingSimulationInteractor` |
-| `SetNumSubsteps` | 设置模拟子步数（提高碰撞精度）。 | `UChaosClothingSimulationInteractor` |
+| `SetMaterialLinear` | 设置线性材质参数（边刚度、弯曲刚度、面积刚度） | `UChaosClothingInteractor` |
+| `SetMaterial` | 设置材质参数（Low/High 加权值，配合权重贴图） | `UChaosClothingInteractor` |
+| `SetMaterialBuckling` | 设置屈曲参数（屈曲比率和屈曲刚度） | `UChaosClothingInteractor` |
+| `SetLongRangeAttachmentLinear` | 设置线性远距离附着（系绳刚度/缩放） | `UChaosClothingInteractor` |
+| `SetLongRangeAttachment` | 设置远距离附着（Low/High 加权值） | `UChaosClothingInteractor` |
+| `SetCollision` | 设置碰撞参数（碰撞厚度、摩擦系数、CCD、自碰撞厚度） | `UChaosClothingInteractor` |
+| `SetBackstop` | 启用/禁用背挡约束 | `UChaosClothingInteractor` |
+| `SetDamping` | 设置阻尼系数（全局阻尼和局部阻尼） | `UChaosClothingInteractor` |
+| `SetWind` | 设置风力参数（阻力/升力/气密度/风速/外阻力/外升力） | `UChaosClothingInteractor` |
+| `SetPressure` | 设置压力参数 | `UChaosClothingInteractor` |
+| `SetGravity` | 设置重力（缩放/覆盖/覆盖向量） | `UChaosClothingInteractor` |
+| `SetAnimDriveLinear` | 设置线性动画驱动刚度 | `UChaosClothingInteractor` |
+| `SetAnimDrive` | 设置动画驱动（刚度/阻尼 Low/High） | `UChaosClothingInteractor` |
+| `SetVelocityScale` | 设置速度缩放（线性/角速度/虚构角缩放） | `UChaosClothingInteractor` |
+| `SetVelocityClamps` | 设置速度钳制（线性/加速度/角速度/角加速度上限） | `UChaosClothingInteractor` |
+| `ResetAndTeleport` | 重置布料模拟或传送重置 | `UChaosClothingInteractor` |
+
+**求解器级别节点**（`UChaosClothingSimulationInteractor`）：
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `SetNumIterations` | 设置求解器迭代次数 | `UChaosClothingSimulationInteractor` |
+| `SetMaxNumIterations` | 设置最大迭代次数 | `UChaosClothingSimulationInteractor` |
+| `SetNumSubsteps` | 设置子步数 | `UChaosClothingSimulationInteractor` |
+| `EnableGravityOverride` | 启用全局重力覆盖 | `UChaosClothingSimulationInteractor` |
+| `DisableGravityOverride` | 禁用全局重力覆盖 | `UChaosClothingSimulationInteractor` |
 
 ### 使用示例（蓝图描述）
 
-1.  获取交互器：从拥有布料资产的 `SkeletalMeshComponent` 获取 `ClothingSimulationInteractor`，并将其转换为 `UChaosClothingSimulationInteractor`。
-2.  获取布料交互器：对于每个应用了布料资产的网格部分，从 `UChaosClothingSimulationInteractor` 调用 `GetClothingInteractor`，并将其转换为 `UChaosClothingInteractor`。
-3.  调整参数：在事件图表中（如 `BeginPlay` 或 `Tick`），调用上述蓝图节点。例如，调用 `SetWind` 节点，传入 `Drag = (0.07, 0.5)`, `Lift = (0.035, 0.5)`, `WindVelocity = (100, 0, 0)` 来让风从 X 方向吹来。
-4.  同步：所有对交互器的调用都是异步的，会在下一个物理模拟帧开始时应用。确保在需要的时间点之前设置好参数。
+1. **获取布料交互器**：从 `SkeletalMeshComponent` 获取 `ClothingSimulationInteractor`，将其转换为 `UChaosClothingSimulationInteractor`，再通过 `CreateClothingInteractor()` 获取特定布料的 `UChaosClothingInteractor`
+2. **设置风力**：调用 `SetWind` 节点，设置 `Drag = (0.07, 0.5)`、`Lift = (0.07, 0.5)`、`AirDensity = 1.225e-6`、`WindVelocity = (100, 0, 0)`，让布料在 X 方向受风吹
+3. **运行时调节刚度**：调用 `SetMaterialLinear`，将 `EdgeStiffness` 和 `BendingStiffness` 从 1.0 降低到 0.3，模拟更软的布料材质
+4. **传送重置**：在角色瞬移时调用 `ResetAndTeleport(bReset=false, bTeleport=true)` 防止布料拉伸
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "ChaosCloth/ChaosClothingSimulationInteractor.h"
+#include "ChaosCloth/ChaosClothingSimulation.h"
 #include "ChaosCloth/ChaosClothConfig.h"
+#include "ChaosCloth/ChaosClothingSimulationInteractor.h"
 ```
 
 ### 基本用法
 
-创建和配置布料模拟的关键类是 `FClothingSimulationCloth`，但更常见的用法是通过交互器或修改配置对象。以下示例展示了如何通过 C++ 代码动态获取并修改布料配置。
+通过布料配置类 `UChaosClothConfig` 设置物理参数（来源：`Public/ChaosCloth/ChaosClothConfig.h`）：
 
 ```cpp
-// 假设你有一个 USkeletalMeshComponent* SkeletalMeshComp
-// 1. 获取布料模拟交互器
-if (UChaosClothingSimulationInteractor* SimulationInteractor = Cast<UChaosClothingSimulationInteractor>(
-        SkeletalMeshComp->GetClothingSimulationInteractor()))
-{
-    // 2. 获取特定网格部分的布料交互器
-    if (UChaosClothingInteractor* ClothInteractor = Cast<UChaosClothingInteractor>(
-            SimulationInteractor->GetClothingInteractor(/*LODIndex*/ 0, /*SectionIndex*/ 0)))
-    {
-        // 3. 通过交互器设置运行时参数
-        ClothInteractor->SetWind(
-            FVector2D(0.07f, 0.5f), // Drag (Low, High)
-            FVector2D(0.035f, 0.5f), // Lift (Low, High)
-            1.225e-6f, // Air Density
-            FVector(100.f, 0.f, 0.f) // Wind Velocity
-        );
-        ClothInteractor->SetCollision(1.0f, 0.8f, false, 2.0f); // Thickness, Friction, CCD, SelfThickness
-    }
-}
+// 获取布料配置对象（通常在 Clothing Asset 中自动创建）
+UChaosClothConfig* ClothConfig = /* 从 ClothingAsset 获取 */;
+
+// 设置质量模式为密度
+ClothConfig->MassMode = EClothMassMode::Density;
+ClothConfig->Density = 0.35f;  // 棉布: 0.2, 丝绸: 0.1, 牛仔: 0.4
+
+// 设置材质属性
+ClothConfig->EdgeStiffnessWeighted = { 1.f, 1.f };    // 边刚度 (Low, High)
+ClothConfig->BendingStiffnessWeighted = { 0.5f, 0.5f }; // 弯曲刚度
+ClothConfig->AreaStiffnessWeighted = { 1.f, 1.f };     // 面积刚度
+
+// 设置碰撞
+ClothConfig->CollisionThickness = 1.0f;
+ClothConfig->FrictionCoefficient = 0.8f;
+ClothConfig->bUseCCD = false;
+ClothConfig->bUseSelfCollisions = false;
+
+// 设置环境参数
+ClothConfig->DampingCoefficient = 0.01f;
+ClothConfig->GravityScale = 1.f;
+ClothConfig->Drag = { 0.035f, 1.f };
+ClothConfig->Lift = { 0.035f, 1.f };
 ```
-*（来源：基于 `UChaosClothingInteractor` 的公共接口设计）*
 
 ### 进阶用法
 
-要进行更底层的配置，需要访问和修改布料资产的 `UChaosClothConfig` 对象。这通常在资产编辑器或通过代码初始化时进行。
+使用 `UChaosClothingInteractor` 在运行时动态控制布料（来源：`Public/ChaosCloth/ChaosClothingSimulationInteractor.h`）：
 
 ```cpp
-#include "ChaosCloth/ChaosClothConfig.h"
+// 从 SkeletalMeshComponent 获取布料模拟交互器
+USkeletalMeshComponent* SKComp = /* 获取组件 */;
+UClothingSimulationInteractor* BaseInteractor = SKComp->GetClothingInteractor();
+UChaosClothingSimulationInteractor* SimInteractor = Cast<UChaosClothingSimulationInteractor>(BaseInteractor);
 
-// 假设你从某个 UClothingAsset 或相关对象获得了 UChaosClothConfig* ClothConfig
-if (UChaosClothConfig* ChaosConfig = Cast<UChaosClothConfig>(ClothConfig))
+if (SimInteractor)
 {
-    // 修改基础材质属性
-    ChaosConfig->EdgeStiffnessWeighted.Low = 0.5f;
-    ChaosConfig->BendingStiffnessWeighted.Low = 0.2f;
+    // 设置求解器参数
+    SimInteractor->SetNumIterations(3);
+    SimInteractor->SetMaxNumIterations(10);
+    SimInteractor->SetNumSubsteps(1);
     
-    // 启用并配置自碰撞
-    ChaosConfig->bUseSelfCollisions = true;
-    ChaosConfig->SelfCollisionThickness = 3.0f;
-    ChaosConfig->SelfCollisionFriction = 0.5f;
+    // 获取特定布料的交互器
+    UClothingInteractor* ClothInteractor = SimInteractor->CreateClothingInteractor();
+    UChaosClothInteractor* ChaosInteractor = Cast<UChaosClothInteractor>(ClothInteractor);
     
-    // 配置环境参数
-    ChaosConfig->DampingCoefficient = 0.05f;
-    ChaosConfig->Drag.Low = 0.05f;
-    ChaosConfig->Lift.Low = 0.02f;
+    if (ChaosInteractor)
+    {
+        // 动态设置材质参数
+        ChaosInteractor->SetMaterial(
+            FVector2D(0.8f, 0.8f),   // EdgeStiffness (Low, High)
+            FVector2D(0.5f, 0.5f),   // BendingStiffness
+            FVector2D(1.f, 1.f)      // AreaStiffness
+        );
+        
+        // 设置风力效果
+        ChaosInteractor->SetWind(
+            FVector2D(0.07f, 0.5f),  // Drag
+            FVector2D(0.07f, 0.5f),  // Lift
+            1.225e-6f,               // AirDensity
+            FVector(200.f, 0.f, 0.f), // WindVelocity
+            FVector2D(0.07f, 0.5f),  // OuterDrag
+            FVector2D(0.07f, 0.5f)   // OuterLift
+        );
+        
+        // 设置速度缩放
+        ChaosInteractor->SetVelocityScale(
+            FVector(0.75f, 0.75f, 0.75f),  // LinearVelocityScale
+            0.75f,                           // AngularVelocityScale
+            1.f                              // FictitiousAngularScale
+        );
+    }
     
-    // 使用密度模式设置质量
-    ChaosConfig->MassMode = EClothMassMode::Density;
-    ChaosConfig->Density = 0.4f; // 类似牛仔布的密度
-    
-    // 需要调用 PostEditChange 或重新初始化资产使更改生效
+    // 设置重力覆盖
+    SimInteractor->EnableGravityOverride(FVector(0.f, 0.f, -490.f)); // 半重力
 }
 ```
-*（来源：基于 `UChaosClothConfig` 头文件中定义的 UPROPERTY 属性）*
 
-## Demo 示例
+### 约束系统用法
 
-一个最小的 C++ 示例，展示如何在运行时通过交互器控制布料。
+直接使用底层约束系统（来源：`Public/ChaosCloth/ChaosClothConstraints.h`）：
 
 ```cpp
-// MyChaosClothActor.h
-#pragma once
+Chaos::FClothConstraints Constraints;
 
-#include "GameFramework/Actor.h"
-#include "MyChaosClothActor.generated.h"
+// 初始化为力约束求解器模式
+Constraints.Initialize(
+    Evolution,           // Softs::FEvolution*
+    PerSolverField,      // FPerSolverFieldSystem*
+    InterpolatedPositions,
+    InterpolatedNormals,
+    AnimationVelocities,
+    Normals,
+    LastSubframeCollisionTransformsCCD,
+    CollisionParticleCollided,
+    CollisionContacts,
+    CollisionNormals,
+    CollisionPhis,
+    ParticleRangeId
+);
 
-class UChaosClothingInteractor;
-class USkeletalMeshComponent;
-
-UCLASS()
-class AMyChaosClothActor : public AActor
-{
-    GENERATED_BODY()
-
-public:
-    AMyChaosClothActor();
-
-protected:
-    virtual void BeginPlay() override;
-
-public:
-    UPROPERTY(VisibleAnywhere)
-    USkeletalMeshComponent* SkeletalMeshComp;
-
-    // 存储布料交互器的引用
-    UPROPERTY()
-    UChaosClothingInteractor* ClothInteractor;
-
-    // 风力参数，可在编辑器调整
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Cloth Wind")
-    FVector WindVelocity = FVector(50.f, 0.f, 0.f);
-};
-
-// MyChaosClothActor.cpp
-#include "MyChaosClothActor.h"
-#include "ChaosCloth/ChaosClothingSimulationInteractor.h"
-#include "Components/SkeletalMeshComponent.h"
-
-AMyChaosClothActor::AMyChaosClothActor()
-{
-    PrimaryActorTick.bCanEverTick = true;
-    SkeletalMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMesh"));
-    RootComponent = SkeletalMeshComp;
-}
-
-void AMyChaosClothActor::BeginPlay()
-{
-    Super::BeginPlay();
-
-    // 获取并缓存布料交互器
-    if (UChaosClothingSimulationInteractor* SimInteractor = Cast<UChaosClothingSimulationInteractor>(
-            SkeletalMeshComp->GetClothingSimulationInteractor()))
-    {
-        // 注意：实际中需要根据布料资产的LOD和Section索引来获取正确的交互器
-        ClothInteractor = Cast<UChaosClothingInteractor>(
-            SimInteractor->GetClothingInteractor(0, 0));
-    }
-
-    if (ClothInteractor)
-    {
-        // 设置一些初始参数
-        ClothInteractor->SetDamping(0.01f, 0.0f);
-        ClothInteractor->SetCollision(1.0f, 0.8f, false, 2.0f);
-    }
-}
-
-// 在 Tick 中或通过其他逻辑调用
-// ClothInteractor->SetWind(FVector2D(0.07f, 0.5f), FVector2D(0.035f, 0.5f), 1.225e-6f, WindVelocity);
+// 添加约束规则（从属性集合读取配置）
+Constraints.AddRules(
+    ConfigProperties,    // Softs::FCollectionPropertyConstFacade&
+    TriangleMesh,        // FTriangleMesh&
+    PatternData,         // FClothingPatternData*
+    WeightMaps,          // TMap<FString, TConstArrayView<FRealSingle>>&
+    VertexSets,          // 顶点选择集
+    FaceSets,            // 面选择集
+    FaceIntMaps,         // 面整数映射
+    Tethers,             // 系绳连接数据
+    MeshScale,           // 网格缩放
+    bEnabled,            // 是否启用
+    ComplexColliders,    // 复杂碰撞体
+    ManagedArrayCollection,  // 管理数组集合
+    AccessoryMeshes      // 附件网格
+);
 ```
 
 ## 模块依赖
 
-从 `Build.cs` 和 `.uplugin` 的 `Plugins` 字段分析，使用此插件需要确保以下模块或插件可用：
+从插件依赖（`.uplugin` 的 Plugins 字段）和源码结构推断：
 
-| 模块/插件 | 用途 |
+| 模块 | 用途 |
 |---|---|
-| `ChaosCaching` | 用于记录和回放布料模拟状态，实现动画缓存功能。 |
-| `Buoyancy` | 提供浮力场支持，使布料能与水体交互。 |
-| `Water` | 提供水体系统，与 Buoyancy 配合使用。 |
+| `ChaosCaching` | 布料模拟数据缓存（录制/回放），通过 `FSkeletalMeshCacheAdapter` 集成 |
+| `Buoyancy` | 浮力场支持，布料可与浮力场交互（`FBuoyancyField`） |
+| `Water` | 水体交互，配合浮力系统实现布料水面交互 |
 
-你的项目模块如果需要直接使用 Chaos Cloth 的 C++ 接口，应在 `Build.cs` 中添加 `ChaosCloth` 依赖。
+特殊依赖：无特殊依赖（仅标准 Core/Engine/Slate 等 + Chaos 物理引擎内部模块）
+
+> **注意**：该插件深度依赖 Chaos 物理引擎内部模块（`FEvolution`/`FPBDEvolution`、`FPerSolverFieldSystem`、各种 Softs 约束类等），这些是引擎内部 API，不在 Public 模块依赖中列出。普通使用者无需直接调用这些底层接口。
 
 ## 维护状态
 
@@ -216,17 +230,26 @@ void AMyChaosClothActor::BeginPlay()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了严格浮点模式下双精度常量截断为浮点数导致的警告。 |
-| 2026-04-23 | `85f3a947` | [Chaos Cloth] Clamp SolverLOD in ChaosClothingSimulationSolver to prevent out of bound crash when so | 限制 `ChaosClothingSimulationSolver` 中的 `SolverLOD`，防止越界崩溃。 |
-| 2026-04-21 | `9322be91` | Minor cloth debug draw improvements: | 布料调试绘制的小改进。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 `UE_LOG` 迁移至 `UE_LOGF`。 |
-| 2026-03-31 | `0d36bcd0` | Chaos Cloth : | Chaos Cloth 相关提交（信息不完整）。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为 float 的编译警告 |
+| 2026-04-23 | `85f3a947` | [Chaos Cloth] Clamp SolverLOD in ChaosClothingSimulationSolver to prevent out of bound crash when so | 钳制 SolverLOD 防止求解器越界崩溃 |
+| 2026-04-21 | `9322be91` | Minor cloth debug draw improvements: | 布料调试绘制的小幅改进 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移为 UE_LOGF 新日志宏 |
+| 2026-03-31 | `0d36bcd0` | Chaos Cloth : | 混沌布料更新 |
 
 ### 维护评价
 
-Chaos Cloth 是 UE5 中布料模拟的核心系统，自2024年3月从实验性状态移出并集成后，一直保持活跃维护。从git记录看，直至2026年5月仍有功能性更新和缺陷修复（如内存越界、浮点精度问题），表明该模块处于**活跃维护**状态。它是官方推荐的布料模拟解决方案，取代了旧版系统，**推荐在新项目中使用**。需要注意，该插件默认启用，但需要配合正确的物理资产设置和布料绘制工作流才能发挥最佳效果。
+**活跃维护** ✅
+
+- **创建时间**：2024-03-22（约 2 年前，从 Experimental 毕业）
+- **更新频率**：最近 2 个月内有 5 次提交，更新频繁
+- **更新内容**：包含 bug 修复（越界崩溃、编译警告）、API 改进（日志宏迁移）、调试工具改进
+- **维护状态**：由 Epic Games 官方团队维护，属于核心物理系统的一部分
+- **成熟度**：已从 Experimental 毕业，作为 UE5 默认布料方案（`EnabledByDefault: true`）
+- **已知限制**：部分 API 标记为 Deprecated（如旧版 Wind 模型、MultiRes 约束），建议使用新版 API
+
+**推荐使用**：该插件是 UE5 布料模拟的官方推荐方案，活跃维护中，可放心用于生产环境。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosCloth)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/chaos-cloth-in-unreal-engine/)（UE官方文档 - Chaos Cloth）
+- [官方文档]()（无）

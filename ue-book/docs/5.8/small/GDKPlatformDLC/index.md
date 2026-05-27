@@ -1,55 +1,63 @@
-# DLC Support for GDK
+# GDK Platform DLC
 
-> Experimental support for DLC in GDK.（照抄，不翻译）
+> Experimental support for DLC in GDK.
 
 | 属性 | 值 |
 |---|---|
+| 中文名 | GDK平台DLC支持 |
 | 分类 | Platform |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
-| 模块 | `GDKPlatformDLC` (Runtime) |
+| 模块 | `GDKPlatformDLC` (RuntimeNoCommandlet) |
 | 实验性 | ⚠️ 是 |
-| 创建时间 | 2026-04-17 |
+| 创建时间 | 2026-03-06 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Microsoft/GDKPlatformDLC) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Microsoft/GDKPlatformDLC) | |
 
 ## 用途
 
-该插件为微软 GDK 平台（主要用于 Xbox 开发）提供了 DLC（可下载内容）的完整管理功能。它实现了 `IPlatformDLC` 接口，专门处理在 GDK 环境下 DLC 的下载、安装、挂载、卸载、权限验证以及状态查询等操作。其存在是为了解决在 Xbox 平台上集成 DLC 功能时，需要与微软的 XPackage 和 XStore 等原生 API 进行交互的复杂性，为开发者提供一个统一的、引擎级别的抽象层。
+本插件是 Unreal Engine 抽象的 `PlatformDLC` 插件在**微软 GDK 平台**（主要用于 Xbox 和 Windows）上的一个具体实现。它封装了微软的 `XPackage` 和 `XStore` API，为开发者提供了一套完整的、符合平台规范的 DLC 管理功能。其存在意义在于，将底层的、平台特定的商店和包管理操作，统一到引擎通用的 `IPlatformDLC` 接口之下，使得游戏逻辑可以跨平台处理 DLC。
+
+具体而言，它解决了以下问题：
+1.  **平台原生集成**：直接与 Microsoft Store 和 Xbox Live 的服务对接，处理 DLC 的查询、购买授权、下载和安装。
+2.  **包生命周期管理**：管理 DLC 包的挂载 (`Mount`) 和卸载 (`Unmount`)，使其内容对游戏引擎可见。
+3.  **插件化支持**：支持将 DLC 实现为 UE 插件，并自动处理插件的加载和资产注册表的合并。
+4.  **状态与进度追踪**：提供统一的 API 来查询 DLC 的授权状态、下载状态、安装大小等，并支持下载和安装进度的异步监控。
 
 ## 使用场景
 
-- 你正在使用 GDK（Game Development Kit）为 Xbox 平台开发游戏，并且需要销售和管理可下载内容（如新地图、角色、剧情章节）。
-- 你需要一个标准化的接口来检查玩家是否拥有某个 DLC 的权限、触发 DLC 的下载与安装、以及将已安装的 DLC 内容挂载到游戏文件系统中。
-- 你的游戏需要支持 DLC 的动态加载和卸载，并希望获得统一的状态通知。
+-   你的游戏计划在 **Xbox** 或通过 **Microsoft Store** 在 Windows 上发行，并且需要销售可下载内容（DLC），如剧情扩展包、新地图、角色皮肤等。
+-   你需要一个稳定的、经过平台认证的方式去集成 Microsoft Store 的购买流程和内容交付网络。
+-   你希望将 DLC 内容打包为独立的 UE 插件，以实现更好的模块化和内容管理。
 
 ## 蓝图用法
 
-该插件主要提供 C++ 接口，蓝图可访问的功能通过 `IPlatformDLC` 接口暴露。核心操作通过获取平台 DLC 管理器实例来完成。
+本插件的核心功能主要通过引擎标准的 `IPlatformDLC` 接口暴露。以下蓝图节点通常可通过 `Platform DLC` 类访问。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `GetPlatformDLC` | 获取当前 GDK 平台的 DLC 管理器实例 | `IGDKPlatformDLCModule` |
-| `HasEntitlement` | 检查玩家是否拥有指定 DLC 的权限 | `IPlatformDLC` |
-| `IsMounted` | 检查指定 DLC 是否已挂载到文件系统 | `IPlatformDLC` |
-| `IsDownloaded` | 检查指定 DLC 是否已下载完成 | `IPlatformDLC` |
-| `Download` | 触发指定 DLC 的下载 | `IPlatformDLC` |
-| `Mount` | 挂载已下载的 DLC 内容 | `IPlatformDLC` |
-| `Unmount` | 卸载已挂载的 DLC 内容 | `IPlatformDLC` |
-| `GetAllDLCNames` | 获取所有已知的 DLC 名称列表 | `IPlatformDLC` |
-| `GetMountedDLCNames` | 获取所有已挂载的 DLC 名称列表 | `IPlatformDLC` |
-| `GetDownloadSize` | 获取 DLC 的下载大小和安装大小 | `IPlatformDLC` |
-| `GetRootDirectory` | 获取已挂载 DLC 内容的根目录路径 | `IPlatformDLC` |
-| `OnNotification` | 获取 DLC 状态变化（如下载完成、挂载成功）的委托 | `IPlatformDLC` |
+| `HasEntitlement` | 检查玩家是否拥有指定DLC的授权（已购买）。 | `IPlatformDLC` |
+| `GetState` | 获取指定DLC的当前状态（如：未下载、已购买、已挂载等）。 | `IPlatformDLC` |
+| `Mount` | 挂载一个已下载的DLC，使其内容对引擎可用。 | `IPlatformDLC` |
+| `Unmount` | 卸载一个已挂载的DLC。 | `IPlatformDLC` |
+| `Download` | 发起一个DLC的下载和安装流程。 | `IPlatformDLC` |
+| `GetAllDLCNames` | 获取所有已知的DLC名称列表。 | `IPlatformDLC` |
+| `GetMountedDLCNames` | 获取当前已挂载的DLC名称列表。 | `IPlatformDLC` |
+| `GetStoreId` | 获取指定DLC在Microsoft Store中的SKU ID。 | `IPlatformDLC` |
+| `SetStoreUser` | 设置用于商店操作（如购买）的平台用户。 | `IPlatformDLC` |
 
 ### 使用示例（蓝图描述）
 
-1.  **获取 DLC 管理器**：在游戏初始化时，调用 `IGDKPlatformDLCModule::Get().GetPlatformDLC()` 获取 `IPlatformDLC` 接口的共享指针，并将其存储为变量。
-2.  **检查并下载 DLC**：当玩家尝试访问某个 DLC 内容时，首先调用 `HasEntitlement` 检查权限。如果拥有权限但未下载，调用 `Download` 启动下载。
-3.  **监听状态变化**：绑定 `OnNotification` 委托。在委托回调中，根据通知类型（`ENotification`）和成功状态（`bSuccess`）更新 UI，例如显示下载进度或提示“DLC 已就绪”。
-4.  **挂载 DLC**：在收到下载成功的通知后，调用 `Mount` 将 DLC 内容挂载。挂载成功后，即可通过 `GetRootDirectory` 获取路径来加载 DLC 中的资产。
+1.  **检查并挂载已购买的DLC**：
+    *   获取 `Platform DLC` 引用。
+    *   调用 `GetAllDLCNames` 节点获取一个DLC列表。
+    *   遍历列表，对每个DLC名称调用 `HasEntitlement` 节点。
+    *   如果返回 `true`（已拥有），则调用 `GetState` 节点检查状态。
+    *   如果状态不是“已挂载”，则调用 `Mount` 节点进行挂载。
+2.  **触发购买流程**：
+    *   调用 `Download` 节点并传入目标DLC的名称。插件内部会自动处理查询、弹出商店购买界面、下载和挂载的完整异步流程。
 
 ## C++ 用法
 
@@ -61,240 +69,170 @@
 
 ### 基本用法
 
-获取 DLC 管理器并查询状态。
-（来源：基于 `IGDKPlatformDLCModule` 和 `IPlatformDLC` 接口定义）
+通过模块接口获取平台 DLC 实例，并调用其核心功能。
+（来源：基于 `GDKPlatformDLCModule.h` 和 `PlatformDLC` 公共接口的通用用法）
 
 ```cpp
 // 获取 GDK 平台 DLC 模块实例
 IGDKPlatformDLCModule& GDKDLCModule = IGDKPlatformDLCModule::Get();
 
-// 获取平台 DLC 管理器
+// 通过模块获取实际的 DLC 管理器
 TSharedPtr<IPlatformDLC> PlatformDLC = GDKDLCModule.GetPlatformDLC();
 
 if (PlatformDLC.IsValid())
 {
-    // 检查玩家是否拥有名为 “MapPack1” 的 DLC
-    FName DLCName = FName(TEXT("MapPack1"));
-    bool bHasEntitlement = PlatformDLC->HasEntitlement(DLCName);
+    // 示例：查询名为 “MyCoolHat” 的DLC状态
+    FName DLCName = FName(TEXT("MyCoolHat"));
+    IPlatformDLC::EState State = PlatformDLC->GetState(DLCName);
 
-    if (bHasEntitlement)
+    // 检查是否已拥有
+    if (PlatformDLC->HasEntitlement(DLCName))
     {
-        // 检查是否已下载
-        bool bIsDownloaded = PlatformDLC->IsDownloaded(DLCName);
-        if (!bIsDownloaded)
+        // 如果未挂载，则尝试挂载
+        if (State != IPlatformDLC::EState::Mounted)
         {
-            // 触发下载
-            PlatformDLC->Download(DLCName);
+            PlatformDLC->Mount(DLCName);
         }
-        else
-        {
-            // 检查是否已挂载
-            bool bIsMounted = PlatformDLC->IsMounted(DLCName);
-            if (!bIsMounted)
-            {
-                // 挂载 DLC
-                PlatformDLC->Mount(DLCName);
-            }
-            // 获取挂载后的根目录
-            FString DLCRootPath = PlatformDLC->GetRootDirectory(DLCName);
-            UE_LOG(LogTemp, Log, TEXT("DLC %s mounted at: %s"), *DLCName.ToString(), *DLCRootPath);
-        }
+    }
+    else
+    {
+        // 触发购买和下载流程
+        PlatformDLC->Download(DLCName);
     }
 }
 ```
 
 ### 进阶用法
 
-监听 DLC 事件并处理状态变化。
-（来源：基于 `FOnDLCNotification` 委托和 `ENotification` 枚举）
+设置商店用户以处理多账户情况，这对于家庭主机上的用户切换至关重要。
 
 ```cpp
-// 假设在某个 Actor 或 GameInstance 中
-void AMyGameMode::BeginPlay()
-{
-    Super::BeginPlay();
+// 假设你已通过其他方式获得了有效的 FPlatformUserId
+FPlatformUserId UserId = /* ... */;
 
-    if (TSharedPtr<IPlatformDLC> PlatformDLC = IGDKPlatformDLCModule::Get().GetPlatformDLC())
-    {
-        // 绑定通知委托
-        PlatformDLC->OnNotification().AddUObject(this, &AMyGameMode::HandleDLCNotification);
-    }
-}
-
-void AMyGameMode::HandleDLCNotification(FName DLCName, ENotification Notification, bool bSuccess)
+if (PlatformDLC.IsValid())
 {
-    switch (Notification)
-    {
-    case ENotification::DownloadComplete:
-        if (bSuccess)
-        {
-            UE_LOG(LogTemp, Log, TEXT("DLC %s download completed."), *DLCName.ToString());
-            // 下载完成后自动挂载
-            if (TSharedPtr<IPlatformDLC> PlatformDLC = IGDKPlatformDLCModule::Get().GetPlatformDLC())
-            {
-                PlatformDLC->Mount(DLCName);
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("DLC %s download failed."), *DLCName.ToString());
-        }
-        break;
-    case ENotification::MountComplete:
-        if (bSuccess)
-        {
-            UE_LOG(LogTemp, Log, TEXT("DLC %s mounted successfully."), *DLCName.ToString());
-            // 通知游戏逻辑 DLC 已就绪
-            OnDLCReady(DLCName);
-        }
-        break;
-    // 处理其他通知类型...
-    }
+    // 设置当前用于商店操作的用户
+    PlatformDLC->SetStoreUser(UserId);
+
+    // 之后所有的购买、授权查询都将以此用户身份进行
+    PlatformDLC->Download(FName(TEXT("SeasonPass")));
 }
 ```
 
 ## Demo 示例
 
-一个最小化的示例，展示如何在 Actor 中初始化和使用 GDK DLC 管理器。
+一个最小的示例，展示如何在 Actor 中集成对 GDK 平台 DLC 的基本查询。
 
-**MyDLCManagerActor.h**
+**DLCManagerActor.h**
 ```cpp
-// MyDLCManagerActor.h
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "PlatformDLC.h" // 引入 IPlatformDLC 接口
-#include "MyDLCManagerActor.generated.h"
+#include "PlatformDLC.h" // 引入平台DLC接口
+#include "DLCManagerActor.generated.h"
 
 UCLASS()
-class MYGAME_API AMyDLCManagerActor : public AActor
+class ADLCManagerActor : public AActor
 {
     GENERATED_BODY()
 
 public:
-    AMyDLCManagerActor();
+    ADLCManagerActor();
+
+    virtual void BeginPlay() override;
+
+    UFUNCTION(BlueprintCallable, Category = "DLC")
+    void QueryDLCStatus();
 
 protected:
-    virtual void BeginPlay() override;
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-private:
-    // DLC 管理器实例
-    TSharedPtr<IPlatformDLC> PlatformDLC;
-
-    // 通知回调
-    void OnDLCNotification(FName DLCName, ENotification Notification, bool bSuccess);
-
-    // 示例：尝试获取并挂载一个 DLC
-    void TryMountDLC(FName DLCName);
+    UPROPERTY(VisibleAnywhere, Category = "DLC")
+    TScriptInterface<IPlatformDLC> PlatformDLC;
 };
 ```
 
-**MyDLCManagerActor.cpp**
+**DLCManagerActor.cpp**
 ```cpp
-// MyDLCManagerActor.cpp
-#include "MyDLCManagerActor.h"
+#include "DLCManagerActor.h"
 #include "GDKPlatformDLCModule.h"
 
-AMyDLCManagerActor::AMyDLCManagerActor()
+ADLCManagerActor::ADLCManagerActor()
 {
     PrimaryActorTick.bCanEverTick = false;
 }
 
-void AMyDLCManagerActor::BeginPlay()
+void ADLCManagerActor::BeginPlay()
 {
     Super::BeginPlay();
 
-    // 1. 获取 GDK 平台 DLC 模块
-    IGDKPlatformDLCModule& GDKModule = IGDKPlatformDLCModule::Get();
-
-    // 2. 获取平台 DLC 管理器
-    PlatformDLC = GDKModule.GetPlatformDLC();
-
-    if (PlatformDLC.IsValid())
+    // 在 BeginPlay 中尝试获取平台 DLC 实例
+    // 注意：在 GDK 平台插件显式加载前，这可能会返回空接口
+    if (IGDKPlatformDLCModule::IsAvailable())
     {
-        // 3. 绑定状态通知
-        PlatformDLC->OnNotification().AddUObject(this, &AMyDLCManagerActor::OnDLCNotification);
-
-        // 4. 示例：尝试挂载名为 “BonusContent” 的 DLC
-        TryMountDLC(FName(TEXT("BonusContent")));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Failed to get GDK Platform DLC manager."));
+        IGDKPlatformDLCModule& Module = IGDKPlatformDLCModule::Get();
+        TSharedPtr<IPlatformDLC> DLC = Module.GetPlatformDLC();
+        PlatformDLC = DLC;
     }
 }
 
-void AMyDLCManagerActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void ADLCManagerActor::QueryDLCStatus()
 {
-    if (PlatformDLC.IsValid())
+    if (!PlatformDLC)
     {
-        PlatformDLC->OnNotification().RemoveAll(this);
+        UE_LOG(LogTemp, Warning, TEXT("PlatformDLC is not available."));
+        return;
     }
-    Super::EndPlay(EndPlayReason);
-}
 
-void AMyDLCManagerActor::OnDLCNotification(FName DLCName, ENotification Notification, bool bSuccess)
-{
-    if (Notification == ENotification::MountComplete && bSuccess)
+    TArray<FName> AllDLC = PlatformDLC->GetAllDLCNames();
+    for (const FName& Name : AllDLC)
     {
-        UE_LOG(LogTemp, Log, TEXT("DLC '%s' is now mounted and ready!"), *DLCName.ToString());
-        // 在这里可以加载 DLC 中的特定资产
-    }
-}
+        bool bOwned = PlatformDLC->HasEntitlement(Name);
+        IPlatformDLC::EState CurrentState = PlatformDLC->GetState(Name);
+        uint64 CurrentSize = 0, TotalSize = 0;
+        PlatformDLC->GetDownloadSize(Name, CurrentSize, TotalSize);
 
-void AMyDLCManagerActor::TryMountDLC(FName DLCName)
-{
-    if (!PlatformDLC.IsValid()) return;
-
-    if (PlatformDLC->HasEntitlement(DLCName))
-    {
-        if (PlatformDLC->IsDownloaded(DLCName))
-        {
-            if (!PlatformDLC->IsMounted(DLCName))
-            {
-                PlatformDLC->Mount(DLCName);
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Log, TEXT("DLC '%s' is not downloaded. Starting download..."), *DLCName.ToString());
-            PlatformDLC->Download(DLCName);
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("User does not have entitlement for DLC '%s'."), *DLCName.ToString());
+        UE_LOG(LogTemp, Log, TEXT("DLC: %s, Owned: %s, State: %s, Size: %llu/%llu"),
+            *Name.ToString(),
+            bOwned ? TEXT("Yes") : TEXT("No"),
+            *UEnum::GetValueAsString(CurrentState),
+            CurrentSize,
+            TotalSize);
     }
 }
 ```
 
 ## 模块依赖
 
-从 Build.cs 分析，该插件依赖以下非标准模块：
+本插件是 `PlatformDLC` 核心插件的一个平台实现，因此强依赖于它。
 
 | 模块 | 用途 |
 |---|---|
-| `PlatformDLC` | 提供跨平台的 DLC 管理抽象接口 (`IPlatformDLC`, `IPlatformDLCFactoryModule`)，是本插件实现的基础。 |
-| `GDKRuntime` | 提供 GDK 平台的运行时支持，包括与微软 XDK/Xbox 服务交互的底层功能。 |
+| `PlatformDLC` | 提供平台无关的 DLC 抽象接口 (`IPlatformDLC`, `IPlatformDLCFactoryModule`)。 |
+
+此外，本插件的构建隐式依赖于微软 GDK 的运行时库（如 `XPackage`, `XStore`），这些通过平台 SDK 和构建工具链集成，无需在游戏模块的 Build.cs 中额外声明。
 
 ## 维护状态
 
 ### 近期更新
 
-- 2026-04-24 `101f2bf3` 在插件中启用 GDK ARM64 支持（需要 2026 年 4 月版 GDK 及现代文件夹布局）。
-- 2026-04-22 `c4a59235` 当用户请求重新下载一个已在下载中的 DLC 时，将其优先级提升。
-- 2026-04-21 `9335740f` 移除了几处不必要的“是否为打包进程”检查。
-- 2026-04-20 `8e8e104d` 修复 DLC 挂载路径与资产注册表加载逻辑，以统一控制台与 PC GDK 平台的行为。
-- 2026-04-17 `6c63b6ce` 在 GDK 平台 DLC 中添加购买功能。
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-05-12 | `75d56ac2` | Add functionality to change the store user for platform DLC | 新增运行时动态切换商店用户的功能，以处理多账户场景。 |
+| 2026-05-12 | `8af8138d` | GDK platform DLC will find the next available user for store purchasing if the current user signs out | 改进用户处理逻辑：当前用户登出时，自动选择下一个可用用户进行商店购买。 |
+| 2026-05-12 | `b791ab2c` | fix potential thead safety issues | 修复了潜在的线程安全问题，提升了多线程环境下的稳定性。 |
+| 2026-05-12 | `40898050` | Add asynchronous initialization for Platform DLC | 为平台DLC添加了异步初始化流程，避免阻塞主线程。 |
+| 2026-05-01 | `9f6036e6` | Add IPlatformDLC function to query the state of a DLC. | 在公共接口中新增了查询DLC状态的功能函数。 |
 
 ### 维护评价
 
-该插件处于**活跃维护**状态。近一周内提交频繁，内容涵盖了新功能开发（ARM64支持、DLC购买）、用户体验优化（下载优先级）以及重要的平台一致性修复，表明团队正在积极迭代和完善此插件。
+-   **活跃维护**：尽管是实验性插件（`IsBetaVersion=true`，`EnabledByDefault=false`），但从近期提交记录（2026年5月）来看，正处于**非常活跃的开发与维护期**。
+-   **功能迭代**：近期提交不仅修复了线程安全等底层问题，还增加了新的公共功能（如动态切换用户、异步初始化），表明其功能正在快速完善。
+-   **实验性警告**：该插件明确标记为实验性，且默认禁用。其API和实现细节在未来版本中可能发生**不兼容的变更**。
+-   **平台限制**：目前仅支持 `Win64` 平台。对于Xbox平台的支持可能通过其他配置或插件变体实现。
+-   **推荐使用**：如果你的项目**明确且必须**集成 Microsoft Store 的 DLC 功能，并且能够接受实验性插件可能带来的稳定性和兼容性风险，那么可以启用并试用此插件。建议密切关注其版本更新日志。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/Microsoft/GDKPlatformDLC)
-- [官方文档]() （暂无）
-- [测试用例]() （插件目录内未发现标准测试文件）
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Microsoft/GDKPlatformDLC)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Microsoft/GDKPlatformDLC/Tests) (如果存在)

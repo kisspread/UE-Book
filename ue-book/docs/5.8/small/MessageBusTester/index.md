@@ -1,6 +1,6 @@
 # MessageBus Tester
 
-> Plugin to test and monitor message bus reliability
+> Plugin to test and monitor message bus reliability（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
@@ -16,140 +16,21 @@
 
 ## 用途
 
-这是一个专门用于**测试和调试 UDP 消息传输**的实验性工具插件。它并非用于生产环境，而是为 UE 开发团队和消息总线（MessageBus）的使用者提供了一套受控的测试用例，用于：
-1.  **验证可靠性**：在特定场景下测试 UDP 消息传递的端到端流程是否正确。
-2.  **性能分析**：帮助分析消息传递的延迟、吞吐量等性能指标。
-3.  **问题诊断**：当消息总线或 UDP 传输层出现异常时，可作为独立的复现和调试环境。
-4.  **API 练习**：用于“练习”（exercise）低层级的 UDP 消息传输代码，确保其按预期工作。
-
-简而言之，它是消息总线（尤其是基于 UDP 的 `UdpMessaging` 插件）的“单元测试”或“集成测试”套件。
+MessageBus Tester 是一个用于 **测试和调试 UDP 消息传输系统** 的专用工具。它并非一个面向最终用户的功能性插件，而是为引擎开发者和测试人员提供一套标准化的测试用例，用于验证底层 UDP 消息传输组件（特别是 `UdpMessaging` 插件）的可靠性、性能和正确性。它的存在是为了在开发阶段保障消息总线核心代码的健壮性，并为复杂的消息场景提供可重复的测试方案。
 
 ## 使用场景
 
-- 你是 Epic 内部或高级开发者，正在**调试或优化 UDP 消息传输**的性能或可靠性问题。
-- 你需要一个**独立的、可复现的环境**来测试消息的发送、接收、序列化和路由。
-- 你在开发基于 UE 消息总线的新功能，并希望运行一些**基准测试**。
+- **消息系统开发者**：在开发或修改 UDP 消息传输层（如 `UdpMessaging`）后，运行此插件的测试用例来验证功能、发现回归问题。
+- **性能与可靠性测试**：需要系统性地评估消息总线在压力、网络抖动或特定负载模式下的表现。
+- **通信问题调试**：当怀疑消息丢失、乱序或重复时，使用该插件提供的测试场景来隔离和复现问题。
+- **集成验证**：确保新接入的消息通道或服务能够正确地与现有消息总线框架协同工作。
 
-**注意**：此插件**仅限**在名为 `MessageBusTesterApp` 的特定程序中加载和使用，无法在普通的游戏编辑器或独立进程中启用。
+## 模块列表
 
-## 蓝图用法
-
-此插件主要设计用于 C++ 自动化测试和特定程序 (`MessageBusTesterApp`)，不提供面向游戏逻辑的蓝图节点。其核心功能通过 C++ 测试框架（如 UE 自动化测试）来调用。
-
-## C++ 用法
-
-### 头文件引入
-
-```cpp
-#include "MessageBusTesterModule.h"
-```
-
-### 基本用法
-
-此插件的核心价值在于其提供的测试用例。在 `MessageBusTesterApp` 程序或自动化测试环境中，你可以直接运行或参考这些测试用例。
-
-一个典型的消息发送测试用例示例（参考自测试文件）：
-
-```cpp
-// 来源: Engine/Plugins/Experimental/MessageBusTester/Source/MessageBusTester/Tests/MessageBusTesterTest.cpp
-
-#include "MessageEndpoint.h"
-#include "MessageEndpointBuilder.h"
-
-// 定义一个简单的消息结构体
-struct FSimpleTestMessage
-{
-    // ... 消息字段
-};
-
-// 在测试中创建消息端点并发送测试消息
-void SendTestMessage()
-{
-    // 构建一个消息端点，用于发送和接收消息
-    TSharedRef<FMessageEndpoint, ESPMode::ThreadSafe> Endpoint = FMessageEndpoint::Builder("TestEndpoint")
-        .Handling<FSimpleTestMessage>(this, &FYourTestClass::OnSimpleTestMessageReceived);
-
-    // 向特定地址发送测试消息
-    Endpoint->Publish<FSimpleTestMessage>(new FSimpleTestMessage{});
-}
-```
-
-### 进阶用法
-
-插件中的测试用例通常结合了**发送、接收、序列化检查和超时控制**，形成完整的测试场景。你可以研究 `MessageBusTester` 模块下的测试文件来了解如何构建更复杂的测试逻辑。
-
-## Demo 示例
-
-由于此插件的特殊性（限特定程序），一个可运行的最小示例更接近于编写一个自动化测试：
-
-```cpp
-// MyMessageBusTest.h
-#pragma once
-
-#include "CoreMinimal.h"
-#include "Misc/AutomationTest.h"
-#include "MessageEndpoint.h"
-
-class FMyMessageBusTest : public FAutomationTestBase
-{
-public:
-    FMyMessageBusTest(const FString& InName, const bool bInComplexTest)
-        : FAutomationTestBase(InName, bInComplexTest)
-    {
-    }
-
-    virtual uint32 GetTestFlags() const override { return EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask; }
-    virtual bool IsStressTest() const { return false; }
-    virtual uint32 GetRequiredDeviceNum() const override { return 1; }
-
-protected:
-    virtual FString GetBeautifiedTestName() const override { return "MessageBusTester.BasicSendTest"; }
-    virtual void GetTests(TArray<FString>& OutBeautifiedNames, TArray<FString>& OutTestCommands) const override
-    {
-        OutBeautifiedNames.Add(TEXT("SendAndReceive"));
-        OutTestCommands.Add(FString());
-    }
-    virtual bool RunTest(const FString& Parameters) override;
-};
-
-// MyMessageBusTest.cpp
-#include "MyMessageBusTest.h"
-#include "MessageEndpointBuilder.h"
-
-DEFINE_LATENT_AUTOMATION_COMMAND(FWaitForMessage);
-// ... (WaitForMessage 实现)
-
-bool FMyMessageBusTest::RunTest(const FString& Parameters)
-{
-    TSharedPtr<FMessageEndpoint, ESPMode::ThreadSafe> TestEndpoint;
-    TSharedPtr<FMessageEndpoint, ESPMode::ThreadSafe> SenderEndpoint;
-
-    // 接收端点
-    TestEndpoint = FMessageEndpoint::Builder("TestReceiver")
-        .Handling<FSimpleTestMessage>([&](const FSimpleTestMessage& Msg, const TSharedRef<IMessageContext, ESPMode::ThreadSafe>& Context)
-        {
-            // 收到消息，测试通过
-            TestEqual("Received correct message content", Msg.Content, ExpectedContent);
-        });
-
-    // 发送端点
-    SenderEndpoint = FMessageEndpoint::Builder("TestSender");
-
-    // 发送消息
-    SenderEndpoint->Publish<FSimpleTestMessage>(new FSimpleTestMessage{ExpectedContent});
-
-    // 等待消息被接收（使用潜伏命令）
-    ADD_LATENT_AUTOMATION_COMMAND(FWaitForMessage());
-
-    return true;
-}
-```
-
-## 模块依赖
-
-| 模块 | 用途 |
+| 模块 | 说明 |
 |---|---|
-| `UdpMessaging` | 提供基于 UDP 的底层消息传输实现，是此插件的主要测试目标。 |
+| `MessageBusTester` | 核心运行时模块，包含测试逻辑、测试用例以及与 UDP 消息传输交互的测试客户端/服务端。仅在指定的 `MessageBusTesterApp` 程序中加载。 |
+| `MessageBusTesterEditor` | 编辑器工具模块（UncookedOnly），提供在编辑器内配置、启动和监控测试的辅助功能。仅在 `MessageBusTesterApp` 中可用。 |
 
 ## 维护状态
 
@@ -157,19 +38,16 @@ bool FMyMessageBusTest::RunTest(const FString& Parameters)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏 UE_LOG 迁移至新的 UE_LOGF 格式。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从旧版 UE_LOG 迁移至新版 UE_LOGF。 |
 | 2026-01-15 | `738ab46a` | Fixed localization warnings | 修复了本地化相关的编译警告。 |
-| 2025-11-27 | `29081f24` | Fixup API macros | 修正了 API 导入/导出宏的使用。 |
-| 2025-11-20 | `f8d6103d` | Enable NDK 29 for Android, fix compilation issues | 为 Android 启用 NDK 29 并修复了相关编译问题。 |
-| 2025-11-10 | `248fda82` | Fix the statistics panel not updating with a remote client resets its UDP Messaging settings. | 修复了当远程客户端重置其 UDP 消息设置时，统计面板未更新的问题。 |
+| 2025-11-27 | `29081f24` | Fixup API macros | 修正了 API 导出宏的使用。 |
+| 2025-11-20 | `f8d6103d` | Enable NDK 29 for Android, fix compilation issues | 为 Android 启用 NDK 29 并修复相关编译问题。 |
+| 2025-11-10 | `248fda82` | Fix the statistics panel not updating with a remote client resets its UDP Messaging settings. | 修复了当远程客户端重置 UDP 消息设置时，统计面板不更新的问题。 |
 
 ### 维护评价
 
-- **实验性**：插件明确标记为 `IsBetaVersion=true`，且仅限特定程序使用，表明其处于开发和测试阶段，未来可能发生较大变化或被移除。
-- **活跃度**：从提交记录看，在创建后的半年内有多次更新，主要是编译修复、API 修正和特定问题修复，说明仍在被动维护（随引擎整体更新而更新）。
-- **推荐度**：**仅限内部测试或深度调试场景**。普通项目开发者**不建议**依赖或使用此插件。如果你需要测试自己的消息传递功能，应基于此插件的思路创建独立的测试模块。
+该插件作为 **实验性** 工具，主要用于引擎内部测试，不面向最终用户。从创建时间看是一个较新的插件（约1年）。近期更新（2026年4月）表明其仍被纳入引擎的常规维护周期中，主要进行代码现代化（日志宏迁移）和编译警告修复等基础维护工作，但没有重大的功能迭代。考虑到其“实验性”和“仅用于测试”的定位，**推荐在开发或测试消息总线时使用，但不应作为稳定API在生产环境中依赖**。其维护状态可视为 **实验性维护中**。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MessageBusTester)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MessageBusTester/Source/MessageBusTester/Tests)

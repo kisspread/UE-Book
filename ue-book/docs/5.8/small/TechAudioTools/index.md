@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 音频工具集 |
+| 中文名 | 音频技术工具集 |
 | 分类 | Audio |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
+| 包含内容 | ✅ 有（运行时功能模块、编辑器扩展） |
 | 模块 | `TechAudioTools` (Runtime), `TechAudioToolsMetaSound` (Runtime), `TechAudioToolsMetaSoundEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-04-22 |
@@ -15,22 +15,34 @@
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/TechAudioTools) | |
 
 ## 用途
-
-TechAudioTools 是一个**实验性**的音频工具集合，专为 UE5 的 **MetaSound** 系统提供扩展功能和编辑器增强。它解决的核心问题是为 MetaSound 图表提供更灵活的数据交互方式，特别是通过引入基于 **Model-View-ViewModel (MVVM)** 模式的数据字面量（Literal）视图模型，简化 MetaSound 节点的参数输入和配置流程。这使得音频设计师和技术美术能够在 MetaSound 图表中以更直观、结构化的方式操作数据，而无需编写复杂的 C++ 代码或创建大量自定义 MetaSound 节点。
+该插件是一个面向 MetaSound 系统的高级工具与扩展集合，旨在提供更强大、更灵活的音频设计与编程能力。它通过添加新的自定义节点、数据类型和编辑器工具，来解决 MetaSound 原生功能在复杂音频项目中的局限性，使音频设计师和技术美术师能以更高效、更可视化的方式构建和调试音频逻辑。
 
 ## 使用场景
+- 你需要扩展 MetaSound 的节点库，使用更专业或项目特定的音频处理节点 → 使用 `TechAudioToolsMetaSound` 提供的自定义节点。
+- 你希望在 MetaSound 编辑器中拥有更便捷的资产浏览、编辑或调试工具 → 使用 `TechAudioToolsMetaSoundEditor` 提供的编辑器扩展。
+- 你需要通过可视化的视图模型（MVVM）模式来管理音频资产的参数或配置 → 此插件依赖 `ModelViewViewModel` 插件，旨在为此类需求提供支持。
 
--   **你需要在 MetaSound 图表中处理复杂的结构化数据** → 使用 `TechAudioToolsMetaSound` 模块提供的字面量视图模型，将结构体（如向量、变换）直接暴露为易于在编辑器中配置的输入引脚。
--   **你需要为 MetaSound 开发自定义的编辑器体验** → 使用 `TechAudioToolsMetaSoundEditor` 模块来集成和扩展 MetaSound 编辑器的 UI，例如为自定义字面量类型创建专用的配置界面。
--   **你正在开发需要与 MetaSound 深度集成的音频工具或系统** → 作为 Runtime 模块，`TechAudioTools` 和 `TechAudioToolsMetaSound` 提供了在运行时与 MetaSound 图表和字面量视图模型交互的 API。
+## 蓝图用法
+此插件的核心功能主要面向编辑器（MetaSound 图形编辑）和底层 C++ 开发，直接的蓝图节点较少。主要的使用方式是在 MetaSound 图形编辑器中操作由插件提供的新节点和工具。
+详细的 API（包括自定义节点和可用工具）请参考各子模块文档：`TechAudioToolsMetaSound.md` 和 `TechAudioToolsMetaSoundEditor.md`。
 
-## 模块列表
+## C++ 用法
+插件功能主要通过其子模块的 C++ 接口提供。
+- **运行时模块** (`TechAudioTools`, `TechAudioToolsMetaSound`) 可能提供用于扩展 MetaSound 系统的基类、数据类型或工厂类。
+- **编辑器模块** (`TechAudioToolsMetaSoundEditor`) 提供用于构建自定义编辑器工具和视图模型的 API。
+具体的类和接口使用方法，请查阅对应模块的详细文档。
 
-| 模块 | 类型 | 一句话说明 |
-|---|---|---|
-| `TechAudioTools` | Runtime | 核心音频工具运行时库，提供基础类型和通用功能。 |
-| `TechAudioToolsMetaSound` | Runtime | 为 MetaSound 提供字面量（Literal）视图模型，实现基于 MVVM 模式的数据绑定和配置。 |
-| `TechAudioToolsMetaSoundEditor` | Editor | 集成在 MetaSound 编辑器中，提供字面量视图模型的自定义编辑界面和交互逻辑。 |
+## Demo 示例
+由于此插件主要为 MetaSound 提供扩展功能，建议在启用插件后，在 MetaSound 编辑器中查看新增的节点和工具面板，或参考引擎内相关的测试用例或示例项目来了解具体用法。
+
+## 模块依赖
+要使用此插件的功能，你的项目或模块通常需要依赖以下插件（已在 .uplugin 中声明）：
+| 插件 | 用途 |
+|---|---|
+| `Metasound` | 核心音频图系统，本插件在此基础上进行扩展。 |
+| `ModelViewViewModel` | 提供视图模型架构支持，用于构建编辑器中的数据驱动UI。 |
+
+*注：插件的 Build.cs 可能还会依赖其他常见引擎模块（如 `Core`, `Engine`），此处仅列出插件间独特的依赖关系。*
 
 ## 维护状态
 
@@ -38,24 +50,16 @@ TechAudioTools 是一个**实验性**的音频工具集合，专为 UE5 的 **Me
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-16 | `cb44584a` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 重构并整合了引脚类型注册及相关的编辑器行为。 |
-| 2026-04-15 | `2010cdbb` | [Backout] - CL52717658 - CIS Compile Error | 回退了一个导致编译错误的提交。 |
-| 2026-04-14 | `d9dda16b` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 重构并整合了引脚类型注册及相关的编辑器行为。 |
-| 2026-04-09 | `77ec5174` | [TechAudioTools] Added support for transactions in MetaSound Literal Viewmodels | 为 MetaSound 字面量视图模型添加了事务支持。 |
+| 2026-04-16 | `cb44584a` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 整合了 MetaSound 引脚类型注册及其相关的编辑器行为。 |
+| 2026-04-15 | `2010cdbb` | [Backout] - CL52717658 - CIS Compile Error | 回滚了一次导致编译错误的提交。 |
+| 2026-04-14 | `d9dda16b` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 对 MetaSound 引脚系统进行了重大重构和整合。 |
+| 2026-04-09 | `77ec5174` | [TechAudioTools] Added support for transactions in MetaSound Literal Viewmodels | 为 MetaSound 字面量的视图模型添加了事务支持。 |
 | 2026-03-16 | `e8ed118a` | DocumentConfiguration Rename to MetaSound(Document)Template | 将 DocumentConfiguration 重命名为 MetaSound(Document)Template。 |
 
 ### 维护评价
-
-TechAudioTools 是一个非常年轻的插件（创建于 2025 年 4 月），目前处于**活跃维护**状态。从提交历史看，最近一个月内有多次功能性更新和重构（如引脚类型整合、事务支持），表明 Epic Games 的开发团队正在积极开发和迭代此插件的功能。
-
-**需要注意**：
--   该插件标记为 **实验性** (`IsBetaVersion=true`, `IsExperimentalVersion=true`) 且**默认未启用**，这意味着其 API 可能会发生不兼容的更改，不建议在需要稳定性的核心项目中使用。
--   它依赖于 **ModelViewViewModel (MVVM)** 插件，这是一个同样较新的框架。
-
-**推荐使用**：适合在**技术预研、内部工具开发或希望在 MetaSound 中探索更高效工作流**的团队中小范围使用。建议关注其更新日志，并准备好应对可能的 API 变动。
+该插件创建于 **2025年4月**，至今约 **1年**。从 git 历史来看，近期（2026年3-4月）有密集的功能更新和重构活动，表明其处于**活跃维护**的实验性开发阶段。
+由于 `IsBetaVersion=true` 且 `IsExperimentalVersion=true`，其 API 和功能可能在未来版本中发生变化。目前来看，它是一个**正在积极发展**的前沿工具集，适合希望探索或依赖 MetaSound 高级扩展功能的开发者使用，但需注意其潜在的不稳定性。
 
 ## 相关链接
-
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/TechAudioTools)
-- 官方文档 (无)
-- 测试用例 (信息不足)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/TechAudioTools/Tests) *(如果存在)*

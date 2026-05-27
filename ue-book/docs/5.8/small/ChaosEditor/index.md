@@ -4,182 +4,221 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 混沌编辑器 |
+| 中文名 | 破碎编辑器 |
 | 分类 | Editor |
 | 默认启用 | ✅ 是 |
-| 包含内容 | ❌ 无 |
+| 包含内容 | ✅ 有（编辑器工具、资产模板） |
 | 模块 | `FractureEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2019-06-08 |
-| 年龄标签 | 🏛️ 老古董（约 7 年） |
+| 年龄标签 | 👴 老古董（约 7 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosEditor) | |
 
 ## 用途
 
-ChaosEditor 是一个编辑器工具插件，它为 Unreal Engine 的 Chaos 物理破坏系统提供了一套完整的几何体集合（Geometry Collection）破碎、编辑和可视化工具集。该插件的核心价值在于，它为美术和设计师提供了一个在编辑器内交互式创建、预览和编辑实时破坏效果的“破碎模式”（Fracture Editor Mode）。它解决了从原始网格体生成可控的破碎层级、优化碰撞体积、管理材质以及配置物理模拟属性等一系列复杂问题，是构建基于 Chaos 系统的物理破坏内容的核心创作工具。
+ChaosEditor 是 UE5 中用于在编辑器内创建和编辑 **几何集合 (Geometry Collection)** 的完整工具集。几何集合是 Chaos 物理系统用于实现可破坏物体（如建筑物、车辆、环境物体）的核心资产。此插件并非直接提供物理破碎模拟，而是为美术师和开发者提供了一个 **破碎工作流编辑器模式**，用于在内容创作阶段定义物体的破碎层次结构、破碎模式、物理属性（如碰撞、材质）等，从而在运行时由 Chaos 物理系统驱动破碎效果。它解决了如何在编辑器内可视化、编辑和验证复杂可破坏几何体的问题。
 
 ## 使用场景
 
-- **建筑/环境破坏**：你需要为一栋建筑或一面墙壁制作可被物理模拟破坏的破碎效果 → 使用 ChaosEditor 中的 Voronoi 破碎、切片、砖块等工具将静态网格体转换为几何体集合，并调整破碎层级。
-- **精确控制破坏碎片**：你希望破碎后的碎片大小、形状或断裂模式符合特定设计需求（如制作解谜游戏中的特定断裂点）→ 使用自定义 Voronoi、网格切割等工具来精确控制破碎模式。
-- **优化物理模拟**：几何体集合破碎后，你需要优化其凸包碰撞形状以提高物理模拟性能和稳定性 → 使用凸包工具（Convex Tool）来调整、简化或删除凸包。
-- **管理破碎材质**：破碎后，你需要为断裂面指定内部材质，或将已有的静态网格体材质正确分配到几何体集合的各个面上 → 使用材质工具（Materials Tool）进行批量分配和调整。
+- 你需要为一个建筑物、雕像或任何静态网格体创建可破坏的碎片效果，并定义它们在被击中时如何断裂。
+- 你正在编辑一个几何集合资产，需要调整其层次结构（聚类）、凸包碰撞、材质分配或物理属性（如初始动态状态、移除条件）。
+- 你需要通过多种模式（如 Voronoi、平面切割、砖块模式等）对网格体进行破碎，并实时预览破碎结果。
+- 你需要可视化几何集合的层次结构、属性（如损坏值、体积大小）并选择特定骨骼进行编辑。
 
 ## 蓝图用法
 
-ChaosEditor 的主要功能通过编辑器中的“破碎模式”工具栏进行交互，其核心 API（如 `FFractureEditorModeToolkit`、`UFractureToolCutterBase` 等）主要是 C++ 类，未暴露为蓝图可调用的节点。所有操作均在编辑器模式下通过工具栏按钮和细节面板参数完成。
+此插件主要通过编辑器模式和工具套件暴露蓝图接口，用于控制破碎编辑器的视图和交互。
+
+### 核心节点
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GetExplodedViewValue` | 获取当前爆炸视图的缩放比例（0-1）。 | `FFractureEditorModeToolkit` |
+| `OnSetExplodedViewValue` | 设置爆炸视图的缩放比例，用于分开查看碎片。 | `FFractureEditorModeToolkit` |
+| `GetLevelViewValue` | 获取当前层级视图的层级数。 | `FFractureEditorModeToolkit` |
+| `OnSetLevelViewValue` | 设置要在编辑器中显示的几何集合层级。 | `FFractureEditorModeToolkit` |
+| `GetHideUnselectedValue` | 获取是否隐藏未选中骨骼的设置。 | `FFractureEditorModeToolkit` |
+| `OnHideUnselectedChanged` | 当“隐藏未选中”设置改变时调用。 | `FFractureEditorModeToolkit` |
+| `SetBoneSelection` | 设置几何集合组件中骨骼的选择状态。 | `FFractureEditorModeToolkit` |
+| `ExecuteAction` | 执行一个 `UFractureActionTool` 定义的操作（如选择、删除、合并）。 | `FFractureEditorModeToolkit` |
+| `CanExecuteAction` | 检查当前状态下是否可以执行指定的操作工具。 | `FFractureEditorModeToolkit` |
+| `SetActiveTool` | 设置当前活动的模态工具（如 Voronoi 破碎、平面切割等）。 | `FFractureEditorModeToolkit` |
+| `GetActiveTool` | 获取当前活动的模态工具。 | `FFractureEditorModeToolkit` |
+| `ShutdownActiveTool` | 关闭并重置当前活动的模态工具。 | `FFractureEditorModeToolkit` |
+
+### 使用示例（蓝图描述）
+
+在蓝图中，你可以通过获取破碎编辑器模式的工具套件来访问这些功能。例如，要控制视图：
+1. 从编辑器工具上下文（Editor Tool Context）获取 `FFractureEditorModeToolkit` 实例。
+2. 使用 `GetExplodedViewValue` 和 `OnSetExplodedViewValue` 节点连接到滑块控件，动态调整破碎物体的爆炸视图。
+3. 使用 `SetBoneSelection` 节点，配合从 UI 事件（如列表选择）传入的骨骼索引数组，来在视口中高亮显示特定的破碎片段。
 
 ## C++ 用法
 
-虽然该插件主要通过编辑器模式 UI 操作，但其核心逻辑可以通过 C++ 访问，用于扩展或自动化工具链。
+该插件主要为编辑器扩展，其 API 用于自定义或扩展破碎编辑器模式和工具。
 
 ### 头文件引入
 
 ```cpp
-#include "FractureEditor/FractureToolContext.h"
-#include "FractureEditor/FractureTool.h"
-#include "FractureEditor/FractureEditorMode.h"
+#include "FractureEditor.h" // 模块主头文件
+#include "FractureEditorMode.h" // 编辑器模式
+#include "FractureEditorModeToolkit.h" // 工具套件，用于UI交互
+#include "FractureTool.h" // 所有破碎工具的基类
+#include "FractureContext.h" // 操作上下文
 ```
 
 ### 基本用法
 
-通过 `FFractureToolContext` 来获取和操作当前选中的几何体集合及其骨骼选择。
-
+**1. 获取破碎编辑器模式的工具套件（用于视图控制）**
 ```cpp
-// 假设已经处于破碎编辑器模式并选中了某个几何体集合组件
-// 来源: 概念源自 FractureToolContext.h
-
-// 1. 获取当前选中的几何体集合组件
-TSet<UGeometryCollectionComponent*> SelectedComponents;
-FFractureToolContext::GetSelectedGeometryCollectionComponents(SelectedComponents);
-
-// 2. 为第一个选中的组件创建工具上下文
-if (SelectedComponents.Num() > 0)
+// 来源：Source/FractureEditor/Public/FractureEditorModeToolkit.h
+// 通常通过模式访问工具套件
+if (GEditor)
 {
-    UGeometryCollectionComponent* Comp = *SelectedComponents.CreateConstIterator();
-    FFractureToolContext Context(Comp);
-
-    // 3. 检查当前选择并执行一些操作
-    if (Context.IsValid())
+    UEdMode* ActiveMode = GEditor->GetActiveMode(FractureEditorModeID);
+    if (UFractureEditorMode* FractureMode = Cast<UFractureEditorMode>(ActiveMode))
     {
-        // 获取当前选中的骨骼索引
-        const TArray<int32>& SelectedBones = Context.GetSelection();
-        UE_LOG(LogTemp, Log, TEXT("当前选中 %d 个骨骼"), SelectedBones.Num());
-
-        // 将选择限制为叶节点（最细碎的碎片）
-        Context.ConvertSelectionToLeafNodes();
-        
-        // 获取几何体集合数据
-        TSharedPtr<FGeometryCollection, ESPMode::ThreadSafe> GeometryCollection = Context.GetGeometryCollection();
-        if (GeometryCollection.IsValid())
+        // 获取工具套件
+        TSharedPtr<FFractureEditorModeToolkit> Toolkit = FractureMode->GetToolkit();
+        if (Toolkit.IsValid())
         {
-            // 可以在此访问几何体集合的顶点、面片等数据
+            // 控制视图
+            Toolkit->OnSetExplodedViewValue(0.5f); // 设置50%爆炸视图
+            Toolkit->OnSetLevelViewValue(2); // 查看层级2
+            Toolkit->OnHideUnselectedChanged(); // 应用“隐藏未选中”更改
         }
     }
+}
+```
+
+**2. 理解并使用操作工具 (Action Tool)**
+```cpp
+// 来源：Source/FractureEditor/Public/FractureTool.h
+// 创建一个工具上下文，包含当前选择
+UGeometryCollectionComponent* SelectedComponent = ...; // 从场景获取
+FFractureToolContext Context(SelectedComponent);
+Context.Sanitize(); // 清理选择（例如，移除无效索引）
+
+// 获取工具套件并执行一个操作工具
+if (TSharedPtr<FFractureEditorModeToolkit> Toolkit = ...)
+{
+    // 实例化一个具体的操作工具（例如选择叶子节点）
+    UFractureToolSelectLeaf* SelectLeafTool = NewObject<UFractureToolSelectLeaf>();
+    // 执行它
+    Toolkit->ExecuteAction(SelectLeafTool);
 }
 ```
 
 ### 进阶用法
 
-结合背景任务工具，在后台线程执行耗时的破碎或凸包计算操作，避免阻塞编辑器。
-
+**创建和执行一个模态工具（Modal Tool）流程**
+模态工具（如 `UFractureToolUniformVoronoi`）需要用户设置参数后执行。
 ```cpp
-// 来源: 概念源自 FractureToolBackgroundTask.h
-#include "FractureEditor/FractureToolBackgroundTask.h"
+// 来源：Source/FractureEditor/Public/FractureTool.h, Source/FractureEditor/Private/FractureToolContext.h
+// 1. 准备操作上下文
+UGeometryCollectionComponent* Component = ...;
+FFractureToolContext Context(Component);
+Context.ConvertSelectionToLeafNodes(); // 例如，只选择叶子节点进行破碎
 
-// 创建一个自定义的几何体集合操作（例如一个简化的凸包生成操作）
-class FMyCustomGeometryOp : public UE::Fracture::FGeometryCollectionOperator
+// 2. 创建模态工具并设置参数
+UFractureToolUniformVoronoi* VoronoiTool = NewObject<UFractureToolUniformVoronoi>();
+// 工具的参数通常暴露为 UPROPERTY，可以通过工具的 GetSettingsObjects() 获取设置对象
+TArray<UObject*> SettingsObjects = VoronoiTool->GetSettingsObjects();
+// 假设第一个对象是 UFractureUniformVoronoiSettings
+if (UFractureUniformVoronoiSettings* VoronoiSettings = Cast<UFractureUniformVoronoiSettings>(SettingsObjects[0]))
 {
-public:
-    FMyCustomGeometryOp(const FGeometryCollection& Source) : FGeometryCollectionOperator(Source) {}
-    
-    virtual FGeometryCollection Compute() override
-    {
-        // 在后台线程中执行耗时的几何体操作
-        // ... 生成凸包等 ...
-        
-        // 将结果存储在 CollectionCopy 中
-        CollectionCopy->AddAttribute(...);
-        
-        return *CollectionCopy; // 返回处理后的几何体集合
-    }
-};
+    VoronoiSettings->NumberVoronoiSites = 50; // 设置50个Voronoi点
+}
 
-// 启动一个可取消的后台任务
-void StartBackgroundFracture(FGeometryCollection& GeometryCollection)
+// 3. 通过工具套件执行
+// 在实际插件中，工具套件会管理模态状态的进入、退出和执行
+// 以下是其内部逻辑的简化模拟
+if (Toolkit->CanSetModalTool(VoronoiTool))
 {
-    auto Op = MakeUnique<FMyCustomGeometryOp>(GeometryCollection);
-    
-    // 启动任务，并获取一个用于轮询和取消的执行器
-    TUniquePtr<UE::Fracture::TBackgroundOpExecuter<FMyCustomGeometryOp>> BackgroundTask = 
-        UE::Fracture::StartBackgroundTask(MoveTemp(Op));
-    
-    // 在编辑器的 Tick 中轮询任务状态（通常在一个工具类的 OnTick 中）
-    // UE::Fracture::TickBackgroundTask(BackgroundTask, bCancel, SuccessCallback);
+    Toolkit->SetActiveTool(VoronoiTool);
+    // 模态工具通常通过“Apply”按钮或命令触发执行
+    // VoronoiTool->Execute(Toolkit);
 }
 ```
 
 ## Demo 示例
 
-一个演示如何通过 C++ 创建工具上下文并检查选择的简单示例。
+以下是一个最小的编辑器模块示例，展示如何初始化破碎编辑器模式（如果作为独立插件扩展，而不是使用原生 ChaosEditor）。
 
-**MyFractureTool.h**
 ```cpp
+// MyFractureEditorModule.h
 #pragma once
+#include "Modules/ModuleManager.h"
 
-#include "CoreMinimal.h"
-#include "FractureEditor/FractureToolContext.h"
-
-class FMyFractureTool
+class FMyFractureEditorModule : public IModuleInterface
 {
 public:
-    void AnalyzeSelection();
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
+
+private:
+    // 可以持有对破碎模式或工具套件的引用用于扩展
+    // TWeakObjectPtr<UFractureEditorMode> FractureMode;
 };
 ```
 
-**MyFractureTool.cpp**
 ```cpp
-#include "MyFractureTool.h"
-#include "GeometryCollection/GeometryCollectionComponent.h"
+// MyFractureEditorModule.cpp
+#include "MyFractureEditorModule.h"
+#include "FractureEditorMode.h" // 来自 ChaosEditor 插件
+#include "EditorModeRegistry.h"
 
-void FMyFractureTool::AnalyzeSelection()
+void FMyFractureEditorModule::StartupModule()
 {
-    // 获取所有选中的几何体集合组件
-    TSet<UGeometryCollectionComponent*> GeomComps;
-    FFractureToolContext::GetSelectedGeometryCollectionComponents(GeomComps);
-
-    for (UGeometryCollectionComponent* Comp : GeomComps)
+    // 破碎编辑器模式由 ChaosEditor 插件自身注册。
+    // 此处可以执行自定义逻辑，例如在模式注册后添加自定义工具。
+    FEditorModeRegistry& EditorModeRegistry = FEditorModeRegistry::Get();
+    if (EditorModeRegistry.IsModeActive(UFractureEditorMode::EM_FractureEditorModeId))
     {
-        if (!Comp) continue;
-
-        // 为每个组件创建一个上下文
-        FFractureToolContext Context(Comp);
-        if (!Context.IsValid()) continue;
-
-        UE_LOG(LogTemp, Log, TEXT("正在分析组件: %s"), *Comp->GetName());
-        UE_LOG(LogTemp, Log, TEXT("  选中骨骼数: %d"), Context.GetSelection().Num());
-        UE_LOG(LogTemp, Log, TEXT("  组件边界范围: %s"), *Context.GetWorldBounds().ToString());
-
-        // 获取几何体集合资产
-        UGeometryCollection* FracturedAsset = Context.GetFracturedGeometryCollection();
-        if (FracturedAsset)
-        {
-            UE_LOG(LogTemp, Log, TEXT("  关联的几何体集合资产: %s"), *FracturedAsset->GetName());
-        }
+        // 破碎模式已激活，可以访问其工具套件进行扩展
+        UE_LOG(LogTemp, Log, TEXT("Fracture Editor Mode is active and ready for extension."));
     }
 }
+
+void FMyFractureEditorModule::ShutdownModule()
+{
+    // 清理资源
+}
+
+IMPLEMENT_MODULE(FMyFractureEditorModule, MyFractureEditor)
 ```
 
 ## 模块依赖
 
-从插件的依赖项分析，使用者（通常是其他编辑器插件或工具）需要依赖以下模块：
+要使用此插件的功能，你的项目或模块需要依赖以下插件和模块：
 
-| 模块 | 用途 |
+| 模块/插件 | 用途 |
 |---|---|
-| `FractureEditor` | 本插件提供的核心破碎编辑器模式和工具类 |
-| `GeometryCollectionPlugin` | 提供 `GeometryCollection` 和 `GeometryCollectionComponent` 的核心类型 |
-| `PlanarCut` | 提供平面切割（Planar Cut）破碎方法的底层实现 |
-| `MeshModelingToolsetExp` | 提供交互式工具（如变换 Gizmo）的底层支持 |
+| `GeometryCollectionPlugin` | 几何集合资产的基础运行时支持。 |
+| `Fracture` | Chaos 物理系统的破碎模拟运行时库。 |
+| `PlanarCut` | 提供平面切割几何体的底层算法。 |
+| `MeshModelingToolsetExp` | 提供网格体建模工具（如自动UV、凸包生成）的实验性集合。 |
+| `EditorScriptingUtilities` | 提供编辑器脚本实用程序。 |
+
+你的 `Build.cs` 文件可能需要如下依赖：
+```csharp
+PublicDependencyModuleNames.AddRange(new string[] {
+    "Core",
+    "CoreUObject",
+    "Engine",
+    "Slate",
+    "SlateCore",
+    "UnrealEd",
+    "GeometryCollectionPlugin",
+    "Fracture",
+    "MeshModelingToolsetExp"
+});
+PrivateDependencyModuleNames.AddRange(new string[] {
+    "PlanarCut",
+    "EditorScriptingUtilities",
+    // ... 其他可能的依赖如 InputCore, PropertyEditor
+});
+```
 
 ## 维护状态
 
@@ -187,17 +226,21 @@ void FMyFractureTool::AnalyzeSelection()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了严格浮点模式下双精度常量截断为浮点数产生的编译警告。 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了 32 位与 64 位格式说明符不匹配的问题。 |
-| 2026-04-14 | `eaf81cf6` | Add new fracture mode utility to split islands | 在破碎模式中新增了用于分离独立网格岛屿的实用工具。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 宏迁移到 UE_LOGF，以支持新的日志格式化功能。 |
-| 2026-04-06 | `3e98cc7e` | TLazyObjectPtr Deprecation pt 3: | TLazyObjectPtr 废弃计划的第三部分更新。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下，双精度常量转换为浮点数时产生的编译警告。 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修正了格式化字符串中的说明符，确保当参数为64位时使用正确的说明符，反之亦然。 |
+| 2026-04-14 | `eaf81cf6` | Add new fracture mode utility to split islands | 在破碎编辑器模式中添加了用于分割独立几何岛屿的新工具。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将代码中的日志宏从 `UE_LOG` 迁移到新的 `UE_LOGF` 格式。 |
+| 2026-04-06 | `3e98cc7e` | TLazyObjectPtr Deprecation pt 3: | 处理 `TLazyObjectPtr` 类型的弃用警告的第三部分工作。 |
 
 ### 维护评价
 
-ChaosEditor 插件自 2019 年创建以来，一直处于活跃维护状态。从最近的 Git 提交记录可以看出，它仍在持续接收功能更新（如新增岛屿分离工具）、错误修复（编译警告、格式化问题）和代码现代化工作（如日志宏迁移）。尽管它被标记为“实验性”（`IsBetaVersion=true`），并且位于 `Experimental` 目录下，但其长期且持续的更新历史表明它是一个成熟且至关重要的 Chaos 物理破坏内容创作工具。**推荐使用**，但需注意其“实验性”标签可能意味着 API 在未来版本中仍有变动的可能。
+ChaosEditor 插件创建于 **2019 年**，至今约 7 年历史，属于 **老古董** 级别。尽管 `.uplugin` 标记为 `IsBetaVersion: true`，表明它仍被认为是实验性功能，但从 git 历史看，它**仍在持续维护中**。
+- **近期更新频繁**：最近几次更新集中在 2026 年 4 月和 5 月，主要是编译修复、警告清理和工具功能添加（如“分割岛屿”工具）。
+- **核心功能稳定**：作为 UE5 Chaos 物理系统的关键编辑器组件，其基础架构和核心破碎工具已趋于稳定。
+- **限制与风险**：由于标记为实验性，API 和行为在未来的引擎版本中可能发生变化。它深度依赖 `GeometryCollectionPlugin` 和 `Fracture` 模块。
+- **推荐**：对于需要创建可破坏物体的项目，**强烈推荐使用**此插件。它是 UE5 官方提供的最完整的破碎工作流解决方案。开发者应关注引擎更新日志中关于 Chaos 和几何集合的变动。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosEditor)
-- [官方文档]() （无）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ChaosEditor/Tests) (如果存在)

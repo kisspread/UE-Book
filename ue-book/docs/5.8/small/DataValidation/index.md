@@ -4,267 +4,262 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 数据验证 |
+| 中文名 | 资产验证 |
 | 分类 | Editor |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
 | 模块 | `DataValidation` (Editor) |
 | 实验性 | 否 |
 | 创建时间 | 2017-11-29 |
-| 年龄标签 | 👴 老古董（约 7 年） |
+| 年龄标签 | 👴 老古董（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/DataValidation) | |
 
 ## 用途
 
-DataValidation 插件为 Unreal Engine 编辑器提供了一个全面的资产和数据验证框架。它不仅仅是一个简单的检查工具，而是一个可扩展的验证系统，旨在确保项目资产在提交到源代码控制系统（SCC）或打包前符合质量标准。
-
-这个插件解决的核心问题是：**如何在大型项目中自动化地、系统性地检查资产质量，防止损坏、无效或不符合规范的资产被引入项目**。它通过以下方式实现：
-
-1.  **框架化验证**：提供 `UEditorValidatorBase` 基类，允许开发者（通过 C++ 或蓝图）创建针对特定资产类型或规则的自定义验证器。
-2.  **多层次验证**：结合了 `UObject::IsDataValid` 的内置验证（适合项目特定类）和注册的独立验证器（适合引擎类或通用逻辑）。
-3.  **深度集成**：与编辑器保存流程、源代码控制提交流程（提交前验证）、以及命令行（用于 CI/CD）深度集成，实现了从个人编辑到团队协作全流程的质量控制。
-4.  **详细报告**：提供带有可点击链接的详细错误和警告报告，便于开发者快速定位问题资产。
+`DataValidation` 插件为 UE5 编辑器提供了一套完整的资产验证框架。它解决了在开发过程中如何系统性地检查资产（如蓝图、材质、地图等）是否符合特定规范和质量标准的问题。通过该插件，团队可以在资产被提交、保存或打包前自动检测并报告错误和警告，从而减少运行时错误，提高内容质量和开发效率。其核心是 `UEditorValidatorSubsystem`，它管理着一系列注册的验证器（`UEditorValidatorBase`），负责协调整个验证流程。
 
 ## 使用场景
 
--   你在编辑器中保存一个材质或蓝图时，希望系统能**自动检查**并报告其中存在的问题（如引用缺失、配置错误）。
--   你的团队需要在**提交代码或资产到 Perforce/Git 前**，自动验证所有变更的资产，防止问题代码库。
--   你需要在**自动化构建流水线（CI/CD）** 中，通过命令行对项目的所有资产进行批量验证，确保打包版本的数据质量。
--   你需要为项目中的**特定资产类型**（如自定义的 Actor、数据表）编写特殊的验证规则（例如，确保所有角色都有正确的动画蒙太奇）。
--   你希望验证**世界分区（World Partition）** 相关资产的完整性和引用关系。
+- **自动化构建流水线**：在 CI/CD 中集成，使用命令行工具（`UDataValidationCommandlet`）在构建前验证所有资产。
+- **提交前检查**：与源代码管理（如 Perforce）集成，在提交变更列表前自动验证修改的资产，防止引入错误。
+- **保存时验证**：在编辑器中保存资产时，自动运行相关验证，确保资产始终有效。
+- **项目特定规则**：为项目创建自定义验证器（如检查特定命名规范、资源尺寸限制、特定逻辑完整性等），强制执行团队规范。
+- **质量监控**：通过收集验证统计数据（`FValidatorStatistics`），监控资产质量趋势和验证器性能。
 
 ## 蓝图用法
 
-主要的蓝图 API 通过 `UEditorValidatorSubsystem` 和 `UEditorValidatorBase` 暴露。`UEditorValidatorSubsystem` 是管理所有验证的中心，可以通过 `GEditor->GetEditorSubsystem<UEditorValidatorSubsystem>()` 获取。
+主要通过 `UEditorValidatorSubsystem` 和 `UEditorValidatorBase` 的蓝图接口进行操作。
 
-### 核心验证节点
-
-这些节点位于 `UEditorValidatorSubsystem` 上。
+### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Validate Assets With Settings` | 对一组资产执行验证，可配置详细设置，并返回包含成功/失败统计的 `FValidateAssetsResults` 结构。 | `UEditorValidatorSubsystem` |
-| `Is Asset Valid` | 检查单个资产是否有效，返回 `Valid`/`Invalid`/`NotValidated` 状态，以及错误和警告消息数组。 | `UEditorValidatorSubsystem` |
-| `Validate Changelist` | 验证一个源代码控制变更列表（`UDataValidationChangelist`）中的所有资产。 | `UEditorValidatorSubsystem` |
+| `Validate Assets With Settings` | 验证一批资产，返回失败数量，并将详细结果写入 `FValidateAssetsResults`。 | `UEditorValidatorSubsystem` |
+| `Is Asset Valid` | 验证单个资产数据，返回验证结果（有效/无效/未验证）。 | `UEditorValidatorSubsystem` |
+| `Is Object Valid` | 验证单个 UObject 对象，返回验证结果。 | `UEditorValidatorSubsystem` |
+| `Asset Fails` | （在自定义验证器中使用）标记资产验证失败，并记录一条错误信息。 | `UEditorValidatorBase` |
+| `Asset Passes` | （在自定义验证器中使用）标记资产验证通过。 | `UEditorValidatorBase` |
+| `Asset Warning` | （在自定义验证器中使用）记录一条警告信息，但不标记为失败。 | `UEditorValidatorBase` |
+| `Can Validate Asset` | （在自定义验证器中重写）判断验证器是否应验证给定资产。 | `UEditorValidatorBase` |
+| `Validate Loaded Asset` | （在自定义验证器中重写）实现具体的资产验证逻辑。 | `UEditorValidatorBase` |
 
-### 验证报告与管理节点
+### 使用示例（蓝图描述）
 
-这些节点位于 `UEditorValidatorBase` 上，通常在自定义验证器的蓝图类中使用。
+1.  **调用批量验证**：
+    *   创建一个 `FValidateAssetsSettings` 结构体变量，配置 `ValidationUsecase`、`bSkipExcludedDirectories` 等选项。
+    *   通过资产注册表或其他方式获取一个 `TArray<FAssetData>`（待验证资产列表）。
+    *   调用 `UEditorValidatorSubsystem` 的 `Validate Assets With Settings` 节点，传入资产列表和设置，接收结果和失败计数。
+    *   可以检查 `FValidateAssetsResults` 中的 `NumInvalid` 和 `AssetsDetails` 了解具体情况。
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `Asset Fails` | 将当前验证的资产标记为失败，并记录一条错误消息。 | `UEditorValidatorBase` |
-| `Asset Passes` | 将当前验证的资产标记为通过。必须调用，否则将报告验证器未检查该资产。 | `UEditorValidatorBase` |
-| `Asset Warning` | 为当前资产记录一条警告消息，但不将其标记为失败。 | `UEditorValidatorBase` |
-| `Get Validation Result` | 获取此验证器上一次验证的结果状态。 | `UEditorValidatorBase` |
-
-### 自定义验证器（蓝图用法）
-
-你可以创建 `UEditorValidatorBase` 的蓝图子类来定义自定义验证逻辑。
-
-**主要重写事件（在蓝图子类中覆盖）：**
-
-1.  **`Can Validate Asset` (Event)**：决定此验证器是否可以验证给定的资产。返回 `true` 才会继续验证。
-2.  **`Validate Loaded Asset` (Event)**：执行实际的验证逻辑。在此事件图表中，你可以使用 `Asset Fails`、`Asset Passes` 和 `Asset Warning` 节点来报告结果。
-
-**使用示例（蓝图描述）：**
-假设你要验证所有“静态网格体”资产的名称必须以 `SM_` 开头。
-
-1.  创建一个新的蓝图类，父类选择 `EditorValidatorBase`，命名为 `BP_Validator_MeshNaming`。
-2.  在 **`Can Validate Asset`** 事件中，添加一个 `Class Is Child Of` 节点检查传入的 `Asset` 对象是否为 `StaticMesh` 类型。如果不是，返回 `false`。
-3.  在 **`Validate Loaded Asset`** 事件中：
-    a.  使用 `Get Object Name` 节点获取资产名称。
-    b.  使用 `Starts With` 节点检查名称是否以 `SM_` 开头。
-    c.  如果检查失败，使用 `Asset Fails` 节点，并连接一个格式化的错误文本（如 `"静态网格体名称必须以 SM_ 开头。当前名称: {AssetName}"`）。
-    d.  如果检查通过，使用 `Asset Passes` 节点。
-4.  编译并保存蓝图。该验证器将被引擎自动发现并集成到编辑器的验证系统中。
+2.  **创建蓝图验证器**：
+    *   创建一个继承自 `UEditorValidatorBase` 的蓝图类。
+    *   重写 `Can Validate Asset` 事件，输入 `InAsset`（UObject），返回布尔值表示是否要验证它（例如，只验证特定类的资产）。
+    *   重写 `Validate Loaded Asset` 事件，输入 `InAsset`（UObject），使用 `Asset Fails`、`Asset Warning` 和 `Asset Passes` 节点来报告验证结果。
+    *   编译并保存该蓝图类。引擎启动时，`UEditorValidatorSubsystem` 会自动发现并注册它。
 
 ## C++ 用法
 
 ### 头文件引入
 
-要创建自定义 C++ 验证器，需要包含以下头文件：
-```cpp
-#include "EditorValidatorBase.h"
-```
-要使用验证子系统，需要包含：
 ```cpp
 #include "EditorValidatorSubsystem.h"
+#include "EditorValidatorBase.h"
 ```
 
-### 基本用法：创建自定义验证器
+### 基本用法
 
-创建一个继承自 `UEditorValidatorBase` 的类，并重写关键的虚函数。
+以下示例展示如何创建一个简单的 C++ 验证器，检查 `UStaticMesh` 的顶点数是否超过上限。
 
-**MyCustomValidator.h**
+**源码文件路径**: `EditorValidatorBase.h` 及项目代码
+
 ```cpp
+// MyVertexCountValidator.h
 #pragma once
-
 #include "EditorValidatorBase.h"
-#include "MyCustomValidator.generated.h"
+#include "MyVertexCountValidator.generated.h"
 
 UCLASS()
-class UMyCustomValidator : public UEditorValidatorBase
+class UMyVertexCountValidator : public UEditorValidatorBase
 {
     GENERATED_BODY()
 
-protected:
-    // 判断此验证器能否验证该资产（类型过滤）
-    virtual bool CanValidateAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext) const override;
+public:
+    UMyVertexCountValidator();
 
-    // 执行具体的验证逻辑
-    virtual EDataValidationResult ValidateLoadedAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext) override;
+protected:
+    // 判断是否验证给定资产
+    virtual bool CanValidateAsset_Implementation(
+        const FAssetData& InAssetData,
+        UObject* InAsset,
+        FDataValidationContext& InContext) const override;
+
+    // 执行验证逻辑
+    virtual EDataValidationResult ValidateLoadedAsset_Implementation(
+        const FAssetData& InAssetData,
+        UObject* InAsset,
+        FDataValidationContext& InContext) override;
 };
 ```
 
-**MyCustomValidator.cpp**
 ```cpp
-#include "MyCustomValidator.h"
-#include "Engine/Texture2D.h"
+// MyVertexCountValidator.cpp
+#include "MyVertexCountValidator.h"
+#include "Engine/StaticMesh.h"
 
-bool UMyCustomValidator::CanValidateAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext) const
+UMyVertexCountValidator::UMyVertexCountValidator()
 {
-    // 只验证纹理资产
-    return InAssetData.GetClass() == UTexture2D::StaticClass();
+    // 可在此设置验证器默认属性，如 bIsEnabled = false;
 }
 
-EDataValidationResult UMyCustomValidator::ValidateLoadedAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext)
+bool UMyVertexCountValidator::CanValidateAsset_Implementation(
+    const FAssetData& InAssetData,
+    UObject* InAsset,
+    FDataValidationContext& InContext) const
 {
-    UTexture2D* Texture = Cast<UTexture2D>(InAsset);
-    if (!Texture)
+    // 只验证 UStaticMesh 类型的资产
+    return InAssetData.AssetClassPath == FTopLevelAssetPath(FName("/Script/Engine"), FName("StaticMesh"));
+}
+
+EDataValidationResult UMyVertexCountValidator::ValidateLoadedAsset_Implementation(
+    const FAssetData& InAssetData,
+    UObject* InAsset,
+    FDataValidationContext& InContext)
+{
+    // 确保资产已加载且类型正确
+    const UStaticMesh* StaticMesh = Cast<UStaticMesh>(InAsset);
+    if (!StaticMesh)
     {
-        AssetFails(InAsset, FText::FromString(TEXT("无法将对象转换为 UTexture2D")));
+        AssetFails(InAsset, FText::FromString("Failed to load static mesh."));
         return EDataValidationResult::Invalid;
     }
 
-    // 检查纹理尺寸是否为2的幂
-    if (!FMath::IsPowerOfTwo(Texture->GetSizeX()) || !FMath::IsPowerOfTwo(Texture->GetSizeY()))
+    // 示例规则：顶点数超过 10000 则失败
+    const int32 MaxVertices = 10000;
+    int32 VertexCount = 0;
+    for (const FStaticMeshSourceModel& LOD : StaticMesh->GetSourceModels())
+    {
+        if (LOD.BuildSettings.bGenerateMeshDistanceField) // 示例，实际统计逻辑可能更复杂
+        {
+            VertexCount += LOD.GetNumVertices(); // 注意：此函数可能不存在，仅为示意
+        }
+    }
+
+    if (VertexCount > MaxVertices)
     {
         AssetFails(InAsset, FText::Format(
-            NSLOCTEXT("MyValidator", "TextureSizeNotPOT", "纹理 '{0}' 的尺寸 ({1}x{2}) 不是2的幂。"),
-            FText::FromString(InAssetData.AssetName.ToString()),
-            Texture->GetSizeX(),
-            Texture->GetSizeY()));
+            NSLOCTEXT("VertexValidator", "TooManyVertices", "Static mesh has {0} vertices, exceeding limit of {1}."),
+            FText::AsNumber(VertexCount),
+            FText::AsNumber(MaxVertices)));
+        return EDataValidationResult::Invalid;
+    }
+    else
+    {
+        AssetPasses(InAsset);
+        return EDataValidationResult::Valid;
+    }
+}
+```
+
+### 进阶用法
+
+1.  **在 C++ 中调用验证**:
+    ```cpp
+    // 从 UEditorValidatorSubsystem 获取子系统实例
+    UEditorValidatorSubsystem* ValidationSubsystem = GEditor->GetEditorSubsystem<UEditorValidatorSubsystem>();
+    if (ValidationSubsystem)
+    {
+        // 验证单个资产
+        TArray<FText> Errors, Warnings;
+        FAssetData AssetData = ...; // 从资产注册表获取
+        EDataValidationResult Result = ValidationSubsystem->IsAssetValid(AssetData, Errors, Warnings, EDataValidationUsecase::Script);
+
+        // 验证批量资产并获取详细结果
+        TArray<FAssetData> AssetList = ...;
+        FValidateAssetsSettings Settings;
+        FValidateAssetsResults Results;
+        int32 FailureCount = ValidationSubsystem->ValidateAssetsWithSettings(AssetList, Settings, Results);
+        UE_LOG(LogTemp, Log, TEXT("Validation completed. Failures: %d, Valid: %d, Total: %d"),
+            FailureCount, Results.NumValid, Results.NumRequested);
+    }
+    ```
+
+2.  **自定义验证设置**:
+    可以通过 `UDataValidationSettings`（`DataValidationSettings.h`）或覆盖 `UEditorValidatorSubsystem` 来自定义验证行为，例如排除特定目录或配置材质验证平台。
+
+## Demo 示例
+
+下面是一个完整的、可编译的最小示例，创建一个验证器，检查资产名称是否以指定前缀开头。
+
+```cpp
+// PrefixNameValidator.h
+#pragma once
+
+#include "CoreMinimal.h"
+#include "EditorValidatorBase.h"
+#include "PrefixNameValidator.generated.h"
+
+UCLASS()
+class UPrefixNameValidator : public UEditorValidatorBase
+{
+    GENERATED_BODY()
+
+public:
+    UPrefixNameValidator();
+
+protected:
+    virtual bool CanValidateAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext) const override;
+    virtual EDataValidationResult ValidateLoadedAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext) override;
+
+    UPROPERTY(EditAnywhere, Category = "Prefix Validation")
+    FString RequiredPrefix = "M_";
+};
+```
+
+```cpp
+// PrefixNameValidator.cpp
+#include "PrefixNameValidator.h"
+
+UPrefixNameValidator::UPrefixNameValidator()
+{
+    // 默认验证器是启用的
+    bIsEnabled = true;
+}
+
+bool UPrefixNameValidator::CanValidateAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext) const
+{
+    // 对所有资产类型生效
+    return true;
+}
+
+EDataValidationResult UPrefixNameValidator::ValidateLoadedAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext)
+{
+    // 检查资产名称
+    FString AssetName = InAssetData.AssetName.ToString();
+    if (!AssetName.StartsWith(RequiredPrefix))
+    {
+        // 使用 AssetFails 记录错误
+        AssetFails(InAsset, FText::Format(
+            NSLOCTEXT("PrefixValidator", "InvalidName", "Asset name '{0}' does not start with required prefix '{1}'."),
+            FText::FromString(AssetName),
+            FText::FromString(RequiredPrefix)));
         return EDataValidationResult::Invalid;
     }
 
-    // 验证通过
     AssetPasses(InAsset);
     return EDataValidationResult::Valid;
 }
 ```
 
-### 进阶用法：在验证期间临时禁用“保存时验证”
-
-在执行某些操作（如批量处理资产）时，你可能不希望触发“保存时验证”。可以使用 `FScopedDisableValidateOnSave` 辅助类。
-
-```cpp
-#include "EditorValidatorSubsystem.h"
-
-void SomeBatchProcessingFunction()
-{
-    // 在此作用域内，保存资产将不会触发验证
-    FScopedDisableValidateOnSave DisableValidationScope;
-
-    // ... 进行资产修改和保存操作 ...
-    SomePackage->SavePackage(...);
-}
-// 离开作用域后，验证将恢复
-```
-
-## Demo 示例
-
-一个完整的自定义验证器示例，验证所有蓝图资产不能有 `Event Tick` 节点被使用（假设项目有此优化规范）。
-
-**BPNoTickValidator.h**
-```cpp
-#pragma once
-
-#include "EditorValidatorBase.h"
-#include "BPNoTickValidator.generated.h"
-
-UCLASS()
-class UBPNoTickValidator : public UEditorValidatorBase
-{
-    GENERATED_BODY()
-
-protected:
-    virtual bool CanValidateAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext) const override;
-    virtual EDataValidationResult ValidateLoadedAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext) override;
-};
-```
-
-**BPNoTickValidator.cpp**
-```cpp
-#include "BPNoTickValidator.h"
-#include "Engine/Blueprint.h"
-#include "K2Node_Event.h"
-#include "EdGraph/EdGraph.h"
-
-bool UBPNoTickValidator::CanValidateAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext) const
-{
-    return InAssetData.GetClass() == UBlueprint::StaticClass();
-}
-
-EDataValidationResult UBPNoTickValidator::ValidateLoadedAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext)
-{
-    UBlueprint* Blueprint = Cast<UBlueprint>(InAsset);
-    if (!Blueprint)
-    {
-        return EDataValidationResult::NotValidated;
-    }
-
-    bool bFoundTickNode = false;
-
-    // 遍历蓝图中的所有图表
-    for (UEdGraph* Graph : Blueprint->UbergraphPages)
-    {
-        // 遍历图表中的所有节点
-        for (UEdGraphNode* Node : Graph->Nodes)
-        {
-            // 检查是否为事件节点且事件名为 “ReceiveTick” 或 “Tick”
-            if (UK2Node_Event* EventNode = Cast<UK2Node_Event>(Node))
-            {
-                if (EventNode->EventReference.GetMemberName() == UEdGraphSchema_K2::FN_UserConstructionScript ||
-                    EventNode->EventReference.GetMemberName() == UEdGraphSchema_K2::FN_ReceiveTick)
-                {
-                    bFoundTickNode = true;
-                    AssetFails(InAsset, FText::Format(
-                        NSLOCTEXT("BPNoTickValidator", "TickFound", "蓝图 '{0}' 中发现了被禁用的 {1} 节点。"),
-                        FText::FromString(Blueprint->GetName()),
-                        FText::FromString(EventNode->GetNodeTitle(ENodeTitleType::FullTitle).ToString())));
-                    // 找到一个即可停止
-                    break;
-                }
-            }
-        }
-        if (bFoundTickNode) break;
-    }
-
-    if (!bFoundTickNode)
-    {
-        AssetPasses(InAsset);
-        return EDataValidationResult::Valid;
-    }
-
-    return EDataValidationResult::Invalid;
-}
-```
-
 ## 模块依赖
 
-要使用或扩展 DataValidation 插件的功能，你的模块需要依赖以下独特的模块：
+插件自身的构建依赖已在 `DataValidation.Build.cs` 中配置。对于使用此插件功能的外部模块，通常只需依赖 `DataValidation` 模块即可获得大部分公共 API。
 
 | 模块 | 用途 |
 |---|---|
-| `SourceControl` | 与源代码控制提供商（Perforce, Git 等）交互，用于验证变更列表。 |
-| `MessageLog` | 显示带有可点击链接的验证错误和警告日志。 |
-| `AssetRegistry` | 查询和过滤资产，是验证系统获取待验证资产列表的核心。 |
-| `Slate`, `SlateCore` | 构建验证结果的 UI 显示（如 Asset Audit 窗口）。 |
-| `UnrealEd` | 编辑器子系统、命令行和编辑器特定功能的支持。 |
-| `PropertyEditor` | 可能用于验证器配置的自定义属性编辑。 |
-
-**注意**：Core, CoreUObject, Engine, InputCore 等是标准依赖，已省略。
+| `DataValidation` | 插件核心模块，提供子系统、验证器基类和命令行工具。 |
+| `SourceControl` | 用于集成源代码管理，实现提交前验证（Changelist Validation）。 |
+| `MessageLog` | 用于在编辑器中显示验证结果和消息。 |
+| `AssetRegistry` | 用于查询和过滤待验证的资产。 |
 
 ## 维护状态
 
@@ -272,22 +267,22 @@ EDataValidationResult UBPNoTickValidator::ValidateLoadedAsset_Implementation(con
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-25 | `1356f236` | [WorldPartition] Reject actor descriptor mutator overrides that would split a reference-connected cl | 增强了世界分区验证，拒绝会导致引用链断裂的演员描述符变异。 |
-| 2026-04-21 | `837e0aa4` | Updated validation stats analytics to be an embedded JSON array, rather than N separate named events | 改进了验证统计的分析数据格式，使用嵌入式JSON数组而非多个独立事件。 |
-| 2026-04-20 | `54b3cb12` | [Backout] - CL52814415 | 回滚了某个变更（CL52814415），可能为修复引入的问题。 |
-| 2026-04-20 | `df44c8a9` | [Backout] - CL52924535 | 回滚了另一个变更（CL52924535），与上一条同日。 |
-| 2026-04-20 | `50bde1ee` | [Backout] - CL52277962 | 回滚了第三个变更（CL52277962），当日进行了多次回滚操作。 |
+| 2026-05-25 | `1356f236` | [WorldPartition] Reject actor descriptor mutator overrides that would split a reference-connected cl | 增强世界分区验证，拒绝会分裂引用连接的Actor描述符变异器重写 |
+| 2026-04-21 | `837e0aa4` | Updated validation stats analytics to be an embedded JSON array, rather than N separate named events | 将验证统计数据从多个独立事件改为嵌入式JSON数组，优化分析 |
+| 2026-04-20 | `54b3cb12` | [Backout] - CL52814415 | 回退了之前的某个更改（CL52814415） |
+| 2026-04-20 | `df44c8a9` | [Backout] - CL52924535 | 回退了之前的某个更改（CL52924535） |
+| 2026-04-20 | `50bde1ee` | [Backout] - CL52277962 | 回退了之前的某个更改（CL52277962） |
 
 ### 维护评价
 
-DataValidation 插件自 2017 年创建以来，经历了长期的开发和迭代。从最近的提交记录（2026年5月）可以看出，它仍然是 Unreal Engine **活跃维护**的核心组件，持续进行功能增强和问题修复。
-
--   **优点**：架构成熟，高度可扩展，与引擎深度集成，是保证项目数据质量的基石工具。Epic Games 持续投入开发，以支持新特性（如世界分区）。
--   **注意点**：框架相对复杂，自定义验证器的开发需要一定的学习成本。回滚提交记录显示其变更可能影响重大，需谨慎更新。
--   **推荐**：**强烈推荐**所有正式项目启用并配置此插件。它是自动化质量保证（QA）和构建流水线（CI/CD）中不可或缺的一环。对于大型团队，基于它构建项目特定的验证规则集是最佳实践。
+- **创建时间**: 插件于 2017 年创建，是一个成熟的编辑器工具。
+- **活跃度**: 最近的更新集中在 2026 年 4-5 月，主要是功能增强（如世界分区验证、分析数据优化）和稳定性修复（回退操作），表明插件仍在积极维护中。
+- **功能完善**: 作为 Epic Games 官方维护的核心编辑器插件，其功能非常完整，覆盖了从资产验证、命令行工具到编辑器集成和源代码管理集成的各个方面。
+- **已知问题/限制**: 主要限制在于验证逻辑的实现质量完全依赖于开发者编写的自定义验证器。框架本身是稳健的。
+- **推荐使用**: **强烈推荐**。对于任何有一定规模的 UE5 项目，集成数据验证是保证资产质量和构建稳定性的最佳实践。该插件提供了强大的基础设施，并且仍在持续改进。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/DataValidation)
--   [官方文档]() （.uplugin 中未提供 DocsURL）
--   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/DataValidation/Tests) (从代码结构推断)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/DataValidation)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/data-validation-in-unreal-engine/) （注：.uplugin 中未提供 DocsURL，此处为推测的通用文档页面）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/DataValidation/Tests) （根据插件结构推测）

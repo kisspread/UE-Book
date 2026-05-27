@@ -4,310 +4,234 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | USD 工作流集成 |
+| 中文名 | 通用场景描述套件 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（USD模式、阶段管理UI、导出功能） |
-| 模块 | `GeometryCacheUSD` (Runtime), `USDClassesEditor` (Runtime), `USDExporter` (Runtime), `USDSchemas` (Runtime), `USDStage` (Runtime), `USDStageEditor` (Runtime), `USDStageEditorViewModels` (Runtime), `USDStageImporter` (Runtime), `USDTests` (Runtime) |
+| 包含内容 | ✅ 有（蓝图资产） |
+| 模块 | `USDStageEditorViewModels` (Runtime), `USDStageEditor` (Runtime), `USDStageImporter` (Runtime), `USDExporter` (Runtime), `USDSchemas` (Runtime), `USDStage` (Runtime), `GeometryCacheUSD` (Runtime), `USDClassesEditor` (Runtime), `USDTests` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-11-19 |
-| 年龄标签 | 👴 老古董（约 8 年） |
+| 年龄标签 | 👴 老古董（约 7 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter) | |
 
 ## 用途
 
-该插件为 Unreal Engine 提供了完整的 USD（通用场景描述）工作流支持。它解决的核心问题是将 USD 这一开放标准的3D资产格式与UE引擎进行深度集成，其功能远超简单的“导入”。插件包含一套完整的模块体系，覆盖了从USD文件解析、场景阶段（Stage）管理、Prim（基本对象）与属性的可视化编辑、图层（Layer）管理、变体（Variant）选择，到最终将场景烘焙导入引擎的全过程。它实质上是一个基于USD构建的轻量级、非破坏性的场景编辑和管理环境。
+USDImporter 是 Epic Games 为 Unreal Engine 提供的 **完整 USD (Universal Scene Description) 生态集成插件**。它远不止是简单的文件导入器。其核心目标是将 USD 作为场景描述和资产交换的中心格式，深度集成到 UE 的工作流中。它解决了以下关键问题：
+
+1.  **场景中心化**：允许在 UE 内打开、查看、编辑和保存 USD Stage 文件，并将更改持久化回 USD 层栈。
+2.  **资产协作**：为 VFX、动画和虚拟制片团队提供基于 USD 的高效协作流程，支持多人同时编辑同一资产的不同层。
+3.  **动画与变形**：通过 `USDAnimation` 模块支持导入和导出动画数据，处理骨骼网格体、变形目标（Blend Shapes）和控制绑定。
+4.  **渲染与材质**：通过 `USDSchemas` 和 `USDStage` 模块将 USD 的材质和渲染属性映射到 UE 的材质系统。
+5.  **实时预览与编辑**：通过 `USDStageEditor` 和 `USDStageEditorViewModels` 提供强大的编辑器界面，用于检查 Prim 层级、管理图层、编辑属性和应用变体。
+
+简而言之，它是 UE 进入 USD 世界的门户，旨在取代传统 FBX 流水线，为复杂的、跨平台的内容创建管线提供现代、可扩展的基础。
 
 ## 使用场景
 
-- 你正在参与一个大型影视、动画或视觉特效项目，项目流水线以 USD 为核心。
-- 你需要在一个场景中整合来自不同部门（模型、动画、灯光）的 USD 文件，并进行非破坏性的实时编辑和预览。
-- 你需要管理复杂的USD图层（Sublayer）、引用（Reference）和载荷（Payload），并在UE中实时切换和调试。
-- 你需要将复杂的、包含丰富元数据的USD资产最终“烘焙”并导入为UE原生资产（如StaticMesh， SkeletalMesh）。
-- 你需要将UE场景或资产导出为USD格式，以供其他DCC工具使用。
+-   **影视与虚拟制片**：需要在不同 DCC 工具（Houdini, Maya, Katana）和 UE 之间交换复杂场景和动画时。
+-   **大型资产协作**：团队成员需要在不互相覆盖的情况下，对同一个环境或角色资产的不同部分（例如，一人改材质，一人改布局）进行并行工作。
+-   **程序化生成**：在 Houdini 中生成基于 USD 的程序化资产，并在 UE 中实时预览和编辑。
+-   **资产版本控制**：利用 USD 的层栈和引用特性，对资产进行非破坏性的版本迭代和 A/B 测试。
+-   **动画生产**：导入并编辑复杂的角色动画，包括面部动画和控制绑定，并在 Sequencer 中进行最终调整。
 
 ## 蓝图用法
 
-本插件提供了丰富的编辑器端 ViewModel 来支撑 UI 交互，部分核心操作也暴露给了蓝图。
+该插件主要提供编辑器扩展和 ViewModel 类，用于在蓝图或 Slate UI 中驱动 USD Stage 的交互。核心节点集中在数据管理、视图刷新和状态查询上。
 
 ### 核心节点
 
-由于插件规模巨大，以下仅列出当前模块 `USDStageEditorViewModels` 中与蓝图/交互相关的核心ViewModel及其功能：
-
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `ToggleVisibility` | 切换某个 Prim（对象）在USD场景中的可见性。 | `FUsdPrimViewModel` |
-| `TogglePayload` | 切换某个 Prim 的 Payload（载荷）的加载状态。 | `FUsdPrimViewModel` |
-| `ApplySchema` | 为某个 Prim 应用指定的 USD Schema。 | `FUsdPrimViewModel` |
-| `RemoveSchema` | 移除某个 Prim 上指定的 USD Schema。 | `FUsdPrimViewModel` |
-| `SetAttributeValue` | 设置某个 USD 属性的值（通过ViewModel）。 | `FUsdObjectFieldViewModel` |
-| `Refresh` | 刷新指定 USD 对象的所有字段（元数据、属性、关系）数据。 | `FUsdObjectFieldsViewModel` |
-| `ToggleMuteLayer` | 切换某个 USD 图层（Layer）的静音状态。 | `FUsdLayerViewModel` |
-| `EditLayer` | 将某个图层设置为当前编辑目标（Edit Target）。 | `FUsdLayerViewModel` |
-| `AddSubLayer` | 为当前图层添加一个新的子图层。 | `FUsdLayerViewModel` |
-| `Reload` | 重新加载某个 USD 图层。 | `FUsdLayerViewModel` |
-| `SetVariantSelection` | 为某个 Variant Set 设置当前选中的变体。 | `FUsdVariantSetViewModel` |
-| `RemoveReference` | 移除某个 Prim 上的引用或载荷。 | `FUsdReferencesViewModel` |
-| `ImportStage` | 将当前打开的 USD 阶段导入到UE内容浏览器。 | `FUsdStageViewModel` |
-| `SaveStage` | 保存当前USD阶段。 | `FUsdStageViewModel` |
+| `OpenStage` | 打开一个 USD 文件作为当前 Stage。 | `FUsdStageViewModel` |
+| `SaveStage` | 保存当前 Stage 的所有修改到原文件。 | `FUsdStageViewModel` |
+| `ImportStage` | 将当前 Stage 的资产实际导入到 UE 内容浏览器。 | `FUsdStageViewModel` |
+| `ReloadStage` | 从磁盘重新加载当前 Stage。 | `FUsdStageViewModel` |
+| `SetIsExpanded` | 控制 Prim 树视图中的展开/折叠状态。 | `FUsdPrimViewModel` |
+| `ToggleVisibility` | 切换一个 Prim 在视口中的可见性。 | `FUsdPrimViewModel` |
+| `TogglePayload` | 加载或卸载一个 Prim 的 Payload。 | `FUsdPrimViewModel` |
+| `ApplySchema` | 将指定的 USD Schema 应用到当前 Prim。 | `FUsdPrimViewModel` |
+| `Refresh` | 根据给定的 Prim 路径和时间码，刷新对象属性字段列表。 | `FUsdObjectFieldsViewModel` |
+| `SetFieldValue` | 设置指定属性字段的新值。 | `FUsdObjectFieldsViewModel` |
+| `ToggleMuteLayer` | 静音或取消静音一个图层。 | `FUsdLayerViewModel` |
+| `EditLayer` | 将指定图层设置为当前编辑目标。 | `FUsdLayerViewModel` |
+| `UpdateVariantSets` | 根据指定的 Prim 路径，更新变体集列表及其当前选择。 | `FUsdVariantSetsViewModel` |
+| `UpdateReferences` | 刷新指定 Prim 的引用（References/Payloads）列表。 | `FUsdReferencesViewModel` |
 
 ### 使用示例（蓝图描述）
 
-蓝图交互通常通过 `USDStageEditor` 模块提供的 Slate UI 或自定义编辑器工具包进行，而非直接通过蓝图图表。典型流程是：在自定义编辑器工具中创建 `FUsdStageViewModel` 来管理阶段；为树状视图创建 `FUsdPrimViewModel` 的列表作为数据源；当用户在列表中选择一个 Prim 时，使用 `FUsdObjectFieldsViewModel` 加载并显示其字段，并使用 `FUsdVariantSetsViewModel` 加载其变体集。UI控件（如按钮、下拉框）通过委托或直接调用对应ViewModel的函数（如 `ToggleVisibility`， `SetVariantSelection`）来响应用户操作。
+1.  **打开并浏览 Stage**：
+    *   创建一个 `FUsdStageViewModel` 的实例。
+    *   调用 `OpenStage` 节点，传入 `.usd` 文件路径。这会更新 `UsdStageActor`。
+    *   创建一个 `FUsdPrimViewModel` 根实例，并将其 `UsdStage` 属性连接到 `FUsdStageViewModel` 的 Stage。
+    *   将 `FUsdPrimViewModel` 的 `Children` 数组绑定到一个 Slate TreeView 控件，即可显示 Prim 树。
+    *   当用户在树中选择一个 Prim 时，使用该 Prim 的路径调用 `FUsdObjectFieldsViewModel::Refresh`，然后将 `Fields` 数组绑定到一个 ListView，显示其元数据、属性和关系。
+
+2.  **编辑图层与变体**：
+    *   创建一个 `FUsdLayerViewModel` 实例，关联当前 Stage。将 `GetChildren()` 的结果绑定到图层树视图。
+    *   当用户右键点击一个图层时，可以显示一个上下文菜单，绑定到 `ToggleMuteLayer`、`EditLayer` 等节点。
+    *   当用户选择一个 Prim 时，使用其路径调用 `FUsdVariantSetsViewModel::UpdateVariantSets`，然后将 `VariantSets` 数组绑定到 UI，其中每个变体集都有一个下拉框（ComboBox）绑定到 `VariantSelection`。
 
 ## C++ 用法
+
+本插件的 C++ 用法主要体现在创建和管理 ViewModel 以驱动自定义 UI，以及直接调用底层 USD Stage 操作。
 
 ### 头文件引入
 
 ```cpp
-#include "USDStageViewModel.h"
-#include "USDPrimViewModel.h"
-#include "USDObjectFieldViewModel.h"
-// ... 根据需要引入其他 ViewModel 头文件
+#include “USDStageViewModel.h“
+#include “USDPrimViewModel.h“
+#include “USDObjectFieldViewModel.h“
+#include “USDLayersViewModel.h“
+#include “USDVariantSetsViewModel.h“
+#include “USDReferencesViewModel.h“
 ```
 
-### 庺本用法
+### 基本用法（ViewModel 驱动 UI）
 
-**操作USD阶段**
-
-```cpp
-// 来源: 推断自 USDStageViewModel.h
-// 创建一个阶段视图模型
-FUsdStageViewModel StageViewModel;
-
-// 打开一个USD文件
-StageViewModel.OpenStage(TEXT("C:/Path/To/Scene.usda"));
-
-// 导入阶段到UE内容浏览器
-StageViewModel.ImportStage(TEXT("/Game/ImportedScenes"), ImportOptionsObject);
-
-// 保存阶段
-StageViewModel.SaveStage();
-
-// 关闭阶段
-StageViewModel.CloseStage();
-```
-
-**查询和操作Prim视图模型**
+以下示例展示如何在 C++ 中设置一个简单的 Prim 属性编辑器。
 
 ```cpp
-// 来源: 推断自 USDPrimViewModel.h
-// 假设 UsdStage 是一个有效的 FUsdStageWeak
-UE::FUsdPrim RootPrim = UsdStage->GetPseudoRoot();
-FUsdPrimViewModel PrimViewModel(nullptr, UsdStage, RootPrim);
+// 在你的 Slate Widget 或 Actor 中持有这些 ViewModel
+TSharedRef<FUsdStageViewModel> StageViewModel = MakeShared<FUsdStageViewModel>();
+TSharedRef<FUsdPrimViewModel> RootPrimViewModel = MakeShared<FUsdPrimViewModel>(nullptr, UE::FUsdStageWeak());
+TSharedRef<FUsdObjectFieldsViewModel> FieldsViewModel = MakeShared<FUsdObjectFieldsViewModel>();
 
-// 获取数据模型
-TSharedRef<FUsdPrimModel> Data = PrimViewModel.RowData;
-FText PrimName = Data->GetName();
-
-// 切换可见性
-PrimViewModel.ToggleVisibility();
-
-// 检查是否可以应用某个Schema
-FName SchemaName = TEXT("MaterialBindingAPI");
-if (PrimViewModel.CanApplySchema(SchemaName))
+// 1. 打开 Stage
+StageViewModel->OpenStage(TEXT(“/Game/MyAsset.usd“));
+if (AUsdStageActor* Actor = StageViewModel->UsdStageActor.Get())
 {
-    PrimViewModel.ApplySchema(SchemaName);
-}
-```
+    UE::FUsdStageWeak UsdStage = Actor->GetUsdStage();
+    // 2. 初始化 Prim ViewModel 树
+    RootPrimViewModel = MakeShared<FUsdPrimViewModel>(nullptr, UsdStage, UsdStage->GetPseudoRoot());
+    RootPrimViewModel->UpdateChildren(); // 生成第一层子项
 
-**读写属性字段**
-
-```cpp
-// 来源: 推断自 USDObjectFieldViewModel.h
-FUsdObjectFieldsViewModel FieldsViewModel;
-FieldsViewModel.Refresh(UsdStage, PrimPath, UsdTimeCode::Default());
-
-// 遍历所有字段
-for (const auto& FieldPtr : FieldsViewModel.Fields)
-{
-    EObjectFieldType FieldType = FieldPtr->Type;
-    FString FieldName = FieldPtr->Label;
-    // ... 显示或处理字段
-}
-
-// 设置一个特定属性的值
-FConvertedVtValue NewValue;
-NewValue.Set<FString>(TEXT("NewMaterial"));
-FieldsViewModel.SetFieldValue(TEXT("material:binding"), NewValue);
-```
-
-### 进阶用法
-
-组合多个 ViewModel 实现一个简单的编辑器面板交互逻辑：
-
-```cpp
-// 来源: 推断自多个 ViewModel 头文件的组合用法
-class FMyUsdPanel
-{
-public:
-    void OnPrimSelected(FUsdPrimViewModelRef SelectedPrim)
+    // 3. 当用户选择一个 Prim（例如，从 TreeView 的 OnSelectionChanged 回调）
+    auto SelectedPrimVM = /* 从选中项获取 TSharedPtr<FUsdPrimViewModel> */;
+    if (SelectedPrimVM.IsValid())
     {
-        // 1. 更新属性面板
-        FieldsViewModel_.Refresh(
-            SelectedPrim->UsdStage,
-            SelectedPrim->UsdPrim.GetPath().GetText(),
-            UsdTimeCode::Default()
-        );
-        
-        // 2. 更新变体集面板
-        VariantSetsViewModel_.UpdateVariantSets(
-            SelectedPrim->UsdStage,
-            SelectedPrim->UsdPrim.GetPath().GetText()
-        );
-        
-        // 3. 更新引用/载荷面板
-        ReferencesViewModel_.UpdateReferences(
-            SelectedPrim->UsdStage,
-            *SelectedPrim->UsdPrim.GetPath().GetText()
-        );
+        // 4. 刷新属性视图
+        UE::FSdfPath PrimPath = SelectedPrimVM->UsdPrim.GetPath();
+        FieldsViewModel->Refresh(UsdStage, *PrimPath.GetString(), UsdStage->GetEditTarget().GetLayer()->GetEndTimeCode());
+        // 5. 将 FieldsViewModel->Fields 绑定到 UI Slate ListView
     }
-    
-private:
-    FUsdObjectFieldsViewModel FieldsViewModel_;
-    FUsdVariantSetsViewModel VariantSetsViewModel_;
-    FUsdReferencesViewModel ReferencesViewModel_;
-};
+}
+```
+
+### 进阶用法（直接操作 Stage）
+
+虽然 ViewModel 提供了高层接口，但你也可以通过 `USDStage` 模块直接操作 USD 对象。
+
+```cpp
+#include “USDStageActor.h“
+#include “UsdWrappers/UsdStage.h“
+#include “UsdWrappers/UsdPrim.h“
+#include “UsdWrappers/SdfLayer.h“
+#include “UsdWrappers/SdfPath.h“
+
+void MyAdvancedFunction(AUsdStageActor* InStageActor)
+{
+    UE::FUsdStageWeak UsdStage = InStageActor->GetUsdStage();
+    if (!UsdStage) return;
+
+    // 获取或创建一个 Prim
+    UE::FUsdPrim Prim = UsdStage->GetPrimAtPath(UE::FSdfPath(“/World/MyProp“));
+    if (!Prim)
+    {
+        Prim = UsdStage->DefinePrim(UE::FSdfPath(“/World/MyProp“), TEXT(“Xform“));
+    }
+
+    // 添加一个自定义属性
+    UE::FUsdAttribute Attr = Prim.CreateAttribute(
+        TEXT(“inputs:myCustomValue“),
+        UE::SdfValueTypeNames->Float
+    );
+    Attr.Set(42.0f);
+
+    // 获取当前编辑图层并保存
+    UE::FSdfLayer EditLayer = UsdStage->GetEditTarget().GetLayer();
+    EditLayer->Save();
+}
 ```
 
 ## Demo 示例
 
-以下是一个控制台应用程序风格的示例，展示如何利用ViewModel层来加载USD文件并查询信息。此代码需要在一个支持模块依赖的上下文中运行（例如编辑器工具或自定义资产处理逻辑）。
+一个最小化示例，展示如何创建一个自定义的 Slate 面板来显示 USD Stage 的属性。
 
-**MyUsdDemo.h**
 ```cpp
+// MyUSDPropertyPanel.h
 #pragma once
+#include “CoreMinimal.h“
+#include “Widgets/SCompoundWidget.h“
+#include “USDObjectFieldViewModel.h“
+#include “USDPrimViewModel.h“
+#include “UsdWrappers/UsdStage.h“
 
-#include "CoreMinimal.h"
-#include "USDStageViewModel.h"
-#include "USDPrimViewModel.h"
-#include "USDObjectFieldViewModel.h"
-
-class FMyUsdDemo
+class SMyUSDPropertyPanel : public SCompoundWidget
 {
 public:
-    FMyUsdDemo();
-    ~FMyUsdDemo();
+    SLATE_BEGIN_ARGS(SMyUSDPropertyPanel) {}
+        SLATE_ARGUMENT(TSharedPtr<FUsdPrimViewModel>, PrimViewModel)
+        SLATE_ARGUMENT(UE::FUsdStageWeak, UsdStage)
+    SLATE_END_ARGS()
 
-    void Run(const FString& UsdFilePath);
+    void Construct(const FArguments& InArgs)
+    {
+        PrimViewModel = InArgs._PrimViewModel;
+        UsdStage = InArgs._UsdStage;
+        FieldsViewModel = MakeShared<FUsdObjectFieldsViewModel>();
+
+        ChildSlot
+        [
+            SNew(SVerticalBox)
+            + SVerticalBox::Slot().AutoHeight()
+            [
+                SNew(STextBlock).Text(FText::FromString(TEXT(“Prim Properties“)))
+            ]
+            + SVerticalBox::Slot().FillHeight(1.0f)
+            [
+                // 将 ListView 绑定到 FieldsViewModel->Fields
+                // 这里需要自定义 Row Widget 来显示 Label, Value 和 Type
+                SNew(STextBlock).Text(FText::FromString(TEXT(“List of attributes will appear here...“)))
+            ]
+        ];
+
+        // 初始刷新
+        RefreshProperties();
+    }
+
+    void RefreshProperties()
+    {
+        if (PrimViewModel.IsValid() && UsdStage.IsValid())
+        {
+            UE::FSdfPath PrimPath = PrimViewModel->UsdPrim.GetPath();
+            FieldsViewModel->Refresh(UsdStage, *PrimPath.GetString(), 0.0f);
+            // 在这里通知 ListView 刷新
+        }
+    }
 
 private:
-    void PrintPrimInfo(const FUsdPrimViewModel& Prim, int32 Depth = 0);
-    void PrintFields(const FString& PrimPath);
-
-    FUsdStageViewModel StageViewModel;
+    TSharedPtr<FUsdPrimViewModel> PrimViewModel;
+    UE::FUsdStageWeak UsdStage;
     TSharedPtr<FUsdObjectFieldsViewModel> FieldsViewModel;
-    TWeakPtr<FUsdPrimViewModel> CurrentPrimViewModel;
 };
-```
-
-**MyUsdDemo.cpp**
-```cpp
-#include "MyUsdDemo.h"
-#include "USDStage.h"
-#include "UsdWrappers/UsdStage.h"
-#include "UsdWrappers/UsdPrim.h"
-
-FMyUsdDemo::FMyUsdDemo()
-    : FieldsViewModel(MakeShared<FUsdObjectFieldsViewModel>(nullptr))
-{
-}
-
-FMyUsdDemo::~FMyUsdDemo()
-{
-    if (StageViewModel.UsdStageActor.IsValid())
-    {
-        StageViewModel.CloseStage();
-    }
-}
-
-void FMyUsdDemo::Run(const FString& UsdFilePath)
-{
-    // 1. 打开 USD 阶段
-    UE_LOG(LogTemp, Log, TEXT("Opening USD stage: %s"), *UsdFilePath);
-    StageViewModel.OpenStage(*UsdFilePath);
-
-    // 假设 UsdStageActor 已由 OpenStage 设置或通过其他方式获得
-    if (!StageViewModel.UsdStageActor.IsValid())
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to open stage or get stage actor."));
-        return;
-    }
-    UE::FUsdStageWeak UsdStage = StageViewModel.UsdStageActor->GetStage();
-
-    // 2. 创建根节点视图模型并递归打印信息
-    UE::FUsdPrim RootPrim = UsdStage->GetPseudoRoot();
-    FUsdPrimViewModel RootPrimViewModel(nullptr, UsdStage, RootPrim);
-    PrintPrimInfo(RootPrimViewModel, 0);
-
-    // 3. 打印某个特定Prim的字段（假设路径为 “/Root/SomePrim”）
-    PrintFields(TEXT("/Root/SomePrim"));
-
-    // 4. 导入阶段（可选）
-    // StageViewModel.ImportStage(TEXT("/Game/DemoImport"));
-}
-
-void FMyUsdDemo::PrintPrimInfo(const FUsdPrimViewModel& Prim, int32 Depth)
-{
-    FString Indent = FString::ChrN(Depth * 2, ' ');
-    FText PrimName = Prim.RowData->GetName();
-    FText PrimType = Prim.RowData->GetType();
-    UE_LOG(LogTemp, Log, TEXT("%s- %s (%s) [Visible: %s, HasPayload: %s]"),
-        *Indent,
-        *PrimName.ToString(),
-        *PrimType.ToString(),
-        Prim.RowData->IsVisible() ? TEXT("Yes") : TEXT("No"),
-        Prim.RowData->HasPayload() ? TEXT("Yes") : TEXT("No")
-    );
-
-    // 递归打印子项
-    TArray<FUsdPrimViewModelRef>& Children = const_cast<FUsdPrimViewModel&>(Prim).UpdateChildren();
-    for (const auto& Child : Children)
-    {
-        PrintPrimInfo(*Child, Depth + 1);
-    }
-}
-
-void FMyUsdDemo::PrintFields(const FString& PrimPath)
-{
-    UE_LOG(LogTemp, Log, TEXT("=== Fields for Prim: %s ==="), *PrimPath);
-
-    if (!StageViewModel.UsdStageActor.IsValid())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No active stage to query fields from."));
-        return;
-    }
-
-    UE::FUsdStageWeak UsdStage = StageViewModel.UsdStageActor->GetStage();
-    FieldsViewModel->Refresh(UsdStage, *PrimPath, UsdTimeCode::Default());
-
-    for (const auto& Field : FieldsViewModel->Fields)
-    {
-        UE_LOG(LogTemp, Log, TEXT("  [%s] %s: %s"),
-            Field->Type == EObjectFieldType::Metadata ? TEXT("Metadata") :
-            Field->Type == EObjectFieldType::Attribute ? TEXT("Attribute") :
-            TEXT("Relationship"),
-            *Field->Label,
-            *Field->Value.GetValueString()
-        );
-    }
-}
 ```
 
 ## 模块依赖
 
-根据 `USDImporter` 各模块的常见依赖关系推断，使用其核心功能通常需要依赖以下模块：
+要使用此插件的任何部分，你的模块通常需要依赖 `USDStage` 或相关的 ViewModel 模块。更具体的功能依赖如下：
 
 | 模块 | 用途 |
 |---|---|
-| `USDStage` | 提供 USD 阶段管理和核心 Actor 类 (`AUsdStageActor`)。 |
-| `USDSchemas` | 提供 USD Schema 相关的类型和工具。 |
-| `USDExporter` | 提供将 UE 资产导出为 USD 的功能。 |
-| `USDClasses` / `USDClassesEditor` | 提供 USD 相关的基础类和编辑器扩展类。 |
-| `UsdUtils` (USDUtilities) | 提供 USD 与 UE 之间数据转换的核心工具函数。 |
-| `SlateCore`, `UMG` | 用于构建 USD 编辑器 UI。 |
-
-*注：由于本插件是 Epic 的内部项目，其具体的 `Build.cs` 依赖未公开。实际开发中，如果以本插件为基础开发编辑器工具，需参考官方示例或插件内模块的依赖关系进行配置。*
+| `USDClasses` | USD 核心类和类型定义。 |
+| `USDSchemas` | USD 预定义 Schema 到 UE 的映射。 |
+| `UsdUtilities` | USD 工具函数和转换器。 |
+| `USDStage` | USD Stage 管理、导入和运行时支持。 |
+| `USDStageEditor` | USD Stage 编辑器 UI 主模块。 |
+| `USDStageEditorViewModels` | 为编辑器 UI 提供数据和行为（ViewModel）。 |
+| `USDExporter` | 将 UE 场景/资产导出为 USD。 |
+| `USDAnimation` | USD 动画数据支持。 |
+| `GeometryCacheUSD` | USD 几何缓存（变形体）支持。 |
+| `Sequencer` | 与动画 Sequencer 集成，编辑 USD 动画。 |
 
 ## 维护状态
 
@@ -315,21 +239,22 @@ void FMyUsdDemo::PrintFields(const FString& PrimPath)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下双精度常量截断为浮点数的警告。 |
-| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | USD：添加了对分配独立于蓝图的控制绑定的支持。 |
-| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va... | USD：解决了USD 26.03更新导致的、与LOD变体相关的AnimQuery内部引用失效问题。 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了格式化字符串中32位与64位格式说明符不匹配的问题。 |
-| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | USD：烘焙了曝光动画轨道的所有帧。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下双精度常量截断为浮点数时产生的编译警告。 |
+| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | USD：新增支持分配独立于蓝图的控制绑定。 |
+| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va… | USD：解决 USD 26.03 更新导致的，当 LOD 级别变化时 AnimQuery 内部引用失效的问题。 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修正了当参数为 64 位时格式化说明符应为 64 位，反之亦然的错误。 |
+| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | USD：现在可以烘焙曝光动画轨道的所有帧。 |
 
 ### 维护评价
 
-- **活跃维护**：尽管插件创建于2018年，但从近期的 Git 历史（2026年）看，它仍在接受**频繁且实质性的更新**。近期的提交涵盖了新功能添加（如独立控制绑定）、重要的兼容性修复（与新版USD库的适配）、动画系统优化以及代码质量改进。
-- **实验性状态**：插件在 `.uplugin` 中明确标记为 `IsBetaVersion: true`，表明其API和功能可能在未来版本中发生变化。
-- **项目重要性**：作为 Epic Games 官方维护的、连接开源USD生态与UE引擎的官方桥梁，该插件具有极高的战略重要性，预计将持续得到长期投入。
-- **推荐使用**：对于需要基于USD进行工作流开发或集成的项目，尽管其为实验性状态，但鉴于其官方维护、功能全面且持续更新，是目前最可靠和强大的选择。用户应做好应对未来API变动的心理准备。
+**积极维护中**。
+-   **创建时间**：插件始于 2018 年，已历经约 7 年发展。
+-   **更新频率**：近期（2026 年 4-5 月）有密集的功能性更新和 Bug 修复，表明 Epic Games 仍在持续投入开发，尤其关注动画、渲染和编辑器体验。
+-   **活跃状态**：非常活跃。尽管 `.uplugin` 中标记为 `IsBetaVersion: true` 和 `EnabledByDefault: false`，但其功能已相当完整和成熟，是 UE 影视和虚拟制片管线的核心组件之一。
+-   **已知限制**：作为 Beta 版本，API 可能仍有变动。对某些 USD 特性的支持可能不完整。
+-   **推荐使用**：**强烈推荐**用于任何涉及 USD 工作流、影视制作或需要高级资产协作的项目。它是 Epic 官方维护的解决方案，代表了 UE 在该领域的未来方向。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
-- [官方文档]() (待补充)
-- [测试用例]() (路径待在源码库中搜索确认)
+- [官方文档]( )

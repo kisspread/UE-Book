@@ -1,12 +1,13 @@
+```markdown
 # Mutable
 
 > Mutable adds the tools and runtime to create customizable objects for your games.
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 可变对象系统 |
+| 中文名 | 可自定义对象系统 |
 | 分类 | CustomizableObjects |
-| 默认启用 | ✅ 是 |
+| 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `MutableRuntime` (Runtime), `CustomizableObject` (Runtime), `CustomizableObjectEditor` (Runtime), `MutableTools` (Runtime), `MutableValidation` (Runtime) |
 | 实验性 | ⚠️ 是 |
@@ -14,243 +15,249 @@
 | 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable) | |
 
+> **注意**：此插件从 `Experimental` 状态迁移而来，当前为 Beta 状态。需手动在项目设置中启用。
+
 ## 用途
 
-Mutable 是一个运行时可定制对象（Customizable Object）系统，解决的核心问题是：**如何在运行时根据玩家选择的参数动态生成、组合和修改游戏资产（网格体、纹理、材质、物理体等）**。
+Mutable 是一套完整的**运行时可自定义对象（Customizable Object）系统**，用于在游戏中创建高度可组合、可参数化的资产。它解决的核心问题是：
 
-它包含：
-- **一个自定义虚拟机**：将可定制对象编译为字节码程序，在运行时执行参数化的资源生成管线
-- **运行时系统（MutableRuntime）**：执行字节码，进行网格体变形、图像合成、纹理压缩、物理体生成等操作
-- **工具链（MutableTools）**：在编辑器中编译可定制对象为运行时模型
-- **引擎集成（CustomizableObject）**：将 Mutable 系统与 UE 的 `USkeletalMesh`、`UTexture`、`UMaterial` 等原生资产无缝集成
+- **角色外观自定义**：玩家可以在运行时自由组合不同部位（发型、服装、纹身、伤疤等），系统自动生成最终的网格体、材质和纹理。
+- **内存与性能优化**：通过"可变对象"的概念，多个变体共享底层数据，避免为每种组合烘焙独立资产，大幅减少内存占用和磁盘空间。
+- **材质合并**：运行时自动将多个纹理层合成为最终材质，减少 draw call。
+- **网格体组合**：运行时将多个身体部件合并为单一网格体，支持骨骼蒙皮、物理体、LOD。
+- **投影贴花**：支持 3D 投影器（平面、圆柱、包裹），在运行时将图像投影到网格体上。
 
-不同于简单的材质参数替换或 LOD 切换，Mutable 能在运行时进行**拓扑级别的修改**：合并网格体、重新计算法线、应用 Morph、执行 Clip Deform、生成新的 UV 布局、合成多层纹理等。
+该插件在编辑器中提供可视化图编辑器（CustomizableObject Editor），通过节点图定义对象的参数化结构；在运行时通过 `FSystem` 和 `FModel` 执行程序化的资产生成。
 
 ## 使用场景
 
-- 你在做一个 RPG/角色创建系统，需要发型、肤色、盔甲、纹身的自由组合 → 用 Mutable 编译一个 `UCustomizableObject`，通过 `SetIntParameter`/`SetFloatParameter` 等切换外观
-- 你需要让玩家在运行时自定义武器外观（材质、图案、附加部件）→ 用 Mutable 的纹理合成和网格体附加功能
-- 你需要根据游戏逻辑（如装备系统）动态修改骨骼网格体的拓扑（添加/移除几何体）→ 用 Mutable 的 Mesh 操作
-- 你需要在运行时生成带 Mipmap 的合成纹理并自动选择压缩格式（BC/ASTC）→ MutableRuntime 内置完整的纹理管线
-- 你需要管理 ROM 流式加载，避免一次性加载所有可变资源 → Mutable 内置 `FRomManager` 进行按需加载
+- 你在做一个**角色自定义系统**（如 MMO、RPG）→ 用 Mutable 管理发型/服装/纹身等的组合
+- 你需要**运行时材质合并**以减少 draw call → 用 Mutable 将多层纹理合并为单张
+- 你需要**投影贴花**（枪械刻字、纹身等）→ 用 Mutable 的 Projector 参数
+- 你需要**运行时网格体变形**（Reshape/ClipDeform）→ 用 Mutable 的 Mesh 操作
+- 你有大量类似的可组合资产需要**内存优化** → 用 Mutable 的增量生成机制
 
 ## 蓝图用法
 
-Mutable 的蓝图 API 主要通过 `UCustomizableObject` 和 `UCustomizableObjectInstance` 暴露。以下节点来自 `CustomizableObject` 模块（非 MutableRuntime），但使用场景需配合运行时。
+Mutable 的主要蓝图接口在 `CustomizableObject` 模块中，通过 `UCustomizableObjectInstance` 和 `UCustomizableObject` 暴露给蓝图。当前模块文档聚焦于底层 `MutableRuntime`，其核心 API 为 C++ 层面。
 
-### 核心节点
+### 核心蓝图类（CustomizableObject 模块）
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `SetIntParameter` | 设置整数参数值 | `UCustomizableObjectInstance` |
-| `SetFloatParameter` | 设置浮点参数值 | `UCustomizableObjectInstance` |
-| `SetBoolParameter` | 设置布尔参数值 | `UCustomizableObjectInstance` |
-| `SetColorParameter` | 设置颜色参数 | `UCustomizableObjectInstance` |
-| `SetTextureParameter` | 设置纹理参数 | `UCustomizableObjectInstance` |
-| `SetProjectorParameter` | 设置投影器参数（用于贴花投影） | `UCustomizableObjectInstance` |
-| `GetCurrentState` | 获取当前对象状态 | `UCustomizableObjectInstance` |
-| `SetCurrentState` | 切换对象状态 | `UCustomizableObjectInstance` |
-| `UpdateSkeletalMeshAsync` | 异步更新骨骼网格体 | `UCustomizableObjectInstance` |
-
-### 使用示例（蓝图描述）
-
-1. 创建 `UCustomizableObject` 资产（通过编辑器中的 Customizable Object Editor）
-2. 在运行时获取 `UCustomizableObjectInstance`：
-   - 从 `UCustomizableObject` 创建新实例，或从池中获取
-3. 设置参数：
-   - 调用 `SetIntParameter("HairStyle", 3)` 选择发型
-   - 调用 `SetFloatParameter("SkinColor", 0.7)` 设置肤色
-   - 调用 `SetBoolParameter("HasHelmet", true)` 启用头盔
-4. 触发更新：
-   - 调用 `UpdateSkeletalMeshAsync()`，系统在后台执行字节码程序生成最终网格体
-5. 获取结果：
-   - 完成后，`GetSkeletalMesh()` 返回包含所有组合结果的 `USkeletalMesh`
+| 类 | 说明 |
+|---|---|
+| `UCustomizableObject` | 可自定义对象的定义资产（在编辑器中创建） |
+| `UCustomizableObjectInstance` | 可自定义对象的运行时实例，持有当前参数值 |
+| `UCustomizableObjectSystem` | 单例管理器，控制更新、流送、内存预算 |
 
 ## C++ 用法
 
-MutableRuntime 模块的 C++ API 是底层的、非蓝图暴露的。实际使用中通常通过 `CustomizableObject` 模块的上层 API 交互。以下示例展示底层运行时原理。
+MutableRuntime 提供了底层的虚拟机执行引擎、图像处理、网格体处理等核心功能。以下示例展示如何与 Mutable 系统交互。
 
 ### 头文件引入
 
 ```cpp
+#include "MuR/System.h"
+#include "MuR/Model.h"
+#include "MuR/Parameters.h"
 #include "MuR/Image.h"
 #include "MuR/Mesh.h"
-#include "MuR/Model.h"
-#include "MuR/System.h"
-#include "MuR/Parameters.h"
-#include "MuR/ProgramCache.h"
 ```
 
-### 基本用法：图像操作
+### 基本用法 — 参数设置与实例更新
 
-MutableRuntime 提供了完整的图像处理管线，包括格式转换、Mipmap 生成、混合等。
+从 `Parameters.h` 和 `System.h` 提取的核心交互流程：
 
 ```cpp
-// 来源: Internal/MuR/Image.h
+#include "MuR/System.h"
+#include "MuR/Parameters.h"
+#include "MuR/Model.h"
+
+// 假设已有 FModel（编译后的可自定义对象模型）
+TSharedPtr<UE::Mutable::Private::FModel> Model = /* ... */;
+
+// 创建运行时实例
+UE::Mutable::Private::FSystem System;
+TSharedRef<UE::Mutable::Private::FLiveInstance> LiveInstance = System.BeginUpdate(Model, 0 /* State */, 0xFF /* LODMask */);
+
+// 获取参数集并设置参数值
+TSharedPtr<const UE::Mutable::Private::FParameters> Parameters = LiveInstance->Parameters;
+
+// 设置布尔参数
+Parameters->SetBoolValue(0 /* ParamIndex */, true);
+
+// 设置整数参数
+Parameters->SetIntValue(1 /* ParamIndex */, 2 /* Value */);
+
+// 设置浮点参数（0.0 ~ 1.0）
+Parameters->SetFloatValue(2 /* ParamIndex */, 0.75f);
+
+// 执行更新 — 系统内部通过虚拟机生成最终资源
+System.EndUpdate(LiveInstance);
+```
+
+> 来源：`Internal/MuR/Parameters.h`、`Internal/MuR/System.h`
+
+### 进阶用法 — 图像操作
+
+MutableRuntime 包含完整的图像处理管线，支持像素格式转换、mipmap 生成、RLE 压缩等：
+
+```cpp
+#include "MuR/Image.h"
+#include "MuR/ImageTypes.h"
 
 using namespace UE::Mutable::Private;
 
-// 创建一个 256x256 的 RGBA 图像，带 8 级 Mipmap
-TManagedPtr<FImage> Image = MakeManaged<FImage>(
-    256, 256, 8, EImageFormat::RGBA_UByte, EInitializationType::Black);
+// 创建一个 RGBA 8-bit 图像，尺寸 512x512，带 4 级 mipmap
+TManagedPtr<FImage> MyImage = MakeManaged<FImage>(512, 512, 4, EImageFormat::RGBA_UByte, EInitializationType::Black);
 
-// 格式转换到 BC3 压缩
+// 获取 mipmap 0 的数据指针
+uint8* BaseMipData = MyImage->GetLODData(0);
+int32 MipDataSize = MyImage->GetLODDataSize(0);
+
+// 使用 FImageOperator 进行像素格式转换
 FImageOperator ImageOp = FImageOperator::GetDefault(nullptr);
-TManagedPtr<FImage> Compressed = ImageOp.ImagePixelFormat(
-    0,  // 质量 (0=最快)
-    Image.Get(),
-    EImageFormat::BC3
-);
 
-// 生成 Mipmap
+// 将 RGBA 转换为 BC3（块压缩）
+TManagedPtr<FImage> CompressedImage = ImageOp.ImagePixelFormat(
+    3 /* Quality */, MyImage.Get(), EImageFormat::BC3);
+
+// 生成 mipmap
 FMipmapGenerationSettings MipSettings;
-ImageOp.ImageMipmap(0, nullptr, Image.Get(), 0, 8, MipSettings);
+MipSettings.FilterType = EMipmapFilterType::SimpleAverage;
+ImageOp.ImageMipmap(3 /* Quality */, MyImage.Get(), MyImage.Get(), 0, 4, MipSettings);
+
+// 检测纯色图像
+FVector4f PlainColor;
+bool bIsPlain = MyImage->IsPlainColor(PlainColor);
 ```
 
-### 基本用法：网格体数据访问
+> 来源：`Internal/MuR/Image.h`、`Internal/MuR/ImageTypes.h`
+
+### 进阶用法 — RLE 图像压缩
 
 ```cpp
-// 来源: Internal/MuR/MeshPrivate.h
+#include "MuR/ImageRLE.h"
 
-// 迭代网格体的顶点位置
-UntypedMeshBufferIteratorConst PositionIter(
-    Mesh->GetVertexBuffers(), EMeshBufferSemantic::Position, 0);
+using namespace UE::Mutable::Private;
 
-for (int32 v = 0; v < Mesh->GetVertexCount(); ++v)
+// 压缩单通道图像为 RLE
+TManagedPtr<FImage> CompressedL = MakeManaged<FImage>(256, 256, 1, EImageFormat::L_UByteRLE, EInitializationType::NotInitialized);
+CompressRLE_L(MyLImage.Get(), CompressedL.Get());
+
+// 解压 RLE 图像
+TManagedPtr<FImage> Decompressed = MakeManaged<FImage>(256, 256, 1, EImageFormat::L_UByte, EInitializationType::NotInitialized);
+UncompressRLE_L(CompressedL.Get(), Decompressed.Get());
+```
+
+> 来源：`Private/MuR/ImageRLE.h`
+
+### 进阶用法 — 网格体操作
+
+```cpp
+#include "MuR/Mesh.h"
+#include "MuR/MeshPrivate.h"
+
+using namespace UE::Mutable::Private;
+
+// 遍历网格体顶点位置
+UntypedMeshBufferIteratorConst PosIter(MyMesh->GetVertexBuffers(), EMeshBufferSemantic::Position, 0);
+for (int32 v = 0; v < MyMesh->GetVertexCount(); ++v)
 {
-    FVector3f Position = PositionIter.GetAsVec3f();
-    // 处理顶点...
-    ++PositionIter;
+    FVector3f Position = PosIter.GetAsVec3f();
+    ++PosIter;
 }
 
-// 使用类型化迭代器获取法线
-MeshBufferIteratorConst<EMeshBufferFormat::Float32, float, 3> NormalIter(
-    Mesh->GetVertexBuffers(), EMeshBufferSemantic::Normal, 0);
+// 遍历骨骼权重
+UntypedMeshBufferIteratorConst BoneIdxIter(MyMesh->GetVertexBuffers(), EMeshBufferSemantic::BoneIndices, 0);
+UntypedMeshBufferIteratorConst BoneWtIter(MyMesh->GetVertexBuffers(), EMeshBufferSemantic::BoneWeights, 0);
 ```
 
-### 进阶用法：图像层合成
-
-```cpp
-// 来源: Private/MuR/OpImageBlend.h
-
-// 支持多种混合模式：
-// BT_BLEND, BT_SOFTLIGHT, BT_HARDLIGHT, BT_BURN, BT_DODGE,
-// BT_SCREEN, BT_OVERLAY, BT_MULTIPLY, BT_LIGHTEN, BT_NORMAL_COMBINE
-
-// 单像素混合示例（Screen 模式）
-uint32 BaseColor = 128;
-uint32 BlendColor = 200;
-uint32 Mask = 255;
-uint32 Result = ScreenChannelMasked(BaseColor, BlendColor, Mask);
-// Result = 255 - (((255-128) * (255-200)) >> 8) 应用遮罩
-```
-
-### 进阶用法：程序缓存系统
-
-```cpp
-// 来源: Internal/MuR/ProgramCache.h
-
-// FProgramCache 是 Mutable 运行时的核心缓存系统
-// 缓存字节码程序执行的中间结果，避免重复计算
-
-FProgramCache Cache;
-
-// 存储/加载各种类型的结果
-Cache.StoreImage(Address, MyImage);
-TManagedPtr<const FImage> Loaded = Cache.LoadImage(Address);
-
-// 检查缓存是否已存在
-if (Cache.IsSet(Address))
-{
-    // 直接使用缓存结果
-}
-
-// 锁定地址防止被清除
-Cache.LockAddress(Address);
-
-// 管理缓存内存
-Cache.Clear(FProgramCache::EClearFlags::Full);
-```
+> 来源：`Internal/MuR/MeshPrivate.h`
 
 ## Demo 示例
 
-以下示例展示如何使用 MutableRuntime 的 FImage 系统进行基本的图像操作。
+以下是一个最小示例，展示如何创建图像并执行格式转换：
 
 ```cpp
-// MutableImageExample.h
+// MutableDemo.h
 #pragma once
 
-#include "MuR/Image.h"
-#include "MuR/ImageDataStorage.h"
+#include "CoreMinimal.h"
 
-class FMutableImageExample
+class FMutableDemo
 {
 public:
-    static UE::Mutable::Private::TManagedPtr<UE::Mutable::Private::FImage> CreateAndCompressImage();
+    static void RunDemo();
 };
 ```
 
 ```cpp
-// MutableImageExample.cpp
-#include "MutableImageExample.h"
+// MutableDemo.cpp
+#include "MutableDemo.h"
+#include "MuR/Image.h"
+#include "MuR/ImageTypes.h"
 
 using namespace UE::Mutable::Private;
 
-TManagedPtr<FImage> FMutableImageExample::CreateAndCompressImage()
+void FMutableDemo::RunDemo()
 {
-    // 1. 创建一个 512x512 的 RGBA8 图像
-    TManagedPtr<FImage> Image = MakeManaged<FImage>(
-        512,        // 宽度
-        512,        // 高度
-        1,          // LOD 数量
-        EImageFormat::RGBA_UByte,
-        EInitializationType::Black
-    );
+    // 创建 256x256 的 RGBA 图像，带 1 级 mipmap，初始化为黑色
+    TManagedPtr<FImage> SourceImage = MakeManaged<FImage>(256, 256, 1, EImageFormat::RGBA_UByte, EInitializationType::Black);
 
-    // 2. 填充纯色
-    uint8* LODData = Image->GetLODData(0);
-    const int32 PixelCount = 512 * 512;
-    for (int32 i = 0; i < PixelCount; ++i)
+    // 写入一些像素数据（红色渐变）
+    uint8* Data = SourceImage->GetLODData(0);
+    for (int32 y = 0; y < 256; ++y)
     {
-        LODData[i * 4 + 0] = 255; // R
-        LODData[i * 4 + 1] = 128; // G
-        LODData[i * 4 + 2] = 0;   // B
-        LODData[i * 4 + 3] = 255; // A
+        for (int32 x = 0; x < 256; ++x)
+        {
+            int32 Offset = (y * 256 + x) * 4;
+            Data[Offset + 0] = static_cast<uint8>(x);       // R
+            Data[Offset + 1] = 0;                            // G
+            Data[Offset + 2] = 0;                            // B
+            Data[Offset + 3] = 255;                          // A
+        }
     }
 
-    // 3. 检查是否为纯色图像
-    FVector4f PlainColor;
-    bool bIsPlain = Image->IsPlainColor(PlainColor);
-
-    // 4. 转换格式（如需要）
+    // 创建图像操作器并转换为灰度格式
     FImageOperator ImageOp = FImageOperator::GetDefault(nullptr);
-    TManagedPtr<FImage> Converted = ImageOp.ImagePixelFormat(
-        0, Image.Get(), EImageFormat::BC3);
+    TManagedPtr<FImage> GrayImage = ImageOp.ImagePixelFormat(1, SourceImage.Get(), EImageFormat::L_UByte);
 
-    return Converted ? MoveTemp(Converted) : MoveTemp(Image);
+    // 验证
+    if (GrayImage)
+    {
+        int32 GrayDataSize = GrayImage->GetLODDataSize(0);
+        // GrayDataSize 应为 256 * 256 * 1 = 65536
+    }
+
+    // 克隆图像
+    TManagedPtr<FImage> ClonedImage = SourceImage->Clone();
+
+    // 检查是否纯色
+    FVector4f PlainColor;
+    bool bIsPlain = SourceImage->IsPlainColor(PlainColor);
+    // bIsPlain == false（因为是渐变色）
 }
 ```
 
 ## 模块依赖
 
-### MutableRuntime 模块
-
-无特殊依赖（仅标准 Core/Engine/Slate 等）。MutableRuntime 是完全自包含的运行时模块，不依赖 UE 编辑器模块。
-
-### CustomizableObject 模块
+### MutableRuntime 内部依赖
 
 | 模块 | 用途 |
 |---|---|
-| `MutableTools` | 编译可定制对象模型 |
-| `DerivedDataCache` | 缓存编译产物 |
-| `MessageLog` | 编译日志输出 |
+| `DerivedDataCache` | 运行时数据缓存 |
+| `MutableTools` | 编译期工具（仅 CustomizableObject 模块依赖） |
 
-### 使用者需要的依赖
+### 使用者的依赖
 
-要使用 Mutable 系统，你的 Build.cs 需要：
-```
-PublicDependencyModuleNames.AddRange(new string[] { "CustomizableObject", "MutableRuntime" });
-```
+要使用 Mutable 的可自定义对象功能，你的模块需要依赖：
+
+| 模块 | 用途 |
+|---|---|
+| `MutableRuntime` | 底层运行时引擎（图像/网格体/虚拟机） |
+| `CustomizableObject` | UE 可自定义对象资产类型与实例管理 |
+
+无其他特殊依赖（仅标准 Core/Engine/Slate 等）。
 
 ## 维护状态
 
@@ -258,24 +265,23 @@ PublicDependencyModuleNames.AddRange(new string[] { "CustomizableObject", "Mutab
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `70229bdc` | [Mutable] Fix duplicated Skeletal Mesh geometry if there is multiple SKM with the same name. | 修复同名骨骼网格体导致几何体重复的问题 |
-| 2026-05-26 | `2b0ca8bd` | [mutable] Fixed "Clip mesh with UV Mask" op not loading the appropriate mask mip. | 修复 UV 遮罩裁剪操作未加载正确 Mip 级别 |
-| 2026-05-26 | `06ea27d3` | [Mutable] Fix texture parameters using the wrong method to compute the LODBias. An incorrect LODBias | 修复纹理参数 LODBias 计算方法错误 |
-| 2026-05-26 | `e9c39661` | [Mutable] Allow more clothing asset types by using the ClothingAssetBase interface. | 支持更多布料资产类型 |
-| 2026-05-25 | `c8ce9ff7` | [Mutable] Fix possible data race when comparing PassthroughObjects. | 修复 PassthroughObject 比较时可能的数据竞争 |
+| 2026-05-26 | `70229bdc` | [Mutable] Fix duplicated Skeletal Mesh geometry if there is multiple SKM with the same name. | 修复同名骨骼网格体导致的几何体重复问题 |
+| 2026-05-26 | `2b0ca8bd` | [mutable] Fixed "Clip mesh with UV Mask" op not loading the appropriate mask mip. | 修复 UV 遮罩裁剪操作未加载正确 mipmap 的问题 |
+| 2026-05-26 | `06ea27d3` | [Mutable] Fix texture parameters using the wrong method to compute the LODBias. | 修复纹理参数计算 LODBias 方法错误的问题 |
+| 2026-05-26 | `e9c39661` | [Mutable] Allow more clothing asset types by using the ClothingAssetBase interface. | 通过 ClothingAssetBase 接口支持更多服装资产类型 |
+| 2026-05-25 | `c8ce9ff7` | [Mutable] Fix possible data race when comparing PassthroughObjects. | 修复比较 PassthroughObjects 时可能出现的数据竞争 |
 
 ### 维护评价
 
-**活跃维护**。Mutable 虽然于 2024 年 9 月才从 Experimental 迁移到 Beta，但近期（2026 年 5 月）仍有密集的 bug 修复和功能改进。该项目由 Epic Games 官方维护，代码质量高，有完善的内存追踪、性能分析和线程安全机制。
-
-**注意事项**：
-- 当前标记为 **Beta**，API 可能在未来版本中发生变化
-- 源码规模庞大（1200+ 文件），内部实现复杂，建议主要通过 `CustomizableObject` 模块的上层 API 使用
-- 部分内部类型（如 `FImage`、`FMesh`）使用自定义托管指针（`TManagedPtr`），不直接暴露给蓝图
-
-**推荐使用**：适合需要运行时角色/对象自定义的中大型项目。对于简单的材质参数切换场景，可能过于重量级。
+- **状态**：**活跃维护中**。作为 Epic 官方的可自定义对象系统，持续获得功能性更新和 Bug 修复。
+- **年龄**：约 1 年（2024 年 9 月从 Experimental 升级为 Beta），但底层技术（原名 Mutable）有更长历史。
+- **更新频率**：非常活跃，仅 2026-05-25 ~ 05-26 就有 5 次提交，涵盖骨骼网格体、纹理、布料等多个子系统。
+- **已知限制**：当前仍为 Beta 状态（`IsBetaVersion=true`），`EnabledByDefault=false` 需手动启用。
+- **源码规模**：1206 个源文件，属于超大型插件，包含完整的编译器、虚拟机、图像/网格体处理器和运行时压缩库（MIRO）。
+- **推荐**：✅ **推荐使用**。这是 Epic 官方维护的角色自定义系统，API 稳定，功能完善，适合需要运行时角色/资产可自定义的项目。注意 Beta 状态可能带来 API 变更。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable)
 - [官方文档](https://docs.unrealengine.com/en-US/InteractiveExperiences/CustomizableObjects/)
+```

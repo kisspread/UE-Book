@@ -4,11 +4,11 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | Alembic 导入器 |
+| 中文名 | Alembic导入器 |
 | 分类 | Importers |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
-| 模块 | `AlembicImporter` (Editor), `AlembicLibrary` (Editor) |
+| 模块 | `AlembicImporter` (Runtime), `AlembicLibrary` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2022-01-26 |
 | 年龄标签 | 🆕（约 3 年） |
@@ -16,39 +16,45 @@
 
 ## 用途
 
-Alembic Importer 插件用于将 Alembic (.abc) 格式的 3D 动画和几何数据导入到 Unreal Engine 中。Alembic 是一种开放的、行业标准的计算机图形数据交换格式，广泛应用于影视特效和游戏开发中，用于在不同的 DCC（数字内容创建）软件之间交换复杂的动画网格、几何缓存和骨骼网格。
+此插件用于将 **Alembic (.abc)** 文件导入到虚幻引擎中。Alembic 是视觉特效和动画行业广泛使用的开放标准格式，用于存储复杂的动画几何体（如角色、流体、粒子系统等）缓存数据。插件解决了从DCC工具（如Maya, 3ds Max, Blender等）导出复杂动画资产到游戏引擎的关键需求，支持将动画数据转化为UE可使用的资产。
 
-这个插件的核心价值在于它不仅仅是一个简单的文件加载器，而是一个强大的数据处理管道。它能够处理来自 Maya、3ds Max 等 DCC 工具导出的、包含复杂拓扑变化、变形动画和精确时间信息的 Alembic 文件，并将其转换为 UE5 中可用的静态网格体（Static Mesh）、几何缓存（Geometry Cache）或包含变形目标（Morph Targets）的骨骼网格体（Skeletal Mesh）。它解决了在专业动画/特效制作流程与实时游戏引擎之间进行高效、高保真度资产导入的关键问题。
+核心功能包括：
+*   **多类型导入**：支持将ABC文件作为静态网格、几何缓存（Geometry Cache）或骨骼网格导入。
+*   **动画采样控制**：提供灵活的采样选项（按帧、按时间步长、按X帧），支持重采样和压缩。
+*   **数据压缩优化**：支持使用PCA（主成分分析）算法压缩顶点动画数据，以减少内存占用和提升性能。
+*   **材质与法线处理**：能够从ABC文件的面集（Face Sets）创建或查找材质，并提供丰富的法线计算与平滑组生成选项。
+*   **空间转换**：内置对Maya、3ds Max等不同DCC软件坐标系和轴向的预设转换。
 
 ## 使用场景
 
--   **影视级角色或生物动画导入**：你从 Maya 中导出了一个带有复杂面部动画和布料模拟的角色 Alembic 序列 → 使用此插件将其作为几何缓存或带有变形目标的骨骼网格体导入，保留原始动画细节。
--   **复杂的特效序列**：你有一个使用 Houdini 或 Bifrost 制作的流体、粒子或刚体破碎模拟的 Alembic 序列 → 导入为几何缓存，以在游戏或实时项目中播放。
--   **需要高精度几何缓存的场景**：你需要一个精确记录顶点位置随时间变化的序列（如可变形的物理对象）→ 将其导入为几何缓存资产。
--   **DCC 工具与 UE5 的动画协作**：动画师在 DCC 软件中完成动画后，可以通过导出 Alembic 文件并使用此插件，将动画无缝地带入 UE5 环境中进行预览、光照设置或进一步开发。
+*   你从Maya或3ds Max中导出了一个角色面部表情动画的Alembic缓存 → 使用`Skeletal`或`GeometryCache`模式导入，将动画数据压缩为形态目标（Morph Targets）或几何缓存资产。
+*   你需要将一段复杂的流体模拟（如水、烟雾）作为动画网格导入游戏引擎 → 使用`GeometryCache`模式导入，并调整采样和压缩设置以获得最佳性能和视觉效果。
+*   你有一个由DCC工具导出的、带动画的静态场景（如摇摆的树木、飘动的旗帜）→ 使用`GeometryCache`模式将其导入为动画静态网格。
+*   你需要为特定的动画序列精确控制导入的起始帧、结束帧和采样率 → 在导入设置中配置`FAbcSamplingSettings`。
 
 ## 蓝图用法
 
-此插件主要作为编辑器导入功能存在，其核心设置（`UAbcImportSettings` 及其子结构体）定义了丰富的参数，这些参数通常在编辑器导入对话框中设置。蓝图可以通过这些数据结构来预配置或修改导入行为。
+该插件的核心导入逻辑由C++实现，主要通过编辑器导入对话框进行交互。但其导入参数通过蓝图可读写的`UCLASS`和`USTRUCT`暴露，允许在蓝图或编辑器工具中进行程序化设置。
 
 ### 核心节点
 
+此插件没有直接暴露`BlueprintCallable`函数供游戏逻辑调用。其蓝图交互点主要体现在可编辑的导入设置类`UAbcImportSettings`及其关联结构体上。
+
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `UAbcImportSettings::Get()` | 获取 Alembic 导入设置的单例实例 | `UAbcImportSettings` |
-| `ImportType` (属性) | 获取或设置导入类型（静态网格、几何缓存、骨骼） | `UAbcImportSettings` |
-| `SamplingSettings` (属性) | 获取或设置动画采样相关配置 | `UAbcImportSettings` |
-| `CompressionSettings` (属性) | 获取或设置骨骼网格体导入的压缩（PCA）配置 | `UAbcImportSettings` |
-| `GeometryCacheSettings` (属性) | 获取或设置几何缓存特定的配置 | `UAbcImportSettings` |
-| `ConversionSettings` (属性) | 获取或设置坐标系转换预设（如 Maya、3ds Max） | `UAbcImportSettings` |
+| `UAbcImportSettings` | 存储所有Alembic文件导入选项的单例对象。在导入对话框中被读取和修改。 | `UAbcImportSettings` |
+| `EAlembicImportType` | 枚举：指定导入类型（静态网格、几何缓存、骨骼）。 | `EAlembicImportType` |
+| `FAbcSamplingSettings` | 结构体：控制动画采样（类型、步长、起止帧）。 | `FAbcSamplingSettings` |
+| `FAbcCompressionSettings` | 结构体：控制动画压缩（合并网格、基准计算方式）。 | `FAbcCompressionSettings` |
+| `FAbcGeometryCacheSettings` | 结构体：控制几何缓存特有设置（扁平化轨迹、运动向量）。 | `FAbcGeometryCacheSettings` |
 
 ### 使用示例（蓝图描述）
 
-虽然通常不通过蓝图节点直接导入，但你可以通过蓝图获取并修改 `UAbcImportSettings` 的实例，以实现自动化导入流程。例如：
-1.  使用 `UAbcImportSettings::Get()` 节点获取设置实例。
-2.  使用 `Set Members in AbcImportSettings` 节点，将 `ImportType` 设置为 `GeometryCache`。
-3.  通过访问 `GeometryCacheSettings` 子属性，设置 `bFlattenTracks` 和 `MotionVectors` 等参数。
-4.  最终，这些配置好的设置对象可以被传递给底层的 C++ 导入函数。
+在蓝图中，你可以通过获取`UAbcImportSettings::Get()`单例来访问和修改导入选项。例如，你可以创建一个编辑器工具蓝图，在其中：
+1.  使用`Set Property`节点将`ImportType`设置为`GeometryCache`。
+2.  访问`SamplingSettings`属性，将`SamplingType`设置为`PerXFrames`，并设置`FrameSteps`为2。
+3.  访问`GeometryCacheSettings`属性，将`MotionVectors`设置为`ImportAbcVelocitiesAsMotionVectors`。
+这些设置会直接影响下次通过该插件导入Alembic文件时的行为。
 
 ## C++ 用法
 
@@ -57,219 +63,187 @@ Alembic Importer 插件用于将 Alembic (.abc) 格式的 3D 动画和几何数�
 ```cpp
 #include "AbcImporter.h"
 #include "AbcImportSettings.h"
+#include "AbcFile.h"
 ```
 
 ### 基本用法
 
-以下示例展示了如何在 C++ 中使用 `FAbcImporter` 来导入一个 Alembic 文件。这模拟了编辑器内部调用的过程。
-（来源：基于 `Public/AbcImporter.h` 中的 API 设计）
+以下示例展示了如何通过C++编程方式打开一个Alembic文件并将其作为几何缓存导入。
 
 ```cpp
+// 源文件参考: Public/AbcImporter.h
 #include "AbcImporter.h"
 #include "AbcImportSettings.h"
-#include "GeometryCache/GeometryCache.h"
-#include "UObject/SavePackage.h"
 
-void ImportAlembicFileAsGeometryCache()
+void ImportAbcAsGeometryCache(const FString& AbcFilePath, UObject* InParent, EObjectFlags Flags)
 {
-    // 1. 创建导入器实例
-    FAbcImporter Importer;
-
-    // 2. 打开并解析 Alembic 文件，获取基础信息
-    const FString AbcFilePath = TEXT("/Game/Assets/MyAnimation.abc");
-    EAbcImportError OpenError = Importer.OpenAbcFileForImport(AbcFilePath);
-    if (OpenError != AbcImportError_NoError)
+    // 1. 创建并配置导入器实例
+    FAbcImporter AbcImporter;
+    
+    // 2. 打开ABC文件并检查错误
+    const EAbcImportError OpenError = AbcImporter.OpenAbcFileForImport(AbcFilePath);
+    if (OpenError != EAbcImportError::AbcImportError_NoError)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to open Alembic file: %s"), *AbcFilePath);
+        UE_LOG(LogTemp, Error, TEXT("Failed to open ABC file: %s"), *AbcFilePath);
         return;
     }
-
-    // 3. 获取或配置导入设置 (这里假设使用默认设置)
-    UAbcImportSettings* ImportSettings = UAbcImportSettings::Get();
-    // 例如，确保是几何缓存模式
-    ImportSettings->ImportType = EAlembicImportType::GeometryCache;
-
-    // 4. 导入轨道数据（动画采样，多线程处理）
-    const int32 NumThreads = FPlatformMisc::NumberOfCores();
-    EAbcImportError ImportError = Importer.ImportTrackData(NumThreads, ImportSettings);
-    if (ImportError != AbcImportError_NoError)
+    
+    // 3. 获取并配置导入设置
+    UAbcImportSettings* Settings = UAbcImportSettings::Get();
+    if (Settings)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to import track data from Alembic file."));
+        Settings->ImportType = EAlembicImportType::GeometryCache;
+        // 可以进一步配置Settings->SamplingSettings, Settings->GeometryCacheSettings等
+    }
+    
+    // 4. 导入轨道数据
+    const EAbcImportError ImportError = AbcImporter.ImportTrackData(FPlatformMisc::NumberOfCores(), Settings);
+    if (ImportError != EAbcImportError::AbcImportError_NoError)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to import track data."));
         return;
     }
-
-    // 5. 将数据导入为 UGeometryCache 资产
-    // 假设我们有一个包用于保存资产
-    UPackage* Package = CreatePackage(*TEXT("/Game/MyImportedGeometryCache"));
-    UGeometryCache* GeometryCache = Importer.ImportAsGeometryCache(Package, RF_Public | RF_Standalone);
+    
+    // 5. 执行几何缓存导入
+    UGeometryCache* GeometryCache = AbcImporter.ImportAsGeometryCache(InParent, Flags);
     if (GeometryCache)
     {
         UE_LOG(LogTemp, Log, TEXT("Successfully imported GeometryCache: %s"), *GeometryCache->GetName());
-        // 6. 标记包为已修改并保存（可选）
-        Package->MarkPackageDirty();
-        FSavePackageArgs SaveArgs;
-        SaveArgs.TopLevelFlags = EObjectFlags::RF_Public | EObjectFlags::RF_Standalone;
-        UPackage::SavePackage(Package, GeometryCache, *FPackageName::LongPackageNameToFilename(Package->GetName(), FPackageName::GetAssetPackageExtension()), SaveArgs);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create GeometryCache from Alembic file."));
+        // 对导入的GeometryCache资产进行后续处理...
     }
 }
 ```
 
 ### 进阶用法
 
-`FAbcFile` 类提供了更底层的控制，例如逐帧读取和处理。
-（来源：基于 `Public/AbcFile.h` 的 API 设计）
+对于更复杂的场景，如需要并发读取帧数据或进行后期处理，可以直接使用`FAbcFile`和`FAbcUtilities`类。
 
 ```cpp
+// 源文件参考: Public/AbcFile.h, Public/AbcUtilities.h
 #include "AbcFile.h"
-#include "GeometryCache/GeometryCacheMeshData.h"
+#include "AbcUtilities.h"
 
-void ProcessAbcFrameByFrame()
+void ProcessAbcFileFrames(const FString& AbcFilePath)
 {
-    FAbcFile AbcFile(TEXT("/Game/Assets/ComplexSimulation.abc"));
-    if (AbcFile.Open() != AbcImportError_NoError) return;
-
-    // 使用自定义设置导入（可选）
-    UAbcImportSettings* Settings = UAbcImportSettings::Get();
-    Settings->SamplingSettings.SamplingType = EAlembicSamplingType::PerXFrames;
-    Settings->SamplingSettings.FrameSteps = 2; // 每隔一帧采样
-    AbcFile.Import(Settings);
-
-    // 遍历帧并处理数据
-    const int32 StartFrame = AbcFile.GetStartFrameIndex();
-    const int32 EndFrame = AbcFile.GetEndFrameIndex();
-
-    // 使用回调函数进行多线程帧处理
-    AbcFile.ProcessFrames([](int32 FrameIndex, FAbcFile* InAbcFile)
+    // 1. 创建FAbcFile实例并打开
+    FAbcFile AbcFile(AbcFilePath);
+    EAbcImportError Error = AbcFile.Open();
+    if (Error != EAbcImportError::AbcImportError_NoError)
     {
-        FGeometryCacheMeshData FrameMeshData;
-        // 使用并发读取索引 (ReadIndex) 0
-        FAbcUtilities::GetFrameMeshData(*InAbcFile, FrameIndex, FrameMeshData, 0);
-        // ... 在此处处理每一帧的 MeshData
-    }, EFrameReadFlags::None);
-
-    // 获取整个动画序列的边界信息
-    const FBoxSphereBounds& TotalBounds = AbcFile.GetArchiveBounds();
-    UE_LOG(LogTemp, Log, TEXT("Animation bounds: %s"), *TotalBounds.ToString());
+        return;
+    }
+    
+    // 2. 配置导入设置（可选）
+    // ... 设置AbcFile的ImportSettings ...
+    
+    // 3. 处理帧数据（例如，用于自定义分析或预览）
+    int32 StartFrame = AbcFile.GetStartFrameIndex();
+    int32 EndFrame = AbcFile.GetEndFrameIndex();
+    
+    for (int32 FrameIndex = StartFrame; FrameIndex <= EndFrame; ++FrameIndex)
+    {
+        FGeometryCacheMeshData MeshData;
+        // 使用FAbcUtilities获取特定帧的合并网格数据
+        FAbcUtilities::GetFrameMeshData(AbcFile, FrameIndex, MeshData);
+        
+        // 此处可以对MeshData进行分析、修改或序列化等操作
+        // ...
+    }
 }
 ```
 
 ## Demo 示例
 
-以下是一个简单的命令行工具 (Commandlet) 示例，演示了如何使用 Alembic Importer API 进行基本导入。此代码模拟了 `Private/AlembicTestCommandlet.h` 中测试命令的部分逻辑。
+一个最小化的、用于将Alembic文件作为几何缓存导入并获取其动画时长信息的C++示例。
 
-**MyAlembicImportCommandlet.h**
+**AbcImportDemo.h**
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Commandlets/Commandlet.h"
-#include "MyAlembicImportCommandlet.generated.h"
 
-UCLASS()
-class UMyAlembicImportCommandlet : public UCommandlet
+class UGeometryCache;
+
+DECLARE_LOG_CATEGORY_EXTERN(LogAbcImportDemo, Log, All);
+
+class FAbcImportDemo
 {
-    GENERATED_BODY()
-
 public:
-    virtual int32 Main(const FString& Params) override;
+    static UGeometryCache* ImportAbcAsGeometryCacheWithInfo(const FString& AbcFilePath, UObject* Outer);
+    static float GetAnimationDuration(const FString& AbcFilePath);
 };
 ```
 
-**MyAlembicImportCommandlet.cpp**
+**AbcImportDemo.cpp**
 ```cpp
-#include "MyAlembicImportCommandlet.h"
+#include "AbcImportDemo.h"
 #include "AbcImporter.h"
+#include "AbcFile.h"
 #include "AbcImportSettings.h"
-#include "Misc/PackageName.h"
-#include "UObject/SavePackage.h"
 
-int32 UMyAlembicImportCommandlet::Main(const FString& Params)
+DEFINE_LOG_CATEGORY(LogAbcImportDemo);
+
+UGeometryCache* FAbcImportDemo::ImportAbcAsGeometryCacheWithInfo(const FString& AbcFilePath, UObject* Outer)
 {
-    // 解析命令行参数获取 .abc 文件路径
-    TArray<FString> Tokens;
-    TArray<FString> Switches;
-    ParseCommandLine(*Params, Tokens, Switches);
-    if (Tokens.Num() == 0)
-    {
-        UE_LOG(LogTemp, Error, TEXT("Usage: MyAlembicImportCommandlet <path_to_abc_file>"));
-        return 1;
-    }
-    const FString AbcFilePath = Tokens[0];
-
-    // 创建导入器并打开文件
     FAbcImporter Importer;
-    EAbcImportError Error = Importer.OpenAbcFileForImport(AbcFilePath);
-    if (Error != AbcImportError_NoError)
+    
+    // 打开文件
+    if (Importer.OpenAbcFileForImport(AbcFilePath) != EAbcImportError::AbcImportError_NoError)
     {
-        UE_LOG(LogTemp, Error, TEXT("Error opening ABC file: %d"), static_cast<int32>(Error));
-        return 1;
+        UE_LOG(LogAbcImportDemo, Error, TEXT("Cannot open file: %s"), *AbcFilePath);
+        return nullptr;
     }
-
-    // 使用默认设置导入轨道数据
+    
+    // 设置为几何缓存导入
     UAbcImportSettings* Settings = UAbcImportSettings::Get();
-    Settings->ImportType = EAlembicImportType::GeometryCache; // 设置为几何缓存
-    Error = Importer.ImportTrackData(FPlatformMisc::NumberOfCores(), Settings);
-    if (Error != AbcImportError_NoError)
+    Settings->ImportType = EAlembicImportType::GeometryCache;
+    
+    // 导入轨道
+    if (Importer.ImportTrackData(1, Settings) != EAbcImportError::AbcImportError_NoError)
     {
-        UE_LOG(LogTemp, Error, TEXT("Error importing track data: %d"), static_cast<int32>(Error));
-        return 1;
+        UE_LOG(LogAbcImportDemo, Error, TEXT("Failed to import tracks for: %s"), *AbcFilePath);
+        return nullptr;
     }
-
-    // 创建包并导入资产
-    FString BaseName = FPaths::GetBaseFilename(AbcFilePath);
-    FString PackageName = FPaths::Combine(TEXT("/Game/Imported"), BaseName);
-    UPackage* Package = CreatePackage(*PackageName);
-
-    // 根据设置的导入类型执行导入
-    TArray<UObject*> ImportedObjects;
-    switch (Settings->ImportType)
+    
+    // 执行导入
+    UGeometryCache* GC = Importer.ImportAsGeometryCache(Outer, RF_NoFlags);
+    
+    if (GC)
     {
-    case EAlembicImportType::StaticMesh:
-        ImportedObjects = Importer.ImportAsStaticMesh(Package, RF_Public | RF_Standalone);
-        break;
-    case EAlembicImportType::GeometryCache:
-        if (UGeometryCache* Cache = Importer.ImportAsGeometryCache(Package, RF_Public | RF_Standalone))
-        {
-            ImportedObjects.Add(Cache);
-        }
-        break;
-    case EAlembicImportType::Skeletal:
-        ImportedObjects = Importer.ImportAsSkeletalMesh(Package, RF_Public | RF_Standalone);
-        break;
+        UE_LOG(LogAbcImportDemo, Log, TEXT("Imported GC '%s' with %d tracks."), *GC->GetName(), GC->GetTracks().Num());
     }
+    
+    return GC;
+}
 
-    if (ImportedObjects.Num() > 0)
+float FAbcImportDemo::GetAnimationDuration(const FString& AbcFilePath)
+{
+    FAbcFile AbcFile(AbcFilePath);
+    if (AbcFile.Open() != EAbcImportError::AbcImportError_NoError)
     {
-        UE_LOG(LogTemp, Log, TEXT("Successfully imported %d asset(s) from: %s"), ImportedObjects.Num(), *AbcFilePath);
-        // 保存包
-        FSavePackageArgs SaveArgs;
-        SaveArgs.TopLevelFlags = RF_Public | RF_Standalone;
-        UPackage::SavePackage(Package, nullptr, *FPackageName::LongPackageNameToFilename(PackageName, FPackageName::GetAssetPackageExtension()), SaveArgs);
+        return 0.0f;
     }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No assets were imported from: %s"), *AbcFilePath);
-    }
-
-    return 0;
+    
+    // 导入设置是获取正确帧范围信息所必需的
+    UAbcImportSettings* Settings = UAbcImportSettings::Get();
+    AbcFile.Import(Settings);
+    
+    const float Duration = AbcFile.GetImportLength();
+    UE_LOG(LogAbcImportDemo, Log, TEXT("Animation duration for '%s': %.3f seconds"), *AbcFilePath, Duration);
+    
+    return Duration;
 }
 ```
 
 ## 模块依赖
 
-要在你的项目或插件中使用 AlembicImporter 的 C++ API，你需要链接 `AlembicLibrary` 模块。
+从插件源码和`.uplugin`文件分析，使用者需依赖以下非标准模块：
 
 | 模块 | 用途 |
 |---|---|
-| `AlembicLibrary` | Alembic Importer 的核心运行时库，包含文件解析、数据转换和导入逻辑 |
-| `MeshUtilities` | 用于法线、切线计算等网格工具函数 |
-| `SkeletalMesh` | 用于骨骼网格体的构建和相关数据结构 |
-
-*注：`GeometryCache` 模块是插件的依赖项，但其本身也是一个独立的运行时插件。*
+| `AlembicLibrary` | 本插件的核心功能库，提供了Alembic文件解析、数据转换和导入的主要API。 |
+| `GeometryCache` | 提供`UGeometryCache`资产类型，用于存储导入的顶点动画数据。这是此插件的强制依赖。 |
+| `Alembic (第三方库)` | `AlembicLibrary`模块内部链接的Alembic C++库，用于解析`.abc`文件格式。无需使用者直接链接。 |
 
 ## 维护状态
 
@@ -277,23 +251,21 @@ int32 UMyAlembicImportCommandlet::Main(const FString& Params)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了32位与64位格式化说明符不匹配的编译器警告/错误。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将过时的 UE_LOG 宏迁移到新的 UE_LOGF 宏。 |
-| 2026-02-27 | `8ce7ca27` | AlembicImporter: Fixed import failure when it couldn't retrieve velocities even though those should | 修复了在应该能读取速度但失败时导致的导入错误。 |
-| 2026-02-25 | `74e86b93` | Alembic Import: Fixed out of bounds access (potentially due to negative times). | 修复了潜在的由负时间值引起的数组越界访问问题。 |
-| 2026-02-03 | `88ba268b` | Fix unreachable code errors | 修复了不可达代码的错误。 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了32位与64位数据格式化字符串不匹配的潜在问题。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将旧的日志宏迁移到新的UE_LOGF宏，属于代码现代化更新。 |
+| 2026-02-27 | `8ce7ca27` | AlembicImporter: Fixed import failure when it couldn't retrieve velocities even though those should | 修复了在应该能获取速度数据但无法获取时导致的导入失败问题。 |
+| 2026-02-25 | `74e86b93` | Alembic Import: Fixed out of bounds access (potentially due to negative times). | 修复了可能由负时间值引起的数组越界访问错误，增强了稳定性。 |
+| 2026-02-03 | `88ba268b` | Fix unreachable code errors | 修复了编译器报出的无法到达代码错误，改善代码质量。 |
 
 ### 维护评价
 
-Alembic Importer 是一个**处于活跃维护状态**的插件。
-- **年龄**：创建于 2022 年，属于相对较新的插件。
-- **更新频率**：从提交历史看，在 2026 年仍有规律的功能性修复和改进，特别是针对编译器兼容性、稳定性和错误处理。
-- **维护内容**：近期更新集中在修复 bug、提升代码健壮性和适配引擎 API 的演进（如日志宏迁移），表明开发团队仍在关注其质量。
-- **依赖**：它依赖于外部的 Alembic 库，但 Epic Games 将其从实验版正式发布，说明其稳定性已得到认可。
-- **推荐**：对于需要导入 Alembic 格式动画资产的工作流程，此插件是官方提供的标准且可靠的解决方案，推荐使用。
+*   **活跃维护**：插件从实验阶段移出（2022年），并持续获得更新。最近一次更新在2026年4月，表明仍在积极维护。
+*   **更新内容**：近期的提交主要集中在**错误修复**和**代码质量改进**（格式化、宏迁移、越界访问修复），说明插件功能已趋于稳定，团队致力于提升其可靠性和兼容性。
+*   **推荐使用**：推荐使用。作为官方提供的、功能完备的Alembic导入解决方案，它经过了广泛测试，并能得到持续维护。对于需要在UE中处理复杂动画缓存的工作流，这是首选方案。
+*   **注意事项**：插件为**Editor-only**模块，不会打包到发布版本中，仅用于内容创建。导入过程可能较为耗时和消耗内存，特别是处理大型或高保真度的ABC文件时，建议合理配置采样和压缩选项。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/AlembicImporter)
 - [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/AlembicImporter/)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/AlembicImporter/Source/AlembicLibrary/Private/AlembicTestCommandlet.h) (注意：此为 Commandlet 测试，非标准单元测试)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/AlembicImporter/Tests) (路径基于常规插件结构推断)

@@ -7,7 +7,7 @@
 | 中文名 | 浮力系统 |
 | 分类 | Water |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图接口、运行时设置） |
+| 包含内容 | ✅ 有（蓝图接口、开发者设置） |
 | 模块 | `Buoyancy` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2023-08-01 |
@@ -16,52 +16,61 @@
 
 ## 用途
 
-Buoyancy 插件为 Chaos 物理系统添加了物理级浮力模拟能力，通过修改 Chaos 求解器的中间碰撞阶段（MidPhase）来实现。它的核心工作流程是：
+Buoyancy 插件为 Unreal Engine 的 Chaos 物理系统提供了**实时浮力模拟能力**，专门配合 Water 插件生成的水体使用。它解决的核心问题是：当刚体物理对象与水体（河流、湖泊、海洋）接触时，如何在物理线程上高效计算浮力、阻力、升力等流体力学效果。
 
-1. **检测浸没**：在物理线程上检测刚体与水体的重叠，计算物体被水淹没的体积和质心
-2. **施加浮力**：根据阿基米德原理，按浸没体积比例施加向上推力，同时模拟水阻力和升力
-3. **处理事件**：当物体接触水面时触发表面接触回调（Begin/Continue/End），供游戏逻辑使用
+插件的核心设计思路是利用 Chaos 物理的 **MidPhaseModification** 回调，在物理引擎的碰撞检测中间阶段拦截水体-刚体的交互，实时计算浸没体积、浮力中心以及流体动力，而无需在游戏线程上手动管理物理模拟。它支持：
 
-与 Water 插件配合，支持河流（Spline）、海洋、湖泊等水体类型，并支持 Gerstner 波浪和浅水模拟数据。核心计算在物理线程上异步执行，避免阻塞游戏线程。
+- **多种水体类型**：河流（Spline）、湖泊、海洋（Ocean）以及浅水模拟（Shallow Water Simulation）
+- **Gerstner 波浪**：与 Water 插件的波浪系统集成，波高和法线会随位置和时间变化
+- **精确流体力学**：基于三角面片的阻力（Drag）和升力（Lift）计算，支持偏转效应
+- **线程安全**：所有物理计算在物理线程上执行，通过异步回调与游戏线程同步
+- **布料浮力**：通过 `FBuoyancyField` 为 Chaos 布料系统提供水下浮力效果
 
 ## 使用场景
 
-- 你在做一个海洋生存游戏，需要船只在水面上漂浮 → 使用 Buoyancy 让物体自动浮在 Water 插件生成的水面上
-- 你需要物理精确的浮力（不是简单的弹簧浮力），物体形状会影响漂浮姿态 → 此插件基于体积计算真实浮力
-- 你需要检测物体入水/出水事件来播放水花特效 → 实现 `IBuoyancyEventInterface` 接收 SurfaceTouch 回调
-- 你有使用 Gerstner 波浪的海洋，物体需要随波浪起伏 → 插件内置波浪采样支持
-- 你需要布料/软体在水中的浮力效果 → `FBuoyancyField` 可与 Chaos Cloth 集成
+- 你制作了一个水上漂流游戏 → 需要船只、木筏等物体自然浮在水面上并受水流影响
+- 你在做海滩场景，需要物体被海浪推动 → 结合 Gerstner 波浪实现真实的水面互动
+- 你需要角色或物体掉入水中后产生浮力效果 → 通过物理模拟而非动画实现自然的漂浮/沉没
+- 你在做布料模拟（如旗帜、帆布），需要它们在水面上有正确的物理表现 → 使用 `FBuoyancyField`
+- 你需要检测物体何时接触水面（溅水特效触发）→ 通过 `IBuoyancyEventInterface` 回调
 
 ## 蓝图用法
 
-### 核心节点
+### 核心接口：IBuoyancyEventInterface
+
+实现此接口的 Actor 会收到水面接触事件，用于触发特效、声音等。
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SetEnabled` | 启用/禁用浮力子系统 | `UBuoyancySubsystem` |
-| `IsEnabled` | 查询浮力子系统是否启用 | `UBuoyancySubsystem` |
-| `OnSurfaceTouchBegin` | 物体首次接触水面时调用 | `IBuoyancyEventInterface` |
-| `OnSurfaceTouching` | 物体持续接触水面时调用 | `IBuoyancyEventInterface` |
-| `OnSurfaceTouchEnd` | 物体离开水面时调用 | `IBuoyancyEventInterface` |
+| `OnSurfaceTouchBegin` | 物体首次接触水面时触发（可多次调用，对应物体多个部位） | `IBuoyancyEventInterface` |
+| `OnSurfaceTouching` | 物体持续与水面接触时每帧触发 | `IBuoyancyEventInterface` |
+| `OnSurfaceTouchEnd` | 物体完全离开水面或完全沉没时触发 | `IBuoyancyEventInterface` |
 
-### 使用示例（蓝图描述）
+### 使用示例
 
-**启用/禁用浮力子系统：**
-1. 获取 `Buoyancy Subsystem` 引用（通过 `Get World Subsystem` 节点，类选择 `UBuoyancySubsystem`）
-2. 调用 `SetEnabled` 节点，传入 `true` 或 `false` 控制浮力是否生效
+1. **启用插件**：在 Edit → Plugins 中搜索 "Buoyancy" 并启用（需要同时启用 Water 插件）
+2. **配置水体**：放置 `AWaterBody` Actor（河流/湖泊/海洋），确保 Water 插件正常工作
+3. **添加浮力**：为需要浮力的 Actor 添加物理组件（如 `UStaticMeshComponent`），确保 Simulate Physics 为 true
+4. **实现事件接口**：
+   - 在 Actor 蓝图中添加 `Buoyancy Event Interface` 接口
+   - 实现 `OnSurfaceTouchBegin`：在首次接触水面时播放溅水特效
+   - 实现 `OnSurfaceTouching`：持续接触时更新泡沫效果
+   - 实现 `OnSurfaceTouchEnd`：物体离开水面时停止特效
+5. **调整设置**：在 Project Settings → Buoyancy 中调整水密度、阻力系数等参数
 
-**接收物体入水事件：**
-1. 打开你的 Actor 蓝图（例如一艘船）
-2. 在类设置中添加 `Buoyancy Event Interface` 接口
-3. 实现 `OnSurfaceTouchBegin` 事件，获取 `WaterBody`、`SubmergedComponent`、`SubmergedVolume` 等参数
-4. 在事件中播放水花粒子特效或音效
+### 项目设置（UBuoyancyRuntimeSettings）
 
-**配置浮力参数：**
-1. 打开 Project Settings → Buoyancy 分类
-2. 设置 `Water Density`（水密度，默认 1.0 g/cm³）
-3. 设置 `Water Drag`（水阻力，默认 1.0）
-4. 设置 `Water Lift`（升力系数，默认 0.0）
-5. 勾选 `Keep Floating Objects Awake` 防止浮在水面的物体休眠
+在 **Edit → Project Settings → Plugins → Buoyancy** 中可调整以下参数：
+
+| 参数 | 默认值 | 说明 |
+|---|---|---|
+| `bBuoyancyEnabled` | true | 全局开关，可在运行时通过子系统 API 覆盖 |
+| `bKeepFloatingObjectsAwake` | false | 防止漂浮物体进入睡眠状态 |
+| `WaterDensity` | 1.0 g/cm³ | 水的密度，影响浮力大小 |
+| `WaterDrag` | 1.0 | 水阻力系数，模拟粘性 |
+| `WaterLift` | 0.0 | 升力系数，控制斜面偏转效果（如舵、滑水板） |
+| `MaxNumBoundsSubdivisions` | 2 | 浸没体积计算的最大细分次数 |
+| `SurfaceTouchCallbackFlags` | Begin + End | 控制哪些接触事件会触发回调 |
 
 ## C++ 用法
 
@@ -70,35 +79,67 @@ Buoyancy 插件为 Chaos 物理系统添加了物理级浮力模拟能力，通�
 ```cpp
 #include "BuoyancySubsystem.h"
 #include "BuoyancyEventInterface.h"
-#include "BuoyancyAlgorithms.h"
 #include "BuoyancyRuntimeSettings.h"
 ```
 
-### 基本用法
-
-**启用/禁用浮力子系统：**
+### 基本用法：启用/禁用浮力子系统
 
 ```cpp
 // 获取浮力子系统
 UBuoyancySubsystem* BuoyancySubsystem = GetWorld()->GetSubsystem<UBuoyancySubsystem>();
 
 // 启用浮力
-BuoyancySubsystem->SetEnabled(true);
-
-// 查询状态
-bool bActive = BuoyancySubsystem->IsEnabled();
+if (BuoyancySubsystem)
+{
+    BuoyancySubsystem->SetEnabled(true);
+    
+    // 检查是否已启用
+    if (BuoyancySubsystem->IsEnabled())
+    {
+        UE_LOG(LogTemp, Log, TEXT("Buoyancy subsystem is running"));
+    }
+}
 ```
 
-**实现浮力事件接口：**
+### 基本用法：查询水面数据
 
 ```cpp
-// 头文件
+// 给定一个包围盒，查询与之重叠的水体信息
+UBuoyancySubsystem* Subsystem = GetWorld()->GetSubsystem<UBuoyancySubsystem>();
+
+FBox QueryBounds(FVector(-100, -100, -100), FVector(100, 100, 100));
+bool bComputePlane = true;
+FVector ClosestWaterPlaneLocation, ClosestWaterPlaneNormal, ClosestWaterPlaneVelocity;
+TArray<const TSharedPtr<FBuoyancyWaterSplineData>> CollisionWaterBodySplineData;
+
+if (Subsystem && Subsystem->FindOverlappingWaterBodies(
+    QueryBounds, bComputePlane,
+    ClosestWaterPlaneLocation, ClosestWaterPlaneNormal,
+    ClosestWaterPlaneVelocity, CollisionWaterBodySplineData))
+{
+    // ClosestWaterPlaneLocation - 最近水面上的点
+    // ClosestWaterPlaneNormal   - 水面法线
+    // ClosestWaterPlaneVelocity - 水面流速
+}
+```
+
+### 进阶用法：实现浮力事件接口
+
+```cpp
+// .h
+#pragma once
+
+#include "GameFramework/Actor.h"
+#include "BuoyancyEventInterface.h"
+#include "BuoyancyEventActor.generated.h"
+
 UCLASS()
-class AMyBoat : public AActor, public IBuoyancyEventInterface
+class ABuoyancyEventActor : public AActor, public IBuoyancyEventInterface
 {
     GENERATED_BODY()
 
 public:
+    // 实现 Native 版本（物理线程回调通过此路径）
     virtual void OnSurfaceTouchBegin_Native(
         UPrimitiveComponent* WaterComponent,
         UPrimitiveComponent* SubmergedComponent,
@@ -123,70 +164,165 @@ public:
 ```
 
 ```cpp
-// 实现
-void AMyBoat::OnSurfaceTouchBegin_Native(
+// .cpp
+#include "BuoyancyEventActor.h"
+
+void ABuoyancyEventActor::OnSurfaceTouchBegin_Native(
     UPrimitiveComponent* WaterComponent,
     UPrimitiveComponent* SubmergedComponent,
     float SubmergedVolume,
     const FVector& SubmergedCenterOfMass,
     const FVector& SubmergedVelocity)
 {
-    // 物体首次入水 — 播放水花特效
-    if (SubmergedVolume > KINDA_SMALL_NUMBER)
-    {
-        SpawnSplashEffectAt(SubmergedCenterOfMass);
-    }
+    UE_LOG(LogTemp, Log, TEXT("Surface touch begin: SubmergedVolume=%.2f"), SubmergedVolume);
 }
-```
 
-### 进阶用法
-
-**查询水体重叠：**
-
-```cpp
-UBuoyancySubsystem* BuoyancySubsystem = GetWorld()->GetSubsystem<UBuoyancySubsystem>();
-
-FBox QueryBounds = MyComponent->GetBounds().GetBox();
-FVector ClosestWaterPlaneLocation, ClosestWaterPlaneNormal, ClosestWaterPlaneVelocity;
-TArray<const TSharedPtr<FBuoyancyWaterSplineData>> CollisionWaterBodySplineData;
-
-bool bFound = BuoyancySubsystem->FindOverlappingWaterBodies(
-    QueryBounds,
-    true,  // ComputePlane
-    ClosestWaterPlaneLocation,
-    ClosestWaterPlaneNormal,
-    ClosestWaterPlaneVelocity,
-    CollisionWaterBodySplineData
-);
-
-if (bFound)
+void ABuoyancyEventActor::OnSurfaceTouching_Native(
+    UPrimitiveComponent* WaterComponent,
+    UPrimitiveComponent* SubmergedComponent,
+    float SubmergedVolume,
+    const FVector& SubmergedCenterOfMass,
+    const FVector& SubmergedVelocity)
 {
-    // 处理水面信息...
+    // 每帧持续调用，可用于更新视觉效果
+}
+
+void ABuoyancyEventActor::OnSurfaceTouchEnd_Native(
+    UPrimitiveComponent* WaterComponent,
+    UPrimitiveComponent* SubmergedComponent,
+    float SubmergedVolume,
+    const FVector& SubmergedCenterOfMass,
+    const FVector& SubmergedVelocity)
+{
+    UE_LOG(LogTemp, Log, TEXT("Surface touch end"));
 }
 ```
 
-**通过运行时设置调整浮力参数：**
+### 进阶用法：运行时调整浮力设置
 
 ```cpp
-// 获取运行时设置
-const UBuoyancyRuntimeSettings* Settings = GetDefault<UBuoyancyRuntimeSettings>();
+#include "BuoyancyRuntimeSettings.h"
 
-// 读取配置
-float Density = Settings->WaterDensity;
-float Drag = Settings->WaterDrag;
-float Lift = Settings->WaterLift;
-int32 Subdivisions = Settings->MaxNumBoundsSubdivisions;
+// 获取默认设置
+UBuoyancyRuntimeSettings* Settings = GetMutableDefault<UBuoyancyRuntimeSettings>();
+
+// 调整水密度（例如模拟盐水 = 1.025 g/cm³）
+Settings->WaterDensity = 1.025f;
+
+// 增大阻力（高粘性液体效果）
+Settings->WaterDrag = 2.0f;
+
+// 启用升力（船只转向、滑水板效果）
+Settings->WaterLift = 0.5f;
+```
+
+## Demo 示例
+
+以下是一个最小可编译示例：创建一个 Actor，启用物理浮力并响应水面接触事件。
+
+```cpp
+// BuoyancyDemoActor.h
+#pragma once
+
+#include "GameFramework/Actor.h"
+#include "BuoyancyEventInterface.h"
+#include "BuoyancyDemoActor.generated.h"
+
+UCLASS()
+class ABuoyancyDemoActor : public AActor, public IBuoyancyEventInterface
+{
+    GENERATED_BODY()
+
+public:
+    ABuoyancyDemoActor();
+
+    virtual void OnSurfaceTouchBegin_Native(
+        UPrimitiveComponent* WaterComponent,
+        UPrimitiveComponent* SubmergedComponent,
+        float SubmergedVolume,
+        const FVector& SubmergedCenterOfMass,
+        const FVector& SubmergedVelocity) override;
+
+    virtual void OnSurfaceTouching_Native(
+        UPrimitiveComponent* WaterComponent,
+        UPrimitiveComponent* SubmergedComponent,
+        float SubmergedVolume,
+        const FVector& SubmergedCenterOfMass,
+        const FVector& SubmergedVelocity) override;
+
+    virtual void OnSurfaceTouchEnd_Native(
+        UPrimitiveComponent* WaterComponent,
+        UPrimitiveComponent* SubmergedComponent,
+        float SubmergedVolume,
+        const FVector& SubmergedCenterOfMass,
+        const FVector& SubmergedVelocity) override;
+
+private:
+    UPROPERTY(VisibleAnywhere)
+    UStaticMeshComponent* MeshComponent;
+
+    bool bIsSubmerged = false;
+};
+```
+
+```cpp
+// BuoyancyDemoActor.cpp
+#include "BuoyancyDemoActor.h"
+#include "Components/StaticMeshComponent.h"
+
+ABuoyancyDemoActor::ABuoyancyDemoActor()
+{
+    MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+    RootComponent = MeshComponent;
+
+    // 必须启用物理模拟，浮力系统才能接管
+    MeshComponent->SetSimulatePhysics(true);
+}
+
+void ABuoyancyDemoActor::OnSurfaceTouchBegin_Native(
+    UPrimitiveComponent* WaterComponent,
+    UPrimitiveComponent* SubmergedComponent,
+    float SubmergedVolume,
+    const FVector& SubmergedCenterOfMass,
+    const FVector& SubmergedVelocity)
+{
+    bIsSubmerged = true;
+    UE_LOG(LogTemp, Log, TEXT("Float: Entered water, volume=%.3f"), SubmergedVolume);
+}
+
+void ABuoyancyDemoActor::OnSurfaceTouching_Native(
+    UPrimitiveComponent* WaterComponent,
+    UPrimitiveComponent* SubmergedComponent,
+    float SubmergedVolume,
+    const FVector& SubmergedCenterOfMass,
+    const FVector& SubmergedVelocity)
+{
+    // 可在此处根据 SubmergedVolume 更新特效强度
+}
+
+void ABuoyancyDemoActor::OnSurfaceTouchEnd_Native(
+    UPrimitiveComponent* WaterComponent,
+    UPrimitiveComponent* SubmergedComponent,
+    float SubmergedVolume,
+    const FVector& SubmergedCenterOfMass,
+    const FVector& SubmergedVelocity)
+{
+    bIsSubmerged = false;
+    UE_LOG(LogTemp, Log, TEXT("Float: Left water"));
+}
 ```
 
 ## 模块依赖
 
+**插件依赖**（.uplugin Plugins 字段）：
+- **Water** — 提供水体系统（`UWaterBodyComponent`、浅水模拟数据等）
+- **ChaosUserDataPT** — Chaos 物理用户数据管理器，用于物理线程数据同步
+
 | 模块 | 用途 |
 |---|---|
-| `Chaos` | 物理求解器核心，MidPhase 修改和刚体力学 |
-| `Water` | WaterBody 组件和水体管理 |
-| `ChaosUserDataPT` | 物理线程用户数据管理，水样条数据同步 |
-| `ChaosSolverEngine` | 求解器引擎接口 |
-| `PhysicsCore` | 物理核心类型定义 |
+| `Water` | 水体组件、样条数据、波浪系统、ShallowWaterSimulationData |
+| `ChaosUserDataPT` | Chaos 物理线程用户数据管理（TUserDataManagerPT） |
+| `PhysicsCore` / `Chaos` | Chaos 物理求解器、粒子句柄、碰撞回调接口 |
 
 ## 维护状态
 
@@ -194,24 +330,25 @@ int32 Subdivisions = Settings->MaxNumBoundsSubdivisions;
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-29 | `46a267c9` | semi implicit drag - improve stability with high values | 改用半隐式阻力积分，提升高阻力值时的稳定性 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移为 UE_LOGF 格式化宏 |
-| 2026-04-13 | `b9b6f134` | redo scaling on drag (1 now is correct and works well) | 修正阻力缩放逻辑，值为1时行为正确 |
-| 2026-04-09 | `d862fb6a` | TUserDataManagerPT: add GetData_GT for optional game-thread read-back | 添加游戏线程数据回读接口 |
-| 2026-04-02 | `94c15d5a` | buoyancy computation optimizations | 浮力计算性能优化 |
+| 2026-04-29 | `46a267c9` | semi implicit drag - improve stability with high values | 半隐式阻力积分，提升高阻力值时的模拟稳定性 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志系统迁移到新的 UE_LOGF 宏 |
+| 2026-04-13 | `b9b6f134` | - redo scaling on drag (1 now is correct and works well) | 修正阻力缩放计算，确保默认值 1 表现正确 |
+| 2026-04-09 | `d862fb6a` | TUserDataManagerPT: add GetData_GT for optional game-thread read-back | 新增物理线程数据的游戏线程读回支持 |
+| 2026-04-02 | `94c15d5a` | - buoyancy computation optimiazations | 浮力计算性能优化 |
 
 ### 维护评价
 
-- **创建时间**：2023 年 8 月，至今约 3 年
-- **更新频率**：近期（2026 年 4 月）活跃更新，连续 5 次提交集中在物理精度和性能优化上
-- **实验性状态**：`IsExperimentalVersion=true`，`EnabledByDefault=false`，仍处于实验阶段
-- **活跃度**：**活跃维护中**，近一个月有多次实质性改进（阻力积分方式、计算优化）
-- **已知限制**：标记为实验性，API 可能在未来版本中发生变化；`FBuoyancySubsystemSimCallback` 的注释表明一些设计仍为临时方案（标记了 `#todo`）
+**活跃维护**。该插件在 2026 年 4 月内有多次连续提交，内容涵盖物理稳定性改进（半隐式积分）、阻力模型修正、性能优化等实质性功能迭代，表明 Epic 正在持续完善此系统。
 
-**推荐使用**：适合需要精确物理浮力效果的项目，但需注意实验性风险。如果只是简单的"物体浮在水面"效果，可以先尝试更简单的弹簧浮力方案。
+**注意事项**：
+- 插件仍处于**实验性**状态（`IsExperimentalVersion=true`），API 可能发生变化
+- **默认未启用**（`EnabledByDefault=false`），需要手动在 Plugins 面板中启用
+- 部分注释中包含 `#todo` 标记，说明仍有一些设计待完善（如凸体最大交点数的上界估计）
+- 版本号为 0.1，处于早期阶段
+
+**推荐使用**：如果你的项目依赖 Water 插件且需要物理浮力效果，该插件是目前唯一官方方案，值得使用。但需做好 API 变更的心理准备，建议锁定引擎版本。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Buoyancy)
-- 官方文档：无
-- 依赖插件：[Water](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/Water)、ChaosUserDataPT
+- [Water 插件（前置依赖）](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Water)

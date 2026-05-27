@@ -7,166 +7,186 @@
 | 中文名 | nDisplay启动器 |
 | 分类 | Virtual Production |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（编辑器UI资产） |
+| 包含内容 | ✅ 有（蓝图资产、配置资源） |
 | 模块 | `DisplayClusterLaunchEditor` (Runtime) |
-| 实验性 | ⚠️ 是 |
+| 实验性 | ⚦ 是 |
 | 创建时间 | 2022-04-07 |
-| 年龄标签 | 🆕（约 4 年） |
+| 年龄标签 | 🆕（约 3 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/DisplayClusterLaunch) | |
 
 ## 用途
 
-这个插件是 nDisplay 多节点渲染系统的本地启动工具。它解决的核心问题是：在虚拟制片开发过程中，开发者需要在本地快速启动和管理多个 nDisplay 渲染节点，而无需依赖外部工具如 Switchboard。
-
-插件提供了编辑器工具栏集成，让用户可以通过一个菜单直接选择 nDisplay 配置、指定要启动的节点、关联控制台变量资产，并一键启动所有节点进程。同时集成了 Multi-User (Concert) 会话支持，能在启动 nDisplay 节点时自动处理 Concert 服务器的查找和连接。
-
-**注意**：此插件默认禁用且为 Beta 状态，需要在插件管理器中手动启用。
+该插件旨在简化 UE5 虚拟制作中 nDisplay 多节点渲染环境的启动流程。它提供了一个集成的编辑器界面，允许用户从编辑器内部一键启动和管理多个本地 nDisplay 渲染节点，并深度集成了 Unreal Concert（多用户编辑）功能，能够自动处理多用户服务器的发现、连接和会话管理。其核心价值在于将原本需要通过命令行或外部工具（如 Switchboard）完成的复杂启动配置和协作流程，内嵌到编辑器中，提升了工作流效率。
 
 ## 使用场景
 
-- 你正在开发 LED Volume 或 CAVE 虚拟制片项目，需要在本地工作站上测试多节点 nDisplay 渲染 → 用此插件一键启动本地节点
-- 你需要快速切换不同的 nDisplay 配置或节点组合进行调试 → 通过工具栏菜单选择配置和节点
-- 你使用 Multi-User 编辑环境进行虚拟制片协作 → 启动时自动连接或创建 Concert 会话
-- 你需要在 nDisplay 节点上应用特定的控制台变量或性能分析配置 → 在项目设置中配置预设和额外参数
-- 你想启用 Unreal Insights 追踪来分析 nDisplay 渲染性能 → 在项目设置中配置 Insights 参数
+- 你正在使用 nDisplay 进行虚拟制片（Virtual Production）或多屏投影项目，需要同时启动和同步多个渲染节点。
+- 你的 nDisplay 工作流需要集成 Unreal Concert 多用户协作，希望自动发现并连接到正确的服务器会话。
+- 你希望在启动 nDisplay 节点时，能够方便地切换不同的显示配置（`ADisplayClusterRootActor`）和控制台变量预设。
+- 你希望为 nDisplay 启动配置项目级默认设置，如是否关闭主编辑器以优化性能、是否启用 Unreal Insights 性能分析等。
 
 ## 蓝图用法
 
-此插件不暴露 BlueprintCallable 函数，所有功能通过编辑器工具栏菜单和项目设置面板交互。
+该插件主要提供编辑器工具栏集成，其核心功能通过 `FDisplayClusterLaunchEditorModule` 类暴露。大部分操作通过编辑器 UI 触发，直接蓝图节点较少。
 
-### 核心交互方式
+### 核心节点
 
-| 交互 | 说明 |
-|---|---|
-| 工具栏按钮 | 点击后弹出 nDisplay 配置、节点和 Console Variables 选择菜单 |
-| 项目设置 | 在 `项目设置 → nDisplay Launch Settings` 中配置启动参数 |
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `FDisplayClusterLaunchEditorModule::Get()` | 获取插件模块单例 | `FDisplayClusterLaunchEditorModule` |
+| `FDisplayClusterLaunchEditorModule::OpenProjectSettings()` | 打开 nDisplay 启动项目设置 | `FDisplayClusterLaunchEditorModule` |
+| `FDisplayClusterLaunchEditorModule::TryLaunchDisplayClusterProcess()` | 尝试启动 nDisplay 进程（异步） | `FDisplayClusterLaunchEditorModule` |
+| `FDisplayClusterLaunchEditorModule::TerminateActiveDisplayClusterProcesses()` | 终止所有活动的 nDisplay 节点进程 | `FDisplayClusterLaunchEditorModule` |
 
-### 工具栏菜单功能
+### 使用示例（蓝图描述）
 
-1. **选择 nDisplay 配置**：列出当前世界中所有 `ADisplayClusterRootActor`，可选择要启动的配置
-2. **选择节点**：勾选要启动的渲染节点，主节点会特殊标记
-3. **Console Variables 资产**：关联 `ConsoleVariablesAsset` 以应用预设变量
-4. **选项菜单**：包含启动选项（如关闭编辑器、连接 Multi-User 等）
-
-### 项目设置说明
-
-| 设置项 | 说明 |
-|---|---|
-| Close Editor on Launch | 启动时关闭编辑器以优化性能 |
-| Connect to Multi-User | 自动连接或创建 Concert 会话 |
-| Unreal Insights | 启用性能追踪，支持 Stat Named Events |
-| Console Variables Preset | 默认应用的控制台变量资产 |
-| Additional Console Variables | 额外控制台变量（覆盖预设） |
-| Additional Console Commands | 额外控制台命令 |
-| Command Line Arguments | 附加命令行参数 |
-| Logging | 日志文件名和日志级别配置 |
+由于该插件主要为编辑器扩展，典型的使用方式是：
+1.  在编辑器工具栏中找到“nDisplay Launch”按钮（通过插件注册的 Toolbar Item）。
+2.  点击下拉菜单，从当前世界中存在的 `ADisplayClusterRootActor` 配置中选择要启动的配置。
+3.  选择特定的节点或“全部节点”。
+4.  （可选）附加一个 Console Variables Asset 进行变量覆盖。
+5.  点击启动。插件会根据项目设置（`UDisplayClusterLaunchEditorProjectSettings`）处理多用户连接、Unreal Insights 等配置，并启动所选节点的独立进程。
 
 ## C++ 用法
-
-此插件主要作为编辑器工具使用，不提供面向外部模块的公共 API。但可通过模块单例调用核心功能。
 
 ### 头文件引入
 
 ```cpp
 #include "DisplayClusterLaunchEditorModule.h"
+#include "DisplayClusterLaunchEditorProjectSettings.h"
 ```
 
 ### 基本用法
 
+访问插件模块并触发启动流程。
+
 ```cpp
-// 获取模块实例并启动 nDisplay 进程
-// 来源: DisplayClusterLaunchEditorModule.h
+// 获取插件模块实例
 FDisplayClusterLaunchEditorModule& LaunchModule = FDisplayClusterLaunchEditorModule::Get();
 
-// 启动 nDisplay 节点（会先进行完整性检查，然后异步获取 Concert 参数）
-LaunchModule.TryLaunchDisplayClusterProcess();
-
-// 终止所有活跃的 nDisplay 进程
-LaunchModule.TerminateActiveDisplayClusterProcesses();
-
-// 打开项目设置面板
-FDisplayClusterLaunchEditorModule::OpenProjectSettings();
+// 检查当前世界是否有nDisplay配置，并尝试启动流程
+if (LaunchModule.DoesCurrentWorldHaveDisplayClusterConfig())
+{
+    // 启动异步流程：检查Concert连接，最终调用LaunchDisplayClusterProcess
+    LaunchModule.TryLaunchDisplayClusterProcess();
+}
 ```
+*(来源: 基于 `DisplayClusterLaunchEditorModule.h` 中的公开方法推断)*
 
 ### 进阶用法
 
-```cpp
-// 获取模块引用后，可以通过项目设置类查看当前配置
-// 来源: DisplayClusterLaunchEditorProjectSettings.h
-const UDisplayClusterLaunchEditorProjectSettings* Settings = GetDefault<UDisplayClusterLaunchEditorProjectSettings>();
+读取项目设置并决定启动行为。
 
-if (Settings)
+```cpp
+// 获取项目设置
+const UDisplayClusterLaunchEditorProjectSettings* ProjectSettings = GetDefault<UDisplayClusterLaunchEditorProjectSettings>();
+if (ProjectSettings)
 {
-    // 检查是否配置了 Multi-User 连接
-    bool bUseMultiUser = Settings->bConnectToMultiUser;
+    // 根据设置决定是否在启动时关闭编辑器
+    if (ProjectSettings->bCloseEditorOnLaunch)
+    {
+        UE_LOG(LogDisplayClusterLaunchEditor, Display, TEXT("Editor will be closed for performance."));
+        // ... 执行关闭编辑器逻辑
+    }
     
-    // 检查是否启动时关闭编辑器
-    bool bCloseEditor = Settings->bCloseEditorOnLaunch;
-    
-    // 获取额外控制台变量
-    const TSet<FString>& AdditionalCVars = Settings->AdditionalConsoleVariables;
-    const TSet<FString>& AdditionalCmds = Settings->AdditionalConsoleCommands;
-    
-    // 获取日志配置
-    const FString& LogFile = Settings->LogFileName;
-    const TArray<FDisplayClusterLaunchLoggingConstruct>& LogConfig = Settings->Logging;
+    // 检查是否需要连接多用户
+    if (ProjectSettings->bConnectToMultiUser)
+    {
+        UE_LOG(LogDisplayClusterLaunchEditor, Display, TEXT("Connecting to Multi-User session..."));
+        // 插件内部会处理服务器查找和连接
+    }
 }
 ```
+*(来源: 基于 `DisplayClusterLaunchEditorProjectSettings.h` 中的属性推断)*
 
 ## Demo 示例
 
-以下是一个自定义编辑器按钮触发 nDisplay 启动的最小示例：
+以下是一个最小化的示例，展示如何在 C++ 代码中获取并使用该插件的模块接口。
 
+**DisplayClusterLaunchTestActor.h**
 ```cpp
-// MyNDisplayHelper.h
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "DisplayClusterLaunchTestActor.generated.h"
 
-class FMyNDisplayHelper
+UCLASS()
+class ADisplayClusterLaunchTestActor : public AActor
 {
-public:
-    /** 一键启动 nDisplay 并打印状态 */
-    static void LaunchNDisplayWithStatus();
-    
-    /** 安全终止所有 nDisplay 进程 */
-    static void SafelyTerminateAll();
+	GENERATED_BODY()
+	
+public:	
+	ADisplayClusterLaunchTestActor();
+
+protected:
+	virtual void BeginPlay() override;
+
+public:	
+	virtual void Tick(float DeltaTime) override;
+
+	/** 在编辑器中调用此函数，尝试启动nDisplay */
+	UFUNCTION(BlueprintCallable, Category="nDisplay Test")
+	void TestLaunchnDisplay();
+
+	/** 在编辑器中调用此函数，终止所有nDisplay节点 */
+	UFUNCTION(BlueprintCallable, Category="nDisplay Test")
+	void TestTerminateAllNodes();
 };
 ```
 
+**DisplayClusterLaunchTestActor.cpp**
 ```cpp
-// MyNDisplayHelper.cpp
-#include "MyNDisplayHelper.h"
+#include "DisplayClusterLaunchTestActor.h"
 #include "DisplayClusterLaunchEditorModule.h"
-#include "DisplayClusterLaunchEditorLog.h"
+#include "Engine/World.h"
 
-void FMyNDisplayHelper::LaunchNDisplayWithStatus()
+ADisplayClusterLaunchTestActor::ADisplayClusterLaunchTestActor()
 {
-    UE_LOG(LogDisplayClusterLaunchEditor, Display, TEXT("正在启动 nDisplay 节点..."));
-    
-    FDisplayClusterLaunchEditorModule& Module = FDisplayClusterLaunchEditorModule::Get();
-    
-    // 启动会先验证配置有效性，再处理 Concert 参数，最后启动进程
-    Module.TryLaunchDisplayClusterProcess();
-    
-    UE_LOG(LogDisplayClusterLaunchEditor, Display, TEXT("nDisplay 启动请求已发送"));
+	PrimaryActorTick.bCanEverTick = false;
 }
 
-void FMyNDisplayHelper:: SafelyTerminateAll()
+void ADisplayClusterLaunchTestActor::BeginPlay()
 {
-    UE_LOG(LogDisplayClusterLaunchEditor, Display, TEXT("正在终止所有 nDisplay 进程..."));
-    
-    FDisplayClusterLaunchEditorModule::Get().TerminateActiveDisplayClusterProcesses();
+	Super::BeginPlay();
+}
+
+void ADisplayClusterLaunchTestActor::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
+void ADisplayClusterLaunchTestActor::TestLaunchnDisplay()
+{
+	// 确保模块已加载
+	if (FModuleManager::Get().IsModuleLoaded("DisplayClusterLaunchEditor"))
+	{
+		FDisplayClusterLaunchEditorModule& Module = FDisplayClusterLaunchEditorModule::Get();
+		// 执行启动流程
+		Module.TryLaunchDisplayClusterProcess();
+		UE_LOG(LogTemp, Warning, TEXT("nDisplay Launch process initiated."));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("DisplayClusterLaunchEditor module is not loaded."));
+	}
+}
+
+void ADisplayClusterLaunchTestActor::TestTerminateAllNodes()
+{
+	if (FModuleManager::Get().IsModuleLoaded("DisplayClusterLaunchEditor"))
+	{
+		FDisplayClusterLaunchEditorModule& Module = FDisplayClusterLaunchEditorModule::Get();
+		Module.TerminateActiveDisplayClusterProcesses();
+		UE_LOG(LogTemp, Warning, TEXT("Terminated all active nDisplay node processes."));
+	}
 }
 ```
 
 ## 模块依赖
 
-| 模块 | 用途 |
-|---|---|
-| `DisplayCluster` | nDisplay 核心功能，提供 `ADisplayClusterRootActor` 和配置数据 |
-| `Concert` / `ConcertClient` | Multi-User 编辑支持，用于 Concert 会话管理和服务器发现 |
-| `ConsoleVariablesEditorRuntime` | 控制台变量资产支持，用于关联 `ConsoleVariablesAsset` |
+无特殊依赖（仅标准 Core/Engine/Slate 等）。
+*(注: 根据源码头文件，该模块依赖了 `DisplayClusterConfiguration`、`Concert` 等模块，但这些是 nDisplay 和多用户功能的内部依赖，对于使用此插件的最终用户项目，通常无需额外添加模块依赖，因为插件已封装了这些功能。)*
 
 ## 维护状态
 
@@ -174,23 +194,22 @@ void FMyNDisplayHelper:: SafelyTerminateAll()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏到新格式 |
-| 2026-02-04 | `80b637db` | Fixed printf format specifiers. | 修复打印格式化占位符错误 |
-| 2025-10-09 | `1d4d3982` | Specify the SupportedPlatformTargets in the DisplayClusterLaunch plugin to prevent it from getting i | 明确指定支持的平台目标 |
-| 2025-10-07 | `96352708` | Renaming Base<Plugin>.ini to Default<Plugin>.ini | 重命名配置文件命名规范 |
-| 2025-09-03 | `65d9e8d9` | [nDisplay] Added few more CVars to the DisplayClusterLauncher launch command line | 新增更多控制台变量到启动命令行 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将旧式 UE_LOG 日志宏更新为新的 UE_LOGF 格式。 |
+| 2026-02-04 | `80b637db` | Fixed printf format specifiers. | 修复了日志输出中的 printf 格式说明符错误。 |
+| 2025-10-09 | `1d4d3982` | Specify the SupportedPlatformTargets in the DisplayClusterLaunch plugin to prevent it from getting i | 在插件中明确指定支持的平台目标，防止其被意外禁用。 |
+| 2025-10-07 | `96352708` | - Renaming Base<Plugin>.ini to Default<Plugin>.ini | 将配置文件 Base<Plugin>.ini 重命名为标准的 Default<Plugin>.ini 格式。 |
+| 2025-09-03 | `65d9e8d9` | [nDisplay] Added few more CVars to the DisplayClusterLauncher launch command line | 向 nDisplay 启动器的命令行添加了更多控制台变量（CVars）。 |
 
 ### 维护评价
 
-- **创建时间**：2022 年 4 月，作为 UE5 虚拟制片工具链的一部分
-- **Beta 状态**：插件标记为 `IsBetaVersion=true`，且 `EnabledByDefault=false`，说明 Epic 认为该功能尚未完全稳定
-- **更新频率**：近期（2025-2026）有持续维护，主要是工程性修复（日志迁移、格式化修复、平台声明规范化），功能性更新较少
-- **源码规模**：仅 6 个文件，功能聚焦，维护负担轻
-- **已知限制**：仅支持 Win64 和 Linux 平台；作为 Beta 产品，API 可能变动
+**维护中**。该插件自2022年创建以来，近期（2025-2026年）仍有多次实质性更新，包括功能增强（添加 CVar）、稳定性修复（日志格式、平台支持）和代码现代化（迁移日志宏）。最后一次更新距今不到1个月，表明它仍在被积极维护。
 
-**综合评价**：此插件仍在维护中但处于 Beta 阶段，适合虚拟制片团队在开发环境中使用。不建议在生产环境的关键流程中强依赖此插件的特定行为。如果你主要使用 Switchboard 进行 nDisplay 管理，此插件可作为本地快速测试的补充工具。
+**主要注意事项**：该插件在 `.uplugin` 中被标记为 `IsBetaVersion: true` 且默认不启用 (`EnabledByDefault: false`)。这意味着它可能尚未达到完全稳定的状态，使用时可能遇到问题，需要用户手动在插件管理器中启用。
+
+**推荐**：对于使用 nDisplay 和 Unreal Concert 进行虚拟制作的团队，推荐启用此插件以简化工作流。鉴于其 Beta 状态，建议在生产环境中进行充分测试。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/DisplayClusterLaunch)
-- 官方文档（暂无）
+- 官方文档链接未在 .uplugin 中提供。
+- 测试用例路径未在提供的信息中明确。
