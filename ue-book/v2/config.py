@@ -18,6 +18,7 @@ LLM_API_KEY = os.environ.get("LLM_API_KEY", "")
 # ── Pipeline ──
 BATCH_SIZE = 3
 MAX_RETRIES = 2
+PROGRESS_PATH = os.path.join(PROJECT_DIR, "v2", "last_run.json")
 
 # ── Load local overrides (git-ignored) ──
 try:

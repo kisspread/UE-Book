@@ -63,15 +63,29 @@ SYSTEM_PROMPT = """你是一个 UE5 插件文档生成专家。根据提供的�
 6. 只输出 markdown 文档内容，不要有多余的解释"""
 
 
-def _call_llm(user_prompt: str, branch: str) -> tuple[str, float]:
+def _call_llm(user_prompt: str, branch: str, max_retries: int = 2) -> tuple[str, float]:
     llm = get_llm()
     harness = _get_harness().replace('{branch}', branch)
-    start = time.time()
-    response = llm.invoke([
-        SystemMessage(content=SYSTEM_PROMPT.format(harness=harness, branch=branch)),
-        HumanMessage(content=user_prompt),
-    ])
-    return _sanitize(response.content), time.time() - start
+    system = SYSTEM_PROMPT.format(harness=harness, branch=branch)
+
+    last_exc = None
+    for attempt in range(1 + max_retries):
+        try:
+            start = time.time()
+            response = llm.invoke([
+                SystemMessage(content=system),
+                HumanMessage(content=user_prompt),
+            ])
+            return _sanitize(response.content), time.time() - start
+        except Exception as e:
+            last_exc = e
+            if attempt < max_retries:
+                wait = 10 * (2 ** attempt)  # 10s → 20s
+                print(f"    ⚠️ LLM error, retry {attempt+1}/{max_retries} in {wait}s: {e}")
+                time.sleep(wait)
+    # last_exc is always set here — the loop reaches this line only after
+    # all attempts exhausted, which means at least one exception was caught
+    raise last_exc  # type: ignore
 
 
 # ── Graph Nodes ──
@@ -267,6 +281,8 @@ def run_pipeline(plugins: list[dict], version: str, batch_size: int = 3) -> list
     """Run doc generation for a list of plugins."""
     import asyncio
 
+    progress_path = config.PROGRESS_PATH
+
     async def _run():
         sem = asyncio.Semaphore(batch_size)
 
@@ -288,17 +304,27 @@ def run_pipeline(plugins: list[dict], version: str, batch_size: int = 3) -> list
                     "error": None,
                     "_start_time": time.time(),
                 }
-                result = await loop.run_in_executor(
-                    None, lambda: plugin_graph.invoke(initial_state)
-                )
-                out = {
-                    "name": result.get("result_name", result.get("plugin_name")),
-                    "success": result.get("result_success", not bool(result.get("error"))),
-                    "error": result.get("result_error", result.get("error")),
-                    "duration_seconds": result.get("result_duration", 0),
-                    "doc_path": result.get("result_doc_path", ""),
-                    "size": result.get("result_size", "small"),
-                }
+                try:
+                    result = await loop.run_in_executor(
+                        None, lambda: plugin_graph.invoke(initial_state)
+                    )
+                    out = {
+                        "name": result.get("result_name", result.get("plugin_name")),
+                        "success": result.get("result_success", not bool(result.get("error"))),
+                        "error": result.get("result_error", result.get("error")),
+                        "duration_seconds": result.get("result_duration", 0),
+                        "doc_path": result.get("result_doc_path", ""),
+                        "size": result.get("result_size", "small"),
+                    }
+                except Exception as e:
+                    out = {
+                        "name": plugin["name"],
+                        "success": False,
+                        "error": str(e),
+                        "duration_seconds": time.time() - initial_state["_start_time"],
+                        "doc_path": "",
+                        "size": "small",
+                    }
                 status = "✅" if out["success"] else "❌"
                 dur = f"{out['duration_seconds']:.0f}s"
                 print(f"  {status} {out['name']} ({dur})")
@@ -307,7 +333,41 @@ def run_pipeline(plugins: list[dict], version: str, batch_size: int = 3) -> list
                 return out
 
         tasks = [_process_one(p) for p in plugins]
-        return await asyncio.gather(*tasks)
+        results = []
+        start_t = time.time()
+
+        for coro in asyncio.as_completed(tasks):
+            out = await coro
+            results.append(out)
+            # Incremental progress save — atomic via rename
+            progress = {
+                "version": version,
+                "results": results,
+                "elapsed": time.time() - start_t,
+                "complete": False,
+            }
+            tmp = progress_path + ".tmp"
+            with open(tmp, "w") as f:
+                json.dump(progress, f, indent=2, ensure_ascii=False)
+            os.replace(tmp, progress_path)
+
+        return results
 
     print(f"\nGenerating docs for {len(plugins)} plugins (batch_size={batch_size})...\n")
-    return list(asyncio.run(_run()))
+    results = asyncio.run(_run())
+
+    # Mark complete
+    _mark_progress_complete(progress_path)
+    return results
+
+
+def _mark_progress_complete(progress_path: str):
+    """Set complete=True on the progress file after successful finish."""
+    if os.path.exists(progress_path):
+        with open(progress_path) as f:
+            data = json.load(f)
+        data["complete"] = True
+        tmp = progress_path + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        os.replace(tmp, progress_path)

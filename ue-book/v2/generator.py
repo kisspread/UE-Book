@@ -15,6 +15,8 @@ def get_llm() -> ChatOpenAI:
         model=config.LLM_MODEL,
         temperature=0.3,
         max_tokens=16000,
+        max_retries=2,   # SDK-level retry for transient 429/5xx
+        timeout=180,      # per-request timeout (generating long docs)
     )
 
 

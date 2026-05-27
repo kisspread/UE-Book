@@ -21,6 +21,7 @@ def main():
     parser.add_argument("--force-all", action="store_true", help="Force regenerate all plugins")
     parser.add_argument("--batch-size", "-b", type=int, default=config.BATCH_SIZE)
     parser.add_argument("--dry-run", action="store_true", help="Show targets without generating")
+    parser.add_argument("--resume", action="store_true", help="Skip already completed plugins from last_run.json")
     args = parser.parse_args()
 
     # Resolve targets
@@ -41,10 +42,35 @@ def main():
             print(f"  - {p['name']} ({p['path']})")
         return
 
+    log_path = config.PROGRESS_PATH
+    prev_results_raw = None
+
+    # ── Resume detection ──
+    if args.resume and os.path.exists(log_path):
+        with open(log_path) as f:
+            prev = json.load(f)
+        if prev.get("version") == args.version and not prev.get("complete", True):
+            prev_results_raw = prev.get("results", [])
+            completed_names = {r["name"] for r in prev_results_raw if r.get("success")}
+            remaining = [p for p in targets if p["name"] not in completed_names]
+            print(f"Resume: {len(prev_results_raw)} previous results, "
+                  f"{len(completed_names)} completed, {len(remaining)} remaining")
+            targets = remaining
+            if not targets:
+                print("All plugins already completed.")
+                return
+
     # Run pipeline
     start = time.time()
     results = run_pipeline(targets, version=args.version, batch_size=args.batch_size)
     elapsed = time.time() - start
+
+    # ── Merge with previous results if resuming ──
+    if prev_results_raw is not None:
+        result_map = {r["name"]: r for r in prev_results_raw}
+        for r in results:
+            result_map[r["name"]] = r  # new results override old
+        results = list(result_map.values())
 
     # Update manifest
     forced_set = set(args.force) if args.force else set()
@@ -66,10 +92,9 @@ def main():
     print(f"\nDone: {success}/{len(results)} success, {failed} failed, total {elapsed:.0f}s")
     print(f"Manifest saved to {config.MANIFEST_PATH}")
 
-    # Save run log
-    log_path = os.path.join(config.PROJECT_DIR, "v2", "last_run.json")
+    # Save final log (overwrite intermediate progress)
     with open(log_path, "w") as f:
-        json.dump({"version": args.version, "results": results, "elapsed": elapsed}, f, indent=2)
+        json.dump({"version": args.version, "results": results, "elapsed": elapsed, "complete": True}, f, indent=2)
 
 
 if __name__ == "__main__":
