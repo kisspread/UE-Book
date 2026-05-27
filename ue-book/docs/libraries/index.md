@@ -346,6 +346,10 @@ Including open source and non-open source, commercial and non-commercial.
 
  
 
+- [DreamNiagara](https://github.com/TypeDreamMoon/DreamNiagara)  Unreal Engine Niagara VFX DSL
+  - 这是一个为Unreal Engine的Niagara粒子效果系统设计的领域特定语言（DSL），旨在通过代码化方式简化VFX的创建和管理。项目基于C++实现，提供解析器和编辑器集成，适合希望提升Niagara开发效率的开发者。
+  - 💬 项目专注于为Niagara系统提供DSL支持，亮点在于代码化VFX设计，但文档和社区活跃度较低，适用于有特定需求的UE5开发者。
+
 
 
 ## Gameplay
