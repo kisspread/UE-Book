@@ -4,7 +4,7 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 面部动画批量导入器 |
+| 中文名 | 面部动画批量导入 |
 | 分类 | Editor |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
@@ -16,170 +16,141 @@
 
 ## 用途
 
-这是一个用于面部动画工作流的批量导入工具。核心功能是将 FBX 文件中的面部动画曲线数据（morph target / blend shape 曲线）批量导入为 UE 的 Curve Table，并将其嵌入到 SoundWave 资产中。
-
-**解决的问题**：面部动画通常以曲线（curves）形式存储面部表情的变化，同时配有对应的语音音频文件。该插件将 FBX 中的曲线数据与 WAV 音频文件批量打包，使面部动画曲线与音频绑定在同一个 SoundWave 资产内，方便运行时同步播放嘴型动画和语音。
-
-插件还提供了曲线源接口（`ICurveSourceInterface`），允许任意实现了该接口的 Actor 或 Component 来驱动曲线数据，实现灵活的动画驱动架构。
+该插件为动画师提供了一个自动化工作流，用于**批量导入面部动画曲线数据和与之配套的音频文件**。它解决了在大型项目中，手动将大量包含在 FBX 文件中的面部动画曲线导入到 UE5 的 `CurveTable` 资产中，并将其与对应的 `.wav` 音频文件关联并打包到 `SoundWave` 资产中的繁琐、易错过程。通过自动化这个流程，可以极大提升内容生产管线效率。
 
 ## 使用场景
 
-- 你正在制作一个带有配音的角色对话系统，需要将面部表情曲线和语音音频批量导入并绑定 → 用此插件
-- 你的美术团队从 DCC 工具（Maya/3ds Max）导出大量 FBX 面部动画和 WAV 音频文件，需要快速批量导入 → 用此插件
-- 你需要在 Persona 中预览音频与面部曲线同步播放效果 → 用此插件提供的 Audio Preview 功能
+- 你是一位动画师或技术美术，拥有一批来自外部 DCC 软件（如 Maya、3ds Max）导出的、包含唇形同步曲线和音频文件的资产。
+- 你需要将这些 `.fbx`（内含动画曲线）和 `.wav` 文件批量导入到 UE5 项目中，并将曲线数据烘焙到声音资产里，以便用于对话系统或面部动画。
+- 你希望避免为每个文件手动执行导入和配置操作，希望有一个统一的工具来处理整个目录的资产。
 
 ## 蓝图用法
 
-该插件主要是编辑器工具，暴露给蓝图的 API 较少。核心 UI 功能通过 Slate 编辑器窗口提供。
+该插件主要通过**编辑器扩展界面**而非蓝图节点提供功能。其核心是一个编辑器窗口，用于配置和执行批量导入任务。
 
 ### 核心节点
 
-该插件未暴露 `BlueprintCallable` 函数。导入功能通过编辑器 UI（批量导入器窗口）操作。
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `无` | 该插件的功能主要通过编辑器菜单和窗口实现，未暴露直接的蓝图可调用函数。 | `SFacialAnimationBulkImporter` |
 
-### 设置项
+### 使用示例（编辑器界面描述）
 
-导入行为由 `UFacialAnimationBulkImporterSettings` 控制，可在 **项目设置 > 编辑器** 中配置：
-
-| 属性 | 说明 |
-|---|---|
-| `SourceImportPath` | FBX 和 WAV 源文件所在目录 |
-| `TargetImportPath` | 导入后的资产输出目录 |
-| `CurveNodeName` | FBX 场景中包含曲线数据的节点名称 |
-
-### 使用示例（编辑器操作描述）
-
-1. 打开批量导入器窗口
-2. 设置 `SourceImportPath` 指向包含 FBX 和 WAV 文件的目录
-3. 设置 `TargetImportPath` 指向 Content Browser 中的目标位置
-4. 填写 `CurveNodeName`（FBX 中存放面部曲线的节点名）
-5. 点击"导入"按钮，批量生成包含曲线数据的 SoundWave 资产
+1.  在 UE5 编辑器中，通过主菜单找到 `Animation` -> `Facial Animation Bulk Importer` 打开导入工具窗口。
+2.  在打开的窗口中，设置 `Source Import Path`（包含 `.fbx` 和 `.wav` 文件的源目录）和 `Target Import Path`（导入后的资产存放目标目录）。
+3.  指定 `Curve Node Name`，这是 FBX 文件中包含动画曲线的节点名称。
+4.  点击 `Import` 按钮，插件将自动扫描源目录，将找到的 FBX 和 WAV 文件配对，导入动画曲线并创建包含曲线数据的 `SoundWave` 资产。
 
 ## C++ 用法
+
+该插件的 Runtime 模块 (`FacialAnimation`) 提供了数据结构，Editor 模块 (`FacialAnimationEditor`) 提供了导入逻辑和 UI。
 
 ### 头文件引入
 
 ```cpp
+// 用于配置导入设置
+#include "FacialAnimationBulkImporterSettings.h"
+
+// 用于表示单个导入项
 #include "FacialAnimationImportItem.h"
 ```
 
 ### 基本用法
 
-单个导入项的结构与导入流程：
+通过 C++ 操作批量导入设置和单个导入项。`UFacialAnimationBulkImporterSettings` 是一个 `UPROPERTY` 驱动的配置类，其属性会保存在用户的编辑器配置文件中。
 
 ```cpp
-#include "FacialAnimationImportItem.h"
+// 来源：Private/FacialAnimationBulkImporterSettings.h
+// 创建或获取导入设置对象
+UClass* SettingsClass = UFacialAnimationBulkImporterSettings::StaticClass();
+UFacialAnimationBulkImporterSettings* ImportSettings = GetMutableDefault<UFacialAnimationBulkImporterSettings>();
 
-// 创建导入项
-FFacialAnimationImportItem ImportItem;
-ImportItem.FbxFile = TEXT("/path/to/face_anim.fbx");
-ImportItem.WaveFile = TEXT("/path/to/dialogue.wav");
-ImportItem.TargetPackageName = TEXT("/Game/Audio/Dialogue/Dialogue_001");
-ImportItem.TargetAssetName = TEXT("Dialogue_001");
-
-// 执行导入：会将 FBX 曲线数据导入 SoundWave
-bool bSuccess = ImportItem.Import();
+// 配置导入路径（通常在构造函数或初始化代码中）
+ImportSettings->SourceImportPath.Path = TEXT("/Game/Characters/Dialog/FBX_Audio/");
+ImportSettings->TargetImportPath.Path = TEXT("/Game/Characters/Dialog/Imported/");
+ImportSettings->CurveNodeName = TEXT("CurveSource"); // FBX中包含曲线的节点名
 ```
-
-> 来源：`Engine/Plugins/Editor/FacialAnimation/Source/FacialAnimationEditor/Public/FacialAnimationImportItem.h`
 
 ### 进阶用法
 
-通过 `Import()` 内部流程，插件会执行两步操作：
-
-1. **`ImportSoundWave()`**：将 WAV 文件导入为 `USoundWave` 资产
-2. **`ImportCurvesEmbeddedInSoundWave()`**：将 FBX 中的曲线数据嵌入到该 SoundWave 中
+构建一个 `FFacialAnimationImportItem` 并执行导入。这模拟了插件批量导入器内部对单个文件对的操作逻辑。
 
 ```cpp
-// ImportItem 内部调用示意（基于头文件接口推断）
-FFacialAnimationImportItem ImportItem;
-ImportItem.FbxFile = TEXT("C:/Animations/Character_A/face_001.fbx");
-ImportItem.WaveFile = TEXT("C:/Audio/Character_A/dialogue_001.wav");
-ImportItem.TargetPackageName = TEXT("/Game/Characters/Character_A/Dialogue/A_Dialogue_001");
-ImportItem.TargetAssetName = TEXT("A_Dialogue_001");
+// 来源：Public/FacialAnimationImportItem.h
+// 假设已有一组配对的FBX和WAV文件路径
+FString FbxFilename = TEXT("/path/to/Dialog_01.fbx");
+FString WavFilename = TEXT("/path/to/Dialog_01.wav");
+FString AssetBaseName = TEXT("Dialog_01");
 
-// Import() 内部会：
-// 1. 调用 ImportSoundWave() 创建 SoundWave
-// 2. 调用 ImportCurvesEmbeddedInSoundWave() 嵌入 FBX 曲线
-if (ImportItem.Import())
+// 创建导入项
+FFacialAnimationImportItem ImportItem;
+ImportItem.FbxFile = FbxFilename;
+ImportItem.WaveFile = WavFilename;
+ImportItem.TargetPackageName = TEXT("/Game/Characters/Dialog/Imported/");
+ImportItem.TargetAssetName = AssetBaseName;
+
+// 执行导入
+bool bSuccess = ImportItem.Import();
+if (bSuccess)
 {
-    // 导入成功，SoundWave 已包含面部动画曲线
+    UE_LOG(LogTemp, Log, TEXT("成功导入: %s"), *AssetBaseName);
+}
+else
+{
+    UE_LOG(LogTemp, Error, TEXT("导入失败: %s"), *AssetBaseName);
 }
 ```
 
 ## Demo 示例
 
-该插件主要是编辑器批处理工具，无运行时组件可演示。以下展示设置类的典型用法：
+一个完整的、可编译的最小示例，演示如何配置和使用导入项。
 
+**FacialAnimationDemo.h**
 ```cpp
-// MyFacialAnimTool.h
 #pragma once
-
 #include "CoreMinimal.h"
+#include "FacialAnimationImportItem.h" // 包含导入项结构体
 
-class FMyFacialAnimTool
+class FFacialAnimationDemo
 {
 public:
-    /** 批量导入目录下所有 FBX + WAV 对 */
-    void BatchImport(const FString& InSourceDir, const FString& InTargetDir, const FString& InCurveNodeName);
-
-    /** 匹配同名的 FBX 和 WAV 文件并导入 */
-    void ImportMatchedPairs(const TArray<TPair<FString, FString>>& InFbxWavPairs,
-                            const FString& InTargetBasePath,
-                            const FString& InCurveNodeName);
+    /** 演示如何导入单个文件对 */
+    static void ImportSingleDialogItem(
+        const FString& InFbxFilename,
+        const FString& InWavFilename,
+        const FString& InAssetName,
+        const FString& InTargetPath);
 };
 ```
 
+**FacialAnimationDemo.cpp**
 ```cpp
-// MyFacialAnimTool.cpp
-#include "MyFacialAnimTool.h"
+#include "FacialAnimationDemo.h"
 #include "FacialAnimationImportItem.h"
-#include "HAL/FileManager.h"
-#include "Misc/Paths.h"
 
-void FMyFacialAnimTool::BatchImport(const FString& InSourceDir, const FString& InTargetDir, const FString& InCurveNodeName)
+void FFacialAnimationDemo::ImportSingleDialogItem(
+    const FString& InFbxFilename,
+    const FString& InWavFilename,
+    const FString& InAssetName,
+    const FString& InTargetPath)
 {
-    // 扫描源目录中的 FBX 文件
-    TArray<FString> FbxFiles;
-    IFileManager::Get().FindFilesRecursive(FbxFiles, *InSourceDir, TEXT("*.fbx"), true, false);
+    // 创建导入项结构体
+    FFacialAnimationImportItem ImportItem;
+    ImportItem.FbxFile = InFbxFilename;
+    ImportItem.WaveFile = InWavFilename;
+    ImportItem.TargetPackageName = InTargetPath; // e.g., TEXT("/Game/Dialog/Audio/")
+    ImportItem.TargetAssetName = InAssetName;
 
-    TArray<TPair<FString, FString>> Pairs;
-    for (const FString& FbxFile : FbxFiles)
+    // 执行导入，该函数内部会处理FBX曲线提取和SoundWave创建
+    bool bImported = ImportItem.Import();
+
+    if (bImported)
     {
-        // 查找同名 WAV 文件
-        FString BaseName = FPaths::GetBaseFilename(FbxFile);
-        FString WavFile = FPaths::GetPath(FbxFile) / BaseName + TEXT(".wav");
-
-        if (FPaths::FileExists(WavFile))
-        {
-            Pairs.Add({FbxFile, WavFile});
-        }
+        UE_LOG(LogTemp, Display, TEXT("Demo: 成功导入对话资产 '%s'"), *InAssetName);
     }
-
-    ImportMatchedPairs(Pairs, InTargetDir, InCurveNodeName);
-}
-
-void FMyFacialAnimTool::ImportMatchedPairs(const TArray<TPair<FString, FString>>& InFbxWavPairs,
-                                            const FString& InTargetBasePath,
-                                            const FString& InCurveNodeName)
-{
-    for (const auto& Pair : InFbxWavPairs)
+    else
     {
-        FFacialAnimationImportItem ImportItem;
-        ImportItem.FbxFile = Pair.Key;
-        ImportItem.WaveFile = Pair.Value;
-
-        FString BaseName = FPaths::GetBaseFilename(Pair.Key);
-        ImportItem.TargetPackageName = InTargetBasePath / BaseName;
-        ImportItem.TargetAssetName = BaseName;
-
-        if (ImportItem.Import())
-        {
-            UE_LOG(LogTemp, Log, TEXT("Successfully imported: %s"), *BaseName);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Failed to import: %s"), *BaseName);
-        }
+        UE_LOG(LogTemp, Error, TEXT("Demo: 导入对话资产 '%s' 失败"), *InAssetName);
     }
 }
 ```
@@ -188,7 +159,9 @@ void FMyFacialAnimTool::ImportMatchedPairs(const TArray<TPair<FString, FString>>
 
 | 模块 | 用途 |
 |---|---|
-| 无特殊依赖（仅标准 Core/Engine/Slate 等） | |
+| `FacialAnimation` | 提供 `FFacialAnimationImportItem` 等核心数据结构 |
+| `AssetTools` | 用于在编辑器中创建和管理资产 |
+| `AssetRegistry` | 用于在导入过程中查询和操作资产注册表 |
 
 ## 维护状态
 
@@ -196,18 +169,22 @@ void FMyFacialAnimTool::ImportMatchedPairs(const TArray<TPair<FString, FString>>
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2025-07-10 | `abb369e2` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. | 添加内联宏以优化编译 |
-| 2025-04-23 | `6ae57335` | Used UnrealGame build target to find and convert all files to have dllstorage on methods/staticvar i | 修改 DLL 导出符号 |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件级别批量改动 |
-| 2022-11-03 | `fa90b399` | Added includes for future change. This changelist only contains added #include and a couple of empty | 预添加头文件包含 |
-| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新为 HTTPS 链接 |
+| 2025-07-10 | `abb369e2` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. (Applies to…) | 为源文件添加内联生成宏，统一代码风格，提升编译一致性。 |
+| 2025-04-23 | `6ae57335` | Used UnrealGame build target to find and convert all files to have dllstorage on methods/staticvar i… | 使用新构建目标转换源文件，调整符号导出声明以适应新的构建系统要求。 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 插件目录结构的通用性调整或更新。 |
+| 2022-11-03 | `fa90b399` | Added includes for future change. This changelist only contains added #include and a couple of empty… | 为未来的代码修改预先添加必要的头文件包含，属于前瞻性准备。 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 将内置插件中供应商链接更新为更安全的 HTTPS 协议。 |
 
 ### 维护评价
 
-该插件自 2016 年创建以来标记为 **Beta/Experimental**，至今未脱离实验状态。最近的提交均为编译维护性改动（DLL 导出、宏添加、头文件整理），**无任何功能性更新**。
-
-⚠️ **该插件可能已处于事实废弃状态**。超过 8 年未有任何功能增强，且仍标记为实验性。Epics 可能已将面部动画功能整合到其他系统（如 MetaHuman 工具链）。建议仅作为历史参考，生产环境使用需谨慎评估。
+- **创建时间**：2016 年，距今约 9 年。
+- **最近更新**：最后一次有意义的提交记录在 2022 年。2025 年的更新均为底层代码构建和格式的适配，没有功能性改进或 Bug 修复。
+- **活跃度**：**维护不活跃**。该插件长期处于“实验性/Beta”状态，且近年几乎没有功能性更新。最近的提交表明 Epic 可能在进行大规模的代码库现代化（如统一符号导出），该插件只是被动地随着更新。
+- **已知问题/限制**：标记为 `IsBetaVersion: true`，且未包含内容资产（`CanContainContent: false`）。意味着它可能未经充分测试，且不提供示例数据。
+- **推荐使用**：**谨慎使用**。对于有明确批量导入面部动画需求的团队，该工具的逻辑仍然有效。但由于它长期处于 Beta 状态，且依赖项（如 `FacialAnimation` 运行时模块）的维护状态不明确，建议在新项目中评估更现代的替代方案（如 MetaHuman Animator 或自定义 Python/蓝图工具链）。在老项目维护中如果已有工作流依赖它，则可以继续使用。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/FacialAnimation)
+- 官方文档：无（`.uplugin` 中 `DocsURL` 为空）
+- 测试用例：未在提供的信息中发现明确的自动化测试文件。其功能主要通过编辑器交互验证。

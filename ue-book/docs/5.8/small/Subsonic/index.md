@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 次声波音频系统 |
+| 中文名 | 次声波 |
 | 分类 | Audio |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、材质模板） |
+| 包含内容 | ✅ 有（编辑器工具与核心资产） |
 | 模块 | `SubsonicCore` (Runtime), `SubsonicEditor` (Runtime), `SubsonicEngine` (Runtime), `SubsonicEngineTest` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-01-12 |
@@ -15,199 +15,129 @@
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic) | |
 
 ## 用途
-
-Subsonic 是 Unreal Engine 的一个**实验性高级音频创作与回放系统**。它旨在解决 UE 原生音频系统在处理复杂、动态、程序化音频场景时的局限性，为开发者提供一个更强大、更灵活的音频工作流。该系统可能包含对动态音乐系统、高级空间音频、音频事件、程序化音效生成等高级功能的支持，是对 UE 核心音频引擎的重大扩展。
+Subsonic 是一个实验性的高级音频系统，旨在提供比 UE 标准音频引擎（如 Audio Mixer）更强大、更直观的音频内容创作与回放功能。它通过一个分层架构，将核心运行时、编辑器工具、引擎集成和测试框架分离，专注于解决复杂音频体验（如交互式音乐、环境声景设计、多轨混音）的创建和管理难题。
 
 ## 使用场景
-
--   你需要为开放世界游戏创建一个完全动态、根据玩家行为实时变化的**音乐系统**。
--   你在开发一个 VR 或沉浸式体验，需要极其精确和复杂的 **3D 空间音频**效果。
--   你的游戏玩法机制高度依赖于**程序化生成的音效**，例如基于物理碰撞的实时音效合成。
--   你需要一个统一的、可视化的**音频事件和逻辑编辑器**，来替代在蓝图中分散的音频逻辑。
--   你希望使用下一代音频技术来构建游戏的听觉体验，并愿意接受实验性 API 带来的变化风险。
+- 你需要为游戏创建一个动态、分支的音乐系统，音乐能够根据玩家行为和游戏状态无缝切换、混合。
+- 你在设计一个 VR 或沉浸式应用，需要精确控制 3D 空间中的音频源、混响和声场。
+- 你希望拥有一个比传统波形编辑更高级的编辑器内音频创作工具，用于可视化地编排音频事件和效果。
+- 你正在尝试 UE 的下一代音频特性，并愿意接受其实验性状态和潜在的 API 变动。
 
 ## 蓝图用法
+> 由于此插件处于实验初期，公开的蓝图 API 可能有限或不稳定。以下功能基于模块结构和音频系统共性推断。
 
-作为实验性系统，其蓝图 API 可能会快速演变。核心功能通常围绕音频资产的创建、触发和控制。
-
-### 核心节点（示例性分组）
-
+### 核心节点
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Play Subsonic Sound` | 触发一个 Subsonic 音频事件或资产 | `USubsonicSubsystem` 或类似管理类 |
-| `Set Audio Parameter` | 动态调整正在播放的音频的参数（如音量、音高、滤波器） | `USubsonicComponent` 或类似运行时对象 |
-| `Create Audio Event` | 动态创建一个音频事件实例 | 工厂类或子系统 |
+| `Play` / `Stop` | 控制音频资产的播放与停止 | `USubsonicSource` (推测) |
+| `SetVolume` / `SetPitch` | 动态调整音量与音高 | `USubsonicSource` (推测) |
+| `TriggerCue` | 触发音频剪辑或音乐段落 | `USubsonicDirector` (推测) |
 
-*（注：具体函数名需查阅最新的 `SubsonicCore` 模块头文件，上述为基于音频系统常见模式的推断。）*
+### 使用示例（蓝图描述）
+在蓝图中，你可能会创建一个 `SubsonicDirector` 资产来管理音乐的各个部分。通过 `Get` 节点获取该 Director 的引用，然后调用其 `TransitionTo` 函数，传入代表不同游戏状态（如“探索”、“战斗”）的音频剪辑标签，即可实现平滑的音乐过渡。
 
 ## C++ 用法
+> 注意：此插件为实验性内容，API 可能随时变更。以下为模块化使用的示例性指引。
 
 ### 头文件引入
-
+根据你的需求，引入对应模块的头文件。
 ```cpp
-#include "SubsonicCoreModule.h"
-// 根据需要，可能还需引入 SubsonicEngine 或特定子系统头文件
+// 核心功能
+#include "SubsonicCore.h"
+
+// 引擎集成与高级功能
+#include "SubsonicEngine.h"
+
+// 编辑器扩展（仅在编辑器模块使用）
+#if WITH_EDITOR
+#include "SubsonicEditor.h"
+#endif
 ```
 
 ### 基本用法
-
-从模块设计推断，通常会通过一个子系统或管理器类来使用核心功能。
-
+假设使用核心模块来管理一个简单的音频源。
 ```cpp
-// 假设的示例，基于音频系统常见模式
-void AMyActor::SetupDynamicMusic()
+// 创建一个 Subsonic 核心音频源对象
+TObjectPtr<USubsonicSource> AudioSource = NewObject<USubsonicSource>();
+
+// 加载或分配一个音频资产
+AudioSource->SetSoundWave(MySoundWaveAsset);
+
+// 在游戏逻辑中播放
+if (AudioSource && MySoundWaveAsset)
 {
-    // 1. 获取 Subsonic 子系统
-    if (UGameInstance* GameInstance = GetGameInstance())
-    {
-        USubsonicSubsystem* SubsonicSubsystem = GameInstance->GetSubsystem<USubsonicSubsystem>();
-        if (SubsonicSubsystem)
-        {
-            // 2. 创建一个动态音乐上下文
-            FSubsonicMusicContext MusicContext;
-            MusicContext.MusicAsset = MyDynamicMusicAsset;
-            MusicContext.LayerNames = {TEXT("Base"), TEXT("Intensity"), TEXT("Tension")};
-
-            // 3. 播放并获取句柄以便后续控制
-            FSubsonicMusicHandle MusicHandle = SubsonicSubsystem->PlayDynamicMusic(MusicContext);
-
-            // 4. 在后续逻辑中根据游戏状态改变音乐层强度
-            SubsonicSubsystem->SetMusicLayerIntensity(MusicHandle, TEXT("Tension"), CurrentTensionValue);
-        }
-    }
+    AudioSource->Play();
 }
 ```
 
 ### 进阶用法
-
-结合多个子系统和自定义逻辑，构建复杂的音频体验。
-
+结合引擎模块，可能用于创建更复杂的音频交互逻辑。
 ```cpp
-// 在 AI 感知系统中集成 3D 空间音频反馈
-void UEnemyAIPerceptionComponent::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
-{
-    if (SubsonicSubsystem && Stimulus.WasSuccessfullySensed())
-    {
-        // 根据威胁程度和距离，播放一个动态混合的音频提示
-        FSubsonicSpatialSoundParams SpatialParams;
-        SpatialParams.SourceActor = Actor;
-        SpatialParams.BaseSound = ThreatDetectionSound;
-        SpatialParams.Parameters.Add(TEXT("ThreatLevel"), GetThreatLevel(Actor));
-        SpatialParams.Parameters.Add(TEXT("Distance"), FVector::Dist(GetOwner()->GetActorLocation(), Actor->GetActorLocation()));
+// 获取 Subsonic 引擎子系统（如果存在）
+USubsonicEngineSubsystem* SubsonicSubsystem = GetGameInstance()->GetSubsystem<USubsonicEngineSubsystem>();
 
-        SubsonicSubsystem->PlaySpatialSound(SpatialParams);
-    }
+if (SubsonicSubsystem)
+{
+    // 请求播放一个标记为“环境”的音频场景，并淡入
+    FSubsonicPlayRequest PlayRequest;
+    PlayRequest.SceneTag = FName("AmbientForest");
+    PlayRequest.FadeInDuration = 2.0f;
+    SubsonicSubsystem->PlayScene(PlayRequest);
 }
 ```
+*(以上代码为根据模块功能的合理推测，实际接口请参考最新头文件。)*
 
 ## Demo 示例
-
-一个最小化的、展示基本初始化和播放的 C++ 示例。
-
-**SubsonicDemoActor.h**
-```cpp
-// SubsonicDemoActor.h
-#pragma once
-#include "GameFramework/Actor.h"
-#include "SubsonicDemoActor.generated.h"
-
-class USubsonicSubsystem;
-class USoundBase; // 假设 Subsonic 音频资产继承自或类似此类
-
-UCLASS()
-class ASubsonicDemoActor : public AActor
-{
-    GENERATED_BODY()
-
-public:
-    ASubsonicDemoActor();
-
-    virtual void BeginPlay() override;
-
-    UFUNCTION(BlueprintCallable, Category = "Subsonic Demo")
-    void TriggerDemoSound();
-
-private:
-    UPROPERTY(EditAnywhere, Category = "Subsonic Demo")
-    USoundBase* DemoSoundAsset;
-
-    UPROPERTY()
-    USubsonicSubsystem* CachedSubsystem;
-};
-```
-
-**SubsonicDemoActor.cpp**
-```cpp
-// SubsonicDemoActor.cpp
-#include "SubsonicDemoActor.h"
-#include "SubsonicSubsystem.h" // 假设的子系统头文件
-#include "GameFramework/GameInstance.h"
-
-ASubsonicDemoActor::ASubsonicDemoActor()
-{
-    PrimaryActorTick.bCanEverTick = false;
-}
-
-void ASubsonicDemoActor::BeginPlay()
-{
-    Super::BeginPlay();
-
-    // 在 BeginPlay 中缓存子系统引用以提高性能
-    if (UGameInstance* GI = GetGameInstance())
-    {
-        CachedSubsystem = GI->GetSubsystem<USubsonicSubsystem>();
-    }
-}
-
-void ASubsonicDemoActor::TriggerDemoSound()
-{
-    if (CachedSubsystem && DemoSoundAsset)
-    {
-        // 使用子系统播放声音，可能支持更多参数
-        CachedSubsystem->PlaySoundAtLocation(DemoSoundAsset, GetActorLocation());
-        UE_LOG(LogTemp, Log, TEXT("Subsonic demo sound triggered."));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Subsonic demo sound failed: Subsystem or Asset not available."));
-    }
-}
-```
+> 由于插件实验性且 API 不稳定，暂无可直接编译的最小示例。一个典型的最小使用可能涉及：
+> 1.  在你的模块 `Build.cs` 中添加对 `SubsonicCore` 和 `SubsonicEngine` 的依赖。
+> 2.  在游戏模块初始化时，通过子系统或手动创建的方式实例化 `SubsonicCore` 中的管理类。
+> 3.  加载一个音频资产（如 `USoundWave`），并通过 Subsonic 的接口进行播放和控制。
+> 4.  在编辑器中，利用 `SubsonicEditor` 提供的工具进行音频场景的编辑和预览。
 
 ## 模块依赖
-
-要使用 Subsonic 插件，你的项目模块需要依赖其核心模块。
+此插件自身高度模块化。要在你的项目中使用它，你的模块需要依赖以下独特的模块：
 
 | 模块 | 用途 |
 |---|---|
-| `SubsonicCore` | 提供核心的音频数据类型、接口和子系统基类。**这是使用 Subsonic 功能的主要依赖。** |
-| `SubsonicEngine` | 包含引擎集成层，将 Subsonic 与 UE 的渲染、物理、游戏逻辑等系统连接。通常由插件内部使用，高级用户可能直接依赖。 |
-| `SubsonicEditor` | 提供编辑器专用工具、资产编辑器、自定义细节面板等。仅在开发编辑器功能或工具时依赖。 |
+| `SubsonicCore` | 引入核心音频数据类型、管理类和基础播放功能。 |
+| `SubsonicEngine` | 引入与 UE 引擎深度集成的音频子系统、场景管理和高级功能。 |
+| `SubsonicEditor` | 引入编辑器内的专用工具、资产编辑器和自定义界面。 |
+
+**构建依赖示例** (YourModule.Build.cs):
+```csharp
+PublicDependencyModuleNames.AddRange(new string[] {
+    "SubsonicCore",
+    "SubsonicEngine"
+});
+
+if (Target.bBuildEditor)
+{
+    PrivateDependencyModuleNames.Add("SubsonicEditor");
+}
+```
 
 ## 维护状态
 
 ### 近期更新
-
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `0ad6a1ff` | [Audio, CIS] Fixup bad merge: Revert wholesale Subsonic Subscriber stomp; apply minimal non-deprecat | 修复合并错误，回滚了对订阅系统的破坏性改动，应用了最小化的非废弃性修复。 |
-| 2026-05-13 | `f91eb8fe` | Resolved merge conflict with FSoundWaveData api deprecation fixup. | 解决了与 `FSoundWaveData` API 废弃相关的合并冲突。 |
-| 2026-04-23 | `129c3dc2` | Fix/silence PVS warnings | 修复或消除了 PVS（代码静态分析）警告。 |
-| 2026-04-14 | `01c9ce5d` | [ContentBrowser] New Add Menu Audio Menu | 在内容浏览器的“添加”菜单中新增了音频相关菜单。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 `UE_LOG` 迁移到新的 `UE_LOGF`。 |
+| 2026-05-13 | `0ad6a1ff` | [Audio, CIS] Fixup bad merge: Revert wholesale Subsonic Subscriber stomp; apply minimal non-deprecat | 修复一次糟糕的合并，回退了对 Subsonic 订阅者系统的错误覆盖，并应用了最小化的非废弃修复。 |
+| 2026-05-13 | `f91eb8fe` | Resolved merge conflict with FSoundWaveData api deprecation fixup. | 解决了与 `FSoundWaveData` API 废弃修复相关的合并冲突。 |
+| 2026-04-23 | `129c3dc2` | Fix/silence PVS warnings | 修复或静默了 PVS（可能的并行验证系统）警告。 |
+| 2026-04-14 | `01c9ce5d` | [ContentBrowser] New Add Menu Audio Menu | 在内容浏览器的新建菜单中添加了音频（可能与 Subsonic 相关）子菜单。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 `UE_LOG` 迁移到 `UE_LOGF`（可能是一种新的日志格式化方式）。 |
 
 ### 维护评价
+Subsonic 是一个非常新的插件（创建于 2026 年初），目前仍处于**实验性阶段**。从 Git 提交记录看，它在过去一个月内有持续的活动，包括合并修复、编译警告清理和编辑器功能集成，表明 Epic 内部仍在积极开发和集成此功能。
 
-Subsonic 是一个**全新且活跃开发中的实验性插件**。从创建时间（2026年1月）和最近的提交记录（2026年5月）来看，它正处于**初期快速开发和迭代阶段**。近期的提交主要是**合并修复、API 适配和代码清理**，而非重大新功能，这表明代码正在趋于稳定，为后续功能扩展打基础。
+**主要特点与风险**：
+1.  **高度实验性**：官方明确声明无向后兼容保证，API 和功能可能发生破坏性更改。
+2.  **活跃开发中**：提交频率表明它并非弃用状态，而是正在成熟。
+3.  **架构清晰**：Core/Engine/Editor/Test 的分层结构表明这是一个设计目标明确的系统。
 
-**主要提示**：
-1.  **实验性**：文档明确指出其 API 不保证向后兼容，意味着在升级引擎版本时可能会有破坏性更改。
-2.  **活跃但风险高**：推荐给勇于尝试新技术、且项目周期能承担 API 变更风险的开发者。不建议用于需要长期稳定维护的已上线项目。
-3.  **文档缺乏**：作为实验性功能，官方文档 (`DocsURL`) 为空，使用时需要更多地依赖源码、测试用例和社区探索。
-
-**结论**：**目前不推荐用于生产环境**，但适合用于原型验证、技术预研或对音频系统有前沿需求的独立实验项目。
+**建议**：适合用于研究下一代 UE 音频技术方向，或在不介意 API 稳定性的原型项目中尝试。**不建议**在需要长期维护的正式生产项目中使用，除非你愿意并有能力跟进其频繁的 API 变更。
 
 ## 相关链接
-
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic)
--   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic/Source/SubsonicEngineTest) （`SubsonicEngineTest` 模块通常包含自动化测试和用法示例）
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic)
+- [官方文档]() (暂无)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic/Source/SubsonicEngineTest)

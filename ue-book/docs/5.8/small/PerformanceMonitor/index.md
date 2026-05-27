@@ -4,56 +4,51 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 性能监视器 |
+| 中文名 | 性能监控器 |
 | 分类 | Performance |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `PerformanceMonitor` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2017-01-27 |
-| 年龄标签 | 🏛️ 文物（约 9 年） |
+| 年龄标签 | 🏛️ 文物（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Performance/PerformanceMonitor) | |
 
 ## 用途
 
-PerformanceMonitor 是一个运行时性能数据采集工具，专为自动化性能测试和回归测试场景设计。它通过 Unreal 的 Stat 系统捕获指定计时器的帧级数据（平均值、最大值），并将结果输出为 CSV 文件。
+PerformanceMonitor 是一个**运行时性能数据采集工具**，用于在游戏运行过程中自动记录各类性能计时器（stat）的数值，并输出为 CSV 格式的文本文件。
 
-与引擎内置的 `stat` 控制台命令不同，该插件面向**程序化使用**场景：你可以通过控制台命令设定要采集哪些 Stats、采集多少帧、采集间隔是多少，插件会在后台自动收集数据，采集完毕后自动输出 CSV 报告。这使得它非常适合集成到 CI/CD 流水线中进行自动化性能回归检测。
+与内置的 `stat` 命令不同，这个插件专注于：
+- **自动化采集**：按可配置的时间间隔自动记录性能数据，无需手动截图
+- **批量导出**：将数据直接写入 CSV 文件，便于后续用 Excel 或 Python 分析
+- **CI/CD 集成**：支持设置超时自动退出（`bExitOnCompletion`），适合在自动化测试流水线中使用
+
+插件本身默认不启用，是一个面向开发和 QA 团队的辅助工具。
 
 ## 使用场景
 
-- 你需要在 CI 管道中自动运行性能基准测试，采集帧时间、DrawCall 等指标并输出 CSV 报告
-- 你需要程序化地控制"录制哪些 Stat、录制多少帧、间隔多久采集一次"，而非手动在屏幕上观察
-- 你需要在特定地图中运行自动化性能采集，并在完成后自动退出（`-exitoncompletion`）
+- 你需要在连续的游戏流程中收集帧率、渲染耗时等性能指标 → 用 PerformanceMonitor 自动记录到 CSV
+- 你在做性能回归测试，需要对比两个版本的性能数据 → 让插件输出 CSV 后用脚本 diff
+- 你在 CI 流水线中跑自动化性能测试，希望跑完后自动退出 → 使用 `bExitOnCompletion` 模式
+- 你需要在特定地图上跑固定时长的性能基准测试 → 配合 `MapToTest` 和 `NumOfFramesToCapture`
 
 ## 蓝图用法
 
-该插件没有暴露任何蓝图 API。所有功能通过控制台命令（Console Commands）访问。
+该插件**没有暴露任何蓝图接口**。所有功能通过控制台命令（Console Command）访问。
 
 ### 控制台命令
 
+启用插件后，在控制台输入 `PerformanceMonitor help` 查看详细用法。
+
 | 命令 | 说明 |
 |---|---|
-| `PerformanceMonitor help` | 显示使用帮助和所有可用命令 |
-| `PerformanceMonitor start <文件名> <Stat名1> <Stat名2> ...` | 开始录制指定的 Stats 到 CSV 文件 |
-| `PerformanceMonitor stop` | 停止录制并输出 CSV 报告 |
-| `PerformanceMonitor setinterval <秒>` | 设置采集间隔时间 |
+| `PerformanceMonitor help` | 显示使用帮助 |
+| `PerformanceMonitor start` | 开始录制性能数据 |
+| `PerformanceMonitor stop` | 停止录制并写入文件 |
 
-### 使用示例（命令行）
-
-```bash
-# 启动游戏并运行性能采集（通过命令行参数）
-UE5Editor.exe MyProject MyMap -game -ExecCmds="PerformanceMonitor start perf_report stat.frametime stat.drawcall" -FPS=60 -nomovie
-
-# 或在运行时通过控制台手动触发
-# 1. 打开控制台 (~)
-# 2. 输入: PerformanceMonitor start MyPerfTest Stat.FPS Stat.DrawCall
-# 3. 等待采集完成后自动生成 CSV 文件
-```
+录制的数据会写入 `Saved/Profiling/` 目录下的 CSV 文件。
 
 ## C++ 用法
-
-该插件的 C++ 接口完全封装在 `FPerformanceMonitorModule` 中，通过模块单例访问。
 
 ### 头文件引入
 
@@ -63,135 +58,49 @@ UE5Editor.exe MyProject MyMap -game -ExecCmds="PerformanceMonitor start perf_rep
 
 ### 基本用法
 
-通过模块单例控制录制流程：
+该插件的核心类是 `FPerformanceMonitorModule`，它同时实现了 `IModuleInterface` 和 `FSelfRegisteringExec`（注册控制台命令）。
 
 ```cpp
-// 获取模块实例
-FPerformanceMonitorModule& PerfMonitor = FPerformanceMonitorModule::Get();
-
-// 检查模块是否可用
+// 检查插件是否可用
 if (FPerformanceMonitorModule::IsAvailable())
 {
-    // 定义要采集的 Stats 列表
-    TArray<FString> StatsToRecord;
-    StatsToRecord.Add(TEXT("stat.frametime"));
-    StatsToRecord.Add(TEXT("stat.drawcall"));
-    StatsToRecord.Add(TEXT("GameThread"));
+    // 获取插件实例
+    FPerformanceMonitorModule& PerfMon = FPerformanceMonitorModule::Get();
 
-    // 开始录制（指定输出文件名和要采集的 Stats）
-    PerfMonitor.StartRecordingPerfTimers(TEXT("MyPerfReport"), StatsToRecord);
+    // 检查当前是否正在录制
+    bool bRecording = PerfMon.IsRecordingPerfTimers();
 }
 ```
 
 ### 进阶用法
 
-配置录制参数和手动停止：
+通过 C++ 可以直接调用录制 API，无需通过控制台命令：
 
 ```cpp
-FPerformanceMonitorModule& PerfMonitor = FPerformanceMonitorModule::Get();
+FPerformanceMonitorModule& PerfMon = FPerformanceMonitorModule::Get();
 
-// 设置采集间隔（秒），避免每帧都采集
-PerfMonitor.SetRecordInterval(1.0f);
-
-// 开始录制
+// 配置录制参数
 TArray<FString> StatsToRecord;
-StatsToRecord.Add(TEXT("RenderThread"));
-StatsToRecord.Add(TEXT("GPU"));
-PerfMonitor.StartRecordingPerfTimers(TEXT("GPU_Benchmark"), StatsToRecord);
+StatsToRecord.Add(TEXT("STAT_FrameTime"));
+StatsToRecord.Add(TEXT("STAT_GameThreadTime"));
+StatsToRecord.Add(TEXT("STAT_RenderThreadTime"));
 
-// 在某个条件满足时停止录制
-if (ShouldStopRecording())
-{
-    PerfMonitor.StopRecordingPerformanceTimers();
-    // 内部会自动调用 FinalizeFTestPerfReport() 输出 CSV 并清理文件句柄
-}
+PerfMon.SetRecordInterval(1.0f); // 每秒记录一次
 
-// 检查当前是否正在录制
-if (PerfMonitor.IsRecordingPerfTimers())
-{
-    // 录制中...
-}
-```
+// 开始录制，指定输出文件名
+PerfMon.StartRecordingPerfTimers(TEXT("MyPerformanceLog"), StatsToRecord);
 
-## Demo 示例
+// ... 游戏运行中，插件会自动按间隔采集数据 ...
 
-以下是一个自定义性能测试辅助类，封装了 PerformanceMonitor 的常用功能：
-
-```cpp
-// MyPerfTestHelper.h
-#pragma once
-
-#include "CoreMinimal.h"
-
-class FMyPerfTestHelper
-{
-public:
-    // 启动性能采集
-    static bool StartCapture(const FString& ReportName, const TArray<FString>& StatsToTrack, float Interval = 1.0f);
-
-    // 停止采集并生成报告
-    static void StopCapture();
-
-    // 是否正在采集
-    static bool IsCapturing();
-};
-```
-
-```cpp
-// MyPerfTestHelper.cpp
-#include "MyPerfTestHelper.h"
-#include "PerformanceMonitor.h"
-
-bool FMyPerfTestHelper::StartCapture(const FString& ReportName, const TArray<FString>& StatsToTrack, float Interval)
-{
-    if (!FPerformanceMonitorModule::IsAvailable())
-    {
-        UE_LOG(LogTemp, Error, TEXT("PerformanceMonitor plugin is not loaded!"));
-        return false;
-    }
-
-    FPerformanceMonitorModule& PerfMonitor = FPerformanceMonitorModule::Get();
-
-    // 设置采集间隔
-    PerfMonitor.SetRecordInterval(Interval);
-
-    // 开始录制
-    PerfMonitor.StartRecordingPerfTimers(ReportName, StatsToTrack);
-
-    UE_LOG(LogTemp, Log, TEXT("Performance capture started: %s"), *ReportName);
-    return true;
-}
-
-void FMyPerfTestHelper::StopCapture()
-{
-    if (!FPerformanceMonitorModule::IsAvailable())
-    {
-        return;
-    }
-
-    FPerformanceMonitorModule& PerfMonitor = FPerformanceMonitorModule::Get();
-
-    if (PerfMonitor.IsRecordingPerfTimers())
-    {
-        PerfMonitor.StopRecordingPerformanceTimers();
-        UE_LOG(LogTemp, Log, TEXT("Performance capture stopped and CSV report generated."));
-    }
-}
-
-bool FMyPerfTestHelper::IsCapturing()
-{
-    if (!FPerformanceMonitorModule::IsAvailable())
-    {
-        return false;
-    }
-
-    return FPerformanceMonitorModule::Get().IsRecordingPerfTimers();
-}
+// 停止录制
+PerfMon.StopRecordingPerformanceTimers();
 ```
 
 ## 模块依赖
 
 无特殊依赖（仅标准 Core/Engine/Slate 等）。
+
+该插件的 Build.cs 使用了标准的 `Core`、`CoreUObject`、`Engine`、`Stats` 等基础模块。
 
 ## 维护状态
 
@@ -199,25 +108,21 @@ bool FMyPerfTestHelper::IsCapturing()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 为即将进行的头文件清理预先添加必要的 include |
-| 2026-03-15 | `2caebd20` | Add more missing includes and forward declarations for various rendering headers to files that have | 补充缺失的头文件引用和前向声明以解决编译问题 |
-| 2025-09-12 | `fd5c41be` | Addressing instances "ignoring return value of function declared with 'nodiscard' attribute" issue f | 修复 [[nodiscard]] 属性函数返回值未使用导致的警告 |
-| 2025-04-23 | `b6f496e4` | Remove timestamp-based dynamic resolution heuristic method | 移除基于时间戳的动态分辨率启发式方法（非本插件直接改动） |
-| 2025-03-14 | `9ccff8c3` | [Backout] - CL40651793 - needs further discussing | 回退一个需要进一步讨论的变更（非本插件直接改动） |
+| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 为即将到来的头文件清理补充 include |
+| 2026-03-15 | `2caebd20` | Add more missing includes and forward declarations for various rendering headers | 补充缺失的头文件包含和前向声明 |
+| 2025-09-12 | `fd5c41be` | Addressing instances "ignoring return value of function declared with 'nodiscard' attribute" issue | 修复 nodiscard 属性相关的编译警告 |
+| 2025-04-23 | `b6f496e4` | Remove timestamp-based dynamic resolution heuristic method | 移除基于时间戳的动态分辨率启发式方法 |
+| 2025-03-14 | `9ccff8c3` | [Backout] - CL40651793 - needs further discussing | 回退一个需要进一步讨论的改动 |
 
 ### 维护评价
 
-⚠️ **该插件自 2017 年创建以来，从未有过功能性更新。**
+⚠️ **该插件维护不活跃，不推荐用于新项目。**
 
-- **创建时间**：2017 年 1 月，已近 9 年
-- **最后实质性更新**：2017 年 1 月（初始提交），此后无任何功能变更
-- **近期改动**：均为全引擎范围的头文件清理和编译警告修复，不是针对性的功能更新
-- **代码规模**：仅 2 个源文件，功能非常有限
-- **默认状态**：`EnabledByDefault=false`，需手动启用
-
-该插件本质上是一个简单的开发辅助工具，功能范围窄但完成度尚可。它仍能正常编译运行，但 Epic 似乎已经不再积极维护。如果你需要更现代的性能分析能力，建议使用 Unreal Insights（引擎内置的性能分析工具），它提供了远超此插件的采集粒度和分析能力。
-
-**推荐**：仅在需要简单 CSV 输出的自动化测试场景中使用，其他场景优先选择 Unreal Insights。
+- **年龄**：2017 年创建，至今约 8 年
+- **更新内容**：最近的提交全部是编译修复和头文件清理，没有任何功能性更新
+- **活跃程度**：最后一次功能性改动（移除 dynamic resolution 启发式）也不是核心功能，且已回退
+- **代码规模**：仅 2 个源文件（1 个头文件 + 1 个实现文件），功能非常有限
+- **推荐程度**：作为 Epic 内部遗留工具仍可使用，但对于新项目建议使用 Unreal Insights 等更现代的性能分析工具。Unreal Insights 提供了更强大的数据采集、可视化和分析能力。
 
 ## 相关链接
 

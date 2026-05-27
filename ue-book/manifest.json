@@ -507,9 +507,10 @@
       "forced": true
     },
     "FacialAnimation": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/FacialAnimation/"
+      "doc_path": "docs/5.8/small/FacialAnimation/",
+      "forced": true
     },
     "FbxAutomationTestBuilder": {
       "generated_in": "5.7",
@@ -3571,9 +3572,10 @@
       "forced": true
     },
     "MetasoundExperimental": {
-      "generated_in": "5.7",
-      "size": "medium",
-      "doc_path": "docs/5.7/medium/MetasoundExperimental/"
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/MetasoundExperimental/",
+      "forced": true
     },
     "MotoSynth": {
       "generated_in": "5.7",

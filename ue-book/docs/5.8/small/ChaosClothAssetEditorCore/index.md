@@ -1,14 +1,14 @@
 # Chaos Cloth Asset Editor Core
 
-> Core required functionalities for editing and creating Dataflow based Cloth Assets.
+> Core required functionalities for editing and creating Dataflow based Cloth Assets.（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 布料资产编辑核心 |
+| 中文名 | 混沌布料资产编辑器核心 |
 | 分类 | Physics |
-| 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（编辑器资产） |
-| 模块 | `ChaosClothAssetEditor` (Runtime), `ChaosClothAssetEditorTools` (Runtime) |
+| 默认启用 | ❌ 否 |
+| 包含内容 | ✅ 有（数据流资产、材质模板等） |
+| 模块 | `ChaosClothAssetEditor` (Editor), `ChaosClothAssetEditorTools` (Editor) |
 | 实验性 | 否 |
 | 创建时间 | 2026-01-27 |
 | 年龄标签 | 🆕（约 0 年） |
@@ -16,102 +16,70 @@
 
 ## 用途
 
-该插件是 Chaos Cloth Asset 编辑工具链的核心模块，提供基于 Dataflow 的布料资产编辑所需的基础框架和功能。它是在将原有的 `ChaosClothEditor` 插件进行重构拆分后诞生的，目的是将通用的编辑器功能与特定格式（如 USD）的导入导出功能解耦，使得核心编辑能力可以被其他模块复用，同时避免功能冗余。
+该插件是创建和编辑基于 Dataflow（数据流）的布料资产（Cloth Asset）的核心框架。它从早期的 `ChaosClothEditor` 插件中拆分出来，目的是将 USD 相关代码剥离，专注于提供独立的、核心的布料资产编辑功能。它为物理模拟（Chaos）驱动的布料提供了可视化的数据流编辑器、资产预览和基础工具集，是构建高级布料模拟工作流的基础。
 
 ## 使用场景
 
--   **资产创建与修改**：当你需要使用基于节点的 Dataflow 图来驱动和创建布料物理模拟资产时。
--   **编辑器内布料工作流**：希望在 UE 编辑器内部完成布料资产的设计、预览和迭代，而不是完全依赖外部 DCC 工具。
--   **插件开发基础**：开发需要处理 Chaos 布料资产的自定义编辑器工具或扩展，以此插件作为基础。
+- 你需要为虚拟角色或物体创建和调整基于物理的布料（如服装、旗帜）。
+- 你正在使用 Dataflow（数据流图）方式来程序化地定义布料的物理属性、形状和动画行为。
+- 你需要一个专门的编辑器来可视化、预览和调试布料资产，而不依赖于 USD 管线。
+- 你在开发一个需要物理布料模拟的游戏或应用程序，并希望拥有模块化的核心编辑能力。
 
 ## 蓝图用法
 
-本插件主要为编辑器工具和底层 C++ 框架提供支持，其核心功能更多体现在数据资产（如 `UChaosClothAsset`）和编辑器工具类上，而非直接暴露大量游戏逻辑蓝图节点。通常，与这些资产的交互会通过编辑器工具（如资产编辑器）或项目特定的蓝图逻辑进行。
+作为编辑器核心插件，其主要功能集中在编辑器内的 Dataflow 图表和资产操作，公开给蓝图的节点较少。核心功能通过编辑器 UI 和数据流图提供。
+
+### 核心节点
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| 资产创建/编辑操作 | 通过编辑器菜单或资产右键菜单触发，非蓝图节点 | N/A (Editor UI) |
 
 ## C++ 用法
 
-本插件的核心在于提供 `UChaosClothAsset` 和相关的编辑器上下文框架。
+该插件的 C++ 接口主要用于扩展编辑器功能和构建自定义数据流节点。
 
 ### 头文件引入
 
 ```cpp
-#include “ChaosClothAsset/ClothAsset.h”
-// 根据需要，引入工具模块
-#include “ChaosClothAssetEditorTools/ToolTargets/ChaosClothEditorToolTarget.h”
+#include "ChaosClothAssetEditorModule.h" // 核心模块
+#include "ChaosClothAsset/ClothAsset.h" // 布料资产类
 ```
 
 ### 基本用法
 
-获取和操作布料资产的基本示例。
-
+用于在代码中访问布料资产和编辑器功能。
 ```cpp
-// 引擎模块上下文中，假设已获得一个 UChaosClothAsset 对象指针
-UChaosClothAsset* ClothAsset = LoadObject<UChaosClothAsset>(nullptr, TEXT(“/Game/Characters/Cloth/T_Cape”));
-if (ClothAsset)
-{
-    // 资产内部的数据通常由 Dataflow 图生成和管理
-    // 此处可以读取或设置资产的元数据等属性
-}
+// 获取布料资产编辑器模块
+IChaosClothAssetEditorModule& ClothEditorModule = FModuleManager::GetModuleChecked<IChaosClothAssetEditorModule>(“ChaosClothAssetEditor”);
+
+// 创建一个新的布料资产 (通常在编辑器工具或自动化流程中使用)
+UChaosClothAsset* NewAsset = NewObject<UChaosClothAsset>();
 ```
-*来源：根据 `ChaosClothAsset` 模块的通用用法推断。*
 
 ### 进阶用法
 
-使用编辑器工具模块与资产进行交互，例如设置编辑器上下文。
-
+创建自定义的数据流节点以扩展布料编辑功能。
 ```cpp
-// 在编辑器工具中，需要为目标资产设置正确的编辑器上下文
-TObjectPtr<UEditableMesh> EditableMesh = CreateEditableMeshFromClothAsset(ClothAsset);
-// 此 EditableMesh 可用于驱动与网格相关的编辑工具，如变形、绘制权重等
+// 自定义数据流节点需要继承自 FDataflowNode 并实现相应接口。
+// 该插件提供了基础节点类型和上下文，用于在布料数据流图中进行计算和处理。
+// 具体实现请参考模块文档中关于节点开发的部分。
 ```
-*来源：根据 `ChaosClothAssetEditorTools` 模块的功能推断。*
 
 ## Demo 示例
 
-一个最小的示例，展示如何在编辑器工具中加载并关联一个布料资产。
-
-```cpp
-// MyClothTool.h
-#pragma once
-#include “Tools/UEdMode.h”
-#include “ChaosClothAsset/ClothAsset.h”
-
-class FMyClothEditorTool : public FEdMode
-{
-public:
-    virtual void Enter() override;
-
-private:
-    UPROPERTY()
-    TObjectPtr<UChaosClothAsset> CurrentClothAsset;
-};
-
-// MyClothTool.cpp
-#include “MyClothTool.h”
-#include “Engine/AssetManager.h”
-
-void FMyClothEditorTool::Enter()
-{
-    FEdMode::Enter();
-
-    // 假设从资产选择器或路径获取资产
-    CurrentClothAsset = LoadObject<UChaosClothAsset>(nullptr, TEXT(“/Game/MyClothAsset”));
-    if (CurrentClothAsset)
-    {
-        // 在此处初始化与该布料资产相关的编辑器状态和 UI
-        UE_LOG(LogTemp, Log, TEXT(“Loaded Cloth Asset: %s”), *CurrentClothAsset->GetName());
-    }
-}
-```
+一个完整的、可编译的最小示例通常涉及创建自定义数据流节点或扩展编辑器面板。由于篇幅限制，此处仅给出框架概念。具体示例请参考模块文档中的 [ChaosClothAssetEditor.md](ChaosClothAssetEditor.md) 和 [ChaosClothAssetEditorTools.md](ChaosClothAssetEditorTools.md)。
 
 ## 模块依赖
 
+从 Build.cs 分析，该插件独特的依赖较少，主要用于物理模拟核心。
+
 | 模块 | 用途 |
 |---|---|
-| `ChaosClothAsset` | 布料资产的数据定义和核心类型 |
-| `EditableMesh` | 提供可编辑的网格表示，用于布料网格编辑工具 |
-| `Interchange` | 支持资产（如布料资产）的导入/导出流程 |
-| `MeshDescription` | 描述网格数据的中间格式，与资产导入相关 |
+| `Chaos` | Chaos 物理引擎核心，提供布料模拟底层支持 |
+| `ChaosSolverEngine` | Chaos 物理解算器引擎 |
+| `DataflowEngine` | 数据流（Dataflow）图执行引擎 |
+| `ClothSolverCore` | 布料解算器核心逻辑 |
 
 ## 维护状态
 
@@ -120,15 +88,17 @@ void FMyClothEditorTool::Enter()
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
 | 2026-05-20 | `b9a938ae` | Cleanup Chaos Cloth Asset converter | 清理布料资产转换器代码 |
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量转浮点的编译警告 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复浮点精度警告 |
 | 2026-05-12 | `a7e94182` | Interchange Cloth Asset: Add support for reimporting; | 为布料资产添加重新导入支持 |
-| 2026-05-12 | `f1d5a018` | Dataflow : add HUD selection information to both Cloth and dataflow selection tool viewports | 为布料和数据流选择工具视口添加 HUD 选择信息 |
-| 2026-04-27 | `b6b093cd` | CIS - Fixed Issue 1323734: Compile warnings in Module.ChaosClothAssetEditor.cpp, ChaosClothAssetEdit | 修复模块中的编译警告 |
+| 2026-05-12 | `f1d5a018` | Daaflow : add HUD selection information to both Cloth and dataflow selection tool viewports | 在布料和数据流选择工具视口添加 HUD 选择信息 |
+| 2026-04-27 | `b6b093cd` | CIS - Fixed Issue 1323734: Compile warnings in Module.ChaosClothAssetEditor.cpp, ChaosClothAssetEdit | 修复编译警告 |
 
 ### 维护评价
 
-该插件于 2026 年 1 月创建，是一个较新的组件。从近期的 Git 记录看，在 2026 年 5 月内仍有频繁的提交，内容涉及功能增强（如重新导入支持）、Bug 修复（编译警告）和代码优化（清理），表明它处于**活跃维护**状态。作为 Chaos 布料工作流的核心编辑部分，它是 Epic Games 官方工具链的一部分，稳定性与后续支持有保障，**推荐在需要相关功能时使用**。
+该插件创建于 **2026年1月**，非常新。从 Git 记录看，维护**极为活跃**，最近一次更新在 **2026年5月20日**。它正处于功能快速迭代和稳定性修复阶段，由 Epic Games 官方团队维护。作为 Chaos 物理布料工具链的核心部分，预计会持续更新。**强烈推荐**用于需要基于数据流编辑布料资产的项目。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetEditorCore)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetEditorCore)
+- [模块文档：ChaosClothAssetEditor](ChaosClothAssetEditor.md)
+- [模块文档：ChaosClothAssetEditorTools](ChaosClothAssetEditorTools.md)

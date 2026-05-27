@@ -1,6 +1,6 @@
 # Editor Debug Tools
 
-> 
+> 集成编辑器调试界面的工具插件。
 
 | 属性 | 值 |
 |---|---|
@@ -11,149 +11,106 @@
 | 模块 | `EditorDebugTools` (Editor) |
 | 实验性 | 否 |
 | 创建时间 | 2020-10-19 |
-| 年龄标签 | 🆕（约 5 年） |
+| 年龄标签 | 👴 老古董（约 6 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/EditorDebugTools) | |
 
 ## 用途
 
-EditorDebugTools 是一个编辑器调试 UI 集合插件，将原先分散的 Toolbox、Gamma UI 和 Module UI 整合到一个统一的插件中。该插件的目标是作为未来所有编辑器调试 UI 的统一归属地。
+`EditorDebugTools` 插件的核心目的是将多个分散的编辑器调试和诊断界面整合到一个统一的插件中。从代码来看，它至少包含三个主要功能：
+1.  **模块管理 UI (`SModuleUI`)**：提供一个图形化界面，用于查看、加载、卸载、重新加载和重新编译引擎与项目模块。
+2.  **调试面板 (`SDebugPanel`)**：提供一系列快速操作按钮，如重新加载纹理、显示纹理/字体图集、刷新字体缓存和启动测试套件。
+3.  **Gamma 校正面板 (`SGammaUIPanel`)**：允许开发者在编辑器内动态调整 Gamma 值，方便进行视觉调试。
 
-它提供三个核心调试面板：
-
-1. **Module UI**：查看和管理已加载/未加载的模块，支持加载、卸载、重新加载、重新编译操作
-2. **Debug Panel**：纹理重新加载、纹理图集显示、字体图集显示、字体缓存刷新、测试套件入口
-3. **Gamma UI**：调节编辑器 Gamma 值的滑块面板
+这个插件存在是为了方便开发者和 QA 在编辑器内进行常见的运行时调试和资源状态检查，无需编写代码或使用复杂的命令行工具。
 
 ## 使用场景
 
-- 你正在开发插件或修改引擎模块 → 用 Module UI 面板快速加载/卸载/重编译目标模块，无需重启编辑器
-- 你怀疑纹理或字体资源出现问题 → 用 Debug Panel 重新加载纹理、查看纹理图集和字体图集、刷新字体缓存
-- 你需要精确调整编辑器显示的 Gamma 值进行视觉调试 → 用 Gamma UI 面板实时调节
-- 你需要运行内置测试套件验证引擎状态 → 用 Debug Panel 的 Test Suite 按钮
+- 你正在开发一个大型项目，模块众多，需要频繁地加载/卸载/重新编译特定模块进行测试。
+- 你需要快速查看当前引擎加载了哪些模块及其状态（已加载、可关闭等）。
+- 你在进行材质或渲染相关的开发，需要快速检查纹理图集或字体图集的打包情况。
+- 你需要临时调整编辑器的 Gamma 值以匹配特定显示设备或进行视觉校准。
+- 你需要快速刷新字体缓存以查看字体修改效果。
 
 ## 蓝图用法
 
-该插件为纯 C++/Slate 编辑器插件，不暴露蓝图 API。
+此插件主要为编辑器工具面板，提供用户界面交互，而非传统的蓝图函数节点。其核心功能封装在 Slate Widget 中。
 
 ### 核心节点
 
-无（纯编辑器 UI 插件，不提供蓝图接口）。
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `OnLoadClicked` | 加载选中的模块 | `SModuleUI::FModuleListItem` |
+| `OnUnloadClicked` | 卸载选中的模块 | `SModuleUI::FModuleListItem` |
+| `OnReloadClicked` | 重新加载选中的模块 | `SModuleUI::FModuleListItem` |
+| `OnRecompileClicked` | 重新编译选中的模块 | `SModuleUI::FModuleListItem` |
+| `OnReloadTexturesClicked` | 触发重新加载所有纹理 | `SDebugPanel` |
+| `OnFlushFontCacheClicked` | 触发刷新字体缓存 | `SDebugPanel` |
 
-### 使用方式
+### 使用示例（蓝图描述）
 
-通过编辑器菜单 **Window → EditorDebugTools** 打开插件窗口（基于 `FEditorDebugToolsCommands::OpenPluginWindow` 命令注册）。
+此插件的功能通过编辑器菜单或快捷键打开其停靠面板来使用，而非在蓝图图表中直接连接节点。通常，开发者通过主菜单栏（例如“Window > Developer Tools > Debug Tools”）或自定义快捷键打开该插件的窗口，然后在窗口中点击相应按钮执行操作。
 
 ## C++ 用法
+
+此插件主要通过其提供的 Slate 面板与用户交互。其公共接口相对简单，主要是模块的注册和样式管理。
 
 ### 头文件引入
 
 ```cpp
 #include "EditorDebugTools.h"
+// 注意：SModuleUI 等主要功能类位于 Private 目录下，不作为公共API暴露，仅供插件内部使用。
 ```
 
 ### 基本用法
 
-该插件主要通过编辑器 UI 交互使用，以下是其内部关键类的结构说明：
+`EditorDebugTools` 模块作为编辑器模块加载，其 `StartupModule` 和 `ShutdownModule` 函数负责注册命令和样式。插件用户通常无需直接调用其 C++ 接口，而是使用其提供的 UI。
 
-**Module UI（SModuleUI）** 是核心面板，提供模块管理功能：
-
-```cpp
-// 内部数据结构 - 每个模块列表项
-struct FModuleListItem
-{
-    FName ModuleName;
-
-    FReply OnLoadClicked();      // 加载模块
-    FReply OnUnloadClicked();    // 卸载模块
-    FReply OnReloadClicked();    // 重新加载模块
-    FReply OnRecompileClicked(); // 重新编译模块
-
-    // 根据模块状态控制按钮可见性
-    EVisibility GetVisibilityBasedOnLoadedAndShutdownableState() const;
-    EVisibility GetVisibilityBasedOnReloadableState() const;
-    EVisibility GetVisibilityBasedOnRecompilableState() const;
-    EVisibility GetVisibilityBasedOnUnloadedState() const;
-};
-```
-
-**SDebugPanel** 提供纹理和字体相关的调试操作：
-
-```cpp
-// 来源: Source/EditorDebugTools/Private/SDebugPanel.h
-class SDebugPanel : public SCompoundWidget
-{
-    FReply OnReloadTexturesClicked();   // 重新加载所有纹理
-    FReply OnDisplayTextureAtlases();   // 显示纹理图集窗口
-    FReply OnDisplayFontAtlases();      // 显示字体图集窗口
-    FReply OnFlushFontCacheClicked();   // 刷新字体缓存
-    FReply OnTestSuiteClicked();        // 打开测试套件
-};
-```
-
-**SGammaUIPanel** 提供 Gamma 调节功能：
-
-```cpp
-// 来源: Source/EditorDebugTools/Private/GammaUIPanel.h
-class SGammaUIPanel : public SCompoundWidget
-{
-    float OnGetGamma() const;              // 获取当前 Gamma 值
-    void OnGammaChanged(float NewValue);   // Gamma 值变更回调
-};
-```
+如果你正在扩展编辑器并希望以编程方式访问类似模块列表的信息，应该直接使用 `FModuleManager` API，而不是依赖此插件内部的 `SModuleUI`。
 
 ## Demo 示例
 
-该插件为内部编辑器工具，无需在外部模块中集成。如需扩展开面板，可参考其 Slate 模式：
+此插件本身即为一个完整的编辑器工具面板。以下是其内部主要 UI 组件 `SModuleUI` 的简化构造逻辑示例，展示了它如何构建模块列表：
 
 ```cpp
-// EditorDebugToolsCommands.h
-#pragma once
-
-#include "Framework/Commands/Commands.h"
-#include "EditorDebugToolsStyle.h"
-
-class FEditorDebugToolsCommands : public TCommands<FEditorDebugToolsCommands>
+// SModuleUI::Construct 内部逻辑示意 (Source/EditorDebugTools/Private/SModuleUI.h)
+void SModuleUI::Construct(const FArguments& InArgs)
 {
-public:
-    FEditorDebugToolsCommands()
-        : TCommands<FEditorDebugToolsCommands>(
-            TEXT("EditorDebugTools"),
-            NSLOCTEXT("Contexts", "EditorDebugTools", "EditorDebugTools Plugin"),
-            NAME_None,
-            FEditorDebugToolsStyle::GetStyleSetName())
-    {
-    }
+    // 1. 创建搜索框
+    ModuleNameSearchBox = SNew(SSearchBox)
+        .HintText(NSLOCTEXT("ModuleUI", "SearchHint", "Search Modules"))
+        .OnTextChanged(this, &SModuleUI::OnFilterTextChanged);
 
-    virtual void RegisterCommands() override;
+    // 2. 创建模块列表视图
+    ModuleListView = SNew(SModuleListView)
+        .ListItemsSource(&ModuleListItems)
+        .OnGenerateRow(this, &SModuleUI::OnGenerateWidgetForModuleListView)
+        .SelectionMode(ESelectionMode::Single);
 
-public:
-    TSharedPtr<FUICommandInfo> OpenPluginWindow;
-};
-```
+    // 3. 布局：将搜索框和列表视图垂直排列
+    ChildSlot
+    [
+        SNew(SVerticalBox)
+        + SVerticalBox::Slot()
+        .AutoHeight()
+        [
+            ModuleNameSearchBox.ToSharedRef()
+        ]
+        + SVerticalBox::Slot()
+        [
+            ModuleListView.ToSharedRef()
+        ]
+    ];
 
-```cpp
-// EditorDebugToolsStyle.h
-#pragma once
-
-class ISlateStyle;
-
-class FEditorDebugToolsStyle
-{
-public:
-    static void Initialize();
-    static void Shutdown();
-    static const ISlateStyle& Get();
-    static FName GetStyleSetName();
-
-private:
-    static TSharedRef<class FSlateStyleSet> Create();
-    static TSharedPtr<class FSlateStyleSet> StyleInstance;
-};
+    // 4. 初始化模块列表
+    UpdateModuleListItems();
+    // 5. 注册模块变更回调
+    FModuleManager::Get().OnModulesChanged().AddRaw(this, &SModuleUI::OnModulesChanged);
+}
 ```
 
 ## 模块依赖
 
-无特殊依赖（仅标准 Core/Engine/Slate 等）。
+插件本身作为编辑器工具，其构建依赖主要为编辑器和 UI 框架。要使用此插件的功能，你的模块通常不需要直接依赖它，因为其功能是通过编辑器界面提供的。
 
 ## 维护状态
 
@@ -161,28 +118,20 @@ private:
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 日志宏迁移到 UE_LOGF 新格式 |
-| 2026-03-10 | `a69ab07d` | [IsSavingPackage] | 适配 IsSavingPackage API 变更 |
-| 2024-10-22 | `98a8e0e0` | Removed lots of UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_2 scopes | 移除大量 5.2 版本废弃的头文件包含顺序宏 |
-| 2024-05-01 | `a2b56134` | Slate: Deprecate SListView::ItemHeight and STreeViewItemHeight. ItemHeight and ItemWidth are only us | Slate 框架废弃 ItemHeight API，插件适配该变更 |
-| 2023-05-15 | `da92084a` | Optimized out more private modules includes and dependencies. | 优化移除不必要的私有模块头文件包含和依赖 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 宏迁移至 UE_LOGF 宏。 |
+| 2026-03-10 | `a69ab07d` | [IsSavingPackage] | 添加对包保存状态的检查相关更新。 |
+| 2024-10-22 | `98a8e0e0` | Removed lots of UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_2 scopes | 移除了大量旧的包含顺序宏（UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_2）。 |
+| 2024-05-01 | `a2b56134` | Slate: Deprecate SListView::ItemHeight and STreeViewItemHeight. ItemHeight and ItemWidth are only us | Slate: 废弃 SListView::ItemHeight 等旧属性，统一使用新属性。 |
+| 2023-05-15 | `da92084a` | Optimized out more private modules includes and dependencies. | 优化，移除了更多的私有模块包含和依赖。 |
 
 ### 维护评价
 
-EditorDebugTools 自 2020 年创建以来，近 5 年的更新主要集中在引擎 API 适配和编译修复，没有功能性更新。近期（2026 年）仍在跟随引擎编译基础设施变更（UE_LOGF 迁移、IsSavingPackage 适配），说明该插件仍在活跃维护中。
+`EditorDebugTools` 是一个维护状态良好的**编辑器工具插件**。它创建于 2020 年，至今约 6 年，属于“老古董”级别，但近期仍有更新（最新至 2026 年）。更新内容主要是跟随引擎的代码现代化和重构（如日志宏迁移、废弃 API 更新、依赖清理），这表明它仍在被 Epic Games 主动维护，并确保其与最新引擎版本的兼容性。
 
-**优点**：
-- 作为 Epic 官方维护的编辑器工具，随引擎主线同步更新
-- 功能稳定，无已知严重问题
-- 默认启用，对编辑器调试工作流有实际价值
-
-**注意**：
-- 功能较为基础，没有扩展机制
-- 仅限 Editor 模块，不能在打包项目中使用
-- 长期没有新增调试功能，可能处于"维护模式"
-
-**推荐**：✅ 建议启用。作为默认启用的编辑器调试工具，Module UI 和纹理/字体调试功能在日常引擎开发中非常实用。
+**结论**：这是一个稳定、持续维护的编辑器实用工具。虽然功能较为基础，但因其提供了便捷的调试界面，对于开发者而言依然有价值。**推荐使用**，尤其是在需要频繁进行模块管理和资源调试的场景下。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/EditorDebugTools)
+- 官方文档：无
+- 测试用例：未在此插件目录内发现标准测试文件。

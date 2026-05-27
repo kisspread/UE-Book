@@ -4,29 +4,29 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 自动化性能测试工具 |
+| 中文名 | 自动性能测试启动器 |
 | 分类 | Testing |
 | 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（编辑器UI与配置） |
+| 包含内容 | ❌ 无 |
 | 模块 | `AutomatedPerfTestLaunchExtension` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-02-06 |
-| 年龄标签 | 🆕（约 2 年） |
+| 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Performance/AutomatedPerfTestTools) | |
 
 ## 用途
 
-此插件是**自动化性能测试框架**的一个组成部分，专为在 **Unreal Frontend (UFE)** 环境中运行而设计。它的核心作用是**扩展 Unreal Frontend 的“项目启动器”界面**，为用户提供一个统一的图形化配置界面，用于设置和启动各种类型的自动化性能测试（如序列测试、回放测试等）。它解决了将自动化测试工具与引擎/编辑器核心代码解耦的问题，使其能独立于编辑器运行，从而更轻量、更专注于测试流程配置。
+该插件是**自动化性能测试（APT）框架**的**启动器扩展**。它的核心目的是**将 APT 测试的配置和启动逻辑从 Unreal Editor 和引擎中剥离出来**，使其能够作为独立的模块，在 **UnrealFrontend（Unreal 编辑器工具）** 中运行。这样，测试团队可以配置并启动各种性能测试（如序列、重放、ProfileGo 等），而无需依赖完整的编辑器环境。
 
 ## 使用场景
 
-- 你是 QA 工程师或性能测试人员，需要在 **Unreal Frontend** 中批量、自动化地运行游戏或项目的性能测试，而无需打开完整的编辑器。
-- 你需要为不同的测试场景（如 `Sequence` 序列测试、`Replay` 回放测试、`ProfileGo` 性能分析等）提供图形化的配置选项，例如设置 LLM（低层内存）追踪、GPU 性能分析等参数。
-- 你希望将测试配置（如测试类型、特定参数）导出为配置文件，以便复用或集成到自动化流水线中。
+- 你是测试工程师，需要在 **UnrealFrontend** 中为项目（如 Lyra）配置并批量运行自动化性能测试。
+- 你希望测试配置（如 LLM、GPU 性能选项）能够从 `.ini` 配置文件中读取，而不是依赖编辑器中的设置对象。
+- 你需要在不启动完整游戏或编辑器的情况下，通过启动器扩展来触发和管理性能测试会话。
 
 ## 蓝图用法
 
-此插件未暴露蓝图节点。其主要功能通过编辑器（Unreal Frontend）的图形界面和 C++ 接口提供。
+此插件主要面向 C++ 和编辑器工具开发，**没有直接暴露给蓝图的核心节点**。其功能主要通过在 UnrealFrontend 的启动器扩展界面中操作实现。
 
 ## C++ 用法
 
@@ -38,60 +38,105 @@
 
 ### 基本用法
 
-此插件主要作为 Unreal Frontend 的扩展模块运行。在 C++ 层面，其模块接口遵循标准的 `IModuleInterface` 模式。
+此插件通常作为 `ProjectLauncher` 插件的一个扩展被加载和使用。它通过 `FAutomatedPerfTestLaunchExtension` 类注册到启动器系统。开发者主要关注如何实现或集成自己的测试扩展逻辑。
 
 ```cpp
-// 模块启动和关闭由引擎自动管理，无需用户代码干预。
-// 此插件的核心在于向 ProjectLauncher 系统注册一个扩展。
-// 参考：AutomatedPerfTestLaunchExtensionModule.cpp
+// 引用自: Source/AutomatedPerfTestLaunchExtension/Private/AutomatedPerfTestLaunchExtension.h
+// 自定义一个性能测试启动器扩展实例类
+class FMyCustomTestLaunchExtensionInstance : public FAutomatedPerfTestLaunchExtensionInstance
+{
+public:
+    FMyCustomTestLaunchExtensionInstance(FArgs& InArgs) : FAutomatedPerfTestLaunchExtensionInstance(InArgs) {}
+
+    virtual void CustomizeUATCommandLine(FString& InOutCommandLine) override
+    {
+        // 根据当前测试类型，向 UAT 命令行追加自定义参数
+        if (GetTestType() == EAutomatedPerfTestType::Sequence)
+        {
+            InOutCommandLine += TEXT(" -CustomSequenceFlag");
+        }
+    }
+
+    // 重写其他虚函数以实现自定义逻辑...
+};
 ```
 
 ### 进阶用法
 
-核心扩展逻辑在 `FAutomatedPerfTestLaunchExtensionInstance` 和 `FAutomatedPerfTestLaunchExtension` 类中。它们通过继承 `ProjectLauncher` 插件的基类来实现。开发者通常**不会直接实例化或使用这些类**，而是通过该插件提供的 UI 进行配置。其内部定义了测试类型枚举：
+了解插件定义的测试类型枚举和扩展点，可以用于创建更复杂的测试配置流程。
 
 ```cpp
-// 测试类型定义 (来自 Private/AutomatedPerfTestLaunchExtension.h)
+// 引用自: Source/AutomatedPerfTestLaunchExtension/Private/AutomatedPerfTestLaunchExtension.h
+// 测试类型枚举
 enum class EAutomatedPerfTestType : uint8
 {
-    Sequence,    // 序列测试
-    Replay,      // 回放测试
-    ProfileGo,   // 性能分析测试
-    StaticCamera,// 静态摄像机测试
-    Material,    // 材质测试
+    Sequence,   // 序列测试
+    Replay,     // 重放测试
+    ProfileGo,  // ProfileGo 场景测试
+    StaticCamera, // 静态相机测试
+    Material,   // 材质测试
     MAX
 };
-```
 
-插件通过 `GetProjectSettings` 和 `GetConfigSection` 从 `.ini` 配置文件读取特定测试类型的参数。
+// 在扩展实例中，可以根据测试类型动态调整 UI 或命令行参数
+void FAutomatedPerfTestLaunchExtensionInstance::CustomizeTree(ProjectLauncher::FLaunchProfileTreeData& ProfileTreeData)
+{
+    // 根据当前选择的测试类型，向树状控件添加不同的配置选项节点
+    switch (GetTestType())
+    {
+    case EAutomatedPerfTestType::Sequence:
+        AddSequenceTestNodeOptions(ProfileTreeData.GetRootNode());
+        break;
+    case EAutomatedPerfTestType::Replay:
+        AddReplayTestNodeOptions(ProfileTreeData.GetRootNode());
+        break;
+    // ... 其他类型
+    }
+}
+```
 
 ## Demo 示例
 
-由于此插件是编辑器扩展，不提供可独立运行的最小示例。其使用方式体现在 Unreal Frontend 的界面操作中。核心的模块注册逻辑如下：
+一个最小化的自定义性能测试扩展实现。
 
+**MyCustomPerfTestExtension.h**
 ```cpp
-// AutomatedPerfTestLaunchExtensionModule.h
-class FAutomatedPerfTestLaunchExtensionModule : public IModuleInterface
+#pragma once
+#include "AutomatedPerfTestLaunchExtension.h" // 包含插件的主要头文件
+
+class FMyCustomPerfTestExtension : public FAutomatedPerfTestLaunchExtension
 {
 public:
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
+    virtual TSharedPtr<ProjectLauncher::FLaunchExtensionInstance> CreateInstanceForProfile(
+        ProjectLauncher::FLaunchExtensionInstance::FArgs& InArgs) override
+    {
+        // 创建我们自定义的扩展实例
+        return MakeShareable(new FAutomatedPerfTestLaunchExtensionInstance(InArgs));
+    }
 
-private:
-	// 存储注册的启动器扩展
-	TArray<TSharedRef<ProjectLauncher::FLaunchExtension>> Extensions;
+    virtual const TCHAR* GetInternalName() const override
+    {
+        return TEXT("MyCustomPerfTest");
+    }
+
+    virtual FText GetDisplayName() const override
+    {
+        return NSLOCTEXT("MyCustomTest", "DisplayName", "My Custom Performance Test");
+    }
+
+    virtual void GetExtensionsMenuEntry(FExtensionsMenuEntry& MenuEntry) const override
+    {
+        MenuEntry.MenuPath = TEXT("Performance");
+        MenuEntry.SortOrder = 100;
+    }
 };
-
-// .cpp 实现中，StartupModule 会创建并注册 FAutomatedPerfTestLaunchExtension 扩展。
 ```
 
 ## 模块依赖
 
 | 模块 | 用途 |
 |---|---|
-| `ProjectLauncher` | 提供基础的启动器扩展框架，本插件依赖并扩展其功能。 |
-| `AutomationController` | 可能用于自动化测试的执行控制（隐式依赖）。 |
-| `TargetPlatform` | 用于平台相关的性能测试配置。 |
+| `ProjectLauncher` | 核心依赖，提供启动器扩展的基类和框架 |
 
 ## 维护状态
 
@@ -99,18 +144,14 @@ private:
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `f2e0adf8` | Fixed AutomatedPerfTestTools plugin having the installed flag set to true | 修正插件默认安装标志为真，使其默认启用行为符合预期。 |
-| 2026-03-18 | `bb23bd67` | APT Launcher Extension Minor improvements and updates | 对启动器扩展进行了细微改进和更新。 |
-| 2026-02-06 | `600e17a2` | APT: Remove Editor and Engine dependencies from APT Launcher Extension | 将启动器扩展独立为插件，移除对编辑器和引擎的依赖，使其能在 Unreal Frontend 中运行。 |
+| 2026-05-26 | `f2e0adf8` | Fixed AutomatedPerfTestTools plugin having the installed flag set to true | 修复了插件“已安装”标志被错误设置为 true 的问题。 |
+| 2026-03-18 | `bb23bd67` | APT Launcher Extension Minor improvements and updates | APT 启动器扩展的小改进和更新。 |
+| 2026-02-06 | `600e17a2` | APT: Remove Editor and Engine dependencies from APT Launcher Extension | 将启动器扩展从主插件中分离，移除对编辑器和引擎的依赖，使其能在 UnrealFrontend 中运行。 |
 
 ### 维护评价
 
-- **年龄**: 插件于2026年2月创建，非常年轻。
-- **活动性**: 自创建以来有两次后续提交，最近一次在2026年5月，表明在积极开发和修正中。
-- **状态**: 插件被标记为 `IsExperimentalVersion: true`，表明其处于实验阶段，API 和功能可能在未来发生变化。
-- **推荐**: 作为**实验性插件**，推荐给希望在 Unreal Frontend 中使用标准化自动化性能测试框架的团队试用。由于其默认启用，可以开箱即用进行评估。需注意其可能存在的不稳定性和接口变更风险。
+该插件**创建时间很新**（约 1 年），但**标记为实验性**。从提交记录看，创建后有过小规模的功能更新和 bug 修复，表明它仍处于**早期积极开发阶段**。最近一次提交（2026年5月）是一个配置修复，说明其基本框架已稳定，但功能集和 API 可能仍有变动。由于它是实验性的且专门服务于 UnrealFrontend 的测试工作流，**在确定的测试流程中可以谨慎使用**，但需关注其后续更新和可能的不兼容变化。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Performance/AutomatedPerfTestTools)
-- 官方文档 (无)

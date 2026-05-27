@@ -4,285 +4,299 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 布料数据流节点 |
+| 中文名 | 布料资产数据流节点 |
 | 分类 | Physics |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
+| 包含内容 | ✅ 有（蓝图资产、数据流节点定义） |
 | 模块 | `ChaosClothAssetDataflowNodes` (Editor) |
 | 实验性 | 否 |
 | 创建时间 | 2025-12-05 |
-| 年龄标签 | 🆕（约 1 年） |
+| 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetDataflowNodes) | |
 
 ## 用途
 
-该插件为 Chaos Cloth Asset 系统提供 **Dataflow 可视化节点编辑能力**。它是布料资产编辑管线的核心组件——没有这些节点，用户无法在 Dataflow 图中构建、配置或调试布料模拟。
+本插件为 Chaos 布料资产（Cloth Asset）的编辑提供了一整套 **Dataflow 节点**。它是 ChaosClothAsset 布料系统在编辑器中的**可视化节点图工作流**的核心组件，通过 Dataflow 框架将布料的导入、网格处理、模拟参数配置、权重图绘制、选择集管理、代理变形器设置等操作全部封装为可连接的节点。
 
-插件包含 80+ 个 Dataflow 节点，覆盖布料资产创建的完整流程：
-
-1. **网格导入**：从 SkeletalMesh、StaticMesh 或 USD 文件导入仿真网格和渲染网格
-2. **拓扑操作**：重网格化（Remesh）、选择集管理、权重图编辑
-3. **蒙皮权重转移**：从骨骼网格转移蒙皮权重到布料网格
-4. **物理约束配置**：拉伸（Stretch）、弯曲（Bending）、长距离附着（Long Range Attachment）、顶点弹簧（Vertex Spring）、顶点-面弹簧（VertexFace Spring）
-5. **仿真环境配置**：空气动力学（Aerodynamics）、碰撞（Collision）、自碰撞（Self-Collision）、速度缩放（Velocity Scale）
-6. **代理变形器**：控制渲染网格与仿真网格之间的变形映射
-7. **资产输出**：终端节点将处理结果打包为 Cloth Asset
-
-该插件从 `ChaosClothAsset` 的 USD Dataflow 节点独立而来（见首次提交信息），专门负责节点定义，与核心运行时逻辑分离。
+该插件从 ChaosClothAsset 中独立出来（原为 USD Dataflow 节点的一部分），专门负责所有与 Cloth Asset 编辑相关的 Dataflow 节点实现。它解决的核心问题是：**让用户通过可视化的节点图方式来构建和配置布料资产的完整工作流**，而不需要编写代码。
 
 ## 使用场景
 
-- 你在制作角色服装、旗帜、披风等布料效果 → 在 Dataflow 图中使用这些节点构建布料资产
-- 你需要精细控制布料的拉伸、弯曲、风力等物理行为 → 使用各 SimulationXxxConfig 节点
-- 你从第三方 DCC 工具（如 Marvelous Designer）导出了 USD 文件 → 使用 USDImport 节点导入
-- 你需要对布料网格进行重网格化以调整分辨率 → 使用 Remesh 节点
-- 你需要将骨骼网格的蒙皮权重转移到布料网格 → 使用 TransferSkinWeights 节点
-- 你只想让渲染网格的特定区域参与布料仿真 → 使用 ProxyDeformer 节点配合选择集
-
-**典型工作流**：
-
-```
-网格导入 → 选择/权重编辑 → 物理约束配置 → 仿真环境设置 → 代理变形器 → 终端输出
-```
+- 你在做角色服装的布料模拟 → 使用 SkeletalMeshImport 节点导入骨骼网格，配置 Stretch/Bending/SelfCollision 等模拟参数
+- 你需要从 USD 文件导入第三方服装软件（如 CLO3D、Marvelous Designer）的布料数据 → 使用 USDImport 节点
+- 你需要对布料网格进行重新拓扑或简化 → 使用 Remesh 节点调整仿真网格和渲染网格的分辨率
+- 你需要精确控制布料哪些区域受模拟驱动 vs 受蒙皮驱动 → 使用 ProxyDeformer 节点配合 Selection 节点
+- 你需要将骨骼网格的蒙皮权重转移到布料网格上 → 使用 TransferSkinWeights 节点
+- 你需要绘制或调整布料的权重图 → 使用 WeightMap 节点
+- 你需要为布料创建自定义的弹簧约束或顶点-面约束 → 使用 ClothVertexSpring/ClothVertexFaceSpring 节点
 
 ## 蓝图用法
 
-本插件不提供蓝图节点。所有功能通过 **Dataflow 图编辑器**（Cloth Editor 内）以节点图形式使用。Dataflow 节点在编辑器中以可视化节点形式呈现，用户通过连接节点端口来构建布料资产处理管线。
+本插件的节点主要通过 Dataflow 编辑器的节点图界面使用，而非传统蓝图。以下是核心节点分类：
 
-### 核心节点分类
+### 导入节点
 
-#### 导入节点
-
-| 节点 | 说明 | 状态 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SkeletalMeshImport` | 从骨骼网格导入仿真/渲染网格 | ✅ 活跃 |
-| `StaticMeshImport` | 从静态网格导入仿真/渲染网格 | ✅ 活跃 |
-| `USDImport` | 从 USD 文件导入（第三方 DCC 工具） | ⚠️ 已弃用 |
+| `SkeletalMeshImport` | 从骨骼网格资产导入仿真/渲染网格 | `FChaosClothAssetSkeletalMeshImportNode_v2` |
+| `StaticMeshImport` | 从静态网格资产导入仿真/渲染网格 | `FChaosClothAssetStaticMeshImportNode_v2` |
+| `USDImport` | 从 USD 文件导入布料数据（已废弃） | `FChaosClothAssetUSDImportNode_v2` |
 
-#### 物理约束配置节点
+### 网格处理节点
 
-| 节点 | 说明 | 状态 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SimulationStretchConfig` | 拉伸约束（刚度、阻尼、各向异性） | ✅ 活跃 |
-| `SimulationBendingConfig` | 弯曲约束（铰链角、刚度、屈曲） | ✅ 活跃 |
-| `SimulationLongRangeAttachmentConfig` | 长距离附着约束（防止过度拉伸） | ✅ 活跃 |
-| `SimulationAerodynamicsConfig` | 空气动力学（风力、阻力、升力、水体交互） | ✅ 活跃 |
-| `SimulationCollisionConfig` | 碰撞配置（碰撞厚度、摩擦力、CCD） | ✅ 活跃 |
-| `SimulationSelfCollisionConfig` | 自碰撞配置（厚度、摩擦力、分层） | ✅ 活跃 |
-| `SimulationVelocityScaleConfig` | 速度缩放（线性/角速度限制、离心力） | ✅ 活跃 |
-| `SimulationClothVertexSpringConfig` | 顶点-顶点弹簧约束 | 🧪 实验性 |
-| `SimulationClothVertexFaceSpringConfig` | 顶点-面弹簧约束 | 🧪 实验性 |
+| `Remesh` | 对仿真/渲染网格进行重拓扑或简化 | `FChaosClothAssetRemeshNode_v2` |
+| `TransferSkinWeights` | 从骨骼网格转移蒙皮权重到布料网格 | `FChaosClothAssetTransferSkinWeightsNode` |
+| `ClothCollectionToDynamicMesh` | 将布料集合转换为动态网格（实验性） | `FChaosClothAssetCollectionToDynamicMeshNode` |
+| `UpdateClothFromDynamicMesh` | 从动态网格更新布料集合属性（实验性） | `FChaosClothAssetUpdateClothFromDynamicMeshNode` |
 
-#### 覆盖配置节点
+### 模拟参数配置节点
 
-| 节点 | 说明 | 状态 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SimulationBendingOverrideConfig` | 弯曲约束覆盖 | 🧪 实验性 |
-| `SimulationStretchOverrideConfig` | 拉伸约束覆盖 | 🧪 实验性 |
+| `SimulationStretchConfig` | 配置拉伸约束属性 | `FChaosClothAssetSimulationStretchConfigNode` |
+| `SimulationBendingConfig` | 配置弯曲约束属性 | `FChaosClothAssetSimulationBendingConfigNode` |
+| `SimulationAerodynamicsConfig` | 配置空气动力学属性（风、阻力、升力） | `FChaosClothAssetSimulationAerodynamicsConfigNode` |
+| `SimulationSelfCollisionConfig` | 配置自碰撞属性 | `FChaosClothAssetSimulationSelfCollisionConfigNode_v2` |
+| `SimulationCollisionConfig` | 配置碰撞属性（与物理资产交互） | `FChaosClothAssetSimulationCollisionConfigNode` |
+| `SimulationLongRangeAttachmentConfig` | 配置长距离附着约束 | `FChaosClothAssetSimulationLongRangeAttachmentConfigNode_v2` |
+| `SimulationVelocityScaleConfig` | 配置速度缩放属性 | `FChaosClothAssetSimulationVelocityScaleConfigNode` |
 
-#### 网格操作节点
+### 参数覆盖节点（实验性）
 
-| 节点 | 说明 | 状态 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Remesh` | 重网格化（调整分辨率） | ✅ 活跃 |
-| `TransferSkinWeights` | 转移蒙皮权重 | ✅ 活跃 |
-| `ClothCollectionToDynamicMesh` | 布料集合转动态网格 | 🧪 实验性 |
+| `SimulationStretchOverrideConfig` | 覆盖拉伸约束参数 | `FChaosClothAssetSimulationStretchOverrideConfigNode` |
+| `SimulationBendingOverrideConfig` | 覆盖弯曲约束参数 | `FChaosClothAssetSimulationBendingOverrideConfigNode` |
 
-#### 选择与权重节点
+### 约束创建节点（实验性）
 
-| 节点 | 说明 | 状态 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Selection` | 顶点/面选择集 | ✅ 活跃 |
-| `WeightMap` | 权重图编辑与绘制 | ✅ 活跃 |
-| `Attribute` | 创建自定义属性 | 🧪 实验性 |
+| `SimulationClothVertexSpringConfig` | 创建顶点-顶点弹簧约束 | `FChaosClothAssetSimulationClothVertexSpringConfigNode` |
+| `SimulationClothVertexFaceSpringConfig` | 创建顶点-面弹簧约束 | `FChaosClothAssetSimulationClothVertexFaceSpringConfigNode` |
 
-#### 变形与输出节点
+### 选择与权重图节点
 
-| 节点 | 说明 | 状态 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `ProxyDeformer` | 代理变形器（渲染-仿真映射） | ✅ 活跃 |
-| `ClothAssetTerminal` | 终端节点，生成 Cloth Asset | ✅ 活跃 |
+| `Selection` | 创建/编辑顶点选择集 | `FChaosClothAssetSelectionNode_v2` |
+| `WeightMap` | 创建/编辑权重图 | `FChaosClothAssetWeightMapNode` |
+| `Attribute` | 创建自定义属性（实验性） | `FChaosClothAssetAttributeNode_v2` |
 
-### 使用示例（Dataflow 图描述）
+### 变形器与终端节点
 
-**基础布料资产创建流程**：
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `ProxyDeformer` | 配置代理变形器数据 | `FChaosClothAssetProxyDeformerNode_v3` |
+| `ClothAssetTerminal` | 将布料集合生成最终布料资产 | `FChaosClothAssetTerminalNode_v2` |
 
-1. 创建 `SkeletalMeshImport` 节点，连接骨骼网格资产，设置 LOD 和 UV 通道
-2. 将其输出连接到 `SimulationStretchConfig`，配置拉伸刚度（如 Low=0.8, High=1.0）和权重图
-3. 连接 `SimulationBendingConfig`，设置弯曲刚度和约束类型
-4. 连接 `SimulationCollisionConfig`，设置碰撞厚度和摩擦系数
-5. 连接 `SimulationAerodynamicsConfig`，设置风速和阻力系数
-6. 将最终集合输出连接到 `ClothAssetTerminal` 节点
-7. Dataflow 图自动将配置序列化为 Cloth Asset
+### 使用示例（节点图描述）
 
-**自定义代理变形器**：
+一个典型的布料资产构建流程：
 
-1. 在 `SkeletalMeshImport` 后连接 `Selection` 节点，选择需要参与仿真的网格区域
-2. 连接 `ProxyDeformer` 节点，将选择集作为输入
-3. 无选择集输入时 → 完全蒙皮；有选择集时 → 选择区域参与布料变形
+1. **SkeletalMeshImport** 节点：连接一个 USkeletalMesh 资产输入，输出 ClothCollection
+2. 连接到 **SimulationStretchConfig** 节点：配置拉伸刚度（如 StretchStiffness 设为 1.0）
+3. 连接到 **SimulationBendingConfig** 节点：配置弯曲刚度
+4. 连接到 **SimulationAerodynamicsConfig** 节点：配置风速和阻力系数
+5. 连接到 **SimulationSelfCollisionConfig** 节点：启用自碰撞
+6. 连接到 **ClothAssetTerminal** 节点：生成最终的 ClothAsset
+
+所有配置节点均继承自 `FChaosClothAssetSimulationBaseConfigNode`，通过 `Collection` 输入/输出的 Passthrough 模式串行连接。
 
 ## C++ 用法
-
-本插件的节点是 USTRUCT 数据流节点（继承自 `FDataflowNode`），不是传统蓝图函数。主要的 C++ 使用场景是**扩展自定义节点**。
 
 ### 头文件引入
 
 ```cpp
 #include "ChaosClothAsset/SimulationBaseConfigNode.h"
+#include "ChaosClothAsset/SimulationStretchConfigNode.h"
+#include "ChaosClothAsset/SimulationBendingConfigNode.h"
+#include "ChaosClothAsset/WeightedValue.h"
+#include "ChaosClothAsset/SelectionNode.h"
+#include "ChaosClothAsset/WeightMapNode.h"
 ```
 
-### 基本用法：继承基础配置节点创建自定义仿真参数节点
+### 基本用法 — 创建自定义模拟配置节点
 
-所有仿真配置节点的基类是 `FChaosClothAssetSimulationBaseConfigNode`。自定义仿真参数时，继承此类并实现 `AddProperties` 方法。
+从 `SimulationBaseConfigNode.h` 中可以看到，所有模拟配置节点都继承自 `FChaosClothAssetSimulationBaseConfigNode`。创建自定义配置节点需要重写 `AddProperties` 方法：
 
 ```cpp
-// 来源: Source/ChaosClothAssetDataflowNodes/Public/ChaosClothAsset/SimulationBaseConfigNode.h
+// 头文件: MyCustomConfigNode.h
+#pragma once
+#include "ChaosClothAsset/SimulationBaseConfigNode.h"
+#include "ChaosClothAsset/WeightedValue.h"
+#include "MyCustomConfigNode.generated.h"
 
-// 自定义一个简单的风力配置节点
 USTRUCT(Meta = (DataflowCloth))
-struct FMyCustomWindConfigNode : public FChaosClothAssetSimulationBaseConfigNode
+struct FMyCustomConfigNode : public FChaosClothAssetSimulationBaseConfigNode
 {
     GENERATED_USTRUCT_BODY()
-    DATAFLOW_NODE_DEFINE_INTERNAL(FMyCustomWindConfigNode, "MyWindConfig", "Cloth", "Custom Wind Config")
+    DATAFLOW_NODE_DEFINE_INTERNAL(FMyCustomConfigNode, "MyCustomConfig", "Cloth", "My Custom Config")
 
 public:
-    // 自定义的风力方向（可动画化）
-    UPROPERTY(EditAnywhere, Category = "Wind", Meta = (InteractorName = "WindDirection"))
-    FVector3f WindDirection = { 1.f, 0.f, 0.f };
-
-    // 风力强度（带权重图支持的范围值）
-    UPROPERTY(EditAnywhere, Category = "Wind", Meta = (UIMin = "0", UIMax = "100"))
-    FChaosClothAssetWeightedValue WindStrength = { true, 10.f, 10.f, TEXT("WindStrength") };
-
-    FMyCustomWindConfigNode(const UE::Dataflow::FNodeParameters& InParam, FGuid InGuid = FGuid::NewGuid())
+    FMyCustomConfigNode(const UE::Dataflow::FNodeParameters& InParam, FGuid InGuid = FGuid::NewGuid())
         : FChaosClothAssetSimulationBaseConfigNode(InParam, InGuid)
     {
+        // 必须调用此方法注册 Collection 连接
+        RegisterCollectionConnections();
     }
 
+    /** 自定义拉伸刚度，支持权重图插值 */
+    UPROPERTY(EditAnywhere, Category = "Custom Properties",
+        Meta = (UIMin = "0", UIMax = "10000", ClampMin = "0", ClampMax = "10000000"))
+    FChaosClothAssetWeightedValue CustomStiffness = { true, 1.f, 1.f, TEXT("CustomStiffness") };
+
+    /** 自定义阻尼 */
+    UPROPERTY(EditAnywhere, Category = "Custom Properties",
+        Meta = (UIMin = "0", UIMax = "10", ClampMin = "0", ClampMax = "1000"))
+    FChaosClothAssetWeightedValue CustomDamping = { true, 0.1f, 0.1f, TEXT("CustomDamping") };
+
 private:
-    // 实现属性注册——这是基类的纯虚函数，必须实现
     virtual void AddProperties(FPropertyHelper& PropertyHelper) const override
     {
-        // 通过 FPropertyHelper 将属性写入布料集合
-        PropertyHelper.SetProperty(TEXT("WindDirection"), WindDirection);
-        PropertyHelper.SetPropertyWeighted(TEXT("WindStrength"), WindStrength);
+        // 使用 PropertyHelper 设置带权重图的属性
+        PropertyHelper.SetProperty(this, &CustomStiffness);
+        PropertyHelper.SetProperty(this, &CustomDamping);
     }
 };
 ```
 
-### 进阶用法：使用 FPropertyHelper 管理属性
+### 进阶用法 — 使用 FPropertyHelper 管理属性
 
-`FPropertyHelper` 是属性注册的核心辅助类，提供多种类型的安全属性设置方法。
+从 `SimulationBaseConfigNode.h` 中 `FPropertyHelper` 的定义可以看到，它提供了丰富的属性设置方法：
 
 ```cpp
-// 来源: Source/ChaosClothAssetDataflowNodes/Public/ChaosClothAsset/SimulationBaseConfigNode.h
+// 在 AddProperties 中使用各种 PropertyHelper 方法
 
 virtual void AddProperties(FPropertyHelper& PropertyHelper) const override
 {
-    // 1. 设置浮点属性
-    PropertyHelper.SetProperty(TEXT("MyFloat"), MyFloatValue);
-    
+    // 1. 设置浮点属性（带权重图插值）
+    PropertyHelper.SetProperty(TEXT("Stiffness"), SomeWeightedValue);
+
     // 2. 设置布尔属性
-    PropertyHelper.SetPropertyBool(TEXT("bMyBool"), bMyFlag);
-    
+    PropertyHelper.SetPropertyBool(TEXT("UseFeature"), bSomeFeature);
+
     // 3. 设置枚举属性
-    PropertyHelper.SetPropertyEnum(TEXT("MyEnum"), MyEnumValue);
-    
+    PropertyHelper.SetPropertyEnum(TEXT("Method"), SomeMethodEnum);
+
     // 4. 设置字符串属性
-    PropertyHelper.SetPropertyString(TEXT("MyString"), MyStringValue);
-    
-    // 5. 设置带权重图的属性（最常用）
-    PropertyHelper.SetPropertyWeighted(TEXT("Stiffness"), StiffnessWeighted);
-    
-    // 6. 设置带导入器数据的属性
-    PropertyHelper.SetSolverProperty(TEXT("SolverProp"), SolverPropValue,
-        [](auto& ClothFacade) -> auto { return ClothFacade.GetSomeValue(); },
-        {});
-    
-    // 7. 设置织物属性
-    PropertyHelper.SetFabricProperty(TEXT("FabricProp"), FabricPropValue,
-        [](auto& FabricFacade) -> auto { return FabricFacade.GetSomeValue(); },
-        {});
-    
-    // 8. 布尔属性名必须以 'b' 开头
-    PropertyHelper.SetPropertyBool(TEXT("bUseGravity"), true);
-}
-```
+    PropertyHelper.SetPropertyString(TEXT("MapName"), SomeStringValue);
 
-### 自动属性名推导（推荐方式）
+    // 5. 设置带权重的属性（Low/High 范围 + 权重图）
+    PropertyHelper.SetPropertyWeighted(TEXT("WeightedProp"), SomeWeightedValue);
 
-通过结构体指针和成员指针自动获取 UPROPERTY 名称，无需硬编码字符串：
+    // 6. 通过成员变量指针设置属性（自动推导属性名）
+    PropertyHelper.SetProperty(this, &MyStiffness);
+    PropertyHelper.SetPropertyBool(this, &bMyBool);
+    PropertyHelper.SetPropertyEnum(this, &MyEnum);
 
-```cpp
-virtual void AddProperties(FPropertyHelper& PropertyHelper) const override
-{
-    // 使用结构体指针 + 成员地址自动推导属性名
-    // 布尔属性会自动移除 'b' 前缀
-    PropertyHelper.SetPropertyBool(this, &FMyNode::bUseGravity);
-    PropertyHelper.SetProperty(this, &FMyNode::Stiffness);
-    PropertyHelper.SetPropertyEnum(this, &FMyNode::SolverType);
-    PropertyHelper.SetPropertyWeighted(this, &FMyNode::DragCoefficient);
+    // 7. 设置从 solver 导入的值
+    PropertyHelper.SetSolverProperty(
+        TEXT("SolverProp"),
+        PropertyValue,
+        [](FCollectionClothFacade& Facade) { return Facade.GetSomeValue(); },
+        {}
+    );
+
+    // 8. 设置从 fabric 导入的值
+    PropertyHelper.SetFabricProperty(
+        TEXT("FabricProp"),
+        PropertyValue,
+        [](FCollectionClothFabricFacade& Facade) { return Facade.GetSomeFabricValue(); },
+        {}
+    );
 }
 ```
 
 ## Demo 示例
 
-以下展示一个自定义仿真约束配置节点的完整实现：
+以下是一个完整的自定义布料模拟配置节点示例：
+
+**MyGravityConfigNode.h**
 
 ```cpp
-// MyClothTurbulenceConfigNode.h
 #pragma once
 
 #include "ChaosClothAsset/SimulationBaseConfigNode.h"
-#include "MyClothTurbulenceConfigNode.generated.h"
+#include "ChaosClothAsset/WeightedValue.h"
+#include "MyGravityConfigNode.generated.h"
 
-/** 湍流扰动约束配置节点 */
+/**
+ * 自定义重力缩放配置节点，用于在特定区域控制重力的影响。
+ */
 USTRUCT(Meta = (DataflowCloth))
-struct FMyClothTurbulenceConfigNode final : public FChaosClothAssetSimulationBaseConfigNode
+struct FMyGravityConfigNode : public FChaosClothAssetSimulationBaseConfigNode
 {
     GENERATED_USTRUCT_BODY()
-    DATAFLOW_NODE_DEFINE_INTERNAL(
-        FMyClothTurbulenceConfigNode,
-        "MyTurbulenceConfig", "Cloth", "Custom Turbulence Config")
+    DATAFLOW_NODE_DEFINE_INTERNAL(FMyGravityConfigNode, "MyGravityConfig", "Cloth", "Custom Gravity Config")
 
 public:
-    /** 湍流强度，支持权重图插值 */
-    UPROPERTY(EditAnywhere, Category = "Turbulence", Meta = (UIMin = "0", UIMax = "100"))
-    FChaosClothAssetWeightedValue TurbulenceStrength = { true, 5.f, 5.f, TEXT("Turbulence") };
+    FMyGravityConfigNode(const UE::Dataflow::FNodeParameters& InParam, FGuid InGuid = FGuid::NewGuid());
 
-    /** 湍流频率 (Hz) */
-    UPROPERTY(EditAnywhere, Category = "Turbulence", Meta = (UIMin = "0", UIMax = "10"))
-    float Frequency = 1.0f;
+    /** 重力缩放系数，0 表示无重力，1 表示完全重力 */
+    UPROPERTY(EditAnywhere, Category = "Gravity",
+        Meta = (UIMin = "0", UIMax = "2", ClampMin = "0", ClampMax = "10"))
+    FChaosClothAssetWeightedValue GravityScale = { true, 1.f, 1.f, TEXT("GravityScale") };
 
-    /** 是否随时间衰减 */
-    UPROPERTY(EditAnywhere, Category = "Turbulence")
-    bool bDecayOverTime = true;
+    /** 是否启用自定义重力方向 */
+    UPROPERTY(EditAnywhere, Category = "Gravity")
+    bool bUseCustomGravityDirection = false;
 
-    FMyClothTurbulenceConfigNode() = default;
-    FMyClothTurbulenceConfigNode(const UE::Dataflow::FNodeParameters& InParam, FGuid InGuid = FGuid::NewGuid())
-        : FChaosClothAssetSimulationBaseConfigNode(InParam, InGuid)
-    {
-    }
+    /** 自定义重力方向（单位向量） */
+    UPROPERTY(EditAnywhere, Category = "Gravity",
+        Meta = (EditCondition = "bUseCustomGravityDirection"))
+    FVector3f CustomGravityDirection = FVector3f(0.f, 0.f, -1.f);
 
 private:
-    virtual void AddProperties(FPropertyHelper& PropertyHelper) const override
-    {
-        // 使用指针方式自动获取属性名
-        PropertyHelper.SetPropertyWeighted(this, &FMyClothTurbulenceConfigNode::TurbulenceStrength);
-        PropertyHelper.SetProperty(this, &FMyClothTurbulenceConfigNode::Frequency);
-        PropertyHelper.SetPropertyBool(this, &FMyClothTurbulenceConfigNode::bDecayOverTime);
-    }
+    virtual void AddProperties(FPropertyHelper& PropertyHelper) const override;
 };
+```
+
+**MyGravityConfigNode.cpp**
+
+```cpp
+#include "MyGravityConfigNode.h"
+
+FMyGravityConfigNode::FMyGravityConfigNode(const UE::Dataflow::FNodeParameters& InParam, FGuid InGuid)
+    : FChaosClothAssetSimulationBaseConfigNode(InParam, InGuid)
+{
+    // 注册 Collection 输入/输出连接
+    RegisterCollectionConnections();
+}
+
+void FMyGravityConfigNode::AddProperties(FPropertyHelper& PropertyHelper) const
+{
+    // 设置重力缩放属性（带权重图插值）
+    PropertyHelper.SetProperty(this, &GravityScale);
+
+    // 设置布尔属性
+    PropertyHelper.SetPropertyBool(this, &bUseCustomGravityDirection);
+
+    // 设置向量属性
+    if (bUseCustomGravityDirection)
+    {
+        PropertyHelper.SetProperty(
+            TEXT("CustomGravityDirection"),
+            CustomGravityDirection,
+            {},
+            ECollectionPropertyFlags::Animatable
+        );
+    }
+}
 ```
 
 ## 模块依赖
 
+从 `.uplugin` 的 `Plugins` 字段提取：
+
 | 模块 | 用途 |
 |---|---|
-| `ChaosCloth` | Chaos 布料物理引擎核心 |
-| `ChaosClothAsset` | 布料资产数据结构（Collection、Facade 等） |
-| `Dataflow` | Dataflow 图编辑框架（节点基类、连接、上下文） |
-| `GeometryProcessing` | 几何处理算法（重网格化、蒙皮权重转移） |
+| `ChaosCloth` | Chaos 布料物理模拟核心 |
+| `ChaosClothAsset` | 布料资产数据结构和 Facade 接口 |
+| `Dataflow` | Dataflow 节点图框架 |
+| `GeometryProcessing` | 几何处理工具（重拓扑、网格操作） |
 | `MeshResizing` | 网格尺寸调整 |
 
 ## 维护状态
@@ -292,16 +306,25 @@ private:
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
 | 2026-05-20 | `b9a938ae` | Cleanup Chaos Cloth Asset converter | 清理布料资产转换器代码 |
-| 2026-05-18 | `d4c2bb83` | Fix crash happening when regenerating or visualizing vertex and vertex face springs after the sim me | 修复仿真网格重新生成后顶点弹簧可视化崩溃问题 |
-| 2026-05-14 | `e9598355` | Chaos Cloth Asset toolset and updated converter from legacy SKM cloth to Chaos Cloth Asset. | 更新从旧版骨骼网格布料到 Chaos Cloth Asset 的转换工具 |
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 转 float 的编译警告 |
-| 2026-05-12 | `7639ea3a` | Cloth weightmap node - add tranmsfer from render mesh option | 权重图节点新增从渲染网格转移的选项 |
+| 2026-05-18 | `d4c2bb83` | Fix crash happening when regenerating or visualizing vertex and vertex face springs after the sim me | 修复仿真网格修改后重新生成/可视化顶点弹簧时的崩溃问题 |
+| 2026-05-14 | `e9598355` | Chaos Cloth Asset toolset and updated converter from legacy SKM cloth to Chaos Cloth Asset. | 布料资产工具集更新，改进从旧版 SKM 布料到 Chaos 布料资产的转换器 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 常量截断为 float 的警告 |
+| 2026-05-12 | `7639ea3a` | Cloth weightmap node - add tranmsfer from render mesh option (on behalf of Tim Brakensiek) | 权重图节点新增从渲染网格转移的选项 |
 
 ### 维护评价
 
-- **活跃维护**：最近更新日期为 2026-05-20，更新非常频繁（几乎每天都有提交）
-- **持续演进**：节点版本迭代活跃（v2、v3 后缀节点），旧节点标记为 `Deprecated`，说明 API 在持续改进
-- **API 稳定性**：部分实验性节点（标记 `Experimental`）可能在未来版本变更
-- **建议使用最新版本**：多个节点（ProxyDeformer、Remesh、Selection、TerminalNode 等）存在已弃用的旧版本，使用时应选择无 `Deprecated` 标记的最新版本
+- **创建时间**：2025-12-05，非常新的插件
+- **版本**：0.1，处于早期开发阶段
+- **近期更新频率**：2026 年 5 月密集更新，非常活跃
+- **维护状态**：**活跃维护中**。作为 Chaos 布料系统的核心编辑器组件，由 Epic Games 持续开发
+- **已知限制**：
+  - 大量节点标注为 `Deprecated`（v2/v3 版本迭代频繁），升级时需注意节点版本兼容
+  - 部分功能标记为 `Experimental`（如 BendingOverride、StretchOverride、VertexSpring、VertexFaceSpring、Attribute、CollectionToDynamicMesh 等），可能在后续版本变更 API
+  - 仅支持 Win64、Mac、Linux 平台
+  - 版本号 0.1，API 稳定性不能保证
+- **推荐使用**：✅ 推荐。这是 Chaos 布料资产工作流的必备插件，是 Epic 官方维护的布料编辑工具链的核心部分。虽然 API 还在快速迭代，但作为编辑器工具使用是稳定可靠的
 
-**推荐使用**：该插件处于活跃开发阶段，是 Chaos Cloth Asset 工作流的核心组成部分，推荐使用最新版本的节点以获得最佳兼容性和功能支持。
+## 相关链接
+
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetDataflowNodes)
+- 官方文档：无（.uplugin 中 DocsURL 为空）

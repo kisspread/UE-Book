@@ -7,196 +7,162 @@
 | 中文名 | 游戏摄像机系统 |
 | 分类 | Cameras |
 | 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（蓝图资产、摄像机配置） |
-| 模块 | `GameplayCameras` (Runtime), `GameplayCamerasEditor` (Runtime), `GameplayCamerasUncookedOnly` (Runtime) |
+| 包含内容 | ✅ 有（蓝图资产、数据资产） |
+| 模块 | `GameplayCameras` (Runtime), `GameplayCamerasEditor` (Runtime), `GameplayCamerasUncookedOnly` (UncookedOnly) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2020-10-10 |
-| 年龄标签 | 🆕（约 5 年） |
+| 年龄标签 | 👴 老古董（约 6 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Cameras/GameplayCameras) | |
 
 ## 用途
 
-GameplayCameras 是一个模块化、数据驱动的摄像机系统，旨在替代或补充 UE 传统的 `UCameraComponent` 和 `APlayerCameraManager` 摄像机逻辑。它解决了传统摄像机系统中逻辑与数据耦合紧密、难以复用和共享摄像机行为的问题。
+GameplayCameras 是 Epic 为 Unreal Engine 设计的**下一代模块化、数据驱动摄像机系统**，旨在替代传统基于 `UCineCameraComponent` + 手动蓝图编排的方式。
 
-该插件的核心思想是将摄像机的“行为”（如移动规则、参数混合）抽象为可配置的 **摄像机逻辑（Camera Rig）资产**，并通过蓝图节点在运行时动态组合、设置参数。这允许设计师在编辑器中创建和调整摄像机行为，而无需修改 C++ 代码，实现了摄像机逻辑的高度可配置性和可复用性。
+该插件解决以下核心问题：
+
+1. **数据驱动**：摄像机行为通过资产（CameraRigAsset）定义，而非硬编码，美术/策划可直接编辑
+2. **模块化组合**：摄像机由多个可复用的 CameraRig 组合而成，支持参数暴露与外部数据注入
+3. **蓝图深度集成**：通过 K2 蓝图节点，可在运行时动态读写 CameraRig 的暴露参数（Blendable 参数和 Data 参数）
+4. **与 EnhancedInput 联动**：依赖 EnhancedInput 插件，将玩家输入映射到摄像机控制参数
+
+目前该插件仍标记为实验性（`IsExperimentalVersion=true`），API 可能在未来版本发生变化。
 
 ## 使用场景
 
--   **第三人称游戏**：需要平滑、可配置的跟随摄像机，其行为（如弹簧臂长度、偏移、碰撞）可以按场景或游戏状态动态调整。
--   **电影化或预设镜头**：需要在过场动画或特定游戏事件中切换到预设的、带有复杂运动规则的摄像机，并可通过参数微调。
--   **需要高度定制化摄像机行为的游戏**：当基础的 `UCameraComponent` 无法满足需求，且希望将定制逻辑资产化以便于复用和团队协作时。
--   **蓝图驱动的游戏开发**：团队主要使用蓝图进行开发，需要一套完整的蓝图节点来创建和控制摄像机。
+- 你需要一个**策划可编辑**的摄像机系统，而非在 C++ 中硬编码摄像机逻辑
+- 游戏有多种摄像机模式（战斗、探索、过场），需要**模块化切换和混合**
+- 需要在蓝图中**动态设置或读取**正在运行的 CameraRig 的参数
+- 需要将玩家输入（摇杆、鼠标）无缝映射到摄像机旋转/缩放等参数
 
 ## 蓝图用法
 
-GameplayCameras 通过自定义蓝图节点（K2Node）暴露其核心功能，允许在蓝图中直接操作摄像机逻辑资产的参数。
+当前分析的 `GameplayCamerasUncookedOnly` 模块提供了自定义 K2 蓝图节点，用于与 CameraRig 的暴露参数交互。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Set Camera Rig Parameters` | 给定一个摄像机逻辑资产（Camera Rig），设置其所有暴露参数的运行时值。正在使用该逻辑数据进行评估的摄像机将应用这些值。 | `UK2Node_SetCameraRigParameters` |
-| `Get Camera Rig Parameters` | 给定一个摄像机逻辑资产，获取其所有暴露参数的当前运行时值。 | `UK2Node_GetCameraRigParameters` |
-| `Set Camera Rig Parameter` | 给定一个摄像机逻辑资产，设置其中一个特定暴露参数的运行时值。 | `UK2Node_SetCameraRigParameter` |
-| `Get Camera Rig Parameter` | 给定一个摄像机逻辑资产，获取其中一个特定暴露参数的当前运行时值。 | `UK2Node_GetCameraRigParameter` |
+| `Set Camera Rig Parameters` | 设置指定 CameraRig 的所有暴露参数值 | `UK2Node_SetCameraRigParameters` |
+| `Get Camera Rig Parameters` | 获取指定 CameraRig 的所有暴露参数值（纯函数） | `UK2Node_GetCameraRigParameters` |
+| `Set Camera Rig Parameter` | 设置指定 CameraRig 的单个暴露参数值 | `UK2Node_SetCameraRigParameter` |
+| `Get Camera Rig Parameter` | 获取指定 CameraRig 的单个暴露参数值（纯函数） | `UK2Node_GetCameraRigParameter` |
+
+### 参数类型
+
+节点支持两种参数类型：
+
+- **Blendable 参数**（`ECameraVariableType`）：浮点、向量、旋转、颜色等可混合的值
+- **Data 参数**（`ECameraContextDataType` + `ECameraContextDataContainerType`）：上下文数据，支持单值和容器类型
 
 ### 使用示例（蓝图描述）
 
-1.  **设置参数**：在事件图表中，从一个 `Camera Rig` 资产变量（如 `MyFollowCameraRig`）连出引线，到 `Set Camera Rig Parameter` 节点的 “Camera Rig” 引脚。在节点的参数下拉列表中选择一个已暴露的参数（如 “ArmLength”），然后将一个浮点数变量连入其 “Value” 引脚。
-2.  **获取参数**：使用 `Get Camera Rig Parameter` 节点，以类似方式连接资产并选择参数，其输出引脚将提供该参数的当前值，可用于逻辑判断。
+**读写单个 CameraRig 参数：**
+
+1. 在蓝图中搜索 "Set Camera Rig Parameter"，选择目标 CameraRig 资产
+2. 节点自动暴露出该 CameraRig 定义的所有参数引脚
+3. 连接目标参数的输入引脚到你的数据源（如 EnhancedInput 的轴值）
+4. "Get Camera Rig Parameter" 节点可读取当前运行中的参数值
+
+**批量读写多个参数：**
+
+1. 使用 "Set Camera Rig Parameters" 节点，一次性设置某个 CameraRig 的全部暴露参数
+2. 使用 "Get Camera Rig Parameters" 节点，一次性读取所有暴露参数
+3. 这两个节点在重建时自动同步参数引脚（`ReallocatePinsDuringReconstruction`）
 
 ## C++ 用法
 
-此插件的 Runtime 模块提供了底层的 C++ API，但对于 `GameplayCamerasUncookedOnly` 模块，其主要功能是为编辑器中的蓝图图提供支持，C++ 用法侧重于扩展编辑器。
+> **注意**：当前模块 `GameplayCamerasUncookedOnly` 主要提供蓝图编译期节点（K2Node），C++ 用法应关注 `GameplayCameras` 主运行时模块。以下示例基于公开的辅助类。
 
 ### 头文件引入
 
 ```cpp
-// 对于蓝图图相关的扩展，通常需要包含编辑器相关头文件
-#include "GameplayCamerasUncookedOnlyModule.h"
+#include "Helpers/CameraVariablePinTypeHelper.h"
+#include "Helpers/CameraContextDataPinTypeHelper.h"
 ```
 
 ### 基本用法
 
-该模块的核心是蓝图节点的定义。以下示例展示了如何基于 `UK2Node_CameraRigBase` 创建一个自定义的蓝图节点，用于查询特定摄像机逻辑资产的状态（非官方示例，基于代码结构推断）。
+根据源码中的辅助类，可以在自定义蓝图节点中创建正确的引脚类型：
 
 ```cpp
-// MyCustomCameraRigNode.h
-#include "K2Node_CameraRigBase.h"
-
-UCLASS(MinimalAPI)
-class UK2Node_GetMyCameraRigStatus : public UK2Node_CameraRigBase
-{
-	GENERATED_BODY()
-
-public:
-	// 实现 UEdGraphNode 接口
-	virtual void AllocateDefaultPins() override;
-	virtual FText GetNodeTitle(ENodeTitleType::Type TitleType) const override;
-	virtual FText GetTooltipText() const override;
-	virtual bool IsNodePure() const override { return true; }
-	virtual void ExpandNode(class FKismetCompilerContext& CompilerContext, UEdGraph* SourceGraph) override;
-
-protected:
-	// 实现 UK2Node_CameraRigBase 接口
-	virtual void GetMenuActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar, const FAssetData& CameraRigAssetData) const override;
-};
+// 来源: Public/Helpers/CameraVariablePinTypeHelper.h
+// 将摄像机变量类型转换为蓝图引脚类型
+FEdGraphPinType PinType = UE::Cameras::FCameraVariablePinTypeHelper::GetPinType(
+    ECameraVariableType::Float,  // 变量类型
+    nullptr                       // Blendable 结构体类型（非结构体时为 nullptr）
+);
 ```
-*（来源：基于 `Private/BlueprintGraph/K2Node_GetCameraRigParameter.h` 结构推断）*
+
+```cpp
+// 来源: Public/Helpers/CameraContextDataPinTypeHelper.h
+// 将摄像机上下文数据类型转换为蓝图引脚类型
+FEdGraphPinType PinType = UE::Cameras::FCameraContextDataPinTypeHelper::GetPinType(
+    ECameraContextDataType::SomeType,           // 数据类型
+    ECameraContextDataContainerType::Single,     // 容器类型
+    nullptr                                      // 数据类型对象
+);
+```
 
 ### 进阶用法
 
-通过 `FCameraVariablePinTypeHelper` 和 `FCameraContextDataPinTypeHelper` 辅助类，可以正确地为不同类型的摄像机变量和上下文数据创建对应的蓝图图引脚类型。
+自定义 K2 节点来操作 CameraRig 参数，基于源码中的基类继承模式：
 
 ```cpp
-#include "Helpers/CameraVariablePinTypeHelper.h"
-#include "Helpers/CameraContextDataPinTypeHelper.h"
-
-void UK2Node_GetMyCameraRigStatus::AllocateDefaultPins()
+// 继承 UK2Node_SingleCameraRigParameterBase 来创建自定义单参数节点
+UCLASS()
+class UMyCustomCameraParamNode : public UK2Node_SingleCameraRigParameterBase
 {
-    Super::AllocateDefaultPins();
-
-    // 根据摄像机变量类型创建引脚
-    FEdGraphPinType FloatPinType = UE::Cameras::FCameraVariablePinTypeHelper::GetPinType(
-        ECameraVariableType::Float, /* BlendableStructType */ nullptr);
-    CreatePin(EGPD_Output, FloatPinType, TEXT("CurrentBlendWeight"));
-
-    // 根据上下文数据类型创建引脚
-    FEdGraphPinType ObjectPinType = UE::Cameras::FCameraContextDataPinTypeHelper::GetPinType(
-        ECameraContextDataType::Object, ECameraContextDataContainerType::None, /* DataTypeObject */ AActor::StaticClass());
-    CreatePin(EGPD_Output, ObjectPinType, TEXT("TargetActor"));
-}
-```
-*（来源：基于 `Public/Helpers/CameraVariablePinTypeHelper.h` 和 `Public/Helpers/CameraContextDataPinTypeHelper.h`）*
-
-## Demo 示例
-
-以下是一个最小化的自定义蓝图节点实现，该节点从指定的摄像机逻辑资产中获取一个浮点型混合参数的当前值。
-
-```cpp
-// MyGetBlendableParameterNode.h
-#pragma once
-#include "K2Node_SingleCameraRigParameterBase.h"
-#include "MyGetBlendableParameterNode.generated.h"
-
-UCLASS(MinimalAPI)
-class UK2Node_GetBlendableParameter : public UK2Node_SingleCameraRigParameterBase
-{
-	GENERATED_BODY()
+    GENERATED_BODY()
 public:
-	virtual void AllocateDefaultPins() override;
-	virtual FText GetNodeTitle(ENodeTitleType::Type TitleType) const override;
-	virtual FText GetTooltipText() const override;
-	virtual bool IsNodePure() const override { return true; }
-	virtual void ExpandNode(class FKismetCompilerContext& CompilerContext, UEdGraph* SourceGraph) override;
-protected:
-	virtual void GetMenuActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar, const FAssetData& CameraRigAssetData) const override;
+    // 初始化节点，绑定到特定 CameraRig 和参数名
+    void SetupNode(UCameraRigAsset* CameraRig, const FString& ParamName)
+    {
+        Initialize(CameraRig, ParamName, ECameraVariableType::Float, nullptr);
+    }
 };
 ```
 
+## Demo 示例
+
+> **注意**：`GameplayCamerasUncookedOnly` 模块的类主要是编辑器/编译期蓝图节点（`UK2Node`），不适用于运行时示例。实际使用中，开发者主要通过蓝图编辑器操作这些节点，无需编写 C++ 代码。
+
+如需在 C++ 中创建自定义蓝图节点来操作摄像机参数，可参考以下最小示例：
+
 ```cpp
-// MyGetBlendableParameterNode.cpp
-#include "MyGetBlendableParameterNode.h"
-#include "CameraRigAsset.h"
-#include "BlueprintActionDatabaseRegistrar.h"
-#include "BlueprintNodeSpawner.h"
+// MyCameraParamBlueprintNode.h
+#pragma once
 
-#define LOCTEXT_NAMESPACE "MyGetBlendableParameterNode"
+#include "BlueprintGraph/K2Node_SingleCameraRigParameterBase.h"
+#include "MyCameraParamBlueprintNode.generated.h"
 
-void UK2Node_GetBlendableParameter::AllocateDefaultPins()
+UCLASS(MinimalAPI)
+class UMyCameraParamBlueprintNode : public UK2Node_SingleCameraRigParameterBase
 {
-	// 创建输出引脚，类型基于已存储的参数信息
-	FEdGraphPinType OutputPinType = GetParameterPinType();
-	CreatePin(EGPD_Output, OutputPinType, TEXT("Value"));
+    GENERATED_BODY()
 
-	// 基类会处理“Camera Rig”输入引脚和“Evaluation Result”输出引脚的创建
-	Super::AllocateDefaultPins();
-}
+public:
+    UMyCameraParamBlueprintNode(const FObjectInitializer& ObjectInit)
+        : Super(ObjectInit) {}
 
-FText UK2Node_GetBlendableParameter::GetNodeTitle(ENodeTitleType::Type TitleType) const
-{
-	return LOCTEXT("NodeTitle", "Get Camera Rig Blendable Parameter");
-}
+    virtual FText GetNodeTitle(ENodeTitleType::Type TitleType) const override
+    {
+        return NSLOCTEXT("MyNodes", "Title", "My Custom Camera Param");
+    }
 
-FText UK2Node_GetBlendableParameter::GetTooltipText() const
-{
-	return LOCTEXT("NodeTooltip", "Gets the current runtime value of a specific blendable parameter from a Camera Rig asset.");
-}
-
-void UK2Node_GetBlendableParameter::ExpandNode(class FKismetCompilerContext& CompilerContext, UEdGraph* SourceGraph)
-{
-	// 扩展节点，生成实际的蓝图逻辑。
-	// 这里通常会生成调用某个函数库的蓝图节点，该函数库负责根据资产和参数名查询值。
-	Super::ExpandNode(CompilerContext, SourceGraph);
-	// ... 具体的展开逻辑，参考UK2Node_GetCameraRigParameter
-}
-
-void UK2Node_GetBlendableParameter::GetMenuActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar, const FAssetData& CameraRigAssetData) const
-{
-	// 仅当资产包含可以操作的混合参数时，才在菜单中注册此节点。
-	if (CameraRigAssetData.IsValid())
-	{
-		UClass* ActionKey = GetClass();
-		if (ActionRegistrar.IsOpenForRegistration(ActionKey))
-		{
-			// 根据资产内的参数动态生成菜单项
-			// ... 具体逻辑
-		}
-	}
-}
-
-#undef LOCTEXT_NAMESPACE
+    virtual FText GetTooltipText() const override
+    {
+        return NSLOCTEXT("MyNodes", "Tooltip", "Custom node for camera param");
+    }
+};
 ```
-*（参考来源：`Private/BlueprintGraph/K2Node_GetCameraRigParameter.h` 与 `K2Node_SingleCameraRigParameterBase.h`）*
 
 ## 模块依赖
 
-使用 `GameplayCameras` 插件，你的模块通常需要依赖其运行时模块。具体依赖关系请查阅各模块的 `Build.cs` 文件。
+从 `.uplugin` 的 Plugins 依赖：
 
-| 模块 | 用途 |
+| 插件/模块 | 用途 |
 |---|---|
-| `GameplayCameras` | 核心运行时模块，提供摄像机逻辑资产、评估器等基础功能 |
-| `EnhancedInput` | 输入系统插件，用于处理摄像机相关的输入操作 |
+| `EnhancedInput` | 玩家输入映射到摄像机控制参数 |
 
 ## 维护状态
 
@@ -204,18 +170,29 @@ void UK2Node_GetBlendableParameter::GetMenuActions(FBlueprintActionDatabaseRegis
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `671f5d81` | Camera: Fix camera variable overrides not working in PIE | 修复在 PIE 中摄像机变量覆盖不生效的问题 |
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为浮点的编译警告 |
-| 2026-05-13 | `928a7f23` | Add or update descriptions to some trace channels. | 为一些追踪通道添加或更新描述信息 |
-| 2026-04-28 | `1e68de2e` | GameplayCameras | 插件相关的通用提交（可能为合并或小范围修复） |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将旧版日志宏 `UE_LOG` 迁移为新版 `UE_LOGF` |
+| 2026-05-26 | `671f5d81` | Camera: Fix camera variable overrides not working in PIE | 修复 PIE 模式下摄像机变量覆盖不生效的问题 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 常量截断为 float 的警告 |
+| 2026-05-13 | `928a7f23` | Add or update descriptions to some trace channels. | 更新部分 Trace 通道的描述信息 |
+| 2026-04-28 | `1e68de2e` | GameplayCameras | GameplayCameras 相关更新 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移为 UE_LOGF 格式化日志宏 |
 
 ### 维护评价
 
-该插件处于**积极维护**状态。尽管标记为实验性版本（IsExperimentalVersion=true），但从近期的提交记录看，Epic 团队仍在持续修复 Bug、优化代码（如日志迁移、编译警告修复）和处理特定场景问题（如 PIE 修复）。作为 Epic 官方推出的摄像机解决方案，它在未来 UE 版本中很可能会成为主流或得到进一步完善。当前推荐在新项目中谨慎试用，以评估其稳定性和是否符合项目需求。
+**活跃维护中** ✅
+
+- **年龄**：约 6 年（2020 年创建），属于 UE5 早期就规划的核心摄像机系统
+- **更新频率**：最近 1 个月内有多次提交，保持活跃更新
+- **更新内容**：包含功能修复（PIE 变量覆盖）、代码质量改进（日志迁移、警告修复）
+- **实验性状态**：仍标记为实验性（`IsExperimentalVersion=true`），API 可能变化
+- **源码规模**：729 个源文件，属于大型插件，架构成熟
+
+**注意事项**：
+- 该插件目前仍为实验性，生产环境使用需谨慎
+- 版本号为 `0.1`，表明 Epic 尚未将其标记为稳定
+- 建议关注后续 UE 版本中该插件的正式发布时间
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Cameras/GameplayCameras)
-- [官方文档](https://docs.unrealengine.com/)（暂无特定文档，需查阅引擎通用摄像机文档或社区资源）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Tests/GameplayCameras)
+- [官方文档]()（暂无）
+- [测试用例]()（待确认）

@@ -1,13 +1,13 @@
-# MetaHuman Creator - UAF support
+# MetaHuman Character UAF
 
-> UAF (Unreal Animation Framework) support for MetaHuman Creator
+> UAF (Unreal Animation Framework) support for MetaHuman Creator（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman UAF 支持 |
+| 中文名 | MetaHuman动画框架支持 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
+| 包含内容 | ✅ 有（配置资产） |
 | 模块 | `MetaHumanCharacterUAFEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-09-02 |
@@ -16,29 +16,34 @@
 
 ## 用途
 
-此插件是 MetaHuman Creator 与 Unreal Animation Framework (UAF) 之间的集成桥梁。它的核心作用是为 MetaHuman 角色的构建流程提供 UAF 支持，允许开发者为不同质量等级的 MetaHuman 配置专门用于 UAF 动画系统的构建蓝图。
+此插件是 MetaHuman 角色系统与 Unreal Animation Framework (UAF) 动画框架之间的集成层。它为 MetaHuman Creator 工具链提供了必要的配置和构建支持，使得创建的 MetaHuman 角色能够利用 UAF 动画系统，而非传统的基于动画蓝图的资产。
 
-本质上，它解决了将基于 Skeletal Mesh 的 MetaHuman 与先进的 UAF 动画图表系统进行无缝对接的配置问题。通过此插件，可以确保在构建 MetaHuman 资产时，能够自动生成或应用与 UAF 兼容的动画蓝图和控制绑定。
+其主要解决的问题是：当开发者选择使用 UAF 这种更新的、可能更高效或功能更强大的动画框架时，需要为其 MetaHuman 角色生成适配 UAF 工作流的资产和配置。此插件提供了这种桥接和构建规则。
 
 ## 使用场景
 
-- 你正在开发一个使用 MetaHuman 角色的项目，并希望利用 UAF 动画框架来实现更复杂、更高性能的程序化动画或动画混合。
-- 你需要为移动端和高端PC端的 MetaHuman 分别配置不同的动画蓝图和控制蓝图，以优化不同平台的性能和视觉效果。
-- 你的 MetaHuman 工作流需要集成 RigLogic 和 UAF，此插件提供了必要的配置入口。
+- 你正在使用 **MetaHuman Creator** 工具创建逼真的人类角色。
+- 你决定或需要在你的项目中采用 **Unreal Animation Framework (UAF)** 动画系统来驱动角色动画。
+- 你需要配置项目，以便导出和组装的 MetaHuman 能够与 UAF 组件和系统兼容并高效工作。
+
+*注意：此插件标记为实验性，且默认不启用。主要用于前沿功能评估和特定工作流开发。*
 
 ## 蓝图用法
 
-此插件主要通过编辑器设置面板进行配置，未暴露直接的蓝图节点。其核心是一个项目设置 (`UDeveloperSettings`)，用于定义构建映射关系。
+此插件当前提供的蓝图功能非常有限，主要通过编辑器设置面板进行配置。
 
-### 核心设置
+### 核心节点
 
-| 设置项 | 说明 | 所在类 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Build.Blueprints` | 一个映射表，将 MetaHuman 质量等级 (`EMetaHumanQualityLevel`) 与对应的构建 Actor 蓝图 (`TSoftClassPtr<AActor>`) 关联起来。 | `UMetaHumanCharacterUAFProjectSettings` |
+| `MetaHuman Character UAF Project Settings` | 在插件设置中配置用于组装 MetaHuman 的默认 Actor 蓝图。 | `UMetaHumanCharacterUAFProjectSettings` |
 
-### 使用示例（配置）
-在编辑器中，通过 **项目设置 (Project Settings)** -> **插件 (Plugins)** -> **MetaHuman Character UAF** 可以找到配置界面。
-在 `Build` 分类下，你可以为 `Low`, `Medium`, `High` 等不同的质量等级指定不同的 Actor 蓝图。这些蓝图定义了如何使用 UAF 来组装一个完整的 MetaHuman 角色。
+### 使用示例（蓝图描述）
+
+由于插件本身不提供运行时蓝图节点，其“蓝图用法”体现在 **项目设置** 中：
+1.  打开编辑器设置（Editor -> Project Settings）。
+2.  导航至 **Plugins -> MetaHuman Character UAF** 分类。
+3.  在 “Build” 类别下，你可以编辑 `Blueprints` 属性。这是一个 `TMap`，将不同的 `EMetaHumanQualityLevel`（质量级别）映射到对应的 `AActor` 蓝图类（`TSoftClassPtr<AActor>`）。这定义了在使用 UAF 组装不同质量级别的 MetaHuman 时，应该使用哪个基础蓝图作为模板。
 
 ## C++ 用法
 
@@ -50,114 +55,83 @@
 
 ### 基本用法
 
-获取项目设置实例并读取配置的蓝图映射。
+从插件唯一的头文件 `MetaHumanCharacterUAFProjectSettings.h` 中提取，用于在 C++ 中访问项目设置。
 
 ```cpp
-// 来源：实际使用场景推断，因测试用例未提供
-// 获取默认设置对象
+// 获取 MetaHuman UAF 项目的设置单例
 const UMetaHumanCharacterUAFProjectSettings* Settings = GetDefault<UMetaHumanCharacterUAFProjectSettings>();
 
 if (Settings)
 {
-    // 获取特定质量等级对应的构建蓝图类
-    TSoftClassPtr<AActor>* FoundBlueprint = Settings->Blueprints.Find(EMetaHumanQualityLevel::High);
-    if (FoundBlueprint && !FoundBlueprint->IsNull())
+    // 读取指定质量级别对应的蓝图资产路径（软引用）
+    // 假设我们想查看 EMetaHumanQualityLevel::High 对应的蓝图
+    const TSoftClassPtr<AActor>* HighQualityBlueprintPtr = Settings->Blueprints.Find(EMetaHumanQualityLevel::High);
+
+    if (HighQualityBlueprintPtr && !HighQualityBlueprintPtr->IsNull())
     {
-        // 使用找到的蓝图类进行后续操作，例如异步加载
-        UClass* BlueprintClass = FoundBlueprint->LoadSynchronous();
-        // ... 使用 BlueprintClass
+        // 在此处可以异步加载该蓝图类
+        UE_LOG(LogTemp, Log, TEXT("Found Blueprint for High quality: %s"), *HighQualityBlueprintPtr->ToString());
     }
 }
 ```
-
-### 进阶用法
-
-在 MetaHuman 构建流程中，根据当前目标质量等级动态选择正确的构建蓝图。
-
-```cpp
-// 来源：结合插件用途推断
-void BuildMetaHumanForUAF(EMetaHumanQualityLevel QualityLevel)
-{
-    const UMetaHumanCharacterUAFProjectSettings* Settings = GetDefault<UMetaHumanCharacterUAFProjectSettings>();
-    if (!Settings) return;
-
-    const TSoftClassPtr<AActor>* BlueprintPtr = Settings->Blueprints.Find(QualityLevel);
-    if (BlueprintPtr && !BlueprintPtr->IsNull())
-    {
-        // 异步加载蓝图资产
-        UAssetManager::GetStreamableManager().RequestAsyncLoad(
-            BlueprintPtr->ToSoftObjectPath(),
-            FStreamableDelegate::CreateLambda([BlueprintPtr, QualityLevel]()
-            {
-                UClass* ActorClass = BlueprintPtr->Get();
-                if (ActorClass)
-                {
-                    // 在此处使用 ActorClass 实例化一个 UAF 版的 MetaHuman 组装器
-                    // 例如：GetWorld()->SpawnActor<AActor>(ActorClass, ...);
-                    UE_LOG(LogTemp, Log, TEXT("Loaded UAF blueprint for quality level: %d"), static_cast<int32>(QualityLevel));
-                }
-            })
-        );
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No UAF blueprint configured for quality level: %d"), static_cast<int32>(QualityLevel));
-    }
-}
-```
+*代码来源：基于 `Source/MetaHumanCharacterUAFEditor/Private/MetaHumanCharacterUAFProjectSettings.h` 解析。*
 
 ## Demo 示例
 
-一个访问插件设置并获取特定质量级别构建蓝图类的最小示例。
+以下是一个最小的示例，演示如何在模块中获取并查询 `MetaHumanCharacterUAFProjectSettings`。
 
-**MetaHumanUAFDemo.h**
+**MyModule.h**
 ```cpp
 #pragma once
+#include "Modules/ModuleInterface.h"
 
-#include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "MetaHumanCharacterUAFProjectSettings.h" // 引入插件设置头文件
-#include "MetaHumanUAFDemo.generated.h"
-
-UCLASS()
-class UMetaHumanUAFDemo : public UObject
+class FMyModule : public IModuleInterface
 {
-    GENERATED_BODY()
-
 public:
-    /** 根据质量等级获取对应的UAF构建蓝图类 */
-    UFUNCTION(BlueprintCallable, Category = "MetaHuman|UAF")
-    static TSubclassOf<AActor> GetUAFBuildBlueprintClass(EMetaHumanQualityLevel QualityLevel);
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
 };
 ```
 
-**MetaHumanUAFDemo.cpp**
+**MyModule.cpp**
 ```cpp
-#include "MetaHumanUAFDemo.h"
+#include "MyModule.h"
+#include "MetaHumanCharacterUAFProjectSettings.h"
 
-TSubclassOf<AActor> UMetaHumanUAFDemo::GetUAFBuildBlueprintClass(EMetaHumanQualityLevel QualityLevel)
+void FMyModule::StartupModule()
 {
+    // 示例：在模块启动时检查设置
     const UMetaHumanCharacterUAFProjectSettings* Settings = GetDefault<UMetaHumanCharacterUAFProjectSettings>();
-    if (!Settings)
+    if (Settings)
     {
-        return nullptr;
+        // 假设存在一个名为 “AMH_UAF_Standard” 的资产，我们想查询它的配置
+        for (const auto& Pair : Settings->Blueprints)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Quality Level %d uses Blueprint: %s"),
+                static_cast<int32>(Pair.Key), *Pair.Value.GetAssetName());
+        }
     }
-
-    const TSoftClassPtr<AActor>* BlueprintPtr = Settings->Blueprints.Find(QualityLevel);
-    if (BlueprintPtr && !BlueprintPtr->IsNull())
-    {
-        // 加载软引用指向的类
-        return BlueprintPtr->LoadSynchronous();
-    }
-
-    return nullptr;
 }
+
+void FMyModule::ShutdownModule()
+{
+    // 清理
+}
+
+IMPLEMENT_MODULE(FMyModule, MyModule)
 ```
 
 ## 模块依赖
 
-此插件主要作为配置层，其模块 `MetaHumanCharacterUAFEditor` 依赖于其启用的上层插件所提供的功能模块。
-使用者无需为自己的模块添加特殊的模块依赖，因为此插件的配置最终通过其依赖的 `UAF`， `MetaHumanCharacter` 等插件的核心模块生效。
+从插件的 `.uplugin` 元数据中的 `Plugins` 列表推断，使用此插件需要以下插件处于启用状态：
+
+| 模块 | 用途 |
+|---|---|
+| `UAF` | 核心的 Unreal Animation Framework 插件。 |
+| `UAFAnimGraph` | 用于 UAF 的动画图表编辑功能。 |
+| `UAFControlRig` | UAF 与 Control Rig 的集成。 |
+| `RigLogicUAF` | 为 MetaHuman 面部 Rig 提供 UAF 支持。 |
+| `MetaHumanCharacter` | MetaHuman 角色系统的基础插件。 |
 
 ## 维护状态
 
@@ -165,20 +139,19 @@ TSubclassOf<AActor> UMetaHumanUAFDemo::GetUAFBuildBlueprintClass(EMetaHumanQuali
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-01-14 | `049dd5ce` | Rename UAnimNextRigVM* to UUAFRigVM* | 将 UAnimNextRigVM 相关类重命名为 UUAFRigVM，反映 UAF 命名空间更新。 |
-| 2026-01-13 | `436f1414` | Rename UAnimNextComponent to UUAFComponent | 将 UAnimNextComponent 重命名为 UUAFComponent，跟进框架重命名。 |
-| 2026-01-08 | `8e81a827` | Add UAF Asset Data structure to encapsulate an asset that can be used to generate a UAF graph or sys | 添加了 UAF Asset Data 结构，用于封装可生成 UAF 图表或系统的资产。 |
-| 2026-01-07 | `7f65190a` | Rename UAnimNextModule to UUAFSystem | 将 UAnimNextModule 重命名为 UUAFSystem，统一命名前缀。 |
-| 2025-09-29 | `e0a45858` | Fix for broken BP when Common folder is redirected when exporting a UAF MH | 修复了在导出 UAF MetaHuman 时，因 Common 文件夹重定向导致的蓝图损坏问题。 |
+| 2026-01-14 | `049dd5ce` | Rename UAnimNextRigVM* to UUAFRigVM* | 将 `UAnimNextRigVM` 类重命名为 `UUAFRigVM`，跟进 UAF 框架的命名更新。 |
+| 2026-01-13 | `436f1414` | Rename UAnimNextComponent to UUAFComponent | 将 `UAnimNextComponent` 重命名为 `UUAFComponent`，是 UAF 框架重构的一部分。 |
+| 2026-01-08 | `8e81a827` | Add UAF Asset Data structure to encapsulate an asset that can be used to generate a UAF graph or system | 添加 `UAF Asset Data` 数据结构，用于封装可生成 UAF 图或系统的资产。 |
+| 2026-01-07 | `7f65190a` | Rename UAnimNextModule to UUAFSystem | 将 `UAnimNextModule` 重命名为 `UUAFSystem`，是框架命名统一。 |
+| 2025-09-29 | `e0a45858` | Fix for broken BP when Common folder is redirected when exporting a UAF MH | 修复在导出 UAF MetaHuman 时，若 “Common” 文件夹被重定向会导致蓝图损坏的问题。 |
 
 ### 维护评价
 
-**活跃维护**。此插件非常新（创建于 2025 年 9 月），并且在最近一个月内（2026 年 1 月）有多次提交，主要活动围绕其核心依赖 `UAF` 框架的重大重命名工作（从 AnimNext 到 UAF）。这表明它正处于快速开发和整合阶段，紧密跟随上游框架的演进。由于其 `IsExperimentalVersion` 为 `true`，API 和行为可能不稳定，但近期的更新证实其处于活跃开发中。
-
-**推荐用于前沿开发或实验项目**，不推荐用于需要长期稳定支持的生产环境，除非你愿意跟随实验性 API 的变更。
+- **状态**：**活跃开发中**。尽管创建于约1年前，但最近的提交（2026年1月）显示插件正在持续更新，主要工作是跟进 UAF 框架的类名重构，并添加新功能。
+- **实验性**：插件明确标记为 `IsExperimentalVersion: true`，且默认不启用。这表明它仍处于早期验证阶段，API 和功能可能不稳定，不建议用于生产环境。
+- **推荐度**：仅推荐给**提前评估 UAF 与 MetaHuman 集成**的技术美术或动画程序员。对于常规 MetaHuman 开发，建议使用成熟的默认动画蓝图工作流。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetaHuman/MetaHumanCharacterUAF)
-- [官方文档]() （无）
-- [测试用例]() （无， 或位于上层 MetaHuman 插件测试目录中）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetaHuman/MetaHumanCharacterUAF/Tests) (预期路径，可能存在)

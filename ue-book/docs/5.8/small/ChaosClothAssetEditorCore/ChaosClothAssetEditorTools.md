@@ -4,242 +4,269 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 混沌布料资产编辑器核心 |
+| 中文名 | 布料资产编辑器核心 |
 | 分类 | Physics |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（编辑器工具、资产、Dataflow 节点） |
+| 包含内容 | ✅ 有（蓝图资产） |
 | 模块 | `ChaosClothAssetEditor` (Runtime), `ChaosClothAssetEditorTools` (Runtime) |
-| 实验性 | ⚠️ 是 |
+| 实验性 | 否 |
 | 创建时间 | 2026-01-27 |
-| 年龄标签 | 🆕（约 1 年） |
+| 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetEditorCore) | |
 
 ## 用途
 
-此插件是 Chaos 布料（Chaos Cloth）编辑系统的核心模块，为基于 **Dataflow 图**的布料资产提供编辑和创建功能。它不是一个独立的运行时物理模拟插件，而是布料资产在**编辑器环境**下的可视化编辑工具链核心。
+该插件提供基于 Dataflow 的布料资产（Cloth Asset）在编辑器中的核心交互式编辑功能。它是从原始 `ChaosClothEditor` 插件拆分而来的三个插件之一，目的是将 USD 相关代码从编辑器模块中移出，同时保持功能完整性。
 
-主要解决的问题：
-1. **布料权重图绘制**：允许美术师在网格表面直接绘制权重（例如，哪些顶点受布料模拟影响，影响强度如何）。
-2. **网格选择工具**：提供精确的网格元素选择功能，用于定义布料模拟的区域。
-3. **蒙皮权重传递**：从一个骨骼网格体将蒙皮权重信息传递给布料资产，简化绑定过程。
-4. **Dataflow 集成**：所有工具都与 Dataflow 图系统深度集成，允许将编辑操作作为图节点输出。
+该插件主要解决以下问题：
 
-它从原有的 `ChaosClothEditor` 插件拆分而来，目的是将与 USD 相关的代码移出编辑器模块，同时保持功能完整。
+- **布料权重图绘制**：在布料网格上交互式绘制权重图（Weight Map），用于控制布料模拟的约束强度、风力影响等参数
+- **布料网格选择**：在布料资产上进行精确的网格元素选择（顶点/边/面），用于后续操作的数据输入
+- **蒙皮权重转移**：将骨骼网格体的蒙皮权重（Skin Weights）转移到布料资产上，使布料能正确跟随骨骼变形
+
+核心架构基于 UE5 的 Dataflow（数据流图）系统，所有编辑工具都通过 `UDataflowContextObject` 与 Dataflow 图编辑器联动，实现非破坏性的参数化编辑流程。
 
 ## 使用场景
 
--   **游戏美术师**：使用布料权重图绘制工具，为角色服装的物理模拟指定精确的权重区域（如，裙摆哪些部分摆动更剧烈，哪些部分相对固定）。
--   **技术美术/关卡设计师**：使用网格选择工具，在布料资产上定义特定的模式（Pattern），用于后续的模拟设置。
--   **绑定师/技术美术**：使用蒙皮权重传递工具，快速将已有人体骨骼的权重信息映射到服装布料资产上，避免手动重新绘制。
--   **所有用户**：通过 Dataflow 图的集成，将上述所有编辑操作记录为可重放、可调整参数的图节点，实现非破坏性工作流。
+- 你在制作角色服装的布料模拟 → 用权重图绘制工具控制不同区域的布料约束强度
+- 你需要为布料的不同部分设置不同的物理参数（如刚度、阻尼）→ 用权重图绘制精确控制影响范围
+- 你有一个已绑定骨骼的角色模型，需要将蒙皮权重应用到布料上 → 用蒙皮权重转移工具
+- 你需要在 Dataflow 图中选择特定的布料节点进行编辑 → 用网格选择工具进行精确选择
+- 你正在使用 Chaos Cloth 的 Dataflow 工作流创建布料资产 → 该插件是编辑环节的核心依赖
 
 ## 蓝图用法
 
-本插件的蓝图用法主要体现在编辑器工具和属性设置上，而非运行时游戏逻辑。
+该插件的所有功能均为编辑器交互式工具（Interactive Tools），不提供传统的蓝图节点。工具通过编辑器工具栏和 Dataflow 图编辑器上下文启动。
 
-### 核心节点
+### 工具列表
 
-| 节点 | 说明 | 所在类 |
+| 工具 | 说明 | 所在类 |
 |---|---|---|
-| `ClearAll` | 清除当前工具的全部权重/选择 | `UClothEditorMeshWeightMapPaintToolActions`, `UClothMeshSelectionToolActions` |
-| `FloodFillCurrent` | 用当前设置的权重值填充整个区域 | `UClothEditorMeshWeightMapPaintToolActions` |
-| `Invert` | 反转当前选择的权重/选择 | `UClothEditorMeshWeightMapPaintToolActions`, `UClothMeshSelectionToolActions` |
-| `GrowSelection` | 增长当前网格选择区域 | `UClothMeshSelectionToolActions` |
-| `ShrinkSelection` | 收缩当前网格选择区域 | `UClothMeshSelectionToolActions` |
-| `FloodSelection` | 全选所有网格元素 | `UClothMeshSelectionToolActions` |
-| `ClearSelection` | 清除当前网格选择 | `UClothMeshSelectionToolActions` |
-| `ShowAll` | 显示所有三角形（在隐藏三角形工具中） | `UClothEditorMeshWeightMapPaintToolShowHideProperties` |
-| `Multiply` | 将当前权重乘以一个值 | `UClothEditorMeshWeightMapPaintToolActions` |
+| 权重图绘制工具 | 在布料网格上绘制/平滑/擦除权重值 | `UClothEditorWeightMapPaintTool` |
+| 网格选择工具 | 选择布料网格元素（顶点/边/面组） | `UClothMeshSelectionTool` |
+| 蒙皮权重转移工具 | 从骨骼网格体转移蒙皮权重到布料 | `UClothTransferSkinWeightsTool` |
 
-### 使用示例（蓝图描述）
+### 工具构建器
 
-1.  **在编辑器中启动工具**：当用户在布料资产编辑器中选择一个节点（如“布料绘制节点”或“选择节点”）时，Dataflow 图编辑器会触发对应的工具构建器（例如 `UClothEditorWeightMapPaintToolBuilder`），从而在视口界面激活相应的交互工具。
-2.  **修改工具属性**：在工具激活后，细节面板（Details Panel）中会显示一组属性（例如 `UClothEditorWeightMapPaintBrushFilterProperties`）。这些属性通过 `UPROPERTY(EditAnywhere)` 暴露在蓝图编辑器中，允许用户在运行时调整。
-3.  **触发操作按钮**：在细节面板中，一些属性集（如 `UClothEditorMeshWeightMapPaintToolActions`）包含了标记为 `CallInEditor` 的函数。这些函数会作为按钮出现在细节面板中，点击后会调用对应的操作（如“清除全部”、“反转”）。这些操作最终通过 `RequestAction` 函数传递给工具内部逻辑执行。
+| 构建器 | 说明 | 所在类 |
+|---|---|---|
+| `UClothEditorWeightMapPaintToolBuilder` | 创建权重图绘制工具实例 | 继承自 `UMeshSurfacePointMeshEditingToolBuilder` |
+| `UClothMeshSelectionToolBuilder` | 创建网格选择工具实例 | 继承自 `UInteractiveToolWithToolTargetsBuilder` |
+| `UClothTransferSkinWeightsToolBuilder` | 创建蒙皮权重转移工具实例 | 继承自 `USingleSelectionMeshEditingToolBuilder` |
+
+### 权重图绘制工具属性
+
+权重图绘制工具通过 `UClothEditorWeightMapPaintBrushFilterProperties` 提供丰富的配置选项：
+
+| 属性 | 类型 | 说明 |
+|---|---|---|
+| `ColorMap` | `EClothEditorWeightMapDisplayType` | 权重图显示模式（黑白/白红） |
+| `SubToolType` | `EClothEditorWeightMapPaintInteractionType` | 交互模式：Brush（笔刷）、Fill（填充）、PolyLasso（多边形套索）、Gradient（渐变）、HideTriangles（隐藏三角面） |
+| `PrimaryBrushType` | `EClothEditorWeightMapPaintBrushType` | 笔刷模式：Paint（绘制）、Smooth（平滑）、Erase（擦除） |
+| `BrushSize` | `float` | 笔刷相对大小 (0.0–1.0) |
+| `Falloff` | `float` | 笔刷衰减区域比例 |
+| `AttributeValue` | `double` | 绘制的目标权重值 |
+| `Strength` | `double` | 笔刷强度 |
+| `AngleThreshold` | `float` | 角度阈值限制（0–180°） |
+| `bUVSeams` | `bool` | 是否以 UV 接缝为边界 |
+| `bNormalSeams` | `bool` | 是否以法线硬边为边界 |
+| `VisibilityFilter` | `EClothEditorWeightMapPaintVisibilityType` | 可见性过滤模式 |
+
+### 权重图批量操作
+
+通过 `UClothEditorMeshWeightMapPaintToolActions` 提供批量操作节点：
+
+| 操作 | 说明 |
+|---|---|
+| `ClearAll()` | 清除所有权重值为零 |
+| `FloodFillCurrent()` | 用当前属性值填充整个权重图 |
+| `Invert()` | 反转所有权重值 |
+| `Multiply()` | 乘以一个系数 |
+
+### 网格选择工具操作
+
+通过 `UClothMeshSelectionToolActions` 提供选择操作：
+
+| 操作 | 说明 |
+|---|---|
+| `GrowSelection()` | 扩展当前选择 |
+| `ShrinkSelection()` | 收缩当前选择 |
+| `FloodSelection()` | 洪水填充选择 |
+| `ClearSelection()` | 清除选择 |
 
 ## C++ 用法
 
 ### 头文件引入
 
-根据你要使用的具体工具类，引入对应的头文件。
-
 ```cpp
-// 工具构建器
 #include "ChaosClothAsset/ClothEditorToolBuilders.h"
-
-// 绘制工具
 #include "ChaosClothAsset/ClothWeightMapPaintTool.h"
-
-// 选择工具
 #include "ChaosClothAsset/ClothMeshSelectionTool.h"
-
-// 蒙皮权重传递工具
 #include "ChaosClothAsset/ClothTransferSkinWeightsTool.h"
-
-// 编辑器上下文对象 (已弃用，推荐使用 UDataflowContextObject)
 #include "ChaosClothAsset/ClothEditorContextObject.h"
 ```
 
-### 基本用法
+### 基本用法 — 获取工具默认对象列表
 
-**获取工具的 CDO（类默认对象）并注册命令**
-
-这是一个典型的编辑器工具注册流程，来自 `ClothEditorToolBuilders.cpp` 的模式：
+工具注册系统通过 `GetClothEditorToolDefaultObjectList` 获取所有可用工具的 CDO 列表：
 
 ```cpp
-#include "ClothEditorToolBuilders.h"
+// 来源: ClothEditorToolBuilders.h
+TArray<UInteractiveTool*> ToolCDOs;
+UE::Chaos::ClothAsset::GetClothEditorToolDefaultObjectList(ToolCDOs);
 
-// 在某个注册函数中
-void RegisterClothEditorTools()
+// 每个 CDO 对应一个可用的布料编辑工具
+for (UInteractiveTool* ToolCDO : ToolCDOs)
 {
-    TArray<UInteractiveTool*> ToolCDOs;
-    // 该函数由插件提供，用于获取所有工具的CDO，以便注册命令
-    UE::Chaos::ClothAsset::GetClothEditorToolDefaultObjectList(ToolCDOs);
-    
-    // 然后可以将这些CDO用于命令注册或其他编辑器集成
-    for (UInteractiveTool* ToolCDO : ToolCDOs)
-    {
-        // ... 注册逻辑
-    }
+    // 注册到 Dataflow 工具注册表等
 }
 ```
 
-**查询工具支持的视图模式**
+### 基本用法 — 视图模式转换
 
-在 Dataflow 图编辑器中切换视图模式时，工具构建器需要报告其支持哪些模式：
+在 Dataflow 视图模式和布料视图模式之间转换：
 
 ```cpp
-// 假设你有一个工具构建器实例
-UClothEditorWeightMapPaintToolBuilder* ToolBuilder = ...;
-TArray<UE::Chaos::ClothAsset::EClothPatternVertexType> SupportedModes;
-TObjectPtr<UDataflowContextObject> ContextObject = ...;
+// 来源: ClothEditorToolBuilders.h
+// 从 Dataflow 视图模式转为布料视图模式
+const UE::Dataflow::IDataflowConstructionViewMode* DataflowMode = /* ... */;
+EClothPatternVertexType ClothMode = UE::Chaos::ClothAsset::DataflowViewModeToClothViewMode(DataflowMode);
 
-// 调用接口方法，获取该工具支持的视图模式
-ToolBuilder->GetSupportedViewModes(*ContextObject, SupportedModes);
+// 从布料视图模式获取对应的 Dataflow 视图模式名称
+FName DataflowModeName = UE::Chaos::ClothAsset::ClothViewModeToDataflowViewModeName(ClothMode);
+// 返回值为 "Cloth2DSimView"、"Cloth3DSimView" 或 "ClothRenderView"
 ```
 
-### 进阶用法
+### 进阶用法 — 权重图绘制工具的编程式操作
 
-**从权重图绘制工具中获取当前绘制的权重值**
-
-在工具运行时，可能需要查询当前画笔下的权重值：
+可以直接调用权重图绘制工具的 API 进行编程式权重设置：
 
 ```cpp
-// 假设你已经有一个 UClothEditorWeightMapPaintTool 的实例 (ToolInstance)
-if (UClothEditorWeightMapPaintTool* PaintTool = Cast<UClothEditorWeightMapPaintTool>(ToolInstance))
-{
-    // 获取当前画笔下最近顶点的权重值
-    double CurrentWeight = PaintTool->GetCurrentWeightValueUnderBrush();
-    UE_LOG(LogTemp, Log, TEXT("Current weight under brush: %f"), CurrentWeight);
-}
+// 来源: ClothWeightMapPaintTool.h
+// 假设已获取到 UClothEditorWeightMapPaintTool* Tool 实例
+
+// 设置指定顶点集合的权重值
+TSet<int32> Vertices;
+Vertices.Add(0);
+Vertices.Add(1);
+Vertices.Add(2);
+double WeightValue = 0.75;
+bool bIsErase = false;
+Tool->SetVerticesToWeightMap(Vertices, WeightValue, bIsErase);
+
+// 请求批量操作
+Tool->RequestAction(EClothEditorWeightMapPaintToolActions::ClearAll);
+Tool->RequestAction(EClothEditorWeightMapPaintToolActions::FloodFillCurrent);
+Tool->RequestAction(EClothEditorWeightMapPaintToolActions::Invert);
 ```
 
-**程序化地设置顶点权重**
-
-你也可以不通过画笔交互，直接设置一组顶点的权重值：
+### 进阶用法 — 上下文对象与 Dataflow 联动
 
 ```cpp
-// 设置顶点索引集合为 1.0 的权重，且不是擦除模式
-TSet<int32> VerticesToSet = {100, 101, 105, 200};
-PaintTool->SetVerticesToWeightMap(VerticesToSet, 1.0, false /* bIsErase */);
+// 来源: ClothEditorContextObject.h (UClothEditorContextObject 已废弃，使用 UDataflowContextObject)
+// 注意: UClothEditorContextObject 在 5.6 中已被标记为废弃，应使用 UDataflowContextObject
+
+// 通过上下文对象获取 Dataflow 资产
+UDataflow* DataflowAsset = ContextObject->GetDataflowAsset();
+
+// 获取当前选中的布料集合
+TWeakPtr<const FManagedArrayCollection> ClothCollection = ContextObject->GetSelectedClothCollection();
+
+// 获取当前施工视图模式
+EClothPatternVertexType ViewMode = ContextObject->GetConstructionViewMode();
+
+// 设置布料集合（切换视图模式时）
+ContextObject->SetClothCollection(ViewMode, NewClothCollection, bUsingInputCollection);
+```
+
+### 进阶用法 — 蒙皮权重转移
+
+```cpp
+// 来源: ClothTransferSkinWeightsTool.h
+// UClothTransferSkinWeightsTool 通过 ToolProperties 配置源网格体：
+
+// 属性设置示例（通过 ToolProperties 面板）：
+// - SourceMesh: 目标 USkeletalMesh 资产
+// - SourceMeshTranslation: 源网格体位移偏移
+// - SourceMeshRotation: 源网格体旋转
+// - SourceMeshScale: 源网格体缩放
+// - bHideSourceMesh: 是否隐藏源网格体预览
 ```
 
 ## Demo 示例
 
-以下是一个最小的示例，展示如何在一个自定义编辑器模块中，通过代码启动布料权重绘制工具。这通常用于插件集成或测试。
+以下示例展示如何在自定义编辑器扩展中注册和使用布料编辑工具的命令绑定：
 
-**MyClothToolIntegration.h**
+### ClothToolExample.h
+
 ```cpp
-// MyClothToolIntegration.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "ChaosClothAsset/ClothEditorToolBuilders.h" // 包含工具构建器
-#include "MyClothToolIntegration.generated.h"
+#include "ChaosClothAsset/ClothToolActionCommandBindings.h"
 
-UCLASS()
-class UMyClothToolIntegration : public UObject
+class FClothToolExample
 {
-    GENERATED_BODY()
-
 public:
-    /** 程序化地启动布料权重绘制工具 */
-    UFUNCTION(BlueprintCallable, Category="ClothTools")
-    void StartWeightPaintTool(UDataflowContextObject* ContextObject);
+    /** 初始化所有布料编辑工具的命令绑定 */
+    void RegisterToolCommands(const TSharedPtr<FUICommandList>& UICommandList);
 
-private:
-    // 持有当前活跃的工具实例，防止被垃圾回收
-    UPROPERTY()
-    TObjectPtr<UInteractiveTool> ActiveClothTool;
+    /** 为当前活动工具绑定命令 */
+    void BindCommandsForTool(const TSharedPtr<FUICommandList>& UICommandList, UInteractiveTool* ActiveTool);
+
+    /** 解除当前绑定 */
+    void UnbindCommands(const TSharedPtr<FUICommandList>& UICommandList);
 };
 ```
 
-**MyClothToolIntegration.cpp**
+### ClothToolExample.cpp
+
 ```cpp
-// MyClothToolIntegration.cpp
-#include "MyClothToolIntegration.h"
-#include "InteractiveToolManager.h"
-#include "ToolContextInterfaces.h"
-#include "ChaosClothAsset/ClothEditorToolBuilders.h"
+#include "ClothToolExample.h"
+#include "ChaosClothAsset/ClothToolActionCommandBindings.h"
 
-void UMyClothToolIntegration::StartWeightPaintTool(UDataflowContextObject* ContextObject)
+void FClothToolExample::RegisterToolCommands(const TSharedPtr<FUICommandList>& UICommandList)
 {
-    if (!ContextObject)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("ContextObject is null."));
-        return;
-    }
+    // 创建命令绑定管理器
+    // FClothToolActionCommandBindings 内部注册了以下工具的快捷键：
+    // - FClothEditorWeightMapPaintToolActionCommands (权重图绘制)
+    // - FClothMeshSelectionToolActionCommands (网格选择)
+    // - FClothTransferSkinWeightsToolActionCommands (蒙皮权重转移)
+    
+    FClothToolActionCommandBindings Bindings;
+    // 将命令绑定到 UICommandList（具体实现在 BindCommandsForCurrentTool 中根据活动工具动态绑定）
+}
 
-    // 1. 获取工具管理器 (在编辑器上下文中)
-    FToolContextScopedQueryScope QueryScope(TEXT("StartWeightPaintTool"));
-    IToolsContextQueries* ContextQueries = GetToolManagerContextQueries();
-    if (!ContextQueries) return;
+void FClothToolExample::BindCommandsForTool(
+    const TSharedPtr<FUICommandList>& UICommandList, 
+    UInteractiveTool* ActiveTool)
+{
+    FClothToolActionCommandBindings Bindings;
+    Bindings.BindCommandsForCurrentTool(UICommandList, ActiveTool);
+}
 
-    UInteractiveToolManager* ToolManager = ContextQueries->GetToolManager();
-    if (!ToolManager) return;
-
-    // 2. 创建一个工具构建器状态
-    FToolBuilderState BuilderState;
-    // 在真实的编辑器环境中，BuilderState 需要从当前场景和选择状态中填充。
-    // 这里为了示例，我们假设已经正确设置。
-    // ... BuilderState 需要被正确初始化 ...
-
-    // 3. 创建并启动工具
-    // 注意：直接创建工具构建器并调用 BuildTool 是非标准方式，通常由编辑器框架在用户点击图标时触发。
-    // 这里仅为演示底层API。
-    UClothEditorWeightMapPaintToolBuilder* WeightPaintBuilder = GetMutableDefault<UClothEditorWeightMapPaintToolBuilder>();
-    if (WeightPaintBuilder && WeightPaintBuilder->CanBuildTool(BuilderState))
-    {
-        UMeshSurfacePointTool* NewTool = WeightPaintBuilder->CreateNewTool(BuilderState);
-        if (NewTool)
-        {
-            // 将上下文对象传递给工具 (通过工具自身的接口，此处简化)
-            // 在实际实现中，工具的 Setup() 会从 BuilderState 中获取上下文。
-            ToolManager->StartTool(NewTool);
-            ActiveClothTool = NewTool;
-            UE_LOG(LogTemp, Log, TEXT("Cloth Weight Paint Tool Started."));
-        }
-    }
+void FClothToolExample::UnbindCommands(const TSharedPtr<FUICommandList>& UICommandList)
+{
+    FClothToolActionCommandBindings Bindings;
+    Bindings.UnbindActiveCommands(UICommandList);
 }
 ```
 
-**注意**：上述代码仅为概念演示。在真实的 UE5 编辑器中启动交互式工具，通常需要更完整的上下文设置（如有效的编辑器模式、工具目标等），并遵循 `UInteractiveToolManager` 的标准流程。
-
 ## 模块依赖
 
-从 `ChaosClothAssetEditorTools.Build.cs` 分析，该插件依赖于多个 UE 核心和几何处理模块。
+从源码中引用的类型推断，以下为该插件的特殊依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `ChaosClothAssetEditor` | 同插件的另一个核心模块，包含 Dataflow 编辑器集成 |
-| `Dataflow` | Dataflow 图框架，用于构建和执行布料处理图 |
-| `DataflowEditor` | Dataflow 图的编辑器框架和 UI |
-| `DynamicMesh` | 动态网格体库，用于工具操作的网格数据结构 |
-| `GeometryProcessing` | 几何处理算法，用于权重计算、网格操作等 |
-| `ModelingTools` | 建模工具框架，提供交互式工具基础（如 `UMeshSculptToolBase`） |
-| `MeshConversion` | 网格体转换工具，用于在不同网格表示间转换 |
-| `GeometryCore` | 几何核心库，提供向量、矩阵、边界框等基础几何类型 |
+| `InteractiveToolsFramework` | 交互式工具基础框架（UInteractiveTool、UInteractiveToolPropertySet） |
+| `MeshModelingTools` | 网格雕刻工具基类（UMeshSculptToolBase、BrushOp） |
+| `ModelingComponents` | 建模组件（UDynamicMeshComponent、UPreviewMesh） |
+| `Dataflow` | Dataflow 数据流图框架（UDataflowContextObject、IDataflowEditorToolBuilder） |
+| `DataflowEditor` | Dataflow 图编辑器集成（SDataflowGraphEditor） |
+| `GeometryFramework` | 几何体框架（FDynamicMesh3、FTriangleGroupTopology） |
+| `ChaosClothAsset` | 布料资产核心模块（布料专用数据类型） |
+| `GeometryScriptingCore` | 几何脚本核心（网格操作） |
+| `SkeletalMeshDescription` | 骨骼网格描述（蒙皮权重转移） |
 
 ## 维护状态
 
@@ -248,20 +275,21 @@ void UMyClothToolIntegration::StartWeightPaintTool(UDataflowContextObject* Conte
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
 | 2026-05-20 | `b9a938ae` | Cleanup Chaos Cloth Asset converter | 清理布料资产转换器代码 |
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为浮点数的编译警告 |
-| 2026-05-12 | `a7e94182` | Interchange Cloth Asset: Add support for reimporting; | 为 Interchange 布料资产添加重新导入支持 |
-| 2026-05-12 | `f1d5a018` | Daaflow : add HUD selection information to both Cloth and dataflow selection tool viewports | 在布料和数据流选择工具视口都增加 HUD 选择信息显示 |
-| 2026-04-27 | `b6b093cd` | CIS - Fixed Issue 1323734: Compile warnings in Module.ChaosClothAssetEditor.cpp, ChaosClothAssetEdit | 修复 ChaosClothAssetEditor 模块的编译警告 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 到 float 截断的编译警告 |
+| 2026-05-12 | `a7e94182` | Interchange Cloth Asset: Add support for reimporting; | 为布料资产添加重新导入支持 |
+| 2026-05-12 | `f1d5a018` | Daaflow : add HUD selection information to both Cloth and dataflow selection tool viewports | 在布料和 Dataflow 选择工具视口中添加 HUD 选择信息显示 |
+| 2026-04-27 | `b6b093cd` | CIS - Fixed Issue 1323734: Compile warnings in Module.ChaosClothAssetEditor.cpp, ChaosClothAssetEdit | 修复编译警告问题 |
 
 ### 维护评价
 
--   **活跃维护**：该项目创建于 **2026年1月**，至今约 **1年**，但最近一次更新在 **2026年5月20日**，表明仍在**积极维护**中。
--   **更新频率高**：近期更新频繁（2026年5月有多次提交），主要集中在**功能添加**（如重新导入支持）、**UI改进**（HUD信息）、**代码清理**和**编译警告修复**上。
--   **实验性状态**：`.uplugin` 中 `IsExperimentalVersion` 未明确标记为 `true`，但插件 `EnabledByDefault=false` 且版本号仅为 `0.1`，结合其处于活跃的重构期（从旧插件拆分而来），可以认为其**仍处于实验性阶段**。
--   **推荐使用**：对于需要基于 Dataflow 工作流来创建和编辑布料资产的**技术美术师和高级用户**，此插件是核心且推荐使用的。但对于纯运行时物理模拟，不需要此插件。由于它仍在演进，使用时应注意未来API可能发生变动。
+- **活跃维护中**：插件创建于 2026 年 1 月，至今约 4 个月，属于全新插件
+- **更新频率高**：最近 1 个月内有多次功能性更新和修复，包括代码清理、编译警告修复、功能增强（重新导入支持、HUD 信息显示）
+- **与 Chaos 布料系统同步发展**：作为布料资产 Dataflow 工作流的编辑器核心，随 UE5 Chaos 布料系统持续迭代
+- **代码质量良好**：注意到了浮点精度警告等细节问题并修复
+- **推荐使用**：如果你正在使用 Chaos Cloth 的 Dataflow 工作流创建布料资产，该插件是编辑环节的核心依赖，且处于活跃开发中
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetEditorCore)
--   [官方文档]() (无)
--   [测试用例]() (未在插件目录内发现显式测试用例，可能集成在 `Engine/Tests` 下)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetEditorCore)
+- 官方文档（暂无）
+- [Dataflow 工具注册表接口](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/ChaosClothAssetEditorCore/Source/ChaosClothAssetEditorTools/Private/ChaosClothAsset/ClothToolActionCommandBindings.h)

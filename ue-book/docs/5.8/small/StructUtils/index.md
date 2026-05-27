@@ -1,6 +1,6 @@
 # Struct Utils
 
-> Experimental Struct Utilities supplying InstancedStruct type
+> Experimental Struct Utilities supplying InstancedStruct type（此插件已废弃，功能已合并至 CoreUObject）
 
 | 属性 | 值 |
 |---|---|
@@ -14,28 +14,53 @@
 | 年龄标签 | 🆕（约 4 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/StructUtils) | |
 
+> ⚠️ **废弃通知**：自 UE 5.5 起，此插件已被标记为废弃，其核心功能已合并至 `CoreUObject` 模块。新项目不应再依赖此插件，直接使用引擎内置的 `FInstancedStruct` 即可。
+
 ## 用途
 
-StructUtils 插件主要提供 `FInstancedStruct` 类型，用于在运行时安全地存储和操作任意 USTRUCT 数据。它解决的问题是：在不知道具体结构体类型的情况下，以类型安全的方式处理异构结构体集合。这类似于面向对象中的多态，但作用于值类型（结构体）层面。
+StructUtils 提供了 **`FInstancedStruct`** 类型——一种可以在运行时持有任意 UScriptStruct 实例的容器。它解决了以下核心问题：
 
-**重要提示**：根据 Git 历史，此插件的核心功能（`FInstancedStruct`）已在 UE 5.5 之后的版本中被迁移至 `CoreUObject` 模块。此插件本身已标记为**废弃**，不建议在新项目中直接使用。当前版本主要是为了向后兼容和用于特定的受支持程序（如 LiveLinkHub）。
-
-## 模块列表
-
-| 模块 | 说明 |
-|---|---|
-| `StructUtils` | 提供 `FInstancedStruct` 核心类型及基础工具函数。 |
-| `StructUtilsEngine` | 提供引擎扩展，如资产处理工具和 `UObject` 相关的辅助功能。 |
+- **类型擦除的结构体容器**：无需为每种结构体类型创建单独的 UPROPERTY，一个 `FInstancedStruct` 即可持有任意结构体
+- **运行时多态**：类似 UObject 的多态机制，但作用于结构体，避免堆分配开销
+- **序列化与网络复制**：通过引擎内置序列化支持，可在蓝图资产和网络传输中安全使用
 
 ## 使用场景
 
-- **数据驱动系统**：当需要存储一组类型可能不同的配置数据时（例如游戏中的不同状态效果配置）。
-- **资产序列化**：在资产中存储可以是多种不同结构的数据字段。
-- **插件间通信**：作为传递复杂、类型不固定数据的容器。
+- 你需要一个通用的"任意结构体"容器，例如实现灵活的属性系统、数据驱动的游戏逻辑
+- 你需要在不创建 UProperty 的情况下存储不同类型结构体的实例
+- 你希望在蓝图中传递和操作结构体，但具体类型在设计时未知
 
-**建议**：对于新项目，应直接使用 `CoreUObject` 模块中的 `FInstancedStruct`。
+## 模块列表
+
+| 模块 | 类型 | 说明 |
+|---|---|---|
+| `StructUtils` | Runtime | 核心类型定义，包含 `FInstancedStruct`、`FConstStructView`、`FStructView` 等基础类型 |
+| `StructUtilsEngine` | Runtime | 引擎扩展层，提供与 Gameplay 相关的结构体工具函数 |
+
+详细 API 请参阅各子模块文档。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/StructUtils)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/StructUtils/Tests)
+- [StructUtils 模块文档](StructUtils.md)
+- [StructUtilsEngine 模块文档](StructUtilsEngine.md)
+
+## 维护状态
+
+### 近期更新
+
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2024-08-05 | `5bf7f335` | Iris - Move InstancedStructNetSerializer to IrisCore. | 网络序列化器已迁移至 Iris 核心模块 |
+| 2024-08-01 | `0e320e33` | Iris - Crash fix for removing InstancedStruct from a replicated array and adding the same struct typ | 修复复制数组中移除并重新添加同类实例化结构体的崩溃 |
+| 2024-06-28 | `8083cf8c` | Iris - Adjust includes due to StructUtils moving. | 适配 StructUtils 合并至 CoreUObject 的头文件路径变更 |
+| 2024-06-28 | `3680fd08` | Iris - Initial naive but working version of FInstancedStructNetSerializer to be able to replicate FI | 为 FInstancedStruct 添加初始的网络复制序列化支持 |
+| 2024-06-19 | `e6d36d75` | Remove references to deprecated plugin StructUtils (now part of CoreUObject) | 正式废弃此插件，功能已合并至 CoreUObject |
+
+### 维护评价
+
+**🚫 已废弃（Deprecated）**
+
+此插件自 UE 5.5 起已被废弃，其功能已整合至引擎核心的 `CoreUObject` 模块。2024 年的更新均为 Iris 网络系统对 `FInstancedStruct` 的适配工作，而非此插件本身的迭代。
+
+**不推荐在新项目中使用此插件。** 如果你需要 `FInstancedStruct`，直接使用 UE 5.5+ 内置版本即可，无需启用此实验性插件。

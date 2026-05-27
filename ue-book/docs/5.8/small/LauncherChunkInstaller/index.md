@@ -4,37 +4,33 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 启动器分块安装器 |
+| 中文名 | 启动器块安装器 |
 | 分类 | Other |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
 | 模块 | `LauncherChunkInstaller` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2018-05-24 |
-| 年龄标签 | 👴 老古董（约 8 年） |
+| 年龄标签 | 👴 老古董（约 7 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Portal/LauncherChunkInstaller) | |
 
 ## 用途
 
-这是一个平台特定的、用于与 Epic Games Launcher 集成的分块安装器实现。它本身并非一个通用的分块管理器，而是一个**驱动**或**后端实现**。其核心作用是通过重写 `GetChunkLocation` 方法，为引擎提供一个与 Epic Games 启动器交互的通道，告诉引擎每个游戏内容分块（Chunk）的具体存储位置（可能是本地磁盘、云端或其他位置），从而实现更智能的分块加载、下载和安装流程。它的存在是为了让引擎能够利用启动器提供的特定功能来优化游戏内容的交付和安装体验。
+该插件提供了一个平台块（Chunk）安装器的具体实现，专门用于与 Epic Games 启动器（Launcher）集成。块（Chunk）是 UE 中用于按需加载和流式传输内容（如资产、关卡）的基本单元。`FLauncherChunkInstaller` 类重写了 `FGenericPlatformChunkInstall` 的 `GetChunkLocation` 方法，使得引擎在进行内容流式传输时，能够从启动器管理的特定位置获取块数据，从而实现基于启动器的内容分发和安装管理。
 
 ## 使用场景
 
-- 你的游戏通过 **Epic Games Store** 进行发布和分发。
-- 你需要实现游戏的 **分块安装** 或 **按需下载**，即玩家可以先下载游戏的核心部分开始玩，其余内容在后台或按需下载。
-- 你希望游戏的安装和更新过程能与 Epic Games Launcher 的下载管理器深度集成，实现更高效的内容管理。
+- 你的游戏通过 Epic Games 启动器发行，并需要支持内容的按需下载和流式加载。
+- 你希望利用启动器自身的下载和缓存机制来管理游戏资源的分块加载。
+- 你需要在运行时查询特定内容块（Chunk）在磁盘上的确切位置，以配合流式加载系统。
 
 ## 蓝图用法
 
-该插件主要通过虚函数重写来扩展引擎底层功能，没有提供公开的蓝图接口或节点。
-
-### 核心节点
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| （无） | 插件未暴露任何蓝图可调用函数。 | - |
+该插件未暴露任何蓝图可调用的函数或属性。其功能主要通过引擎内部的块安装系统和启动器集成机制被动使用。
 
 ## C++ 用法
+
+该插件提供的 C++ 接口非常简洁，主要用于被引擎平台抽象层调用。
 
 ### 头文件引入
 
@@ -44,84 +40,61 @@
 
 ### 基本用法
 
-该插件的核心是重写引擎的分块安装接口。通常，你不会直接调用此插件的 API，而是由引擎内部自动使用。作为开发者，你主要需要理解其工作原理。
+该插件的核心是 `FLauncherChunkInstaller` 类，它通常不需要开发者直接实例化或调用。它是平台块安装器系统的一个实现，由引擎在初始化时根据平台和发行渠道（如 Epic Games 启动器）自动选择。
 
-从 `LauncherChunkInstaller.h` 提取的类定义展示了其核心职责：
+**核心方法：**
+`FLauncherChunkInstaller::GetChunkLocation(uint32 ChunkID)` - 根据 ChunkID 返回其存储位置（`EChunkLocation::Type`）。此方法被引擎的流式加载系统调用，以决定从何处加载特定的数据块。
 
 ```cpp
-// 文件路径: Engine/Plugins/Portal/LauncherChunkInstaller/Source/LauncherChunkInstaller/Public/LauncherChunkInstaller.h
-
-class FLauncherChunkInstaller : public FGenericPlatformChunkInstall
+// 引擎内部调用示例（概念性，非直接用户代码）
+// 当流式加载系统需要知道 ChunkID 为 100 的块位于何处时：
+FGenericPlatformChunkInstall* ChunkInstaller = FPlatformMisc::GetPlatformChunkInstall();
+if (ChunkInstaller)
 {
-public:
-	// 核心函数：重写此函数以决定给定 ChunkID 的存储位置。
-	// 返回值可能指示该分块在本地可用，或需要从云端下载等。
-	UE_API virtual EChunkLocation::Type GetChunkLocation(uint32 ChunkID) override;
-};
+    EChunkLocation::Type Location = ChunkInstaller->GetChunkLocation(100);
+    // 根据 Location（例如在磁盘、需要下载等）采取相应行动
+}
 ```
 
 ### 进阶用法
 
-要使此插件生效，通常需要通过引擎的模块化系统（Module Manager）将其加载并设置为活动的 `IPlatformChunkInstall` 实现。这一般在引擎初始化或平台抽象层配置阶段完成。对于大多数游戏开发者，这个过程是透明的，由引擎和启动器自动处理。
+在自定义平台或分发渠道开发中，你可能需要参考此类的实现来创建自己的 `FGenericPlatformChunkInstall` 子类。`GetChunkLocation` 的逻辑决定了游戏内容是被认为已安装、需要按需下载还是位于其他位置（如云存储）。
 
 ## Demo 示例
 
-下面的示例展示了一个简化的自定义分块安装器的实现模式，它与 `LauncherChunkInstaller` 的设计思路类似。
+以下示例展示了如何子类化平台块安装器，但请注意，`FLauncherChunkInstaller` 本身是针对启动器的具体实现，通常不需要修改。
 
-**MyGameChunkInstaller.h**
 ```cpp
+// MyCustomChunkInstaller.h
 #pragma once
 
 #include "GenericPlatform/GenericPlatformChunkInstall.h"
 
-// 自定义的分块安装器，可用于非启动器场景或测试
-class FMyGameChunkInstaller : public FGenericPlatformChunkInstall
+class FMyCustomChunkInstaller : public FGenericPlatformChunkInstall
 {
 public:
-	virtual EChunkLocation::Type GetChunkLocation(uint32 ChunkID) override;
+    virtual EChunkLocation::Type GetChunkLocation(uint32 ChunkID) override
+    {
+        // 你的自定义逻辑，例如检查本地缓存、CDN状态等
+        if (IsChunkDownloaded(ChunkID))
+        {
+            return EChunkLocation::Type::OnDisk;
+        }
+        return EChunkLocation::Type::NotAvailable;
+    }
 
-	// 可以添加额外的自定义逻辑，例如检查本地缓存
-	bool IsChunkCached(uint32 ChunkID) const;
+private:
+    bool IsChunkDownloaded(uint32 ChunkID) const
+    {
+        // 实现你的检查逻辑
+        return true;
+    }
 };
-```
-
-**MyGameChunkInstaller.cpp**
-```cpp
-#include "MyGameChunkInstaller.h"
-
-EChunkLocation::Type FMyGameChunkInstaller::GetChunkLocation(uint32 ChunkID)
-{
-	// 示例逻辑：
-	// 1. 首先检查此分块是否已在本地缓存
-	if (IsChunkCached(ChunkID))
-	{
-		return EChunkLocation::Type::Local;
-	}
-	// 2. 对于核心分块(ChunkID < 10)，总是要求从本地加载（假设已预装）
-	else if (ChunkID < 10)
-	{
-		return EChunkLocation::Type::Local;
-	}
-	// 3. 其他分块位于云端，需要下载
-	else
-	{
-		return EChunkLocation::Type::Cloud;
-	}
-}
-
-bool FMyGameChunkInstaller::IsChunkCached(uint32 ChunkID) const
-{
-	// 实现具体的缓存检查逻辑，例如查询本地文件系统或缓存数据库
-	// 此处为占位实现
-	return false;
-}
 ```
 
 ## 模块依赖
 
-| 模块 | 用途 |
-|---|---|
-| 无特殊依赖（仅标准 Core/Engine 等） | 插件继承自引擎的 `GenericPlatformChunkInstall`，相关依赖已由引擎公共模块提供。 |
+无特殊依赖（仅标准 Core/Engine 等）。
 
 ## 维护状态
 
@@ -129,17 +102,20 @@ bool FMyGameChunkInstaller::IsChunkCached(uint32 ChunkID) const
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-23 | `29f9ae30` | Enable LinuxArm64 MergeModules server builds. | 为 LinuxArm64 平台的合并模块服务器构建提供支持。 |
-| 2025-04-23 | `6ae57335` | Used UnrealGame build target to find and convert all files to have dllstorage on methods/staticvar i... | 使用 UnrealGame 构建目标，并转换文件以使用 DLL 存储属性。 |
-| 2023-01-12 | `2f78497e` | [Engine/Plugins] | 引擎插件目录的通用维护性提交。 |
+| 2026-04-23 | `29f9ae30` | Enable LinuxArm64 MergeModules server builds. | 为 Linux ARM64 平台启用服务器构建的模块合并功能。 |
+| 2025-04-23 | `6ae57335` | Used UnrealGame build target to find and convert all files to have dllstorage on methods/staticvar i | 使用 UnrealGame 构建目标查找并转换文件，为方法/静态变量添加 DLL 导出/导入属性。 |
+| 2023-01-12 | `2f78497e` | [Engine/Plugins] | 引擎插件目录的常规维护或批处理更新。 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新内置插件的供应商链接以使用安全协议（HTTPS）。 |
+| 2021-10-13 | `a12d56ff` | Merge from Release-Engine-Staging @ 17791557 to Release-Engine-Test | 从引擎发布暂存区合并到测试区。 |
 
 ### 维护评价
 
-- **创建时间**：2018年，历史较长。
-- **更新频率**：更新不频繁，但持续有维护性提交，以确保其在新平台（如 LinuxArm64）上的编译兼容性。
-- **活跃度**：**维护中**。作为引擎基础设施的一部分，它保持与最新引擎版本和构建系统的兼容性。最近的提交主要是构建和平台支持相关的，表明它仍在被维护以保障基础功能的运行，但未见有重大功能变更。
-- **限制**：该插件紧密依赖于 **Epic Games Launcher** 的运行时环境。脱离该环境（例如在 Steam 或纯离线环境中）将无法发挥其作用。
-- **推荐**：如果你的项目**仅通过 Epic Games Store 分发**，此插件是默认且必要的。对于其他分发渠道，此插件将不起作用，你的游戏将回退到引擎默认的分块安装逻辑。
+**维护评价：**
+- **创建时间**：2018年，已有约7年历史。
+- **近期更新频率**：最近更新发生在2026年（根据提供信息），但之前更新间隔较长（如2021年至2023年）。更新内容主要是构建系统、平台支持（LinuxArm64）和链接协议等维护性工作，而非功能增强。
+- **活跃程度**：该插件代码库极其稳定且轻量（仅2个文件），功能单一明确。更新主要跟随引擎整体构建和平台支持的变更，属于被动维护状态。
+- **已知限制**：仅支持 Windows、Linux、LinuxArm64 和 Mac 平台。
+- **推荐使用**：**仅当你的项目通过 Epic Games 启动器发行时，此插件才相关且必要**。它是该发行渠道基础设施的一部分，通常由引擎或启动器自动管理，无需开发者直接干预。对于独立发行或其他平台的游戏，此插件不会被激活。
 
 ## 相关链接
 

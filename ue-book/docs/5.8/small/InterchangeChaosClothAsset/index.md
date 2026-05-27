@@ -4,211 +4,189 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 布料资产互换导入 |
+| 中文名 | Interchange布料导入 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产） |
+| 包含内容 | ❌ 无 |
 | 模块 | `InterchangeChaosClothAssetImport` (Editor) |
 | 实验性 | ⚠️ 是 |
-| 创建时间 | 2026-04-27 |
+| 创建时间 | unknown |
 | 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Extensions/ChaosClothAsset) | |
 
 ## 用途
 
-该插件是 **UE5 Interchange 导入框架** 的一个扩展，专门用于将外部格式（如 USD）中的布料数据导入为引擎内的 `ChaosClothAsset` 资产。它解决了将布料网格（包含渲染和模拟数据）、求解器属性以及关联的 `Dataflow` 图作为完整资产进行导入和集成的问题，确保了布料数据在导入过程中保持其物理模拟所需的结构与属性。
+此插件是 Unreal Engine **Interchange 导入框架**的一个扩展，专门用于支持**Chaos Cloth 布料资产**的导入。它解决的核心问题是：将外部数字内容创作工具（DCC，如 Maya、Houdini、Blender）中创建的布料模拟数据（网格、属性、拓扑），通过 Interchange 的标准化管线，自动转换为 UE 内部的 `UChaosClothAsset`。这使得布料资产的导入过程能够复用 Interchange 框架的批量处理、管线自定义和自动化能力，简化角色服装、旗帜、柔性物体等布料效果的制作流程。
 
 ## 使用场景
 
-- 当你的美术流程使用 **USD** 等格式交换布料资产，并希望一键导入为 UE5 可用的 `ChaosClothAsset` 时。
-- 当你需要从外部 DCC 工具导入带有完整物理设置的布料，并希望自动生成对应的 `Dataflow` 图时。
-- 当你在使用 **Interchange 管线** 进行资产批量导入，并需要包含布料类型的资产时。
+- 你的美术团队使用 Maya 或 Houdini 等工具制作角色服装的布料模拟，并需要将其批量、标准化地导入 UE 项目。
+- 你需要一个可定制的导入管线，在导入布料资产时自动附加特定的 Dataflow 图以定义后续处理逻辑。
+- 你希望利用 USD 等通用交换格式，通过 Interchange 框架将布料数据从其他 DCC 工具引入 UE 的 Chaos 物理系统。
 
 ## 蓝图用法
 
-本插件的蓝图 API 主要集中在 **工厂节点（Factory Node）** 和 **导入管线（Pipeline）** 的配置上，允许在导入前预设或在导入对话框中调整布料导入参数。
+此插件的蓝图 API 主要通过 `UInterchangeChaosClothAssetFactoryNode` 类暴露，用于在 Interchange 管线执行期间配置布料资产的导入参数。
 
 ### 核心节点
 
-#### 工厂节点 (`UInterchangeChaosClothAssetFactoryNode`)
-
-用于配置单个布料资产的导入细节。
-
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `GetImportSimulationMeshes` / `SetImportSimulationMeshes` | 获取/设置是否导入模拟网格数据 | `UInterchangeChaosClothAssetFactoryNode` |
-| `GetImportRenderMeshes` / `SetImportRenderMeshes` | 获取/设置是否导入渲染网格数据 | `UInterchangeChaosClothAssetFactoryNode` |
-| `GetDataflowGraphPath` / `SetDataflowGraphPath` | 获取/设置用于实例化 `Dataflow` 图模板的资源路径 | `UInterchangeChaosClothAssetFactoryNode` |
-| `GetAirDamping` / `SetAirDamping` | 获取/设置布料求解器的空气阻力参数 | `UInterchangeChaosClothAssetFactoryNode` |
-| `GetGravity` / `SetGravity` | 获取/设置布料求解器的重力方向向量 | `UInterchangeChaosClothAssetFactoryNode` |
-| `GetSubStepCount` / `SetSubStepCount` | 获取/设置模拟的子步进数 | `UInterchangeChaosClothAssetFactoryNode` |
-| `GetTimeStep` / `SetTimeStep` | 获取/设置模拟的时间步长 | `UInterchangeChaosClothAssetFactoryNode` |
-
-#### 导入管线 (`UInterchangeChaosClothAssetPipeline`)
-
-控制整个布料资产导入流程的全局设置。
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `PipelineDisplayName` (属性) | 在导入对话框中显示的管线名称 | `UInterchangeChaosClothAssetPipeline` |
-| `bImportClothAssets` (属性) | 总开关，是否导入源文件中发现的所有布料资产 | `UInterchangeChaosClothAssetPipeline` |
-| `bImportSimulationMeshes` (属性) | 是否向生成的布料集合中添加模拟数据 | `UInterchangeChaosClothAssetPipeline` |
-| `bImportRenderMeshes` (属性) | 是否向生成的布料集合中添加渲染数据 | `UInterchangeChaosClothAssetPipeline` |
-| `DataflowGraphAsset` (属性) | 生成的布料资产将使用的 `Dataflow` 图模板资源路径 | `UInterchangeChaosClothAssetPipeline` |
+| `GetImportSimulationMeshes` / `SetImportSimulationMeshes` | 获取或设置是否导入模拟网格 | `UInterchangeChaosClothAssetFactoryNode` |
+| `GetImportRenderMeshes` / `SetImportRenderMeshes` | 获取或设置是否导入渲染网格 | `UInterchangeChaosClothAssetFactoryNode` |
+| `GetDataflowGraphPath` / `SetDataflowGraphPath` | 获取或设置用于实例化到布料资产中的 Dataflow 图模板路径 | `UInterchangeChaosClothAssetFactoryNode` |
+| `GetAirDamping` / `SetAirDamping` | 获取或设置空气阻尼求解器参数 | `UInterchangeChaosClothAssetFactoryNode` |
+| `GetGravity` / `SetGravity` | 获取或设置重力求解器参数 | `UInterchangeChaosClothAssetFactoryNode` |
+| `GetSubStepCount` / `SetSubStepCount` | 获取或设置子步进求解器参数 | `UInterchangeChaosClothAssetFactoryNode` |
+| `GetTimeStep` / `SetTimeStep` | 获取或设置时间步长求解器参数 | `UInterchangeChaosClothAssetFactoryNode` |
 
 ### 使用示例（蓝图描述）
 
-1.  在 **Interchange 导入对话框** 中，你会看到一个名为 `PipelineDisplayName` 指定的管线（例如 “Cloth Asset Pipeline”）。
-2.  选中该管线，可以在 **细节面板** 中配置 `bImportClothAssets`、`bImportSimulationMeshes`、`bImportRenderMeshes` 以及 `DataflowGraphAsset`。
-3.  当导入流程执行时，插件会为每个识别出的布料源数据创建一个 `UInterchangeChaosClothAssetFactoryNode`。
-4.  在蓝图脚本中，你可以在导入流程执行前，通过遍历节点容器找到这些工厂节点，并使用上述 `Get/Set` 函数动态修改其导入参数，例如：
-    ```
-    查找所有 ChaosClothAssetFactoryNode -> 循环 -> SetImportSimulationMeshes(True) -> SetGravity((0, 0, -980))。
-    ```
+在自定义的 Interchange 管线蓝图中，当执行到布料相关的节点时，可以通过 `Find Interchange Factory Node` 节点找到 `UInterchangeChaosClothAssetFactoryNode`。然后，使用上述的 `Set` 节点来配置本次导入任务的具体参数，例如：
+1.  调用 `Set Import Simulation Meshes` 并传入 `true`，表示本次导入需要包含模拟网格。
+2.  调用 `Set Import Render Meshes` 并传入 `false`，表示不需要导入渲染网格。
+3.  调用 `Set Dataflow Graph Path` 并传入一个 `Dataflow` 资产路径，使生成的布料资产自动绑定该图。
 
 ## C++ 用法
-
-C++ 用法通常用于深度定制导入行为或编写自动化工具。
 
 ### 头文件引入
 
 ```cpp
-#include “InterchangeChaosClothAssetFactoryNode.h”
-#include “InterchangeChaosClothAssetPipeline.h”
+#include "InterchangeChaosClothAssetFactoryNode.h"
+#include "InterchangeChaosClothAssetFactory.h"
+#include "InterchangeChaosClothAssetPipeline.h"
 ```
 
 ### 基本用法
 
-获取并配置一个布料资产的工厂节点属性。
+以下代码演示了如何在 C++ 中配置 `UInterchangeChaosClothAssetPipeline` 的参数，以控制布料资产的导入行为。
 
 ```cpp
-// 假设你已经有了一个 UInterchangeBaseNodeContainer* NodeContainer 和一个节点 UID
-const FString ClothNodeUid = TEXT(“SomeClothRootNodeUid”);
-UInterchangeChaosClothAssetFactoryNode* ClothFactoryNode = Cast<UInterchangeChaosClothAssetFactoryNode>(NodeContainer->GetFactoryNode(ClothNodeUid));
-
-if (ClothFactoryNode)
+// 来源于管线类 UInterchangeChaosClothAssetPipeline 的属性
+// 在创建或修改导入管线实例时设置
+void ConfigureClothImportPipeline(UInterchangeChaosClothAssetPipeline* Pipeline)
 {
-    // 启用模拟网格和渲染网格的导入
-    ClothFactoryNode->SetImportSimulationMeshes(true);
-    ClothFactoryNode->SetImportRenderMeshes(true);
-
-    // 设置求解器属性
-    ClothFactoryNode->SetGravity(FVector3f(0.0f, 0.0f, -980.0f)); // 使用厘米/秒^2为单位
-    ClothFactoryNode->SetAirDamping(0.1f);
-    ClothFactoryNode->SetSubStepCount(4);
-    ClothFactoryNode->SetTimeStep(1.0f / 30.0f); // 30 FPS
-
-    // 指定一个Dataflow图模板
-    FSoftObjectPath GraphPath(“/Game/Dataflow/ClothSimulationTemplate”);
-    ClothFactoryNode->SetDataflowGraphPath(GraphPath);
+    if (Pipeline)
+    {
+        Pipeline->PipelineDisplayName = TEXT("角色服装导入");
+        Pipeline->bImportClothAssets = true; // 启用布料资产导入
+        Pipeline->bImportSimulationMeshes = true; // 包含模拟网格
+        Pipeline->bImportRenderMeshes = true; // 包含渲染网格
+        // 设置数据流图模板的软引用路径
+        Pipeline->DataflowGraphAsset = FSoftObjectPath(TEXT("/Game/Dataflows/ClothPostProcess.ClothPostProcess"));
+    }
 }
 ```
 
 ### 进阶用法
 
-通过继承管线类，实现自定义的布料资产识别和处理逻辑。
+在自定义工厂的处理逻辑中，你可能需要直接操作 `UInterchangeChaosClothAssetFactoryNode`。
 
 ```cpp
-// MyCustomClothPipeline.h
-UCLASS()
-class UMyCustomClothPipeline : public UInterchangeChaosClothAssetPipeline
+// 在 Interchange 工厂或管线的回调中，对找到的布料工厂节点进行精细控制
+void CustomizeClothFactoryNode(UInterchangeChaosClothAssetFactoryNode* FactoryNode)
 {
-    GENERATED_BODY()
-public:
-    virtual void ExecutePipeline(UInterchangeBaseNodeContainer* BaseNodeContainer, const TArray<UInterchangeSourceData*>& SourceDatas, const FString& ContentBasePath) override
+    if (FactoryNode)
     {
-        // 1. 先调用父类实现，完成标准的布料节点识别和工厂节点创建
-        Super::ExecutePipeline(BaseNodeContainer, SourceDatas, ContentBasePath);
+        // 覆盖工厂节点中的求解器属性
+        FactoryNode->SetAirDamping(0.1f);
+        FactoryNode->SetGravity(FVector3f(0.0f, 0.0f, -980.0f));
+        FactoryNode->SetSubStepCount(2);
+        FactoryNode->SetTimeStep(1.0f/30.0f);
 
-        // 2. 添加自定义逻辑，例如：为所有找到的布料节点设置一个特定的Dataflow图
-        TArray<UInterchangeFactoryNode*> FactoryNodes;
-        BaseNodeContainer->GetFactoryNodes(FactoryNodes);
-        for (UInterchangeFactoryNode* Node : FactoryNodes)
-        {
-            if (UInterchangeChaosClothAssetFactoryNode* ClothNode = Cast<UInterchangeChaosClothAssetFactoryNode>(Node))
-            {
-                FSoftObjectPath CustomGraphPath(“/Game/Dataflow/MySuperClothTemplate”);
-                ClothNode->SetDataflowGraphPath(CustomGraphPath);
-                // 也可以根据源数据路径等条件设置不同的图模板
-            }
-        }
+        // 也可以覆盖工厂节点上的网格导入标志（优先级可能高于管线设置）
+        FactoryNode->SetImportSimulationMeshes(true);
+        FactoryNode->SetImportRenderMeshes(true);
     }
-};
+}
 ```
 
 ## Demo 示例
 
-一个简单的示例，展示如何使用工厂节点类的 API。
+一个最小化的自定义导入管线示例，展示了如何从 C++ 层面创建和配置一个用于布料资产的 Interchange 导入流程。
 
+### `ClothImportPipeline.h`
 ```cpp
-// MyClothImporter.h
 #pragma once
-#include “CoreMinimal.h”
-#include “InterchangeChaosClothAssetFactoryNode.h”
 
-class FMyClothImporter
+#include "CoreMinimal.h"
+#include "InterchangeChaosClothAssetPipeline.h"
+#include "ClothImportPipeline.generated.h"
+
+UCLASS()
+class UClothImportPipeline : public UInterchangeChaosClothAssetPipeline
 {
+    GENERATED_BODY()
+
 public:
-    void ConfigureClothNode(UInterchangeChaosClothAssetFactoryNode* ClothNode);
+    UClothImportPipeline();
+
+    // 重写管线执行逻辑，可在调用父类前进行额外处理
+    virtual void ExecutePipeline(UInterchangeBaseNodeContainer* BaseNodeContainer, const TArray<UInterchangeSourceData*>& SourceDatas, const FString& ContentBasePath) override;
 };
+```
 
-// MyClothImporter.cpp
-#include “MyClothImporter.h”
-#include “InterchangeChaosClothAssetDefinitions.h” // 用于常量引用
+### `ClothImportPipeline.cpp`
+```cpp
+#include "ClothImportPipeline.h"
 
-void FMyClothImporter::ConfigureClothNode(UInterchangeChaosClothAssetFactoryNode* ClothNode)
+UClothImportPipeline::UClothImportPipeline()
 {
-    if (!ClothNode) return;
+    // 在构造函数中设置默认管线参数
+    PipelineDisplayName = TEXT("自定义布料管线");
+    bImportClothAssets = true;
+    bImportSimulationMeshes = true;
+    bImportRenderMeshes = false; // 默认不导入渲染网格，以节省资源
+    DataflowGraphAsset = FSoftObjectPath(TEXT("/Game/Dataflows/DefaultCloth.DefaultCloth"));
+}
 
-    // 使用插件定义的常量名来获取/设置节点上的用户属性（这通常是内部流程，但展示了可访问性）
-    // 注意：直接使用蓝图函数如 SetGravity 更为常用。
+void UClothImportPipeline::ExecutePipeline(UInterchangeBaseNodeContainer* BaseNodeContainer, const TArray<UInterchangeSourceData*>& SourceDatas, const FString& ContentBasePath)
+{
+    // 在调用标准布料管线处理逻辑之前，可以添加自定义的节点扫描或修改逻辑
+    // ...
 
-    // 设置基本导入选项
-    ClothNode->SetImportSimulationMeshes(true);
-    ClothNode->SetImportRenderMeshes(true);
+    // 调用父类执行标准的布料资产导入管线处理
+    Super::ExecutePipeline(BaseNodeContainer, SourceDatas, ContentBasePath);
 
-    // 配置物理求解器
-    ClothNode->SetGravity(FVector3f(0.f, 0.f, -980.f));
-    ClothNode->SetAirDamping(0.05f);
-    ClothNode->SetSubStepCount(8); // 更高的精度
-
-    UE_LOG(LogTemp, Log, TEXT(“Configured Chaos Cloth Factory Node: %s”), *ClothNode->GetUniqueID());
+    // 在调用之后，可以进行后处理，例如记录日志或更新其他资产
+    UE_LOG(LogInterchangeChaosClothAssetImport, Log, TEXT("布料导入管线执行完成。"));
 }
 ```
 
 ## 模块依赖
 
-根据插件功能分析，要使用此插件，你的模块需要依赖以下模块：
+要使用此插件，你的项目或模块需要依赖以下模块和插件：
 
-| 模块 | 用途 |
+| 模块/插件 | 用途 |
 |---|---|
-| `InterchangeCore` | Interchange 框架核心模块 |
-| `InterchangeNodes` | Interchange 基础节点定义 |
-| `InterchangeFactoryNodes` | Interchange 工厂节点基类 |
-| `ChaosClothAsset` | Chaos 布料资产核心类 |
-| `DataflowEngine` | 用于处理 `Dataflow` 图和变量 |
+| `Interchange` | 核心的资产交换框架，提供导入/导出的基础架构 |
+| `ChaosClothAsset` | 提供 `UChaosClothAsset` 资产类型和相关基础功能 |
+| `ChaosClothAssetDataflowNodes` | 提供用于布料资产的 Dataflow 节点，与 `DataflowGraphAsset` 属性配合使用 |
+| `DataflowEngine` | 运行时执行 Dataflow 图的引擎模块，工厂中 `DataflowGraphAsset` 属性需要它 |
 
 ## 维护状态
 
 ### 近期更新
 
-从 git 历史看，该插件近期有持续更新：
-
-- `852b276c` 2026-05-13 — 修复了在严格浮点模式下关于双精度常量截断为单精度的警告。
-- `a7e94182` 2026-05-12 — **布料资产交换：添加了对重新导入的支持。** 这是一个重要的功能更新。
-- `60127194` 2026-04-27 — [ChaosClothAsset] 修复静态分析违规的简单问题。
-- `665076e6` 2026-04-27 — USD Interchange: 添加了对 ChaosCloth 资产的支持。（这可能是插件的初始提交或重大功能提交）
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-05-21 | `c97da6bd` | Interchange ClothAsset: Use ShortName on the new modules to mitigate some long filepath issues | 重构模块命名，缩短文件路径以解决长度问题 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下 double 转 float 的截断警告 |
+| 2026-05-12 | `a7e94182` | Interchange Cloth Asset: Add support for reimporting; | 为布料资产添加重导入支持 |
+| 2026-04-27 | `60127194` | [ChaosClothAsset] Simple fix for static analysis violation | 修复静态分析检测到的违规代码 |
+| 2026-04-27 | `665076e6` | USD Interchange: Add support for ChaosCloth asset. | 通过 USD Interchange 插件增加了对 Chaos 布料资产的支持 |
 
 ### 维护评价
 
-- **创建时间**：非常新（2026年）。
-- **活跃度**：**活跃维护中**。最近一个月内有多次提交，包括重要的“重导入”功能添加和代码质量修复。
-- **状态**：插件被标记为 **实验性** (`IsExperimentalVersion: true`)，且 **默认不启用** (`EnabledByDefault: false`)。这表明它功能已实现但可能尚未完全稳定或面向所有用户开放，建议在需要时手动启用并关注其后续版本。
-- **推荐使用**：如果你有通过 Interchange 导入 Chaos 布料资产的需求，并且能够接受实验性功能的潜在风险，可以启用和使用此插件。它正在被积极开发。
+此插件处于**活跃维护**状态。
+
+- **创建时间**：插件本身创建时间未知，但作为 Interchange 框架的扩展，其更新与主引擎紧密相关。
+- **近期活动**：在2026年4月至5月间有多次提交，包括功能增强（添加重导入支持、USD支持）、代码重构和bug修复，表明 Epic 内部仍在积极使用和改进此模块。
+- **实验性状态**：插件被标记为 `IsExperimentalVersion = true`，且默认不启用。这意味着其API和行为可能在未来版本中发生变化，不建议在需要长期稳定性的生产项目中将其作为核心依赖。
+- **推荐使用**：如果你的项目正在评估或需要从外部DCC工具通过 Interchange 框架导入布料数据，并且可以接受实验性API的潜在变动，此插件是官方提供的、正在维护的解决方案。对于生产环境，建议密切关注其版本更新说明。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Extensions/ChaosClothAsset)
-- [官方文档]()（.uplugin 中未提供 DocsURL）
-- [Interchange 系统文档](https://docs.unrealengine.com/5.8/en-US/interchange-overview-in-unreal-engine/)
-- [Chaos Cloth 文档](https://docs.unrealengine.com/5.8/en-US/chaos-cloth-in-unreal-engine/)
+- 官方文档：暂无
+- 测试用例：插件目录内未发现标准测试用例文件，其功能主要通过集成到Interchange导入流程中进行验证。

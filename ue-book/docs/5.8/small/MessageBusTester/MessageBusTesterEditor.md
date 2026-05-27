@@ -9,113 +9,131 @@
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `MessageBusTester` (Runtime), `MessageBusTesterEditor` (UncookedOnly) |
-| 实验性 | ⚦️ 是 |
+| 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-10-24 |
-| 年龄标签 | 🆕（约 0.5 年） |
+| 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MessageBusTester) | |
 
 ## 用途
 
-该插件是一个专门用于**测试和调试 Unreal Engine 底层 UDP 消息传输系统（Message Bus）** 的开发者工具。它并非一个面向最终用户的功能插件，而是一个为 UE5 网络消息系统开发团队（或高级用户）设计的“诊断套件”。其核心目的是提供一系列测试用例和监控工具，用于：
-
-1.  **压力测试**：通过定义测试计划（如定时发送不同大小的数据包）来主动“压测” UDP 消息通道。
-2.  **可靠性监控**：实时监控消息传输的统计数据，如往返时间（RTT）、丢包率、滑动窗口大小、分段传输状态等，帮助分析底层传输代码的健壮性和性能瓶颈。
-3.  **多实例发现与交互**：能够自动发现网络上运行的其他测试实例，并与之建立连接进行测试，模拟真实的分布式消息传递场景。
+MessageBus Tester 是一个专用于开发和测试阶段的实验性插件。它的核心功能并非作为通用的消息总线监控工具，而是为 `MessageBusTesterApp` 这个特定的应用程序提供一套完整的测试用例和调试界面。其目的是通过模拟各种场景（如不同的负载大小、发送间隔），系统性地验证 Unreal Engine 底层 UDP 消息传输（由 `UdpMessaging` 插件提供）的可靠性、稳定性和性能。它帮助开发者分析消息总线的用例，并确保底层网络代码在最优状态下运行。此插件**不适合用于生产环境的实时监控**。
 
 ## 使用场景
 
--   **UE5 网络引擎开发人员**：用于验证和优化 UDP 消息传输协议、流量控制、拥塞避免等底层逻辑的实现。
--   **需要深度调试网络消息的高级开发者**：当你的游戏或应用依赖 UE 的 Message Bus 或 UDP Messaging 插件进行自定义网络通信，并且遇到了难以复现的网络性能或稳定性问题时，可以使用此插件来创建标准化的测试环境，量化分析问题。
--   **性能基准测试**：在不同的网络环境（局域网、模拟延迟/丢包网络）下，对消息总线的吞吐量和延迟进行基准测试。
+- 你正在开发或维护 Unreal Engine 的底层消息系统或网络传输层，需要进行压力测试和回归测试。
+- 你需要为 `MessageBusTesterApp` 这个独立工具提供测试界面和用例，以评估 UDP 消息传输在各种条件下的表现。
+- 你怀疑 UDP 消息传输存在丢包、延迟或性能问题，需要一个工具来系统性地复现和诊断问题。
 
 ## 蓝图用法
 
-该插件主要提供编辑器 UI 和运行时测试逻辑，**没有暴露可用于蓝图的 `BlueprintCallable` 函数**。其核心功能通过编辑器标签页和运行时逻辑实现，主要供 C++ 代码和编辑器 UI 调用。
+经过源码分析，该插件主要提供编辑器 UI 和应用程序逻辑，**未发现面向蓝图公开的 `UFUNCTION(BlueprintCallable)` 或 `UPROPERTY(BlueprintReadWrite)` 接口**。它的所有功能都通过其配套的 `MessageBusTesterApp` 程序和编辑器标签页 `SMessageBusTesterPanel` 来操作，无法在游戏逻辑或通用蓝图中直接调用。
 
 ## C++ 用法
 
-该插件主要提供一个编辑器面板和运行时测试模块，其核心使用方式是**通过编辑器界面操作**，或者在其测试框架内添加自定义测试。直接在项目 C++ 代码中调用其 API 的场景较少。
+**重要提示：** 此插件的模块 (`MessageBusTester`, `MessageBusTesterEditor`) 的 `AllowlistPrograms` 设置为 `["MessageBusTesterApp"]`。这意味着这些模块**只会在 `MessageBusTesterApp` 这个程序中加载**，在编辑器、独立运行或打包的游戏程序中不会加载。因此，其 C++ API 主要供插件内部和 `MessageBusTesterApp` 使用，普通项目无法直接调用。
 
 ### 头文件引入
 
+如果需要在 `MessageBusTesterApp` 的开发中引用，可使用：
 ```cpp
-// 引入编辑器模块接口
-#include "IMessageBusTesterEditorModule.h"
+#include "MessageBusTesterEditorModule.h"
 ```
 
-### 基本用法（在编辑器工具中）
+### 基本用法（内部/调试）
 
-插件注册了一个编辑器标签页，可以通过代码或菜单打开。
+一个典型的内部用法是获取当前的网络消息统计信息扩展。以下示例展示了如何通过 `FMessageBusTesterEditorModule` 的静态方法安全地获取该接口：
 
 ```cpp
-// 检查编辑器模块是否可用
-if (FModuleManager::Get().IsModuleLoaded(TEXT("MessageBusTesterEditor")))
+// 来源: Private/MessageBusTesterEditorModule.h
+// 用途：获取用于监控消息统计的 INetworkMessagingExtension 接口
+if (INetworkMessagingExtension* StatsProvider = FMessageBusTesterEditorModule::GetMessagingStatistics())
 {
-    // 获取模块接口
-    IMessageBusTesterEditorModule& EditorModule = FModuleManager::GetModuleChecked<IMessageBusTesterEditorModule>(TEXT("MessageBusTesterEditor"));
-    
-    // 显示（或切换到）Message Bus Tester 面板
-    EditorModule.DisplayMessageBusTester();
+    // 使用 StatsProvider 查询网络传输统计信息
+    // 例如：RTT, 窗口大小, 已发送/丢失分段等
+}
+else
+{
+    // 特征不可用，可能在非测试上下文或模块未加载时
+    UE_LOG(LogMessageBusTesterEditor, Warning, TEXT("Network Messaging Extension is not available."));
 }
 ```
-*（思路来源：`MessageBusTesterEditorModule.h` 中的 `DisplayMessageBusTester` 接口定义）*
+
+### 进阶用法
+
+更高级的用法涉及启动该插件的编辑器模块并显示其测试面板，但这通常由 `MessageBusTesterApp` 的入口点自动完成。
 
 ## Demo 示例
 
-一个最小的集成示例，展示如何在项目中启用该插件并尝试打开其面板。假设插件已通过 .uplugin 文件或项目设置启用。
+由于插件的特殊性，下面提供一个最小的示例，展示如何在另一个编辑器模块中（假设上下文允许）引用并调用 `MessageBusTester` 的辅助函数。这仅用于说明原理，实际中很少这样使用。
 
+**MessageBusTestConsumer.h**
 ```cpp
-// MyTestGameMode.h
 #pragma once
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
-#include "MyTestGameMode.generated.h"
+#include "Modules/ModuleManager.h"
 
-UCLASS()
-class AMyTestGameMode : public AGameModeBase
+// 前置声明，避免不必要的头文件包含
+class INetworkMessagingExtension;
+
+class FMessageBusTestConsumerModule : public IModuleInterface
 {
-    GENERATED_BODY()
 public:
-    // 在游戏开始后的一段时间，尝试打开消息总线测试面板（仅编辑器下有效）
-    virtual void BeginPlay() override;
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
+
+    // 示例函数：尝试获取并使用消息统计接口
+    void QueryNetworkStats();
+
+private:
+    // 缓存接口指针，避免频繁查询
+    INetworkMessagingExtension* CachedStatsProvider = nullptr;
 };
 ```
 
+**MessageBusTestConsumer.cpp**
 ```cpp
-// MyTestGameMode.cpp
-#include "MyTestGameMode.h"
-#include "IMessageBusTesterEditorModule.h"
-#include "Modules/ModuleManager.h"
+#include "MessageBusTestConsumerModule.h"
+#include "MessageBusTesterEditorModule.h" // 引入插件模块
+#include "INetworkMessagingExtension.h" // 引入统计接口类型
 
-void AMyTestGameMode::BeginPlay()
+#define LOCTEXT_NAMESPACE "FMessageBusTestConsumerModule"
+
+void FMessageBusTestConsumerModule::StartupModule()
 {
-    Super::BeginPlay();
-
-#if WITH_EDITOR
-    // 在游戏开始后5秒，如果编辑器模块已加载，则显示测试面板
-    FTimerHandle UnusedHandle;
-    GetWorldTimerManager().SetTimer(UnusedHandle, [this]()
-    {
-        if (FModuleManager::Get().IsModuleLoaded(TEXT("MessageBusTesterEditor")))
-        {
-            IMessageBusTesterEditorModule& TesterModule = FModuleManager::GetModuleChecked<IMessageBusTesterEditorModule>(TEXT("MessageBusTesterEditor"));
-            TesterModule.DisplayMessageBusTester();
-            UE_LOG(LogTemp, Log, TEXT("MessageBus Tester Panel Opened."));
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("MessageBusTesterEditor module not loaded. Ensure the plugin is enabled for editor."));
-        }
-    }, 5.0f, false);
-#endif
+    // 模块启动时尝试缓存接口
+    CachedStatsProvider = FMessageBusTesterEditorModule::GetMessagingStatistics();
 }
+
+void FMessageBusTestConsumerModule::ShutdownModule()
+{
+    CachedStatsProvider = nullptr;
+}
+
+void FMessageBusTestConsumerModule::QueryNetworkStats()
+{
+    if (CachedStatsProvider)
+    {
+        // 此处可以使用 CachedStatsProvider 调用其方法，获取统计数据
+        // 例如：FMessageTransportStatistics Stats = CachedStatsProvider->GetTransportStatistics(...);
+        UE_LOG(LogTemp, Log, TEXT("Successfully queried network messaging stats via MessageBusTester helper."));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("MessageBusTester network stats interface is not available in this context."));
+    }
+}
+
+#undef LOCTEXT_NAMESPACE
+
+IMPLEMENT_MODULE(FMessageBusTestConsumerModule, MessageBusTestConsumer)
 ```
 
 ## 模块依赖
 
 | 模块 | 用途 |
 |---|---|
-| `UdpMessaging` | 插件测试的目标传输层，提供 UDP 消息传输实现。插件依赖它来建立实际的网络连接和发送测试数据。 |
+| `UdpMessaging` | 提供底层的 UDP 消息传输实现，是此插件测试的核心对象。 |
+| `INetworkMessagingExtension` | (通过 `INetworkMessagingExtension.h`) 提供网络消息统计的抽象接口，插件通过 `IModularFeatures` 获取具体实现。 |
 
 ## 维护状态
 
@@ -123,21 +141,17 @@ void AMyTestGameMode::BeginPlay()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将传统的 UE_LOG 宏迁移至新的 UE_LOGF 宏，属于引擎日志系统升级的适配性改动。 |
-| 2026-01-15 | `738ab46a` | Fixed localization warnings | 修复本地化相关的编译警告。 |
-| 2025-11-27 | `29081f24` | Fixup API macros | 修正 API 相关的宏定义，确保跨模块调用的兼容性。 |
-| 2025-11-20 | `f8d6103d` | Enable NDK 29 for Android, fix compilation issues | 为 Android 平台启用 NDK 29 并修复由此引起的编译问题。 |
-| 2025-11-10 | `248fda82` | Fix the statistics panel not updating with a remote client resets its UDP Messaging settings. | 修复当远程客户端重置其 UDP 消息设置时，统计面板无法更新的 bug。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏以使用新的格式化功能。 |
+| 2026-01-15 | `738ab46a` | Fixed localization warnings | 修复了本地化相关的编译警告。 |
+| 2025-11-27 | `29081f24` | Fixup API macros | 修正了 API 导出宏的使用。 |
+| 2025-11-20 | `f8d6103d` | Enable NDK 29 for Android, fix compilation issues | 启用 Android NDK 29 并修复相关编译问题。 |
+| 2025-11-10 | `248fda82` | Fix the statistics panel not updating with a remote client resets its UDP Messaging settings. | 修复了当远程客户端重置其 UDP 消息设置时，统计面板未更新的问题。 |
 
 ### 维护评价
 
-该插件创建于 2025 年 10 月，历史较短，仍处于**实验性阶段**（`IsBetaVersion=true`）。从提交历史看，初期有功能性提交（如修复统计面板更新），近期（2026 年）的更新主要集中在**维护和适配**上（修复警告、宏迁移、平台编译修复），没有新的核心功能开发。
-
-由于是 `Experimental` 插件且默认未启用，它更可能作为 Epic 内部或特定项目的测试工具存在。对于大多数项目而言，它不具备直接的生产使用价值，而是作为网络底层开发的辅助工具。
-
-**综合评价**：这是一个功能明确、设计完整的**实验性开发者工具**，适合在开发或深度调试 UE5 UDP 消息系统时使用。它并非一个需要集成到最终产品中的插件。如果你的工作不涉及 UE 消息总线底层开发，则无需关注。
+该插件创建于 2025 年 10 月，相对“年轻”。从提交历史看，它处于**活跃维护**中，近期的更新包括编译修复、平台兼容性改进（Android NDK 29）和 bug 修复（统计面板更新）。作为实验性 (`IsBetaVersion=true`) 和特定工具 (`MessageBusTesterApp`) 的插件，其核心功能稳定，但 API 和设计未来可能会有变动。**仅推荐在开发 `MessageBusTesterApp` 或对 UE 消息总线进行深度调试时使用**。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MessageBusTester)
--   测试用例：该插件本身即为测试工具，其源码可视为 UE5 消息系统测试用例的参考。核心逻辑和 UI 位于 `Source/MessageBusTesterEditor/` 目录下。
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MessageBusTester)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MessageBusTester/Tests) (如果存在)

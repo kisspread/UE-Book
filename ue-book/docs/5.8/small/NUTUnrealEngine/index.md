@@ -4,38 +4,34 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 网络代码单元测试引擎模块 |
+| 中文名 | 网络漏洞测试 |
 | 分类 | Networking |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `NUTUnrealEngine` (UncookedOnly) |
 | 实验性 | 否 |
 | 创建时间 | 2021-03-23 |
-| 年龄标签 | 👴 老古董（约 5 年） |
+| 年龄标签 | 🆕（约 4 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NetcodeUnitTest/NUTUnrealEngine) | |
 
 ## 用途
 
-此插件是 **Netcode Unit Test** 框架的引擎层实现。它不是一个通用的网络功能插件，而是一个**开发和测试工具**。其核心用途是提供一组预定义的、针对 Unreal Engine 引擎本身及一些基础游戏（如 ShooterGame、QAGame）的**漏洞利用与边界条件单元测试**。
+本插件并非通用功能插件，而是 **Epic Games 内部用于网络协议安全测试的专用工具库**。它基于 `NetcodeUnitTest` 框架，提供了针对 Unreal Engine 本身（如网络序列化、RPC 机制）以及一些内部示例游戏项目（如 `ShooterGame`、`QAGame`）的**已知网络漏洞或边界条件的单元测试用例**。
 
-这些测试旨在：
-1.  **复现历史漏洞**：如 `FTextCrash`（空 FText RPC 崩溃）和 `UTT61_DebugReplicateData`（数组溢出崩溃）。
-2.  **验证网络边界**：如 `PacketLimitTest`，用于测试网络数据包大小限制、发送失败及边缘情况。
-3.  **提供测试环境**：为 `ShooterGame`、`QAGame` 等特定项目配置默认测试地图和连接 URL。
-
-**它解决的问题**：为引擎网络代码提供一个标准化的、可自动化的测试套件，用于在开发阶段早期发现网络相关的崩溃、漏洞和边界问题。
+其核心目的是：
+1.  **漏洞复现与验证**：为历史上发现的网络协议相关崩溃或安全问题（如 FText RPC 崩溃、Packet 大小边界、数组溢出）提供精确的自动化复现步骤。
+2.  **回归测试**：确保引擎网络栈的改动不会引入已知问题的回归。
+3.  **内部游戏集成**：为特定内部游戏项目提供预配置的测试环境和默认地图。
 
 ## 使用场景
 
-- 你是 **Epic 内部或参与引擎开发的开发者**，需要运行和验证 Unreal Engine 的网络代码健壮性。
-- 你在开发或测试一个**基于 Unreal 网络架构的游戏**，需要针对已知的引擎网络漏洞（如特定 RPC 崩溃、数据包处理问题）编写或运行防护性测试。
-- 你需要为你的项目配置一个**标准化的网络测试环境**，需要参考 `ShooterGameEnvironment` 这样的模式来定义默认地图和连接参数。
-
-**重要提示**：此插件 `EnabledByDefault` 为 `false`，且模块类型为 `UncookedOnly`，表明它**不包含在发布版本中**，是纯粹的开发/测试工具。
+- 你是 **Epic 内部的安全或网络引擎工程师**，需要验证针对 Unreal 网络协议的攻击或边界情况的修复是否有效。
+- 你在进行 **网络协议栈的深度开发或重构**，需要一套现成的、针对历史问题的测试用例来进行回归测试。
+- 你在研究 **Unreal 网络安全性**，希望了解已知的漏洞模式及其复现方法。
 
 ## 蓝图用法
 
-此插件主要面向 C++ 开发者，**几乎没有公开的蓝图 API**。源码中未发现 `UFUNCTION(BlueprintCallable)` 或 `UPROPERTY(BlueprintReadWrite)`。其功能通过编写 C++ 测试用例来使用。
+本插件不包含面向游戏逻辑的公开蓝图接口。其所有功能均为 C++ 测试类和底层环境设置。
 
 ## C++ 用法
 
@@ -45,138 +41,149 @@
 #include "NUTUnrealEngine.h"
 ```
 
-### 基本用法：编写一个网络单元测试
+### 基本用法：注册自定义测试环境
 
-该插件的核心是提供了一系列继承自 `UClientUnitTest` 或 `UUnitTest` 的测试类。要使用，你需要基于这些基类创建自己的测试。
+本插件允许为特定的项目或游戏配置默认的测试地图。你可以通过继承 `FUnitTestEnvironment` 来实现。
 
-**示例：一个简单的测试类 (来自 `FTextCrash.h` 的简化模式)**
-```cpp
-// MyNetworkTest.h
-#pragma once
-#include "UnitTests/ClientUnitTest.h" // 或 UnitTests/UnitTest.h
-#include "MyNetworkTest.generated.h"
-
-UCLASS()
-class UMyNetworkTest : public UClientUnitTest
-{
-    GENERATED_UCLASS_BODY()
-
-public:
-    virtual void InitializeEnvironmentSettings() override;
-    virtual void ExecuteClientUnitTest() override;
-    virtual void NotifyProcessLog(TWeakPtr<FUnitTestProcess> InProcess, const TArray<FString>& InLogLines) override;
-};
-```
+**来源文件**: `Source/NUTUnrealEngine/Public/UnrealEngineEnvironment.h`
 
 ```cpp
-// MyNetworkTest.cpp
-#include "MyNetworkTest.h"
+#include "UnitTestEnvironment.h"
 
-UMyNetworkTest::UMyNetworkTest(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
-{
-}
-
-void UMyNetworkTest::InitializeEnvironmentSettings()
-{
-    // 在此配置测试环境，例如设置测试标志
-    Super::InitializeEnvironmentSettings();
-}
-
-void UMyNetworkTest::ExecuteClientUnitTest()
-{
-    // 在此实现测试的核心逻辑
-    // 例如：发送一个特殊的 RPC，触发特定的网络行为
-}
-
-void UMyNetworkTest::NotifyProcessLog(TWeakPtr<FUnitTestProcess> InProcess, const TArray<FString>& InLogLines)
-{
-    // 在此处理测试过程中服务器或客户端的日志输出，用于验证预期行为
-}
-```
-
-### 进阶用法：注册自定义测试环境
-
-参考 `FShooterGameEnvironment`，你可以为自己的项目注册特定的测试环境设置。
-
-```cpp
-#include "UnrealEngineEnvironment.h" // 包含基类 FUnitTestEnvironment
-
-class FMyProjectEnvironment : public FUnitTestEnvironment
+// 为你的项目“MyGame”创建一个测试环境
+class FMyGameEnvironment : public FUnitTestEnvironment
 {
 public:
     static void Register()
     {
-        AddUnitTestEnvironment(TEXT("MyProjectName"), new FMyProjectEnvironment());
+        AddUnitTestEnvironment(TEXT("MyGame"), new FMyGameEnvironment());
     }
 
+    // 为你的项目指定一个专门用于网络测试的默认地图
     virtual FString GetDefaultMap(EUnitTestFlags UnitTestFlags) override
     {
-        FString CurrentGame = FApp::GetProjectName();
-        if (CurrentGame == TEXT("MyProjectName"))
+        FString ReturnVal = FUnitTestEnvironment::GetDefaultMap(UnitTestFlags);
+        if (FApp::GetProjectName() == TEXT("MyGame"))
         {
-            return TEXT("MyTestMap");
+            ReturnVal = TEXT("NetTestMap");
         }
-        return FUnitTestEnvironment::GetDefaultMap(UnitTestFlags);
+        return ReturnVal;
     }
 };
 ```
 
-通常在模块启动时调用 `FMyProjectEnvironment::Register()`。
+### 进阶用法：复现网络漏洞
+
+插件中的单元测试类（如 `UPacketLimitTest`）展示了如何使用 `NetcodeUnitTest` 框架来精确控制网络交互并验证边界条件。
+
+**来源文件**: `Source/NUTUnrealEngine/Classes/UnitTests/PacketLimitTest.h`
+
+```cpp
+#include "ClientUnitTest.h"
+
+// 示例：一个测试网络数据包大小限制的单元测试
+// 它会拦截发送到 Socket 的原始数据包，并阻止不符合预期大小的包发送
+class UPacketLimitTest : public UClientUnitTest
+{
+protected:
+    // 重写此函数以实现对原始网络包发送的拦截和逻辑判断
+    virtual void NotifySocketSendRawPacket(void* Data, int32 Count, bool& bBlockSend) override
+    {
+        // 计算当前数据包大小
+        int32 CurrentPacketSize = CalculatePacketSize(Data, Count);
+
+        // 如果当前大小不等于目标测试大小，则阻止发送
+        if (CurrentPacketSize != TargetSocketSendSize)
+        {
+            bBlockSend = true; // 阻止这个包发送
+            UE_LOG(LogNet, Warning, TEXT("Blocked packet with size %d, target is %d"), CurrentPacketSize, TargetSocketSendSize);
+        }
+        // 否则，允许发送（bBlockSend 保持默认的 false）
+    }
+
+public:
+    // 执行测试逻辑，按阶段推进测试
+    virtual void ExecuteClientUnitTest() override
+    {
+        // 初始化测试阶段...
+        NextTestStage();
+    }
+};
+```
 
 ## Demo 示例
 
-一个完整的、最小化的自定义网络单元测试示例。
+以下示例演示了如何为一个自定义项目 `“MyGame”` 创建并注册一个简单的测试环境。
 
-**MySimpleTest.h**
+**MyGameTestEnvironment.h**
 ```cpp
 #pragma once
+#include "UnitTestEnvironment.h"
 
-#include "CoreMinimal.h"
-#include "UnitTests/UnitTest.h"
-#include "MySimpleTest.generated.h"
-
-/**
- * 一个简单的自定义网络单元测试示例
- */
-UCLASS()
-class UMySimpleTest : public UUnitTest
+class FMyGameTestEnvironment : public FUnitTestEnvironment
 {
-    GENERATED_UCLASS_BODY()
-
 public:
-    /** 执行测试 */
-    virtual bool ExecuteUnitTest() override;
+    static void Register();
+
+    virtual FString GetDefaultMap(EUnitTestFlags UnitTestFlags) override;
+    virtual FString GetDefaultClientConnectURL() override;
 };
 ```
 
-**MySimpleTest.cpp**
+**MyGameTestEnvironment.cpp**
 ```cpp
-#include "MySimpleTest.h"
+#include "MyGameTestEnvironment.h"
 
-UMySimpleTest::UMySimpleTest(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
+void FMyGameTestEnvironment::Register()
 {
+    AddUnitTestEnvironment(TEXT("MyGame"), new FMyGameTestEnvironment());
 }
 
-bool UMySimpleTest::ExecuteUnitTest()
+FString FMyGameTestEnvironment::GetDefaultMap(EUnitTestFlags UnitTestFlags)
 {
-    // 这里是测试的核心逻辑
-    // 例如，验证某个网络相关的条件或函数
-    UE_LOG(LogTemp, Log, TEXT("MySimpleTest executed successfully!"));
+    // 获取基础默认地图
+    FString BaseMap = FUnitTestEnvironment::GetDefaultMap(UnitTestFlags);
+    // 仅在当前项目为 MyGame 时覆盖
+    if (FApp::GetProjectName() == TEXT("MyGame"))
+    {
+        // 返回你专门为网络测试准备的地图名称
+        return TEXT("/Game/Maps/NetworkTestLevel");
+    }
+    return BaseMap;
+}
 
-    // 返回 true 表示测试通过，false 表示失败
-    return true;
+FString FMyGameTestEnvironment::GetDefaultClientConnectURL()
+{
+    FString BaseURL = FUnitTestEnvironment::GetDefaultClientConnectURL();
+    // 可以为特定项目追加连接参数，例如版本检查
+    if (FApp::GetProjectName() == TEXT("MyGame"))
+    {
+        BaseURL += TEXT("?MyGameParam=1");
+    }
+    return BaseURL;
+}
+```
+
+**使用（在模块启动时注册）**:
+```cpp
+#include "MyGameTestEnvironment.h"
+
+void FMyGameModule::StartupModule()
+{
+    FMyGameTestEnvironment::Register();
 }
 ```
 
 ## 模块依赖
 
-从 Build.cs 分析，此插件除了常见的引擎模块外，**唯一独特且必须的依赖**是：
+本插件自身依赖于 `NetcodeUnitTest` 框架。如果你想在自己的模块中使用或扩展本插件的测试环境或测试用例，你需要：
 
 | 模块 | 用途 |
 |---|---|
-| `NetcodeUnitTest` | 提供网络单元测试框架的基类、测试执行器和工具（如 `UUnitTest`, `UClientUnitTest`, `FUnitTestEnvironment` 等）。这是此插件存在的核心前提。 |
+| `NetcodeUnitTest` | 核心的网络单元测试框架，提供 `UUnitTest`、`FUnitTestEnvironment` 等基类和工具。 |
+| `NUTUnrealEngine` | 本插件模块，包含针对 UE 及特定游戏的测试实现和环境设置。 |
+
+无特殊依赖（仅标准 Core/Engine/Slate 等）。
 
 ## 维护状态
 
@@ -184,19 +191,22 @@ bool UMySimpleTest::ExecuteUnitTest()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了 64 位整数在日志格式化字符串中的警告问题。 |
-| 2024-11-06 | `bc63a88d` | Redirect old cppcompilewarning properties to new *.CppCompileWarningSettings | 将旧的编译器警告属性重定向到新的设置类，属于编译系统适配。 |
-| 2023-11-01 | `e4faf8ba` | Enable truncation warnings in NetcodeUnitTest. | 在 NetcodeUnitTest 框架中启用了类型转换截断警告，提升代码严谨性。 |
-| 2023-02-18 | `e599d19e` | Removing redundant Private includes. | 清理代码，移除冗余的 `#include` 语句。 |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 一次针对引擎插件的通用性修改。 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了日志输出中 32/64 位格式说明符不匹配的问题。 |
+| 2024-11-06 | `bc63a88d` | Redirect old cppcompilewarning properties to new *.CppCompileWarningSettings | 更新了编译器警告设置的属性，以适配新的项目设置结构。 |
+| 2023-11-01 | `e4faf8ba` | Enable truncation warnings in NetcodeUnitTest. | 启用了 NetcodeUnitTest 中的截断警告，提升代码健壮性。 |
+| 2023-02-18 | `e599d19e` | Removing redundant Private includes. | 清理了冗余的私有头文件包含，简化依赖。 |
 
 ### 维护评价
 
-- **状态**：**维护不活跃**。最近一次功能性更新在2026年4月，但内容是编译器警告修复，并非新测试用例或功能。实质性更新停留在2021-2023年。
-- **频率**：更新非常稀疏，每年仅1-2次，且多为编译兼容性或代码清理。
-- **推荐度**：**不推荐普通开发者主动使用**。此插件属于 Epic 内部的**测试基础设施**，用于保障引擎网络代码的质量。它依赖的 `NetcodeUnitTest` 框架本身也具有很高的专业性。除非你明确需要运行或扩展这套特定的引擎网络漏洞测试套件，否则无需关注。
+- **创建时间**：2021年3月，作为从 UE4 迁移到 UE5 的一部分（基于首次 commit 信息）。
+- **更新频率**：最近一次实质性（非编译修复）更新在 **2023年11月**。之后的更新主要是编译器兼容性和代码清理，没有新的测试用例或功能添加。
+- **活跃度**：**维护不活跃**。该插件更像一个历史测试用例的存档库，而非活跃开发的功能模块。
+- **已知问题/限制**：
+    1.  `EnabledByDefault: false`，且 `Installed: false`，表明这是一个需要手动启用的、非常特殊的插件。
+    2.  `UncookedOnly` 类型，意味着它**仅在编辑器和未打包的开发版本中可用**，不会包含在最终发布的游戏中。
+    3.  包含一些标记为 `Obsolete` 的测试类（如 `UUTT61_DebugReplicateData`）。
+- **推荐使用**：**不推荐**普通开发者用于生产项目。它是 Epic 内部网络协议安全测试和引擎验证流程的一部分。对于大多数开发者，其价值在于**参考和学习**如何为 Unreal 网络协议编写深度的、可复现漏洞的单元测试。如果你需要测试自己的网络游戏，应使用 `NetcodeUnitTest` 框架编写自己的测试。
 
 ## 相关链接
 
-- [源码 (NUTUnrealEngine)](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NetcodeUnitTest/NUTUnrealEngine)
-- [依赖框架 (NetcodeUnitTest)](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NetcodeUnitTest)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NetcodeUnitTest/NUTUnrealEngine)

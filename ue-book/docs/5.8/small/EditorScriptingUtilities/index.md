@@ -11,237 +11,221 @@
 | 模块 | `EditorScriptingUtilities` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-05-09 |
-| 年龄标签 | 👴 老古董（约 8 年） |
+| 年龄标签 | 👴 老古董（约 7 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/EditorScriptingUtilities) | |
 
 ## 用途
 
-EditorScriptingUtilities 提供了一组蓝图可用的函数库，用于在编辑器环境下通过脚本（蓝图）批量操作资产、关卡、网格体和 Actor。它封装了编辑器的常见工作流——如加载/保存/复制/删除资产、查询和过滤 Actor、管理静态网格体和骨骼网格体的 LOD 与碰撞、以及弹出编辑器对话框。
-
-**重要提示：自 UE 5.0 起，该插件中的大部分功能已被标记为废弃（Deprecated）**，功能已迁移至新的编辑器子系统中。非废弃的部分主要是 `UEditorAssetLibrary`（资产操作）、`UEditorFilterLibrary`（过滤器）和 `UEditorDialogLibrary`（对话框）。
+`EditorScriptingUtilities` 插件为通过蓝图或 Python 脚本（如 Commandlet）自动化编辑器任务提供了一组基础函数库。它封装了编辑器中常见的操作，如资产的加载、保存、重命名、删除，角色的生成、销毁、选择，以及静态网格/骨骼网格的LOD、碰撞、UV管理等。**重要提示：在 UE 5.0 中，此插件已被标记为废弃（Deprecated）**，其功能已被拆分并迁移到更具体的子系统中（例如 `UStaticMeshEditorSubsystem`、`UEditorActorSubsystem` 等）。此插件主要作为旧有蓝图或脚本的兼容层而存在。
 
 ## 使用场景
 
-- 你需要通过蓝图批量导入、复制、重命名或删除内容浏览器中的资产 → 用 `UEditorAssetLibrary`
-- 你需要在编辑器脚本中根据类、名称、标签、图层等条件过滤 Actor 列表 → 用 `UEditorFilterLibrary`
-- 你需要在编辑器脚本中弹出消息框或对象属性编辑对话框 → 用 `UEditorDialogLibrary`
-- 你需要在编辑器中通过脚本创建/删除 Actor、操控关卡 → **已废弃**，请改用 `EditorActorSubsystem` / `ULevelEditorSubsystem`
-- 你需要脚本化静态网格体/骨骼网格体的 LOD、碰撞等操作 → **已废弃**，请改用 `UStaticMeshEditorSubsystem` / `USkeletalMeshEditorSubsystem`
+- **历史场景**：在 UE 4.2x 时代，开发者需要通过蓝图或Python脚本批量处理资产、管理关卡中的角色或修改网格属性。
+- **当前场景**：**不推荐在新项目中使用**。如果你正在维护一个旧项目并发现蓝图中大量使用了此插件的节点，你可以继续使用它们以避免大规模重构。对于新项目，应直接使用对应的编辑器子系统。
 
 ## 蓝图用法
 
-所有类均继承自 `UBlueprintFunctionLibrary`，函数可直接在蓝图中调用。
+**警告：以下所有函数均已废弃，新项目应使用其 DeprecationMessage 中指向的替代函数。**
 
-### 资产操作（UEditorAssetLibrary）
+### 核心节点
 
+以下为该插件提供的主要功能类别及示例函数：
+
+#### 资产管理 (`UEditorAssetLibrary`)
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `LoadAsset` | 从路径加载资产（已加载则跳过） | `UEditorAssetLibrary` |
-| `LoadBlueprintClass` | 加载蓝图资产并返回其生成类 | `UEditorAssetLibrary` |
-| `FindAssetData` | 根据路径获取 FAssetData 信息 | `UEditorAssetLibrary` |
-| `DoesAssetExist` | 检查资产是否存在 | `UEditorAssetLibrary` |
-| `DuplicateAsset` | 复制资产到新路径 | `UEditorAssetLibrary` |
-| `RenameAsset` | 重命名资产（相当于移动） | `UEditorAssetLibrary` |
-| `DeleteAsset` | 强制删除资产 | `UEditorAssetLibrary` |
-| `SaveAsset` | 保存资产包 | `UEditorAssetLibrary` |
-| `ListAssets` | 列出目录下所有资产路径 | `UEditorAssetLibrary` |
-| `MakeDirectory` | 在内容浏览器中创建目录 | `UEditorAssetLibrary` |
-| `ConsolidateAssets` | 将多个资产的所有引用合并到一个目标资产 | `UEditorAssetLibrary` |
-| `FindPackageReferencersForAsset` | 查找资产的所有引用者 | `UEditorAssetLibrary` |
-| `GetMetadataTag` | 获取资产元数据标签值 | `UEditorAssetLibrary` |
-| `SetMetadataTag` | 设置资产元数据标签值 | `UEditorAssetLibrary` |
-| `SyncBrowserToObjects` | 在内容浏览器中定位并选中资产 | `UEditorAssetLibrary` |
+| `LoadAsset` | 加载内容浏览器中的资产 | `UEditorAssetLibrary` |
+| `DuplicateAsset` | 复制一个资产 | `UEditorAssetLibrary` |
+| `RenameAsset` | 重命名（移动）资产 | `UEditorAssetLibrary` |
+| `DeleteAsset` | 删除资产 | `UEditorAssetLibrary` |
+| `SaveAsset` | 保存资产 | `UEditorAssetLibrary` |
+| `FindPackageReferencersForAsset` | 查找资产的引用者 | `UEditorAssetLibrary` |
 
-### 过滤器（UEditorFilterLibrary）
-
+#### 关卡与角色操作 (`UEditorLevelLibrary`)
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `ByClass` | 按对象类过滤 | `UEditorFilterLibrary` |
-| `ByIDName` | 按对象 ID 名称过滤 | `UEditorFilterLibrary` |
-| `ByActorLabel` | 按 Actor 标签过滤 | `UEditorFilterLibrary` |
-| `ByActorTag` | 按 Actor Tag 过滤 | `UEditorFilterLibrary` |
-| `ByLayer` | 按图层名过滤 | `UEditorFilterLibrary` |
-| `ByLevelName` | 按关卡名过滤 | `UEditorFilterLibrary` |
-| `BySelection` | 按选中状态过滤 | `UEditorFilterLibrary` |
+| `GetAllLevelActors` | 获取当前关卡中所有角色 | `UEditorLevelLibrary` |
+| `SpawnActorFromClass` | 在指定位置生成一个角色 | `UEditorLevelLibrary` |
+| `DestroyActor` | 销毁一个角色 | `UEditorLevelLibrary` |
+| `ReplaceSelectedActors` | 用另一种类型替换选中的角色 | `UEditorLevelLibrary` |
+| `GetLevelViewportCameraInfo` | 获取编辑器视口摄像机位置和旋转 | `UEditorLevelLibrary` |
 
-### 对话框（UEditorDialogLibrary）
-
+#### 静态网格编辑 (`UDEPRECATED_EditorStaticMeshLibrary`)
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `ShowMessage` | 显示消息框，返回用户选择 | `UEditorDialogLibrary` |
-| `ShowSuppressableWarningDialog` | 显示可抑制的警告对话框 | `UEditorDialogLibrary` |
-| `ShowObjectDetailsView` | 弹出单个 UObject 属性编辑对话框 | `UEditorDialogLibrary` |
-| `ShowObjectsDetailsView` | 弹出多个 UObject 属性编辑对话框 | `UEditorDialogLibrary` |
+| `SetLods` | 为静态网格设置LOD级别 | `UDEPRECATED_EditorStaticMeshLibrary` |
+| `AddSimpleCollisions` | 为网格添加简单碰撞 | `UDEPRECATED_EditorStaticMeshLibrary` |
+| `SetConvexDecompositionCollisions` | 设置凸分解碰撞 | `UDEPRECATED_EditorStaticMeshLibrary` |
+| `RemoveCollisions` | 移除所有碰撞 | `UDEPRECATED_EditorStaticMeshLibrary` |
+| `ImportLOD` | 导入LOD模型文件 | `UDEPRECATED_EditorStaticMeshLibrary` |
+
+#### 骨骼网格编辑 (`UDEPRECATED_EditorSkeletalMeshLibrary`)
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `RegenerateLOD` | 重新生成LOD | `UDEPRECATED_EditorSkeletalMeshLibrary` |
+| `ImportLOD` | 导入LOD模型文件 | `UDEPRECATED_EditorSkeletalMeshLibrary` |
+| `RemoveLODs` | 移除指定的LOD | `UDEPRECATED_EditorSkeletalMeshLibrary` |
+| `CreatePhysicsAsset` | 为骨骼网格创建物理资产 | `UDEPRECATED_EditorSkeletalMeshLibrary` |
+
+#### 实用工具
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `ByClass` / `ByIDName` / `ByActorLabel` | 根据各种条件过滤对象/角色数组 | `UEditorFilterLibrary` |
+| `ShowMessage` | 显示一个模态消息对话框 | `UEditorDialogLibrary` |
+| `SyncBrowserToObjects` | 在内容浏览器中定位并显示资产 | `UEditorAssetLibrary` |
 
 ### 使用示例（蓝图描述）
 
-**批量复制资产：**
-1. 使用 `Make Directory` 节点创建目标目录 `/Game/Backup/`
-2. 使用 `List Assets` 节点列出 `/Game/Original/` 下所有资产路径
-3. 对每个路径执行 `Duplicate Asset`，目标路径设为 `/Game/Backup/AssetName`
-
-**按标签过滤 Actor 后弹出确认对话框：**
-1. 使用 `Get All Level Actors` 获取所有 Actor（注意：此函数已废弃，推荐使用 Editor Actor Subsystem）
-2. 将结果传入 `Filter by Actor Tag`，Tag 设为 `"NeedsCleanup"`
-3. 将过滤结果传入 `Show Message` 对话框，确认后执行后续操作
+**场景：批量重命名一组选中的资产。**
+1.  **获取资产路径列表**：使用 `Get Selected Assets` 节点获取当前内容浏览器选中的资产对象数组。
+2.  **循环处理**：使用 `For Each Loop` 遍历数组。
+3.  **生成新路径并重命名**：在循环内，使用字符串操作节点生成新的资产路径，然后调用 `Editor Asset Library -> Rename Asset` 节点。`Source Asset Path` 输入当前资产的路径，`Destination Asset Path` 输入新路径。
+4.  **注意**：此操作需要资产已被加载，且会尝试签出文件（如果使用版本控制）。
 
 ## C++ 用法
+
+**重要：以下 API 已废弃，请查阅头文件中的 `UE_DEPRECATED` 注释以获取替代 API。**
 
 ### 头文件引入
 
 ```cpp
 #include "EditorAssetLibrary.h"
-#include "EditorFilterLibrary.h"
-#include "EditorDialogLibrary.h"
+#include "EditorLevelLibrary.h"
+// 根据需要包含其他库的头文件
 ```
 
 ### 基本用法
 
+以下代码演示了在C++中（例如在Editor Utility Widget或Commandlet中）使用`EditorAssetLibrary`进行资产操作。*(来源: `EditorAssetLibrary.h`)*
+
 ```cpp
-// 检查资产是否存在并加载
-if (UEditorAssetLibrary::DoesAssetExist(TEXT("/Game/MyFolder/MyAsset")))
+#include "EditorAssetLibrary.h"
+
+void MyEditorScript::ProcessAssets()
 {
-    UObject* Asset = UEditorAssetLibrary::LoadAsset(TEXT("/Game/MyFolder/MyAsset"));
-    UE_LOG(LogTemp, Log, TEXT("Loaded asset: %s"), *Asset->GetName());
+    // 加载一个资产
+    const FString AssetPath = TEXT("/Game/MyFolder/MyAsset.MyAsset");
+    UObject* LoadedAsset = UEditorAssetLibrary::LoadAsset(AssetPath);
+    if (LoadedAsset)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Loaded asset: %s"), *LoadedAsset->GetName());
+    }
+
+    // 检查资产是否存在
+    bool bExists = UEditorAssetLibrary::DoesAssetExist(AssetPath);
+
+    // 复制资产
+    const FString DestPath = TEXT("/Game/MyFolder/MyAsset_Copy");
+    UObject* DuplicatedAsset = UEditorAssetLibrary::DuplicateAsset(AssetPath, DestPath);
+
+    // 获取资产的元数据标签
+    if (LoadedAsset)
+    {
+        FString TagValue = UEditorAssetLibrary::GetMetadataTag(LoadedAsset, FName("MyCustomTag"));
+    }
 }
-
-// 复制资产
-UObject* Duplicated = UEditorAssetLibrary::DuplicateAsset(
-    TEXT("/Game/Source/Template"),
-    TEXT("/Game/NewFolder/MyCopy")
-);
-
-// 保存资产
-UEditorAssetLibrary::SaveAsset(TEXT("/Game/NewFolder/MyCopy"), true);
 ```
 
 ### 进阶用法
 
-```cpp
-// 批量查找引用者后确认是否合并
-TArray<FString> Referencers = UEditorAssetLibrary::FindPackageReferencersForAsset(
-    TEXT("/Game/MyFolder/OldAsset"), true
-);
+结合多个库的功能，在关卡中找到特定标签的角色，并为它们批量更换材质。*(来源: `EditorLevelLibrary.h`)*
 
-if (Referencers.Num() > 0)
+```cpp
+#include "EditorLevelLibrary.h"
+#include "EditorAssetLibrary.h"
+
+void MyEditorScript::BatchReplaceMaterial()
 {
-    // 弹出对话框让用户确认
-    EAppReturnType::Type Result = UEditorDialogLibrary::ShowMessage(
-        NSLOCTEXT("Cleanup", "Confirm", "确认合并"),
-        FText::Format(
-            NSLOCTEXT("Cleanup", "Msg", "发现 {0} 个引用者，是否合并到新资产？"),
-            FText::AsNumber(Referencers.Num())
-        ),
-        EAppMsgType::YesNo,
-        EAppReturnType::No
-    );
-    
-    if (Result == EAppReturnType::Yes)
+    // 1. 获取关卡中所有角色
+    TArray<AActor*> AllActors = UEditorLevelLibrary::GetAllLevelActors();
+
+    // 2. 过滤出带有特定标签的角色 (假设使用EditorFilterLibrary，但此处用C++逻辑简化)
+    TArray<AActor*> TaggedActors;
+    for (AActor* Actor : AllActors)
     {
-        UObject* Target = UEditorAssetLibrary::LoadAsset(TEXT("/Game/NewFolder/Replacement"));
-        TArray<UObject*> SourceAssets;
-        SourceAssets.Add(UEditorAssetLibrary::LoadAsset(TEXT("/Game/MyFolder/OldAsset")));
-        UEditorAssetLibrary::ConsolidateAssets(Target, SourceAssets);
+        if (Actor && Actor->Tags.Contains(FName("ReplaceMaterial")))
+        {
+            TaggedActors.Add(Actor);
+        }
+    }
+
+    // 3. 准备新材质
+    const FString NewMaterialPath = TEXT("/Game/Materials/M_NewMaterial");
+    UMaterialInterface* NewMaterial = Cast<UMaterialInterface>(UEditorAssetLibrary::LoadAsset(NewMaterialPath));
+
+    // 4. 替换材质 (使用已废弃的函数，实际应用应查阅替代方案)
+    if (NewMaterial && TaggedActors.Num() > 0)
+    {
+        // 注意：此函数已废弃
+        UEditorLevelLibrary::ReplaceMeshComponentsMaterialsOnActors(TaggedActors, nullptr, NewMaterial);
     }
 }
-
-// 使用过滤器筛选 Actor
-TArray<AActor*> AllActors = UEditorLevelLibrary::GetAllLevelActors();
-TArray<AActor*> TaggedActors = UEditorFilterLibrary::ByActorTag(
-    AllActors, FName("Important"), EEditorScriptingFilterType::Include
-);
-TArray<AActor*> FinalSelection = UEditorFilterLibrary::ByClass(
-    CastArray<UObject*>(TaggedActors), AStaticMeshActor::StaticClass(), EEditorScriptingFilterType::Include
-);
 ```
 
 ## Demo 示例
 
+一个最小的编辑器工具面板，包含一个按钮，用于在点击时列出当前关卡中的所有角色名称。*(注意：此示例使用了废弃的API，仅作结构参考)*
+
+**MyEditorToolPanel.h**
 ```cpp
-// EditorBatchOperations.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EditorSubsystem.h"
-#include "EditorBatchOperations.generated.h"
+#include "Editor/Blutility/Classes/BlutilityUserWidget.h"
+#include "MyEditorToolPanel.generated.h"
+
+class UButton;
+class UTextBlock;
 
 UCLASS()
-class UEditorBatchOperationsSubsystem : public UEditorSubsystem
+class UMyEditorToolPanel : public UBlutilityUserWidget
 {
     GENERATED_BODY()
 
 public:
-    /** 批量复制目录下所有资产到备份位置 */
-    UFUNCTION(BlueprintCallable, Category = "Batch Operations")
-    bool BackupAssetDirectory(const FString& SourcePath, const FString& BackupPath);
+    UPROPERTY(meta = (BindWidget))
+    UButton* ListActorsButton;
 
-    /** 清理未使用的资产（基于元数据标签） */
-    UFUNCTION(BlueprintCallable, Category = "Batch Operations")
-    int32 CleanupTaggedAssets(FName Tag, const FString& TagValue);
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* OutputText;
+
+    UFUNCTION(BlueprintCallable)
+    void OnListActorsButtonClicked();
 };
 ```
 
+**MyEditorToolPanel.cpp**
 ```cpp
-// EditorBatchOperations.cpp
-#include "EditorBatchOperations.h"
-#include "EditorAssetLibrary.h"
-#include "EditorDialogLibrary.h"
+#include "MyEditorToolPanel.h"
+#include "Components/Button.h"
+#include "Components/TextBlock.h"
+#include "EditorLevelLibrary.h"
 
-bool UEditorBatchOperationsSubsystem::BackupAssetDirectory(const FString& SourcePath, const FString& BackupPath)
+void UMyEditorToolPanel::OnListActorsButtonClicked()
 {
-    if (!UEditorAssetLibrary::DoesDirectoryExist(SourcePath))
+    // 调用废弃的API获取所有角色
+    TArray<AActor*> Actors = UEditorLevelLibrary::GetAllLevelActors();
+    
+    FString OutputString = TEXT("Actors in level:\n");
+    for (AActor* Actor : Actors)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Source directory does not exist: %s"), *SourcePath);
-        return false;
-    }
-
-    UEditorAssetLibrary::MakeDirectory(BackupPath);
-    return UEditorAssetLibrary::DuplicateDirectory(SourcePath, BackupPath);
-}
-
-int32 UEditorBatchOperationsSubsystem::CleanupTaggedAssets(FName Tag, const FString& TagValue)
-{
-    TArray<FString> AssetPaths = UEditorAssetLibrary::ListAssetByTagValue(Tag, TagValue);
-
-    if (AssetPaths.Num() == 0)
-    {
-        return 0;
-    }
-
-    EAppReturnType::Type Result = UEditorDialogLibrary::ShowMessage(
-        NSLOCTEXT("Cleanup", "Title", "批量清理"),
-        FText::Format(
-            NSLOCTEXT("Cleanup", "Msg", "找到 {0} 个资产带有标签 {1}={2}，是否删除？"),
-            FText::AsNumber(AssetPaths.Num()),
-            FText::FromName(Tag),
-            FText::FromString(TagValue)
-        ),
-        EAppMsgType::YesNo,
-        EAppReturnType::No
-    );
-
-    if (Result != EAppReturnType::Yes)
-    {
-        return 0;
-    }
-
-    int32 DeletedCount = 0;
-    for (const FString& Path : AssetPaths)
-    {
-        if (UEditorAssetLibrary::DeleteAsset(Path))
+        if (Actor)
         {
-            DeletedCount++;
+            OutputString += FString::Printf(TEXT("- %s\n"), *Actor->GetName());
         }
     }
 
-    UE_LOG(LogTemp, Log, TEXT("Deleted %d assets tagged with %s=%s"), DeletedCount, *Tag.ToString(), *TagValue);
-    return DeletedCount;
+    if (OutputText)
+    {
+        OutputText->SetText(FText::FromString(OutputString));
+    }
 }
 ```
 
 ## 模块依赖
 
-该插件的标准依赖（Core、CoreUObject、Engine、Slate、UMG、UnrealEd 等）已省略。无特殊依赖——仅使用标准编辑器模块。
+无特殊依赖（仅标准 Core/Engine/Slate 等，以及 `UnrealEd` 编辑器模块）。
+你的模块需要依赖 `UnrealEd` 才能使用此类编辑器脚本功能。
 
 ## 维护状态
 
@@ -249,28 +233,18 @@ int32 UEditorBatchOperationsSubsystem::CleanupTaggedAssets(FName Tag, const FStr
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 截断为 float 的编译警告 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移：UE_LOG 改为 UE_LOGF |
-| 2026-03-23 | `871f4daa` | Misc module deprecation fixup for 5.4 and earlier, I did not remove anything still in use. | 清理 5.4 及更早版本的模块废弃兼容代码 |
-| 2026-03-05 | `a3b601d8` | Remove includes guarded by `UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_5`. Delete header files that now | 移除 UE 5.5 废弃的头文件包含守卫，删除冗余头文件 |
-| 2025-10-07 | `96352708` | Renaming Base<Plugin>.ini to Default<Plugin>.ini | 配置文件重命名：Base 改为 Default |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为浮点数的编译警告。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 宏迁移为 UE_LOGF。 |
+| 2026-03-23 | `871f4daa` | Misc module deprecation fixup for 5.4 and earlier, I did not remove anything still in use. | 为5.4及更早版本进行杂项模块废弃修复，未移除仍在使用的部分。 |
+| 2026-03-05 | `a3b601d8` | Remove includes guarded by `UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_5`. Delete header files that now... | 移除受 `UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_5` 保护的包含项，删除现已...的头文件。 |
+| 2025-10-07 | `96352708` | - Renaming Base<Plugin>.ini to Default<Plugin>.ini | 将 Base<Plugin>.ini 重命名为 Default<Plugin>.ini。 |
 
 ### 维护评价
 
-该插件自 UE 5.0 起已进入**废弃过渡期**。所有关卡操作、网格体操作、Actor 操作的函数均已标记 `DeprecatedFunction`，并指向新的编辑器子系统（`EditorActorSubsystem`、`UStaticMeshEditorSubsystem`、`USkeletalMeshEditorSubsystem`、`ULevelEditorSubsystem` 等）。
-
-近期更新全部为编译器警告修复、日志宏迁移、头文件清理等维护性改动，**无任何功能更新**。插件仍在接收维护性提交以保持编译兼容性，但不会再有新功能。
-
-**⚠️ 仅 `UEditorAssetLibrary`、`UEditorFilterLibrary` 和 `UEditorDialogLibrary` 未被废弃**，仍可正常使用。其余功能建议尽早迁移至对应的新子系统。
-
-**推荐程度：仅用于资产操作和过滤/对话框等未废弃功能。已废弃的 Actor/关卡/网格体功能请勿使用。**
+此插件已**明确废弃**。从 2020 年 UE 5.0 预览版开始，其功能就已被官方标记为 `UE_DEPRECATED`，并指向新的编辑器子系统（如 `UStaticMeshEditorSubsystem`, `UEditorActorSubsystem` 等）。最近的提交均属于**维护性修复**（如适配新的日志宏、修复编译警告、清理已弃用的代码），没有任何新功能开发。**强烈建议新项目不要使用此插件**。对于旧项目，可继续使用以维持兼容性，但应规划逐步迁移至新的子系统。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Editor/EditorScriptingUtilities)
-- 官方文档：无（.uplugin 中 DocsURL 为空）
-- 替代方案：
-  - `UActorEditorSubsystem` — 替代 `UEditorLevelLibrary` 中的 Actor 操作
-  - `ULevelEditorSubsystem` — 替代 `UEditorLevelLibrary` 中的关卡操作
-  - `UStaticMeshEditorSubsystem` — 替代 `UDEPRECATED_EditorStaticMeshLibrary`
-  - `USkeletalMeshEditorSubsystem` — 替代 `UDEPRECATED_EditorSkeletalMeshLibrary`
+- 官方文档：无（已被废弃，新文档位于各子系统页面）
+- 测试用例：未在插件目录内发现独立测试用例。

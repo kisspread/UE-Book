@@ -1,254 +1,185 @@
 # MetaHuman Animator Calibration Diagnostics
 
-> The official MetaHuman Calibration Diagnostics Unreal Engine toolkit（照抄，不翻译）
+> The official MetaHuman Calibration Diagnostics Unreal Engine toolkit
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman校准诊断 |
+| 中文名 | MetaHuman 校准诊断 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（编辑器工具、蓝图资产） |
+| 包含内容 | ❌ 无 |
 | 模块 | `MetaHumanCalibrationDiagnostics` (Editor) |
-| 实验性 | ⚦️ 是 |
+| 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-09-18 |
 | 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetaHuman/MetaHumanCalibrationDiagnostics) | |
 
 ## 用途
-
-该插件是 MetaHuman Animator 工作流中的**相机校准质量诊断工具**。它用于解决从多视图视频（Footage）中捕捉 MetaHuman 动画时，相机校准不准确导致的动画数据扭曲、抖动等问题。其核心功能是**评估相机标定的精度**，通过检测特征点、计算重投影误差、提供可视化诊断视图，帮助动画师识别哪些相机或哪些画面的标定存在问题，从而指导用户优化标定流程或选择最佳标定结果。
+这是一个面向 MetaHuman 动画制作流程的质量分析与问题诊断工具包。它并非一个简单的功能封装，而是为了解决 MetaHuman 校准过程中可能出现的复杂质量问题而存在。
+其核心功能是**量化评估相机校准结果的准确性**，通过分析特征匹配点的重投影误差，提供可视化的误差分布图、块级误差统计和全局误差指标。这帮助技术美术师或动画师识别校准质量不佳的区域（如特定相机视角或图像区域），从而精准定位问题，优化校准流程或调整拍摄参数，最终获得更高质量的数字人面部动画数据。
 
 ## 使用场景
-
-- 你正在使用 **MetaHuman Animator** 从多机位视频中驱动一个 MetaHuman 角色，但发现生成的面部动画在某些角度或帧有扭曲。
-- 你怀疑是**相机标定**不准确，但无法直观地知道问题出在哪个相机或哪几帧画面上。
-- 你需要一个工具来**量化**并**可视化**标定误差，以便精准地排查和修复问题。
+- 当你使用 **MetaHuman Animator** 处理面部捕捉素材（如iPhone视频）并生成相机校准后，需要评估校准质量是否满足动画要求。
+- 当你发现最终渲染的数字人面部动画存在细微的扭曲、拉伸或不自然变形，怀疑是源头校准数据有问题时，使用此插件进行**定量误差分析**。
+- 你需要为多个镜头或场景优化校准参数，希望找到一个**最优校准**（误差最小），而非手动逐个尝试。
+- 你需要向团队其他成员展示或汇报校准质量问题，需要直观的**可视化报告**（如热力图、误差数值）。
 
 ## 蓝图用法
-
-该插件主要提供编辑器内的诊断窗口，但也暴露了部分核心功能到蓝图，便于高级用户进行自动化分析或自定义流程。
+该插件主要面向**技术人员和高级用户**，其核心功能通常通过 C++ 接口调用或在编辑器 UI 中使用。提供的蓝图接口主要用于**配置和驱动**诊断流程。
 
 ### 核心节点
-
-以下节点均来自 `UMetaHumanRobustFeatureMatcher` 类。
-
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Init` | 初始化特征匹配器。需要传入 `FootageCaptureData` 和诊断选项。 | `UMetaHumanRobustFeatureMatcher` |
-| `DetectFeatures` | 对指定帧 `InFrame` 进行特征点检测。 | `UMetaHumanRobustFeatureMatcher` |
-| `GetFeatures` | 获取指定帧的特征点检测结果，包括2D点、3D点和重投影点。 | `UMetaHumanRobustFeatureMatcher` |
-| `GetCameraNames` | 获取当前 Footage 中所有相机的名称列表。 | `UMetaHumanRobustFeatureMatcher` |
-| `GetImagePaths` | 获取指定相机的所有帧图像路径。 | `UMetaHumanRobustFeatureMatcher` |
+| `Init` | 初始化特征匹配器，传入捕捉数据和诊断选项 | `UMetaHumanRobustFeatureMatcher` |
+| `DetectFeatures` | 对指定帧进行特征检测 | `UMetaHumanRobustFeatureMatcher` |
+| `GetFeatures` | 获取指定帧的检测结果（2D点、3D点、重投影点） | `UMetaHumanRobustFeatureMatcher` |
+| `OrderCalibrations` | 根据诊断结果对一组相机校准进行排序，最优在前 | `UMetaHumanDiagnosticsBasedSelector` |
+| `GetSelectedFrames` | 获取用于计算最佳校准的帧索引列表 | `UMetaHumanFeatureMatcherFrameProvider` |
 
 ### 使用示例（蓝图描述）
-
-一个典型的蓝图使用流程是：
-1.  创建一个 `UMetaHumanRobustFeatureMatcher` 对象。
-2.  调用 `Init` 节点，传入你的 `UFootageCaptureData` 资产和一个配置好的 `UMetaHumanCalibrationDiagnosticsOptions` 对象。
-3.  循环调用 `DetectFeatures` 节点，处理你需要诊断的帧序列。
-4.  在每次检测后，立即调用 `GetFeatures` 节点来获取 `FDetectedFeatures` 结构体，其中包含了该帧的详细诊断数据（原始点、3D点、重投影点等）。
-5.  你可以基于获取的数据（例如计算 `Points3d` 和 `Points3dReprojected` 之间的差异）编写自己的误差分析逻辑。
+在蓝图中配置一个 `UMetaHumanDiagnosticsBasedSelectorSettings` 对象，为其设置一个 `FrameProvider`（如 `UMetaHumanManualFrameProvider` 来指定要分析的关键帧）。然后，在驱动 MetaHuman 校准流程的逻辑中，使用 `UMetaHumanDiagnosticsBasedSelector` 作为校准选择器。当流程调用 `OrderCalibrations` 时，该选择器会在后台运行诊断分析，根据误差得分对传入的校准数组进行排序，并返回最优的校准序列。
 
 ## C++ 用法
-
-虽然该插件主要面向编辑器用户，但其内部的误差计算和分析工具类是纯 C++ 的，可供其他模块引用。
+该插件的 C++ 用法集中于对校准误差进行底层计算和分析。
 
 ### 头文件引入
-
 ```cpp
-#include "MetaHumanCalibrationDiagnostics/Utils/MetaHumanCalibrationErrorCalculator.h"
-#include "MetaHumanCalibrationDiagnostics/Utils/MetaHumanCalibrationErrorAnalysis.h"
+#include "MetaHumanRobustFeatureMatcher.h"
+#include "MetaHumanCalibrationErrorCalculator.h"
+#include "MetaHumanCalibrationErrorAnalysis.h"
 ```
 
 ### 基本用法
-
-`FMetaHumanCalibrationErrorCalculator` 是核心的误差计算引擎，用于管理按帧、按相机、按图像区块划分的误差数据。
-
+**使用 `UMetaHumanRobustFeatureMatcher` 检测特征并获取原始误差数据。**
 ```cpp
-// 来源： MetaHumanCalibrationErrorCalculator.h 使用推断
-// 假设我们已经有了检测到的特征点数据 FDetectedFeatures 和相机信息
-TArray<FString> CameraNames = {TEXT("LeftEye"), TEXT("RightEye"), TEXT("Front")};
-TArray<FIntVector2> ImageSizes = {FIntVector2(1920, 1080), FIntVector2(1920, 1080), FIntVector2(1920, 1080)};
-FVector2D CoverageMapSize(1920, 1080); // 通常与图像尺寸相同
+// 创建并初始化匹配器
+UMetaHumanRobustFeatureMatcher* Matcher = NewObject<UMetaHumanRobustFeatureMatcher>();
+bool bSuccess = Matcher->Init(CaptureData, DiagnosticsOptions);
 
-// 1. 创建计算器
-FMetaHumanCalibrationErrorCalculator ErrorCalculator(CoverageMapSize, CameraNames, ImageSizes);
-
-// 2. （可选）为特定相机设置关注区域 (Area of Interest)
-FBox2D AreaOfInterest(FVector2D(100, 100), FVector2D(1800, 900)); // 例如排除图像边缘
-ErrorCalculator.SetAreaOfInterestForCamera(TEXT("Front"), AreaOfInterest);
-
-// 3. 更新计算器（传入一帧或多帧的检测结果）
-// FDetectedFeatures DetectedFeatures = ...; // 从某处获取
-ErrorCalculator.Update(DetectedFeatures);
-
-// 4. 查询误差
-double FrontCameraFrame5_RMS = ErrorCalculator.GetRMSErrorForFrame(TEXT("Front"), 5);
-double TotalMeanError = ErrorCalculator.GetTotalMeanError();
-```
-
-### 进阶用法
-
-结合 `FMetaHumanCalibrationErrorAnalysis` 进行多帧排序分析，这在 `UMetaHumanDiagnosticsBasedSelector` 内部被用来寻找最佳标定帧。
-
-```cpp
-// 来源： MetaHumanCalibrationErrorAnalysis.h 和 Selectors/MetaHumanDiagnosticsBasedSelector.h
-// 假设 ErrorCalculator 已经更新了多帧数据
-TArray<int32> SelectedFrames = {10, 15, 20, 25, 30}; // 一些待分析的帧
-
-// 创建错误分析器
-FMetaHumanCalibrationErrorAnalysis ErrorAnalysis(ErrorCalculator, SelectedFrames);
-
-// 运行分析，得到每个相机在各帧上的综合评分
-TMap<FString, FCameraCalibrationScore> CameraScores = ErrorAnalysis.Analyze();
-
-// 遍历结果，找到每个相机评分最高的帧
-for (const auto& Pair : CameraScores)
+if (bSuccess)
 {
-    const FString& CameraName = Pair.Key;
-    const FCameraCalibrationScore& Score = Pair.Value;
+    // 对第10帧进行特征检测
+    Matcher->DetectFeatures(10);
+    // 获取该帧的检测结果
+    FDetectedFeatures Features = Matcher->GetFeatures(10);
     
-    int32 BestFrame = INDEX_NONE;
-    double HighestTotalScore = -TNumericLimits<double>::Max();
-    
-    for (const auto& FrameScorePair : Score.TotalScorePerFrame)
-    {
-        if (FrameScorePair.Value > HighestTotalScore)
-        {
-            HighestTotalScore = FrameScorePair.Value;
-            BestFrame = FrameScorePair.Key;
-        }
-    }
-    // 现在 BestFrame 对于 CameraName 来说是评分最高的帧
-    UE_LOG(LogMetaHuman, Log, TEXT("Best frame for camera %s is %d with score %f"), *CameraName, BestFrame, HighestTotalScore);
+    // Features 现在包含了该帧所有相机的2D点、3D点及重投影点，可用于后续分析
 }
 ```
+*(来源: `UMetaHumanRobustFeatureMatcher.h`)*
+
+### 进阶用法
+**结合 `FMetaHumanCalibrationErrorCalculator` 和 `FMetaHumanCalibrationErrorAnalysis` 进行深度误差统计。**
+```cpp
+// 假设已有 Features 数据和相机信息
+FMetaHumanCalibrationErrorCalculator Calculator(ImageSize, CameraNames, ImageSizes);
+// 可选：设置感兴趣的区域
+Calculator.SetAreaOfInterestForCamera(CameraName, AreaOfInterestBox);
+// 更新计算器以包含新帧的数据
+Calculator.Update(Features);
+
+// 创建分析器，传入计算器和要分析的帧列表
+FMetaHumanCalibrationErrorAnalysis Analyzer(Calculator, FrameIndices);
+// 进行分析，获取每个相机的详细评分
+TMap<FString, FCameraCalibrationScore> Scores = Analyzer.Analyze();
+
+// 访问特定相机在特定帧的误差指标
+double FrameRMSError = Calculator.GetRMSErrorForFrame(CameraName, FrameIndex);
+FErrors BlockErrors = Calculator.GetErrorsForBlock(CameraName, BlockIndex, FrameIndex);
+```
+*(来源: `MetaHumanCalibrationErrorCalculator.h`, `MetaHumanCalibrationErrorAnalysis.h`)*
 
 ## Demo 示例
+一个最小化的 C++ 示例，展示如何初始化诊断选项并运行一次基于诊断的校准排序。
 
-一个演示如何使用蓝图 API 初始化并运行特征检测的最小 C++ 代码。
-
+**.h 文件**
 ```cpp
-// MyCalibrationDiagnostics.h
+// MetaHumanCalibrationDemo.h
 #pragma once
-
 #include "CoreMinimal.h"
-#include "Subsystems/EngineSubsystem.h"
-#include "MyCalibrationDiagnostics.generated.h"
 
+class UCameraCalibration;
 class UFootageCaptureData;
 class UMetaHumanCalibrationDiagnosticsOptions;
-class UMetaHumanRobustFeatureMatcher;
 
-UCLASS()
-class UMyCalibrationDiagnosticsSubsystem : public UEngineSubsystem
+class FMetaHumanCalibrationDemo
 {
-    GENERATED_BODY()
-
 public:
-    virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-    virtual void Deinitialize() override;
-
-    UFUNCTION(BlueprintCallable, Category = "MyDiagnostics")
-    void RunDiagnosticsOnFootage(UFootageCaptureData* InFootageData, UMetaHumanCalibrationDiagnosticsOptions* InOptions, const TArray<int32>& InFrames);
+    void RunDiagnostics(UFootageCaptureData* InCaptureData, const TArray<UCameraCalibration*>& InCalibrations);
 
 private:
-    UPROPERTY()
-    TObjectPtr<UMetaHumanRobustFeatureMatcher> FeatureMatcher;
+    TStrongObjectPtr<UMetaHumanCalibrationDiagnosticsOptions> DiagnosticsOptions;
 };
 ```
 
+**.cpp 文件**
 ```cpp
-// MyCalibrationDiagnostics.cpp
-#include "MyCalibrationDiagnostics.h"
-#include "MetaHumanCalibrationDiagnostics/UMetaHumanRobustFeatureMatcher.h"
-#include "MetaHumanCalibrationDiagnostics/MetaHumanCalibrationDiagnosticsOptions.h"
+// MetaHumanCalibrationDemo.cpp
+#include "MetaHumanCalibrationDemo.h"
+#include "MetaHumanCalibrationDiagnosticsOptions.h"
+#include "MetaHumanDiagnosticsBasedSelector.h"
 #include "FootageCaptureData.h"
+#include "CameraCalibration.h"
 
-void UMyCalibrationDiagnosticsSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+void FMetaHumanCalibrationDemo::RunDiagnostics(UFootageCaptureData* InCaptureData, const TArray<UCameraCalibration*>& InCalibrations)
 {
-    Super::Initialize(Collection);
-    FeatureMatcher = NewObject<UMetaHumanRobustFeatureMatcher>();
-}
-
-void UMyCalibrationDiagnosticsSubsystem::Deinitialize()
-{
-    FeatureMatcher = nullptr;
-    Super::Deinitialize();
-}
-
-void UMyCalibrationDiagnosticsSubsystem::RunDiagnosticsOnFootage(
-    UFootageCaptureData* InFootageData, 
-    UMetaHumanCalibrationDiagnosticsOptions* InOptions, 
-    const TArray<int32>& InFrames)
-{
-    if (!FeatureMatcher || !InFootageData || !InOptions)
+    if (!InCaptureData)
     {
         return;
     }
 
-    // 1. 初始化
-    if (!FeatureMatcher->Init(InFootageData, InOptions))
+    // 创建并配置诊断选项
+    DiagnosticsOptions = NewObject<UMetaHumanCalibrationDiagnosticsOptions>();
+    DiagnosticsOptions->RMSErrorThreshold = 2.5; // 设置一个更严格的阈值
+
+    // 创建基于诊断的选择器
+    UMetaHumanDiagnosticsBasedSelector* Selector = NewObject<UMetaHumanDiagnosticsBasedSelector>();
+
+    // 创建一个手动帧提供者，指定分析前10帧
+    UMetaHumanManualFrameProvider* FrameProvider = NewObject<UMetaHumanManualFrameProvider>();
+    for (int32 i = 0; i < 10; ++i)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to initialize Feature Matcher."));
-        return;
+        FrameProvider->SelectedFrames.Add(i);
     }
 
-    UE_LOG(LogTemp, Log, TEXT("Initialized feature matcher. Starting diagnostics for %d frames."), InFrames.Num());
+    // 为选择器配置设置（这里简化了，实际中设置类通过 GetSettingsClass 获知）
+    UMetaHumanDiagnosticsBasedSelectorSettings* Settings = NewObject<UMetaHumanDiagnosticsBasedSelectorSettings>();
+    Settings->FrameProvider = FrameProvider;
+    Selector->SetSettings(Settings); // 假设有此方法或通过其他方式关联
 
-    // 2. 遍历指定帧进行检测
-    for (int32 FrameIndex : InFrames)
-    {
-        if (FeatureMatcher->DetectFeatures(FrameIndex))
-        {
-            FDetectedFeatures Features = FeatureMatcher->GetFeatures(FrameIndex);
-            if (Features.IsValid())
-            {
-                // 这里可以进行更复杂的分析，比如计算重投影误差
-                // 为简化示例，我们只打印信息
-                UE_LOG(LogTemp, Log, TEXT("Frame %d: Detected %d 3D points, %d camera point sets."), 
-                    FrameIndex, Features.Points3d.Num(), Features.CameraPoints.Num());
-            }
-            else
-            {
-                UE_LOG(LogTemp, Warning, TEXT("Frame %d: Detection succeeded but returned invalid features."), FrameIndex);
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Frame %d: Feature detection failed."), FrameIndex);
-        }
-    }
+    // 执行排序：传入原始校准数组，得到按诊断得分排序后的新数组
+    TArray<UCameraCalibration*> OrderedCalibrations = Selector->OrderCalibrations(InCaptureData, InCalibrations);
 
-    UE_LOG(LogTemp, Log, TEXT("Diagnostics complete."));
+    // OrderedCalibrations[0] 现在是诊断认为最优的校准
+    UE_LOG(LogTemp, Log, TEXT("Best calibration found: %s"), *GetNameSafe(OrderedCalibrations[0]));
 }
 ```
 
 ## 模块依赖
-
-该插件本身依赖一个同级的核心处理插件。
-
+该插件依赖 MetaHuman 核心的校准处理模块。
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCalibrationProcessing` | 提供底层的相机标定处理逻辑，是本诊断工具的数据基础和依赖项。 |
+| `MetaHumanCalibrationProcessing` | 提供基础的相机校准数据结构和处理功能 |
 
 ## 维护状态
 
 ### 近期更新
-
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了日志和字符串格式化中的平台兼容性问题。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将过时的UE_LOG宏迁移到新的UE_LOGF宏。 |
-| 2026-04-13 | `6f8e9aeb` | [MetaHumanCalibration] Enable MetaHumanCalibrationProcessing on Mac | 启用了对Mac平台的支持。 |
-| 2026-03-30 | `91150aa0` | Finding best calibration based on diagnostics | 实现了基于诊断数据自动寻找最佳标定结果的核心功能。 |
-| 2026-03-18 | `aa1f1c34` | Diagnostics data with error analysis | 添加了错误分析数据结构和计算逻辑。 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复日志输出中64位格式说明符的正确使用问题 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏迁移到更安全的 `UE_LOGF` 宏 |
+| 2026-04-13 | `6f8e9aeb` | [MetaHumanCalibration] Enable MetaHumanCalibrationProcessing on Mac | 在 Mac 平台上启用 MetaHuman 校准处理功能 |
+| 2026-03-30 | `91150aa0` | Finding best calibration based on diagnostics | 新增基于诊断结果查找最佳校准的核心功能 |
+| 2026-03-18 | `aa1f1c34` | Diagnostics data with error analysis | 增加了误差分析的核心数据结构和计算逻辑 |
 
 ### 维护评价
-
-该插件**处于活跃维护中**。它创建于2025年9月，并在2026年3月至4月期间有多次实质性功能更新（错误分析、跨平台支持、最佳标定查找）和代码质量改进（宏迁移、格式修复）。作为`Experimental`状态且`EnabledByDefault=false`的插件，它仍在积极开发迭代中。预计随着MetaHuman Animator工具链的成熟，此诊断工具也将持续完善。当前推荐在开发或测试环境中使用，以诊断和解决MetaHuman动画工作流中的相机标定问题。
+- **创建时间**: 2025年9月，插件较新。
+- **近期更新**: 最近3个月内有**实质性功能更新**（添加最佳校准查找、误差分析）和平台支持扩展（Mac），以及代码质量改进（日志宏、格式修复）。更新频率较高。
+- **活跃度**: **活跃维护中**。Epic Games 的 MetaHuman 团队似乎正在积极开发和完善此工具。
+- **已知限制**: 作为实验性插件，API 和功能可能在未来版本中发生变化。其依赖的 `MetaHumanCalibrationProcessing` 插件也是必需的。
+- **推荐使用**: **推荐**。对于从事 MetaHuman 资产制作和校准工作的用户，这是一个非常有用的官方质量保障工具。尽管标记为实验性，但其活跃的开发状态表明它正在走向成熟。
 
 ## 相关链接
-
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetaHuman/MetaHumanCalibrationDiagnostics)
-- [官方文档]() (暂无)
+- [官方文档]()（暂无）
+- [测试用例]()（暂未在该插件目录内发现测试文件）
