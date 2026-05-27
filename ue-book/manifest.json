@@ -434,9 +434,10 @@
       "doc_path": "docs/5.7/small/DetailPoseModel/"
     },
     "DirectoryPlaceholder": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/DirectoryPlaceholder/"
+      "doc_path": "docs/5.8/small/DirectoryPlaceholder/",
+      "forced": true
     },
     "DisasterRecoveryClient": {
       "generated_in": "5.7",
@@ -455,9 +456,10 @@
       "forced": true
     },
     "DumpGPUServices": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/DumpGPUServices/"
+      "doc_path": "docs/5.8/small/DumpGPUServices/",
+      "forced": true
     },
     "EOSOverlayInputProvider": {
       "generated_in": "5.7",
@@ -515,9 +517,10 @@
       "doc_path": "docs/5.7/small/FbxAutomationTestBuilder/"
     },
     "FieldNotificationTrace": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/FieldNotificationTrace/"
+      "doc_path": "docs/5.8/small/FieldNotificationTrace/",
+      "forced": true
     },
     "FileLogging": {
       "generated_in": "5.7",
@@ -536,9 +539,10 @@
       "doc_path": "docs/5.7/small/FunctionalTestingEditor/"
     },
     "GPUReshape": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/GPUReshape/"
+      "doc_path": "docs/5.8/small/GPUReshape/",
+      "forced": true
     },
     "GameInput": {
       "generated_in": "5.7",
@@ -556,9 +560,10 @@
       "doc_path": "docs/5.7/small/GeForceNOWWrapper/"
     },
     "GitSourceControl": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/GitSourceControl/"
+      "doc_path": "docs/5.8/small/GitSourceControl/",
+      "forced": true
     },
     "GoogleARCoreServices": {
       "generated_in": "5.7",
@@ -636,14 +641,16 @@
       "doc_path": "docs/5.7/small/InputDebugging/"
     },
     "KDevelopSourceCodeAccess": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/KDevelopSourceCodeAccess/"
+      "doc_path": "docs/5.8/small/KDevelopSourceCodeAccess/",
+      "forced": true
     },
     "LauncherChunkInstaller": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/LauncherChunkInstaller/"
+      "doc_path": "docs/5.8/small/LauncherChunkInstaller/",
+      "forced": true
     },
     "LensComponent": {
       "generated_in": "5.7",
@@ -851,9 +858,10 @@
       "doc_path": "docs/5.7/small/MultiUserTakes/"
     },
     "N10XSourceCodeAccess": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/N10XSourceCodeAccess/"
+      "doc_path": "docs/5.8/small/N10XSourceCodeAccess/",
+      "forced": true
     },
     "NUTUnrealEngine": {
       "generated_in": "5.8",
@@ -947,9 +955,10 @@
       "doc_path": "docs/5.7/small/PCGExternalDataInterop/"
     },
     "PCGPythonInterop": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/PCGPythonInterop/"
+      "doc_path": "docs/5.8/small/PCGPythonInterop/",
+      "forced": true
     },
     "PackedAttributes": {
       "generated_in": "5.7",
@@ -962,9 +971,10 @@
       "doc_path": "docs/5.7/small/PerformanceCaptureCore/"
     },
     "PerformanceMonitor": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/PerformanceMonitor/"
+      "doc_path": "docs/5.8/small/PerformanceMonitor/",
+      "forced": true
     },
     "PixWinPlugin": {
       "generated_in": "5.7",
@@ -1430,9 +1440,10 @@
       "doc_path": "docs/5.7/medium/AudioMotorSim/"
     },
     "AutomatedPerfTesting": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/AutomatedPerfTesting/"
+      "doc_path": "docs/5.8/medium/AutomatedPerfTesting/",
+      "forced": true
     },
     "AvalancheDataLink": {
       "generated_in": "5.7",
@@ -1582,9 +1593,10 @@
       "doc_path": "docs/5.7/medium/LiveLinkOpenTrackIO/"
     },
     "MQTT": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/MQTT/"
+      "doc_path": "docs/5.8/medium/MQTT/",
+      "forced": true
     },
     "MassCrowd": {
       "generated_in": "5.7",
@@ -1860,9 +1872,10 @@
       "doc_path": "docs/5.7/medium/UdpMessaging/"
     },
     "VariantManagerContent": {
-      "generated_in": "5.7",
-      "size": "medium",
-      "doc_path": "docs/5.7/medium/VariantManagerContent/"
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/VariantManagerContent/",
+      "forced": true
     },
     "WaveTable": {
       "generated_in": "5.7",
@@ -1885,9 +1898,10 @@
       "doc_path": "docs/5.7/medium/XRBase/"
     },
     "AIAssistant": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/AIAssistant/"
+      "doc_path": "docs/5.8/large/AIAssistant/",
+      "forced": true
     },
     "ActorModifier": {
       "generated_in": "5.7",
@@ -1978,9 +1992,10 @@
       "doc_path": "docs/5.7/large/DatasmithContent/"
     },
     "DatasmithFBXImporter": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/DatasmithFBXImporter/"
+      "doc_path": "docs/5.8/large/DatasmithFBXImporter/",
+      "forced": true
     },
     "EaseCurveTool": {
       "generated_in": "5.7",
@@ -2038,14 +2053,16 @@
       "doc_path": "docs/5.7/large/LevelSequenceEditor/"
     },
     "LidarPointCloud": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/LidarPointCloud/"
+      "doc_path": "docs/5.8/large/LidarPointCloud/",
+      "forced": true
     },
     "MDLImporter": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/MDLImporter/"
+      "doc_path": "docs/5.8/large/MDLImporter/",
+      "forced": true
     },
     "MLAdapter": {
       "generated_in": "5.7",
@@ -2140,9 +2157,10 @@
       "doc_path": "docs/5.7/large/TraceSourceFilters/"
     },
     "VariantManager": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/VariantManager/"
+      "doc_path": "docs/5.8/large/VariantManager/",
+      "forced": true
     },
     "VirtualCamera": {
       "generated_in": "5.7",
@@ -2291,9 +2309,10 @@
       "doc_path": "docs/5.7/xlarge/DatasmithCADImporter/"
     },
     "DatasmithImporter": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/DatasmithImporter/"
+      "doc_path": "docs/5.8/xlarge/DatasmithImporter/",
+      "forced": true
     },
     "DeformerGraph": {
       "generated_in": "5.7",
@@ -2312,9 +2331,10 @@
       "forced": true
     },
     "GLTFExporter": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/GLTFExporter/"
+      "doc_path": "docs/5.8/xlarge/GLTFExporter/",
+      "forced": true
     },
     "GameplayAbilities": {
       "generated_in": "5.7",
@@ -2817,7 +2837,8 @@
     "PCGMeshPartitionInterop": {
       "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.8/medium/PCGMeshPartitionInterop/"
+      "doc_path": "docs/5.8/medium/PCGMeshPartitionInterop/",
+      "forced": true
     },
     "PlatformDLC": {
       "generated_in": "5.8",
@@ -2939,17 +2960,20 @@
     "UAFLayering": {
       "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.8/large/UAFLayering/"
+      "doc_path": "docs/5.8/large/UAFLayering/",
+      "forced": true
     },
     "UAFMass": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/UAFMass/"
+      "doc_path": "docs/5.8/small/UAFMass/",
+      "forced": true
     },
     "UAFSharedAssets": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/UAFSharedAssets/"
+      "doc_path": "docs/5.8/small/UAFSharedAssets/",
+      "forced": true
     },
     "UAFTestSuites": {
       "generated_in": "5.8",
@@ -2983,8 +3007,9 @@
     },
     "MediaProfile": {
       "generated_in": "5.8",
-      "size": "small",
-      "doc_path": "docs/5.8/small/MediaProfile/"
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/MediaProfile/",
+      "forced": true
     },
     "NVDECElectra": {
       "generated_in": "5.8",
@@ -3049,12 +3074,14 @@
     "AutomatedPerfTestTools": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/AutomatedPerfTestTools/"
+      "doc_path": "docs/5.8/small/AutomatedPerfTestTools/",
+      "forced": true
     },
     "RPCBase": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/RPCBase/"
+      "doc_path": "docs/5.8/small/RPCBase/",
+      "forced": true
     },
     "RenderTraceInsights": {
       "generated_in": "5.8",
@@ -3303,34 +3330,40 @@
       "doc_path": "docs/5.7/small/EvaluationNotifies/"
     },
     "FastGeoStreaming": {
-      "generated_in": "5.7",
-      "size": "medium",
-      "doc_path": "docs/5.7/medium/FastGeoStreaming/"
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/FastGeoStreaming/",
+      "forced": true
     },
     "FieldSystemPlugin": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/FieldSystemPlugin/"
+      "doc_path": "docs/5.8/small/FieldSystemPlugin/",
+      "forced": true
     },
     "FloatingProperties": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/FloatingProperties/"
+      "doc_path": "docs/5.8/medium/FloatingProperties/",
+      "forced": true
     },
     "Fracture": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/Fracture/"
+      "doc_path": "docs/5.8/small/Fracture/",
+      "forced": true
     },
     "FullBodyIK": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/FullBodyIK/"
+      "doc_path": "docs/5.8/medium/FullBodyIK/",
+      "forced": true
     },
     "GPULightmass": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/GPULightmass/"
+      "doc_path": "docs/5.8/medium/GPULightmass/",
+      "forced": true
     },
     "GameInputWindows": {
       "generated_in": "5.7",
@@ -3338,9 +3371,10 @@
       "doc_path": "docs/5.7/small/GameInputWindows/"
     },
     "GameplayBehaviors": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/GameplayBehaviors/"
+      "doc_path": "docs/5.8/medium/GameplayBehaviors/",
+      "forced": true
     },
     "GameplayGraph": {
       "generated_in": "5.7",
@@ -3687,19 +3721,22 @@
       "doc_path": "docs/5.7/small/PCGWaterInterop/"
     },
     "PSDImporter": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/PSDImporter/"
+      "doc_path": "docs/5.8/xlarge/PSDImporter/",
+      "forced": true
     },
     "PSDImporterMaterialDesignerBridge": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/PSDImporterMaterialDesignerBridge/"
+      "doc_path": "docs/5.8/small/PSDImporterMaterialDesignerBridge/",
+      "forced": true
     },
     "PanoramicCapture": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/PanoramicCapture/"
+      "doc_path": "docs/5.8/small/PanoramicCapture/",
+      "forced": true
     },
     "PhysicsControl": {
       "generated_in": "5.7",
@@ -3707,9 +3744,10 @@
       "doc_path": "docs/5.7/large/PhysicsControl/"
     },
     "PixelStreamingPlayer": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/PixelStreamingPlayer/"
+      "doc_path": "docs/5.8/small/PixelStreamingPlayer/",
+      "forced": true
     },
     "PlainProps": {
       "generated_in": "5.7",
@@ -3963,19 +4001,22 @@
       "doc_path": "docs/5.7/small/UAFControlRig/"
     },
     "UAFMirroring": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/UAFMirroring/"
+      "doc_path": "docs/5.8/small/UAFMirroring/",
+      "forced": true
     },
     "UAFPoseSearch": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/UAFPoseSearch/"
+      "doc_path": "docs/5.8/medium/UAFPoseSearch/",
+      "forced": true
     },
     "UAFStateTree": {
-      "generated_in": "5.7",
-      "size": "medium",
-      "doc_path": "docs/5.7/medium/UAFStateTree/"
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/UAFStateTree/",
+      "forced": true
     },
     "UAFTests": {
       "generated_in": "5.7",
@@ -4340,34 +4381,40 @@
       "doc_path": "docs/5.7/medium/MediaCompositing/"
     },
     "MediaFrameworkUtilities": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/MediaFrameworkUtilities/"
+      "doc_path": "docs/5.8/large/MediaFrameworkUtilities/",
+      "forced": true
     },
     "MediaIOFramework": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/MediaIOFramework/"
+      "doc_path": "docs/5.8/large/MediaIOFramework/",
+      "forced": true
     },
     "MediaMovieStreamer": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/MediaMovieStreamer/"
+      "doc_path": "docs/5.8/small/MediaMovieStreamer/",
+      "forced": true
     },
     "MediaPlate": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/MediaPlate/"
+      "doc_path": "docs/5.8/medium/MediaPlate/",
+      "forced": true
     },
     "MediaPlayerEditor": {
-      "generated_in": "5.7",
-      "size": "large",
-      "doc_path": "docs/5.7/large/MediaPlayerEditor/"
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/MediaPlayerEditor/",
+      "forced": true
     },
     "MediaViewer": {
-      "generated_in": "5.7",
-      "size": "large",
-      "doc_path": "docs/5.7/large/MediaViewer/"
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/MediaViewer/",
+      "forced": true
     },
     "MfMedia": {
       "generated_in": "5.7",
@@ -4427,12 +4474,14 @@
     "PCGPrimitives": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/PCGPrimitives/"
+      "doc_path": "docs/5.8/small/PCGPrimitives/",
+      "forced": true
     },
     "PCGPrimitives_MeshPartitionInterop": {
       "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.8/small/PCGPrimitives_MeshPartitionInterop/"
+      "doc_path": "docs/5.8/small/PCGPrimitives_MeshPartitionInterop/",
+      "forced": true
     },
     "ChaosClothAssetToolset": {
       "generated_in": "5.8",

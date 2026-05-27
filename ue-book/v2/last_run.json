@@ -547,11 +547,479 @@
       "duration_seconds": 0,
       "doc_path": "",
       "size": "small"
+    },
+    {
+      "name": "DirectoryPlaceholder",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 99.57088804244995,
+      "doc_path": "docs/5.8/small/DirectoryPlaceholder",
+      "size": "small"
+    },
+    {
+      "name": "FastGeoStreaming",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 245.77057695388794,
+      "doc_path": "docs/5.8/large/FastGeoStreaming",
+      "size": "large"
+    },
+    {
+      "name": "DatasmithFBXImporter",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 354.4213881492615,
+      "doc_path": "docs/5.8/large/DatasmithFBXImporter",
+      "size": "large"
+    },
+    {
+      "name": "PCGMeshPartitionInterop",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 290.2305676937103,
+      "doc_path": "docs/5.8/medium/PCGMeshPartitionInterop",
+      "size": "medium"
+    },
+    {
+      "name": "PCGPythonInterop",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 107.52380466461182,
+      "doc_path": "docs/5.8/small/PCGPythonInterop",
+      "size": "small"
+    },
+    {
+      "name": "DumpGPUServices",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 88.91878032684326,
+      "doc_path": "docs/5.8/small/DumpGPUServices",
+      "size": "small"
+    },
+    {
+      "name": "MediaFrameworkUtilities",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 263.64065074920654,
+      "doc_path": "docs/5.8/large/MediaFrameworkUtilities",
+      "size": "large"
+    },
+    {
+      "name": "UAFLayering",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 447.23376965522766,
+      "doc_path": "docs/5.8/large/UAFLayering",
+      "size": "large"
+    },
+    {
+      "name": "FieldSystemPlugin",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 83.48713946342468,
+      "doc_path": "docs/5.8/small/FieldSystemPlugin",
+      "size": "small"
+    },
+    {
+      "name": "PCGPrimitives",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 53.50360369682312,
+      "doc_path": "docs/5.8/small/PCGPrimitives",
+      "size": "small"
+    },
+    {
+      "name": "UAFMass",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 483.67596912384033,
+      "doc_path": "docs/5.8/small/UAFMass",
+      "size": "small"
+    },
+    {
+      "name": "MediaIOFramework",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 468.25198554992676,
+      "doc_path": "docs/5.8/large/MediaIOFramework",
+      "size": "large"
+    },
+    {
+      "name": "AutomatedPerfTestTools",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 89.9782874584198,
+      "doc_path": "docs/5.8/small/AutomatedPerfTestTools",
+      "size": "small"
+    },
+    {
+      "name": "GLTFExporter",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 179.31964135169983,
+      "doc_path": "docs/5.8/xlarge/GLTFExporter",
+      "size": "xlarge"
+    },
+    {
+      "name": "FieldNotificationTrace",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 304.4577078819275,
+      "doc_path": "docs/5.8/small/FieldNotificationTrace",
+      "size": "small"
+    },
+    {
+      "name": "FloatingProperties",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 96.8627016544342,
+      "doc_path": "docs/5.8/medium/FloatingProperties",
+      "size": "medium"
+    },
+    {
+      "name": "PCGPrimitives_MeshPartitionInterop",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 93.16616463661194,
+      "doc_path": "docs/5.8/small/PCGPrimitives_MeshPartitionInterop",
+      "size": "small"
+    },
+    {
+      "name": "DatasmithImporter",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 1042.1472992897034,
+      "doc_path": "docs/5.8/xlarge/DatasmithImporter",
+      "size": "xlarge"
+    },
+    {
+      "name": "MediaMovieStreamer",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 99.12249898910522,
+      "doc_path": "docs/5.8/small/MediaMovieStreamer",
+      "size": "small"
+    },
+    {
+      "name": "AutomatedPerfTesting",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 127.05409216880798,
+      "doc_path": "docs/5.8/medium/AutomatedPerfTesting",
+      "size": "medium"
+    },
+    {
+      "name": "GPUReshape",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 75.73133158683777,
+      "doc_path": "docs/5.8/small/GPUReshape",
+      "size": "small"
+    },
+    {
+      "name": "UAFMirroring",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 288.19390654563904,
+      "doc_path": "docs/5.8/small/UAFMirroring",
+      "size": "small"
+    },
+    {
+      "name": "Fracture",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 111.26313543319702,
+      "doc_path": "docs/5.8/small/Fracture",
+      "size": "small"
+    },
+    {
+      "name": "LidarPointCloud",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 331.54816126823425,
+      "doc_path": "docs/5.8/large/LidarPointCloud",
+      "size": "large"
+    },
+    {
+      "name": "UAFPoseSearch",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 321.9021384716034,
+      "doc_path": "docs/5.8/medium/UAFPoseSearch",
+      "size": "medium"
+    },
+    {
+      "name": "PerformanceMonitor",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 76.18508887290955,
+      "doc_path": "docs/5.8/small/PerformanceMonitor",
+      "size": "small"
+    },
+    {
+      "name": "PSDImporter",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 459.4951379299164,
+      "doc_path": "docs/5.8/xlarge/PSDImporter",
+      "size": "xlarge"
+    },
+    {
+      "name": "MediaPlate",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 230.94888925552368,
+      "doc_path": "docs/5.8/medium/MediaPlate",
+      "size": "medium"
+    },
+    {
+      "name": "GitSourceControl",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 119.68254327774048,
+      "doc_path": "docs/5.8/small/GitSourceControl",
+      "size": "small"
+    },
+    {
+      "name": "MDLImporter",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 120.15012788772583,
+      "doc_path": "docs/5.8/large/MDLImporter",
+      "size": "large"
+    },
+    {
+      "name": "UAFSharedAssets",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 42.54201054573059,
+      "doc_path": "docs/5.8/small/UAFSharedAssets",
+      "size": "small"
+    },
+    {
+      "name": "PSDImporterMaterialDesignerBridge",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 81.0915117263794,
+      "doc_path": "docs/5.8/small/PSDImporterMaterialDesignerBridge",
+      "size": "small"
+    },
+    {
+      "name": "LauncherChunkInstaller",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 63.898775815963745,
+      "doc_path": "docs/5.8/small/LauncherChunkInstaller",
+      "size": "small"
+    },
+    {
+      "name": "MediaPlayerEditor",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 100.52762174606323,
+      "doc_path": "docs/5.8/xlarge/MediaPlayerEditor",
+      "size": "xlarge"
+    },
+    {
+      "name": "FullBodyIK",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 292.4597125053406,
+      "doc_path": "docs/5.8/medium/FullBodyIK",
+      "size": "medium"
+    },
+    {
+      "name": "KDevelopSourceCodeAccess",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 82.33174920082092,
+      "doc_path": "docs/5.8/small/KDevelopSourceCodeAccess",
+      "size": "small"
+    },
+    {
+      "name": "VariantManager",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 123.0395929813385,
+      "doc_path": "docs/5.8/large/VariantManager",
+      "size": "large"
+    },
+    {
+      "name": "PanoramicCapture",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 85.99272894859314,
+      "doc_path": "docs/5.8/small/PanoramicCapture",
+      "size": "small"
+    },
+    {
+      "name": "GPULightmass",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 200.92590951919556,
+      "doc_path": "docs/5.8/medium/GPULightmass",
+      "size": "medium"
+    },
+    {
+      "name": "MediaProfile",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 258.71128368377686,
+      "doc_path": "docs/5.8/medium/MediaProfile",
+      "size": "medium"
+    },
+    {
+      "name": "N10XSourceCodeAccess",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 62.34675073623657,
+      "doc_path": "docs/5.8/small/N10XSourceCodeAccess",
+      "size": "small"
+    },
+    {
+      "name": "UAFStateTree",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 368.26344442367554,
+      "doc_path": "docs/5.8/large/UAFStateTree",
+      "size": "large"
+    },
+    {
+      "name": "MQTT",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 267.13903427124023,
+      "doc_path": "docs/5.8/medium/MQTT",
+      "size": "medium"
+    },
+    {
+      "name": "VariantManagerContent",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 215.6133327484131,
+      "doc_path": "docs/5.8/large/VariantManagerContent",
+      "size": "large"
+    },
+    {
+      "name": "PixelStreamingPlayer",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 230.89667749404907,
+      "doc_path": "docs/5.8/small/PixelStreamingPlayer",
+      "size": "small"
+    },
+    {
+      "name": "MediaViewer",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 124.30711007118225,
+      "doc_path": "docs/5.8/xlarge/MediaViewer",
+      "size": "xlarge"
+    },
+    {
+      "name": "GameplayBehaviors",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 384.37124943733215,
+      "doc_path": "docs/5.8/medium/GameplayBehaviors",
+      "size": "medium"
+    },
+    {
+      "name": "RPCBase",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 79.61522459983826,
+      "doc_path": "docs/5.8/small/RPCBase",
+      "size": "small"
+    },
+    {
+      "name": "AIAssistant",
+      "success": true,
+      "skipped": false,
+      "error": null,
+      "duration_seconds": 88.27148723602295,
+      "doc_path": "docs/5.8/large/AIAssistant",
+      "size": "large"
+    },
+    {
+      "name": "GameplayGraph",
+      "success": false,
+      "skipped": true,
+      "error": "timebox: run time limit of 3600s reached",
+      "duration_seconds": 0,
+      "doc_path": "",
+      "size": "small"
+    },
+    {
+      "name": "PlainProps",
+      "success": false,
+      "skipped": true,
+      "error": "timebox: run time limit of 3600s reached",
+      "duration_seconds": 0,
+      "doc_path": "",
+      "size": "small"
+    },
+    {
+      "name": "UAFWarping",
+      "success": false,
+      "skipped": true,
+      "error": "timebox: run time limit of 3600s reached",
+      "duration_seconds": 0,
+      "doc_path": "",
+      "size": "small"
     }
   ],
   "last_result": {
-    "success": 57,
+    "success": 106,
     "skipped": 3,
-    "elapsed": 4106.320561885834
+    "elapsed": 3894.1960496902466
   }
 }

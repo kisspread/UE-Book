@@ -4,120 +4,74 @@
 
 | 属性 | 值 |
 |---|---|
+| 中文名 | UAF 共享资产 |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（UAF默认资产） |
+| 包含内容 | ✅ 有（UAF 浏览器配置资产、标签资产浏览器配置） |
 | 模块 | 无（纯内容插件） |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-13 |
 | 年龄标签 | 🆕（约 0 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/UAF/UAFSharedAssets) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/UAF/UAFSharedAssets) | |
 
 ## 用途
 
-UAFSharedAssets 是 Unreal Animation Framework (UAF) 生态系统中的一个**纯内容插件**。它不包含任何代码模块，其核心作用是为 UAF 框架下的其他插件（如 `UAFEditor`、`UAFGameplay` 等）提供**共享的默认资产**。
+UAFSharedAssets 是一个**纯内容插件**，没有任何 C++ 模块。它的存在是为了解决 UAF（Unreal Animation Framework）生态中**跨插件资产共享**的问题。
 
-这个插件的存在是为了解决资产复用和一致性问题。当多个 UAF 相关插件都需要使用同一套基础动画蓝图、动画蒙太奇或数据资产时，将这些资产集中存放在 `UAFSharedAssets` 中，可以避免重复，确保所有插件引用的是同一份权威资源，并简化资产管理和更新流程。
+在 UAF 架构中，不同的功能模块被拆分为独立的插件（如 ST/Pose Search、UAF Browser 等），但有些资产需要被多个插件共同使用。UAFSharedAssets 就是这些**跨插件共享资产**的统一存放位置，避免将资产放在任何一个功能插件中造成循环依赖。
+
+具体来说，该插件提供的内容包括：
+- **UAF Browser 的资产配置**：将 ST（State Tree）和 Pose Search 相关的资产注册到 UAF Browser 中
+- **Tagged Asset Browser 的扩展配置**：为标签资产浏览器提供合并配置支持，允许不同扩展配置中同名的 Section 进行合并显示
 
 ## 使用场景
 
--   **UAF 框架开发**：当你正在开发或扩展 UAF 框架本身，并需要为多个子插件提供一套标准的、可复用的动画资产（例如默认的角色动画蓝图、标准的动画通知类）时。
--   **快速原型开发**：在基于 UAF 框架进行游戏原型开发时，可以直接使用此插件提供的默认资产，快速搭建动画系统，而无需从头创建所有基础资源。
--   **资产一致性维护**：确保项目中所有依赖 UAF 的模块都使用相同版本的默认动画资产，避免因资产版本不一致导致的动画表现差异或错误。
+- 你需要在 UAF Browser 中浏览和管理 Pose Search 或 State Tree 相关资产 → 安装此插件即可获得默认配置
+- 你开发了一个 UAF 扩展插件，需要向 Tagged Asset Browser 注册新的资产分类，且希望与现有 Section 合并 → 通过 `AppendAfterFilterName` 和 `bMergeExtensionsPerSection` 配置扩展行为
+- 多个 UAF 子插件需要共享同一套默认资产配置 → 将共享资产放在此插件中统一管理
 
 ## 蓝图用法
 
-此插件为纯内容插件，不包含任何可调用的蓝图节点或函数。其价值在于提供的资产（如 `AnimationBlueprint`、`AnimMontage`、`DataAsset` 等）。
-
-### 核心资产
-
-| 资产类型 | 说明 | 典型用途 |
-|---|---|---|
-| `Animation Blueprint` | UAF 框架默认的动画蓝图 | 作为角色动画状态机的模板或基础 |
-| `Anim Montage` | 预设的动画蒙太奇 | 提供标准的攻击、受击、交互等动画片段 |
-| `Data Asset` | 配置数据资产 | 存储默认的动画参数、状态配置等 |
-
-### 使用示例（资产引用）
-
-在蓝图中，你无法直接“调用”此插件，但可以引用它提供的资产：
-1.  在内容浏览器中，导航至 `Plugins/UAFSharedAssets Content/` 目录。
-2.  找到你需要的资产（例如 `ABP_DefaultCharacter`）。
-3.  在另一个蓝图（如你的角色蓝图）的动画图表中，将 `Anim Blueprint` 节点的类设置为 `ABP_DefaultCharacter`。
-4.  或者，在 `Anim Instance` 组件中直接指定该动画蓝图类。
+无。此插件为纯内容插件，不包含任何 BlueprintCallable 函数或蓝图类。
 
 ## C++ 用法
 
-此插件为纯内容插件，不提供任何 C++ API。在 C++ 中，你可以通过路径引用其提供的资产。
-
-### 头文件引入
-
-无需引入特定头文件，但需要知道资产路径。
-
-### 基本用法
-
-在 C++ 中加载此插件提供的资产：
-```cpp
-// 加载一个动画蓝图资产
-UAnimBlueprint* DefaultAnimBP = LoadObject<UAnimBlueprint>(
-    nullptr,
-    TEXT("/UAFSharedAssets/Characters/ABP_DefaultCharacter")
-);
-
-// 加载一个数据资产
-UMyDataAsset* DefaultData = LoadObject<UMyDataAsset>(
-    nullptr,
-    TEXT("/UAFSharedAssets/Data/DA_DefaultConfig")
-);
-```
-
-### 进阶用法
-
-在构造函数或初始化函数中预加载资产，避免运行时卡顿：
-```cpp
-// 在头文件中声明
-UPROPERTY()
-TObjectPtr<UAnimBlueprint> CachedDefaultAnimBP;
-
-// 在 BeginPlay 或构造函数中
-if (!CachedDefaultAnimBP)
-{
-    CachedDefaultAnimBP = LoadObject<UAnimBlueprint>(
-        this,
-        TEXT("/UAFSharedAssets/Characters/ABP_DefaultCharacter")
-    );
-}
-```
+无。此插件不包含任何 C++ 模块，无需引入头文件或编写代码。
 
 ## Demo 示例
 
-由于是纯内容插件，没有可编译的代码示例。一个典型的使用流程是：
-1.  启用 `UAFSharedAssets` 插件。
-2.  在你的项目中创建一个新的动画蓝图，父类选择 `UAFSharedAssets` 提供的 `ABP_DefaultCharacter`。
-3.  在你的角色蓝图中，将 `Mesh` 组件的 `Anim Class` 设置为这个新创建的动画蓝图。
-4.  运行游戏，角色将使用 UAF 框架的默认动画逻辑。
+不适用。此插件为纯内容资产插件，无需编写代码。安装插件后，其提供的资产配置会自动被 UAF Browser 和 Tagged Asset Browser 识别并加载。
 
 ## 模块依赖
 
-此插件本身没有代码模块，但它依赖其他插件才能正常工作。
+无特殊依赖。此插件是纯内容插件，不包含代码模块。
+
+但插件层面依赖以下插件（在 .uplugin 的 Plugins 字段中声明）：
 
 | 插件 | 用途 |
 |---|---|
-| `Workspace` | UAF 框架的基础工作区插件，提供核心动画编辑功能和资产类型定义。`UAFSharedAssets` 中的资产很可能依赖于 `Workspace` 插件定义的类和接口。 |
+| `Workspace` | Tagged Asset Browser 所在的插件，提供资产浏览器基础框架 |
 
 ## 维护状态
 
 ### 近期更新
 
--   `5078d880` 2026-04-13 — Add UAFSharedAssets plugin for content we want to provide that references UAF assets defined in separate plugins. (添加 UAFSharedAssets 插件，用于提供我们希望提供的、引用了在其他插件中定义的 UAF 资产的内容。)
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-04-13 | `5078d880` | Add UAFSharedAssets plugin for content we want to provide that references UAF assets defined in separate, independent, plugins. Use new plugin to add ST / Pose search to UAF Browser asset config. Update Tagged Asset Browser to support merging sections of the same name across extension configs. | 创建插件，添加 ST/Pose Search 到 UAF Browser 配置，支持同名 Section 合并显示 |
 
 ### 维护评价
 
--   **创建时间**：该插件于 2026 年 4 月 13 日创建，是一个非常新的插件。
--   **更新频率**：目前仅有一次初始提交，尚无后续更新记录。
--   **维护状态**：**新创建**。作为 UAF 框架的一部分，其维护状态将跟随整个 UAF 框架的开发进度。
--   **已知限制**：作为实验性插件 (`IsExperimentalVersion: true`)，其 API 和资产结构可能在未来版本中发生重大变化。
--   **推荐使用**：如果你正在深度使用或开发 UAF 框架，此插件是获取标准默认资产的推荐方式。对于普通项目，除非明确需要 UAF 的默认资产，否则无需启用。鉴于其“实验性”标签，在生产环境中使用需谨慎，并做好应对未来变更的准备。
+- **创建时间**：2026-04-13，极为新建的插件
+- **最近更新**：仅有一次初始提交，尚无后续更新
+- **实验性标记**：`IsExperimentalVersion=true`，位于 `Experimental/UAF/` 路径下，明确处于实验阶段
+- **默认启用**：`Installed=false`，需要手动启用
+- **源码规模**：纯内容插件，0 个代码文件，维护成本低
+- **依赖链**：属于 UAF 生态系统的一部分，其生命周期取决于 UAF 框架的整体成熟度
+
+**评价**：这是一个刚创建的实验性纯内容插件，目前仅包含 UAF 生态的共享资产配置。由于 UAF 本身仍处于实验阶段，此插件的稳定性取决于上游框架的演进。建议仅在开发 UAF 相关功能时使用，生产环境需谨慎。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.7/Engine/Plugins/Experimental/UAF/UAFSharedAssets)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/UAF/UAFSharedAssets)
+- 官方文档：无

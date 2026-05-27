@@ -4,88 +4,89 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | PCG基础图元库 |
+| 中文名 | PCG 图元库 |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、示例关卡、材质等） |
+| 包含内容 | ✅ 有（PCG 图元蓝图资产与世界构建示例） |
 | 模块 | 无（纯内容插件） |
-| 实验性 | ⚦ 是 |
+| 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-04-27 |
 | 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PCGPrimitives) | |
 
 ## 用途
 
-该插件是一个**内容集合**，旨在为使用程序化内容生成（PCG）框架进行世界构建的开发者提供一套基础的几何形状（图元）和实用示例。它不是一个功能插件，而是一个资源库，用于加速PCG工作流的原型设计和学习过程。
+这是一个**纯内容插件**，为 UE5 的 PCG（Procedural Content Generation，程序化内容生成）框架提供预置的图元（Primitives）和世界构建示例资产。
+
+插件本身不包含任何 C++ 代码，而是打包了一系列可直接使用的 PCG 图表资产、生成器预设和示例配置，帮助开发者快速上手 PCG 系统进行程序化世界构建。它依赖 PCG 核心生态系统中的多个模块（PCG、PCGGeometryScriptInterop、PCGBiomeCore、PCGBiomeSample、PCGExternalDataInterop），说明其提供的资产覆盖了几何脚本互操作、生物群落生成和外部数据导入等多种 PCG 工作流。
+
+**核心价值**：避免从零开始搭建 PCG 图表，直接使用 Epic 官方提供的图元库作为起点或参考。
 
 ## 使用场景
 
-- 当你使用 PCG 框架进行场景布局时，需要快速使用基础几何形状（如立方体、圆柱体、球体）作为生成点的载体或视觉参考。
-- 当你在学习 PCG 时，需要查看官方如何设置图表、应用滤镜、处理数据以及与其它PCG插件（如Biome系统）协作的完整示例。
-- 当你需要在PCG图表中生成简单的代理几何体进行碰撞检测或视觉填充，而无需依赖复杂网格体时。
+- 你正在使用 PCG 框架进行程序化世界构建，需要预置的图元节点和示例作为参考 → 启用此插件
+- 你需要快速搭建生物群落（Biome）相关的 PCG 图表 → 此插件提供了与 PCGBiomeCore/PCGBiomeSample 配合使用的示例资产
+- 你想学习 PCG 系统的最佳实践 → 此插件的示例资产可作为学习模板
+- 你需要将外部数据源接入 PCG 流程 → 依赖 PCGExternalDataInterop，说明包含相关示例
 
 ## 蓝图用法
 
-此插件主要提供资产，因此其“蓝图用法”主要体现在对这些资产的引用和PCG图表中的节点使用上。
+此插件为纯内容插件，不包含 C++ 模块，因此没有自定义蓝图节点。使用方式为直接在 PCG 图表编辑器中引用此插件提供的图元资产和示例。
 
 ### 核心资产
 
-所有资产位于 `Content/PCGPrimitives` 目录下。
+插件启用后，其内容资产将出现在 Content Browser 中，通常位于 `Plugins/PCG Primitives/` 目录下。可在 PCG 图表中通过以下方式使用：
 
-| 资产类型 | 路径示例 | 说明 |
-|---|---|---|
-| PCG Graph | `Content/PCGPrimitives/Graphs/...` | 包含使用基础图元的PCG图表示例。 |
-| Static Mesh | `Content/PCGPrimitives/Meshes/...` | 基础几何体网格，如立方体、球体。 |
-| Material | `Content/PCGPrimitives/Materials/...` | 配套的材质，常用于生成可视化标记。 |
-| Blueprient | `Content/PCGPrimitives/Blueprints/...` | 可能包含特定于示例的蓝图或数据资产。 |
-
-### 使用示例（蓝图描述）
-
-1.  **在PCG图表中使用**：打开一个示例PCG图表，你会看到 `Surface Sampler`、`Density Filter` 等节点直接引用了插件提供的基础网格体作为“Surface Mesh”或“Instanced Mesh”。
-2.  **内容浏览器访问**：在内容浏览器中导航到 `Plugins/PCG Primitives Content`，即可找到所有提供的资产。你可以直接将其中的网格体或材质复制到你的项目中使用。
+1. **在 PCG 图表中添加图元节点**：右键 → 搜索插件提供的生成器或过滤器
+2. **引用示例配置**：直接拖拽示例 PCG 图表到场景中
+3. **修改示例参数**：根据项目需求调整 PCG 节点的参数和属性
 
 ## C++ 用法
 
-此插件不包含任何C++模块，因此**不需要**在C++代码中引入任何头文件或链接任何模块。所有功能通过蓝图资产和PCG图表实现。
+不适用。此插件为纯内容插件，无 C++ 模块和源码文件。
 
 ## Demo 示例
 
-该插件本身即为一个大型的Demo示例库。一个典型的用法步骤如下：
+不适用。此插件本身就是示例库，所有示例资产随插件一同提供。启用插件后即可在 Content Browser 中查看和使用。
 
-1.  启用插件。
-2.  在内容浏览器中找到 `Content/PCGPrimitives/Graphs`。
-3.  打开一个示例图表（例如，一个在地形上撒布基础几何体的图表）。
-4.  运行该PCG图表，观察生成的效果。
-5.  研究图表中的节点设置和数据流动，以此为基础创建你自己的PCG图表。
+**推荐工作流**：
+
+1. 在 Plugins 面板中启用 `PCG Primitives`
+2. 在 Content Browser 中导航到插件内容目录
+3. 浏览提供的 PCG 图表示例，了解图元的使用方式
+4. 复制示例到项目 Content 目录中进行修改和扩展
 
 ## 模块依赖
 
-此插件本身无代码模块，但其正常运行依赖于一系列PCG生态系统插件。这些插件通常也需要启用。
-
-| 插件 | 用途 |
+| 模块 | 用途 |
 |---|---|
-| `PCG` | 核心程序化内容生成框架，提供PCG图表、节点等基础功能。 |
-| `PCGGeometryScriptInterop` | 提供PCG与几何脚本的交互能力，用于处理网格体数据。 |
-| `PCGBiomeCore` | 生物群系核心系统，用于定义环境规则。 |
-| `PCGBiomeSample` | 生物群系示例，展示如何使用BiomeCore。 |
-| `PCGExternalDataInterop` | 提供PCG与外部数据源（如JSON， CSV）的交互能力。 |
+| `PCG` | PCG 核心框架，程序化内容生成的基础系统 |
+| `PCGGeometryScriptInterop` | PCG 与 Geometry Script 的互操作，支持程序化网格处理 |
+| `PCGBiomeCore` | 生物群落生成核心模块 |
+| `PCGBiomeSample` | 生物群落示例资产 |
+| `PCGExternalDataInterop` | PCG 外部数据源互操作支持 |
 
 ## 维护状态
 
 ### 近期更新
 
-```
-- 2026-05-12 d2353f53 PCG Primitives plugins: small friendly name tweak to match other PCG data plugins.
-- 2026-04-27 8f1b41e9 PCG Primitives: moved the PCG_Primitives plugin into public facing plugins/experimental folder.
-```
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-05-12 | `d2353f53` | PCG Primitives plugins: small friendly name tweak to match other PCG data plugins. | 调整插件显示名称以与其他 PCG 数据插件保持一致 |
+| 2026-04-27 | `8f1b41e9` | PCG Primitives: moved the PCG_Primitives plugin into public facing plugins/experimental folder. | 将 PCG 图元插件从内部目录迁移至公开的 experimental 文件夹 |
 
 ### 维护评价
 
-**实验性内容插件**。该插件于2026年4月底创建，非常新。目前仅有两次提交，一次为创建，一次为小的名称调整，表明它仍处于**实验性早期阶段**。作为内容库，其更新频率取决于PCG框架核心功能的变化和示例的扩展。
-
-**建议**：适合用于学习PCG框架和快速原型验证。由于是实验性插件，不建议在正式发布的项目中直接深度依赖，其资产结构或内容可能在未来版本中发生变化。推荐用于开发和学习阶段。
+- **创建时间**：2026-04-27，是一个非常新的插件
+- **当前状态**：实验性（IsExperimentalVersion = true），默认未安装（Installed = false）
+- **最近活动**：2026-05-12 有命名规范调整，表明仍在积极维护中
+- **已知限制**：
+  - 标记为实验性，API 和内容可能随版本变化
+  - 默认未安装，需手动启用
+  - 强依赖多个 PCG 子插件，缺少任何一个可能导致功能不完整
+- **推荐度**：✅ 推荐使用。作为 Epic 官方提供的 PCG 示例库，是学习和快速原型开发的优秀资源。但需注意实验性标签，生产环境使用需谨慎评估。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PCGPrimitives)
-- [测试用例]（该插件为纯内容插件，其“测试”即为插件内提供的示例关卡和图表资产。）
+- [PCG 核心插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/PCG)
