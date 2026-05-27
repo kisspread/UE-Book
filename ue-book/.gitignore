@@ -5,9 +5,9 @@ __pycache__/
 pipeline/config_local.py
 v2/config_local.py
 
-# Runtime artifacts
+# Runtime artifacts (v2/last_run.json is now committed as pipeline state)
 pipeline/last_run.json
-v2/last_run.json
+v2/last_run.json.tmp
 scripts/timing.log
 
 # Scanner intermediate files
