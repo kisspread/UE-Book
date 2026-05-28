@@ -4,23 +4,23 @@ import path from 'node:path'
 import type { Plugin } from 'vite'
 
 // ── Vite plugin: escape C++ template syntax to avoid Vue SFC parsing ──
-function cppEscapePlugin(): Plugin {
-  return {
-    name: 'cpp-escape',
-    enforce: 'pre',
-    transform(code, id) {
-      if (!id.endsWith('.md')) return null
-      if (!code.includes('<')) return null
-      code = code.replace(/<([A-Za-z_][\w:*&,\s<>]*?)>/g, (match, inner) => {
-        if (/^\/?(?:div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th|thead|tbody|br|hr|code|pre|strong|em|b|i|u|s|script|style|template|slot|component|section|header|footer|nav|main|aside|article|form|input|button|select|option|label|textarea|link|meta|head|body|html|iframe|svg|path|circle|rect|g|video|audio|source|canvas|v-[a-z-]+)[\s>/]/i.test(match)) {
-          return match
-        }
-        return '&lt;' + inner + '&gt;'
-      })
-      return code
-    }
-  }
-}
+// function cppEscapePlugin(): Plugin {
+//   return {
+//     name: 'cpp-escape',
+//     enforce: 'pre',
+//     transform(code, id) {
+//       if (!id.endsWith('.md')) return null
+//       if (!code.includes('<')) return null
+//       code = code.replace(/<([A-Za-z_][\w:*&,\s<>]*?)>/g, (match, inner) => {
+//         if (/^<\/?(?:div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th|thead|tbody|br|hr|code|pre|strong|em|b|i|u|s|script|style|template|slot|component|section|header|footer|nav|main|aside|article|form|input|button|select|option|label|textarea|link|meta|head|body|html|iframe|svg|path|circle|rect|g|video|audio|source|canvas|v-[a-z-]+)[\s>/]/i.test(match)) {
+//           return match
+//         }
+//         return '&lt;' + inner + '&gt;'
+//       })
+//       return code
+//     }
+//   }
+// }
 
 // ----  读取脚本生成的分批排除黑名单 ----
 let srcExclude: string[] = []
@@ -139,7 +139,7 @@ export default defineConfig({
 
   vite: {
     // 之前解决 C++ 解析报错的高性能插件保留
-    plugins: [cppEscapePlugin()],
+    // plugins: [cppEscapePlugin()],
     resolve: {
       preserveSymlinks: true,
     },
