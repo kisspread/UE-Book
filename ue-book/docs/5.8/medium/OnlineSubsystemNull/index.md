@@ -320,7 +320,7 @@ void UMyOnlineTestComponent::OnJoinSessionComplete(FName SessionName, EOnJoinSes
 | 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移至 UE_LOGF |
 | 2026-03-26 | `03bb7402` | UE: Fix OSS Null not finding multiple LAN sessions from a single host. | 修复 Null 子系统无法发现同一主机的多个 LAN 会话的问题 |
 | 2026-02-09 | `8e8bb266` | [Hotfix] Fixing a bug in the perforce hotfix implementation that would cause us to place the downloa | 修复 Perforce 热修复文件下载路径的 Bug |
-| 2026-02-03 | `0a3bf18a` | [TitleFile][Hotfix] Adding support for TitleFilePath=p4://<path> (windows only) to fetch the files f | TitleFile 接口新增支持 p4:// 路径从 Perforce 拉取文件（仅 Windows） |
+| 2026-02-03 | `0a3bf18a` | [TitleFile][Hotfix] Adding support for TitleFilePath=p4://&lt;path&gt; (windows only) to fetch the files f | TitleFile 接口新增支持 p4:// 路径从 Perforce 拉取文件（仅 Windows） |
 
 ### 维护评价
 
