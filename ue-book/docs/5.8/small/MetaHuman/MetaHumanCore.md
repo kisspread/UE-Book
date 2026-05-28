@@ -1,298 +1,216 @@
 # MetaHuman Animator
 
-> The official MetaHuman Unreal Engine toolkit
+> The official MetaHuman Unreal Engine toolkit（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 超写实角色动画器 |
+| 中文名 | 元人类动画师 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（运行时模块、编辑器模块、测试资源） |
-| 模块 | `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MeshTrackerInterface` (Runtime) |
+| 包含内容 | ✅ 有（蓝图资产、编辑器工具） |
+| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2022-04-07 |
+| 创建时间 | 2022-05-02 |
 | 年龄标签 | 🆕（约 4 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是一个完整的 MetaHuman 角色动画制作解决方案，旨在将真实的面部表演数据转化为高质量的数字角色动画。该插件提供从原始视频捕捉到最终动画输出的全流程工具链，解决了以下核心问题：
+MetaHuman Animator 是 Epic Games 官方提供的完整数字人类创建与动画工具包，其核心功能远超简单的“动画师”。它解决的问题是**从真实世界的表演捕捉数据（视频、深度图）驱动高保真 MetaHuman 角色的面部动画**。
 
-1. **面部追踪与轮廓提取**：通过 `MetaHumanFaceContourTracker` 从视频中提取面部特征点和轮廓
-2. **动画求解**：使用 `MetaHumanFaceAnimationSolver` 将追踪数据转化为面部骨骼动画
-3. **身份与拓扑适配**：通过 `MetaHumanIdentity` 将动画适配到不同的 MetaHuman 角色
-4. **流程自动化**：`MetaHumanBatchProcessor` 支持批量处理多个动画序列
-5. **实时预览与调试**：提供视口工具和双视图对比功能，方便动画师调整
-
-该插件的核心价值在于提供了一个专业级的面部动画管线，使用户能够快速将真实表演转化为逼真的数字角色动画。
+该插件是一个庞大的系统，旨在实现“捕捉-追踪-求解-驱动”的完整流程：
+1.  **捕捉与输入**：通过 `MetaHumanCaptureSource` 和 `MetaHumanCaptureProtocolStack` 导入来自 iPhone（Live Link Face）或其他设备的表演视频、深度数据和校准信息。
+2.  **追踪与拟合**：使用 `MetaHumanFaceContourTracker` 追踪视频中的面部轮廓关键点，并利用 `MetaHumanFaceFittingSolver` 将这些 2D 追踪点拟合到 MetaHuman 的 3D 骨骼控制点上。
+3.  **动画求解**：`MetaHumanFaceAnimationSolver` 负责将拟合后的数据转换为最终驱动 MetaHuman 骨骼和变形器的动画曲线。
+4.  **身份管理**：`MetaHumanIdentity` 模块负责管理数字人类的“身份”，包括其基础网格、骨骼和 DNA 数据。
+5.  **序列化与输出**：`MetaHumanSequencer` 模块确保生成的动画可以无缝集成到 Unreal Sequencer 中，用于最终合成或实时渲染。
 
 ## 使用场景
 
-- **影视动画制作**：将演员的面部表演直接驱动数字角色
-- **游戏开发**：为游戏角色创建逼真的面部动画
-- **虚拟主播/VTuber**：实时驱动虚拟角色面部表情
-- **广告制作**：快速生成品牌代言人的数字分身动画
-- **教育培训**：创建虚拟教师或讲解员的面部动画
+-   你需要为一部电影或电视剧创建数字替身，需要从演员的面部表演视频中提取高质量的动画数据。
+-   你在开发一个需要实时数字人对话的虚拟人应用，希望通过面部捕捉驱动 MetaHuman 角色。
+-   你已经使用 MetaHuman Creator 创建了角色模型，现在需要为其制作基于真实表演的动画序列。
+-   你需要批处理大量捕捉数据，将它们转换为可用的动画。
 
 ## 蓝图用法
+
+蓝图接口主要集中在视图控制和数据查询上。核心节点大多位于 `UMetaHumanViewportSettings` 类中，用于控制 MetaHuman Animator 编辑器视口的显示状态。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `GetViewModeIndex` | 获取指定视图的渲染模式索引 | `UMetaHumanViewportSettings` |
-| `SetViewModeIndex` | 设置指定视图的渲染模式 | `UMetaHumanViewportSettings` |
-| `ToggleShowCurves` | 切换曲线显示/隐藏状态 | `UMetaHumanViewportSettings` |
-| `IsShowingCurves` | 查询曲线是否显示 | `UMetaHumanViewportSettings` |
-| `ToggleSkeletalMeshVisibility` | 切换骨骼网格体可见性 | `UMetaHumanViewportSettings` |
-| `IsSkeletalMeshVisible` | 查询骨骼网格体是否可见 | `UMetaHumanViewportSettings` |
-| `ToggleFootageVisibility` | 切换原始素材可见性 | `UMetaHumanViewportSettings` |
-| `ToggleDepthMeshVisibility` | 切换深度网格可见性 | `UMetaHumanViewportSettings` |
-| `GetContourData` | 获取轮廓数据对象 | `FMetaHumanCurveDataController` |
-| `SetCurveSelection` | 设置曲线选择状态 | `FMetaHumanCurveDataController` |
-| `MoveSelectedPoint` | 移动选中的控制点 | `FMetaHumanCurveDataController` |
+| `GetViewModeIndex` | 获取指定视图（A/B/AB）的视图模式索引（如 Lit, Wireframe） | `UMetaHumanViewportSettings` |
+| `SetViewModeIndex` | 设置指定视图的视图模式 | `UMetaHumanViewportSettings` |
+| `ToggleShowCurves` | 切换指定视图中面部轮廓曲线的显示/隐藏 | `UMetaHumanViewportSettings` |
+| `IsShowingCurves` | 查询指定视图中是否显示曲线 | `UMetaHumanViewportSettings` |
+| `ToggleSkeletalMeshVisibility` | 切换指定视图中底层骨骼网格体的显示/隐藏 | `UMetaHumanViewportSettings` |
+| `IsSkeletalMeshVisible` | 查询指定视图中骨骼网格体是否可见 | `UMetaHumanViewportSettings` |
+| `ToggleFootageVisibility` | 切换指定视图中原始捕捉素材（视频/深度图）的显示/隐藏 | `UMetaHumanViewportSettings` |
+| `IsFootageVisible` | 查询指定视图中素材是否可见 | `UMetaHumanViewportSettings` |
+| `ToggleDistortion` | 切换指定视图中镜头畸变效果的显示/隐藏 | `UMetaHumanViewportSettings` |
+| `IsShowingUndistorted` | 查询指定视图中是否显示未畸变的图像 | `UMetaHumanViewportSettings` |
 
 ### 使用示例（蓝图描述）
 
-在蓝图中创建一个 MetaHuman 动画工作流程：
-
-1. **初始化阶段**：
-   - 从 `UMetaHumanViewportSettings` 获取视口设置对象
-   - 调用 `SetViewModeIndex` 设置视图模式为 `VMI_Lit`
-   - 调用 `ToggleSkeletalMeshVisibility` 显示骨骼网格体
-
-2. **数据处理阶段**：
-   - 通过 `FMetaHumanCurveDataController` 加载轮廓数据
-   - 调用 `InitializeContoursFromConfig` 从配置文件初始化曲线
-   - 调用 `UpdateFromContourData` 更新追踪数据
-
-3. **交互编辑阶段**：
-   - 调用 `SetCurveSelection` 选择需要编辑的曲线
-   - 调用 `MoveSelectedPoint` 根据用户输入移动控制点
-   - 调用 `TriggerContourUpdate` 触发视图更新
+在一个编辑器工具蓝图（Editor Utility Widget）中，你可能需要创建一个界面来控制 MetaHuman Animator 的视口。
+1.  获取 `MetaHumanViewportSettings` 对象的引用（通常在 Animator 面板活动时可用）。
+2.  使用一个“Toggle Button”控件，将其 `On Clicked` 事件连接到一个自定义函数。
+3.  在该函数中，调用 `ToggleSkeletalMeshVisibility` 节点，并将 `In View` 参数设置为 `EABImageViewMode::A` 或 `Current`。这会切换视图 A 中底层骨骼的显示，用于检查动画驱动是否正确。
+4.  使用另一个按钮调用 `ToggleFootageVisibility`，以便在需要时将原始视频素材叠加显示，用于对比动画与原始表演。
 
 ## C++ 用法
+
+C++ 层面提供了更底层的控制，用于处理曲线数据、形状注释和系统集成。
 
 ### 头文件引入
 
 ```cpp
-#include "MetaHumanViewportSettings.h"
 #include "MetaHumanCurveDataController.h"
+#include "ShapeAnnotationWrapper.h"
+#include "DNAUtilities.h"
 #include "MetaHumanContourData.h"
 ```
 
 ### 基本用法
 
-从测试用例中提取的典型用法示例：
+使用 `FMetaHumanCurveDataController` 来操作和查询追踪到的面部轮廓数据。
 
 ```cpp
-// 1. 创建并配置视口设置
-UMetaHumanViewportSettings* ViewportSettings = NewObject<UMetaHumanViewportSettings>();
-ViewportSettings->SetViewModeIndex(EABImageViewMode::A, VMI_Lit, true);
-ViewportSettings->ToggleShowCurves(EABImageViewMode::A);
-ViewportSettings->SetEV100(EABImageViewMode::A, 1.5f, true);
+// 假设你有一个 UMetaHumanContourData* 对象 (ContourDataPtr)，它包含了一帧的轮廓数据
+FMetaHumanCurveDataController CurveController(ContourDataPtr);
 
-// 2. 管理轮廓数据
-UMetaHumanContourData* ContourData = NewObject<UMetaHumanContourData>();
-ContourData->SetContourDataForDrawing(DrawDataMap);
-ContourData->SetFullCurveContourDataForDrawing(FullDrawDataMap);
+// 从配置文件和默认数据初始化轮廓
+FFrameTrackingContourData DefaultData; // 通常从某个资产加载
+CurveController.InitializeContoursFromConfig(DefaultData, TEXT("1.0"));
 
-// 3. 使用曲线数据控制器
-FMetaHumanCurveDataController CurveController(ContourData, ECurveDisplayMode::Editing);
-CurveController.InitializeContoursFromConfig(DefaultContourData, "1.0.0");
-CurveController.UpdateFromContourData(TrackingData, true);
+// 当收到新的追踪数据时更新
+FFrameTrackingContourData NewTrackingData = ...; // 从追踪器获取
+CurveController.UpdateFromContourData(NewTrackingData, true);
 
-// 4. 查询和修改控制点
-TArray<FControlVertex> Vertices = ContourData->GetControlVerticesForCurve("FaceContour");
-FControlVertex* Vertex = ContourData->GetControlVertexFromPointId(PointId);
-if (Vertex && ContourData->ControlVertexIsVisible(*Vertex))
+// 查询某条曲线（例如，左侧眉毛）是否被选中
+TPair<bool, bool> Status = CurveController.GetCurveSelectedAndActiveStatus(TEXT("brow_left"));
+if (Status.Key) // 是否被选中
 {
-    // 移动控制点
-    CurveController.MoveSelectedPoint(NewPosition, PointId);
+    // 执行某些操作，如高亮显示
 }
+
+// 获取所有可见曲线的稠密点数据，用于绘制
+TMap<FString, TArray<FVector2D>> VisibleDensePoints = CurveController.GetDensePointsForVisibleCurves();
 ```
+
+**来源文件**: `Source/MetaHumanCore/Public/MetaHumanCurveDataController.h`
 
 ### 进阶用法
 
-结合多个模块的高级工作流：
+结合 `FDNAUtilities` 检查不同 MetaHuman 身份之间的 DNA 兼容性，这在准备批量处理或混合动画时很重要。
 
 ```cpp
-// 1. 加载和校准相机数据
-UCameraCalibration* Calibration = LoadLiveLinkFaceCameraCalibration(
-    UCameraCalibration::StaticClass(),
-    GetTransientPackage(),
-    "CameraCalibration",
-    RF_NoFlags,
-    "CalibrationData.json"
+#include "DNAUtilities.h"
+
+// 假设你有两个 IDNAReader 指针，分别代表两个不同的 MetaHuman 角色
+IDNAReader* ReaderA = ...;
+IDNAReader* ReaderB = ...;
+
+FString CompatibilityMessage;
+bool bAreCompatible = FDNAUtilities::CheckCompatibility(
+    ReaderA, 
+    ReaderB, 
+    EDNARigCompatiblityFlags::Joint | EDNARigCompatiblityFlags::Mesh, // 只检查骨骼和网格
+    CompatibilityMessage
 );
 
-// 2. 初始化形状注释系统
-FShapeAnnotationWrapper ShapeAnnotation;
-TMap<FString, TArray<FVector2D>> SplineData = 
-    ShapeAnnotation.GetDrawingSplinesFromContourData(ContourData);
-
-// 3. 版本兼容性检查
-FString Version = FMetaHumanContourDataVersion::GetContourDataVersionString();
-ECompatibilityResult CompatResult;
-TArray<FString> VersionList = {Version, "1.2.0"};
-FMetaHumanContourDataVersion::CheckVersionCompatibility(VersionList, CompatResult);
-
-// 4. DNA 兼容性验证
-IDNAReader* ReaderA = /* 获取DNA读取器A */;
-IDNAReader* ReaderB = /* 获取DNA读取器B */;
-bool bCompatible = FDNAUtilities::CheckCompatibility(
-    ReaderA, ReaderB, EDNARigCompatiblityFlags::All
-);
-
-// 5. RHI 兼容性检查
-if (FMetaHumanSupportedRHI::IsSupported())
+if (!bAreCompatible)
 {
-    FText SupportedNames = FMetaHumanSupportedRHI::GetSupportedRHINames();
-    // 显示支持的 RHI 列表
+    UE_LOG(LogTemp, Warning, TEXT("DNA不兼容: %s"), *CompatibilityMessage);
+    // 无法在它们之间安全地传递动画
 }
 ```
+
+**来源文件**: `Source/MetaHumanCore/Public/DNAUtilities.h`
 
 ## Demo 示例
 
-以下是一个完整的 MetaHuman 动画工作流示例：
-
-### MetaHumanAnimatorDemo.h
+以下是一个极简的 C++ 示例，展示如何初始化一个轮廓数据控制器并模拟一次更新。
 
 ```cpp
+// MetaHumanDemoActor.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MetaHumanViewportSettings.h"
-#include "MetaHumanCurveDataController.h"
-#include "MetaHumanContourData.h"
+#include "GameFramework/Actor.h"
+#include "MetaHumanDemoActor.generated.h"
 
-class FMetaHumanAnimatorDemo
+class UMetaHumanContourData;
+class FMetaHumanCurveDataController;
+
+UCLASS()
+class MYPROJECT_API AMetaHumanDemoActor : public AActor
 {
+    GENERATED_BODY()
+
 public:
-    void InitializeDemo();
-    void ProcessTrackingData(const FFrameTrackingContourData& TrackingData);
-    void ToggleViewOptions();
-    void ExportAnimationData();
-    
+    AMetaHumanDemoActor();
+
+protected:
+    virtual void BeginPlay() override;
+
 private:
-    UPROPERTY()
-    TObjectPtr<UMetaHumanViewportSettings> ViewportSettings;
-    
-    UPROPERTY()
-    TObjectPtr<UMetaHumanContourData> ContourData;
-    
+    // 轮廓数据资产，可在编辑器中分配
+    UPROPERTY(EditAnywhere)
+    TObjectPtr<UMetaHumanContourData> ContourDataAsset;
+
+    // 控制器实例，用于管理轮廓数据
     TUniquePtr<FMetaHumanCurveDataController> CurveController;
-    
-    // 调试计数器
-    int32 ProcessedFrames = 0;
 };
 ```
 
-### MetaHumanAnimatorDemo.cpp
-
 ```cpp
-#include "MetaHumanAnimatorDemo.h"
+// MetaHumanDemoActor.cpp
+#include "MetaHumanDemoActor.h"
+#include "MetaHumanContourData.h"
+#include "MetaHumanCurveDataController.h"
 
-void FMetaHumanAnimatorDemo::InitializeDemo()
+AMetaHumanDemoActor::AMetaHumanDemoActor()
 {
-    // 1. 初始化视口设置
-    ViewportSettings = NewObject<UMetaHumanViewportSettings>();
-    ViewportSettings->SetViewModeIndex(EABImageViewMode::ABSplit, VMI_Lit, false);
-    ViewportSettings->ToggleShowCurves(EABImageViewMode::A);
-    ViewportSettings->ToggleShowControlVertices(EABImageViewMode::B);
-    
-    // 2. 初始化轮廓数据
-    ContourData = NewObject<UMetaHumanContourData>();
-    
-    // 3. 初始化曲线控制器
-    CurveController = MakeUnique<FMetaHumanCurveDataController>(
-        ContourData, 
-        ECurveDisplayMode::Editing
-    );
-    
-    // 4. 加载配置数据
-    FFrameTrackingContourData DefaultData;
-    // ... 填充默认数据 ...
-    CurveController->InitializeContoursFromConfig(DefaultData, "1.0.0");
-    
-    UE_LOG(LogMetaHumanCore, Log, TEXT("MetaHuman Animator Demo 已初始化"));
+    PrimaryActorTick.bCanEverTick = false;
 }
 
-void FMetaHumanAnimatorDemo::ProcessTrackingData(
-    const FFrameTrackingContourData& TrackingData)
+void AMetaHumanDemoActor::BeginPlay()
 {
-    // 更新追踪数据
-    CurveController->UpdateFromContourData(TrackingData, true);
-    
-    // 自动选择所有曲线进行可视化
-    TSet<FString> AllCurves;
-    for (const auto& Pair : TrackingData.TrackingContours)
-    {
-        AllCurves.Add(Pair.Key);
-    }
-    CurveController->SetCurveSelection(AllCurves, true);
-    
-    // 统计处理帧数
-    ProcessedFrames++;
-    UE_LOG(LogMetaHumanCore, Log, 
-        TEXT("已处理第 %d 帧，包含 %d 条曲线"), 
-        ProcessedFrames, 
-        TrackingData.TrackingContours.Num());
-}
+    Super::BeginPlay();
 
-void FMetaHumanAnimatorDemo::ToggleViewOptions()
-{
-    // 切换 A/B 视图的不同显示选项
-    ViewportSettings->ToggleSkeletalMeshVisibility(EABImageViewMode::A);
-    ViewportSettings->ToggleFootageVisibility(EABImageViewMode::B);
-    ViewportSettings->ToggleDepthMeshVisibility(EABImageViewMode::ABSplit);
-    
-    // 切换视图模式
-    EViewModeIndex CurrentMode = ViewportSettings->GetViewModeIndex(EABImageViewMode::A);
-    if (CurrentMode == VMI_Lit)
+    if (ContourDataAsset)
     {
-        ViewportSettings->SetViewModeIndex(EABImageViewMode::A, VMI_Unlit, true);
-    }
-    else
-    {
-        ViewportSettings->SetViewModeIndex(EABImageViewMode::A, VMI_Lit, true);
-    }
-    
-    UE_LOG(LogMetaHumanCore, Log, TEXT("视图选项已切换"));
-}
-
-void FMetaHumanAnimatorDemo::ExportAnimationData()
-{
-    // 获取最终动画数据
-    TMap<FString, TArray<FVector2D>> FullData = 
-        ContourData->GetTrackingContourDataForDrawing();
-    
-    // 获取选定曲线的简化数据
-    TSet<FString> SelectedCurves = ContourData->GetSelectedCurves();
-    for (const FString& CurveName : SelectedCurves)
-    {
-        TArray<FControlVertex> Vertices = 
-            ContourData->GetControlVerticesForCurve(CurveName);
+        // 初始化控制器
+        CurveController = MakeUnique<FMetaHumanCurveDataController>(ContourDataAsset);
         
-        UE_LOG(LogMetaHumanCore, Log, 
-            TEXT("曲线 '%s' 包含 %d 个控制点"), 
-            *CurveName, Vertices.Num());
+        // 模拟加载配置和默认数据
+        FFrameTrackingContourData DefaultContourData;
+        // ... 这里应该是从资产或配置文件加载 DefaultContourData 的代码 ...
+        CurveController->InitializeContoursFromConfig(DefaultContourData, TEXT("5.0"));
+
+        // 模拟一次追踪更新（实际数据应来自追踪管线）
+        FFrameTrackingContourData SimulatedUpdate;
+        // ... 填充 SimulatedUpdate 的代码 ...
+        CurveController->UpdateFromContourData(SimulatedUpdate, true);
+
+        UE_LOG(LogTemp, Log, TEXT("MetaHuman 轮廓控制器初始化完成"));
     }
-    
-    UE_LOG(LogMetaHumanCore, Log, 
-        TEXT("动画数据已导出，共 %d 条曲线"), 
-        FullData.Num());
 }
 ```
 
 ## 模块依赖
 
+由于插件内含众多模块，且它们相互依赖，作为使用者，你的项目通常只需依赖最外层的模块（如 `MetaHumanCore` 或 `MetaHumanIdentity`）。以下列出了一些关键且非通用的依赖模块。
+
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCoreTechLib` | MetaHuman 核心技术库，提供基础算法和数据处理 |
-| `SkeletalMeshUtilitiesCommon` | 骨骼网格体工具函数 |
-| `ControlRigDeveloper` | 控制绑定开发工具 |
-| `MetaHumanSDKEditor` | MetaHuman SDK 编辑器集成 |
+| `MetaHumanCoreTechLib` | 核心技术库，通常为底层算法提供支持 |
+| `ControlRigDeveloper` | 用于创建和编辑 Control Rig，MetaHuman 的面部驱动基于 Control Rig |
+| `SkeletalMeshUtilitiesCommon` | 骨骼网格体的通用工具函数 |
+| `MetaHumanSDKEditor` | MetaHuman SDK 的编辑器部分，用于资产管理和编辑器集成 |
+| `MetaHumanCaptureDataEditor` | 捕捉数据资产的编辑器自定义 |
 
 ## 维护状态
 
@@ -300,25 +218,21 @@ void FMetaHumanAnimatorDemo::ExportAnimationData()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 禁用身体追踪时的关卡序列导出功能 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 渲染伪影问题 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MHA] 为现有网格体导出动画序列 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复序列器缓存问题 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在身体追踪时过滤可视化对象 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MetaHuman Animator] 为现有网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
 
 ### 维护评价
 
-MetaHuman Animator 是一个**活跃维护**的插件，具有以下特点：
-
-1. **近期活跃度**：最近一周内有5次提交，说明开发团队正在积极维护
-2. **持续改进**：最新的提交集中在修复渲染问题、优化身体追踪和增强序列器功能
-3. **功能增强**：正在添加新的导出功能（为现有网格体导出动画序列）
-4. **稳定性优先**：多个提交专注于修复缓存和渲染问题
-
-**推荐使用**：该插件适合需要高质量面部动画的专业项目，特别是影视和游戏开发领域。由于是官方维护，与 MetaHuman 生态系统深度集成，长期支持有保障。
+- **活跃维护**：从提交记录看，该插件在**近期（2026年5月）** 仍有密集的功能更新和 Bug 修复。
+- **核心功能稳定**：作为 Epic 的官方工具，其用于核心的 MetaHuman 创建和动画工作流。
+- **推荐使用**：如果你正在使用 MetaHuman 且需要进行基于表演的面部动画，这是**必须且推荐**的官方解决方案。它仍在持续开发中，以支持新的平台功能（如身体追踪）并修复问题。
+- **注意**：该插件规模庞大，学习曲线较陡峭，建议结合 Epic 官方的 MetaHuman 文档和教程使用。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档](https://docs.unrealengine.com/en-US/Plugins/MetaHuman/)（MetaHuman 整体文档）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Tests)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/MetaHuman-in-Unreal-Engine/)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanControlsConversionTest)

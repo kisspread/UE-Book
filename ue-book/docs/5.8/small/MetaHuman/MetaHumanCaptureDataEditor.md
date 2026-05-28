@@ -4,212 +4,192 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman 动画师 |
+| 中文名 | 虚拟人动画 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产、测试资源） |
-| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
+| 包含内容 | ✅ 有（MetaHuman资产/工具） |
+| 模块 | `MetaHumanCore` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime) 等共 28 个模块 |
 | 实验性 | 否 |
-| 创建时间 | 未知 |
-| 年龄标签 | 🆕（约 3 年） |
+| 创建时间 | 2022-10-01 |
+| 年龄标签 | 🆕（约 4 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是 Epic Games 官方的 MetaHuman 角色动画工具链。它解决的核心问题是：**如何将真实演员的面部表演（通过 iPhone LiDAR、视频素材或音频）快速、高精度地驱动 MetaHuman 虚拟角色**。
+MetaHuman Animator 是 Epic Games 官方提供的 MetaHuman 角色面部动画制作工具套件。它解决的核心问题是：**如何将真实演员的面部表演数据（如 iPhone 深度摄像头、Live Link Face 录制的视频片段）转化为高保真的 MetaHuman 角色动画**。
 
-整个插件包含 28 个模块，覆盖了完整的面部动画管线：
+整个插件覆盖了从捕捉到最终动画输出的完整流水线：
 
-1. **采集层**（Capture）：从各种来源（iPhone 原深感摄像头、视频文件、Live Link 面捕设备）采集面部表演数据
-2. **追踪层**（Tracking）：对面部轮廓、面部网格进行逐帧追踪
-3. **拟合层**（Fitting）：将追踪结果拟合到 MetaHuman 面部骨骼控制器（ControlRig）
-4. **求解层**（Solver）：面部动画求解器，将追踪数据转换为动画曲线
-5. **深度生成**（Depth）：从单目视频生成深度信息
-6. **语音驱动**（Speech2Face）：仅凭音频生成面部动画
-7. **批量处理**（Batch）：大批量素材的自动化处理
-8. **编排管线**（Pipeline）：各处理步骤的串联编排
+1. **数据采集与导入**（MetaHumanCaptureSource, MetaHumanFootageIngest, MetaHumanCaptureProtocolStack）—— 导入来自各种设备（iPhone、立体相机等）的面部视频/深度数据
+2. **面部特征追踪**（MetaHumanFaceContourTracker）—— 追踪视频中的人脸轮廓、关键点
+3. **面部拟合求解**（MetaHumanFaceFittingSolver）—— 将追踪到的面部数据拟合到 MetaHuman 骨骼网格体上
+4. **动画求解**（MetaHumanFaceAnimationSolver）—— 将拟合结果转化为骨骼动画驱动参数
+5. **身份管理**（MetaHumanIdentity）—— 管理 MetaHuman 角色身份资产，包括姿势捕捉与配置
+6. **音频驱动面部**（MetaHumanSpeech2Face）—— 从语音音频生成面部动画
+7. **动画输出**（MetaHumanPerformance, MetaHumanSequencer）—— 将最终动画数据输出为关卡序列或动画资产
+
+**当前聚焦模块 MetaHumanCaptureDataEditor** 是插件编辑器层的捕捉数据编辑工具，提供相机选择 UI 控件和捕捉数据预览组件创建功能，供内部各模块在编辑器中展示和编辑捕捉到的面部表演数据。
 
 ## 使用场景
 
-- 你有 iPhone 拍摄的面部表演录像 → 用 MetaHuman Capture Source + Face Contour Tracker + Face Fitting Solver 生成动画
-- 你只有音频文件想驱动角色说话 → 用 MetaHuman Speech2Face 模块
-- 你需要为大批量拍摄素材自动处理 → 用 MetaHuman Batch Processor
-- 你要创建完整的 MetaHuman 角色身份 → 用 MetaHuman Identity 模块
-- 你需要在 Sequencer 中编辑面部动画 → 用 MetaHuman Sequencer 模块
-- 你想从视频提取深度信息用于追踪 → 用 MetaHuman Depth Generator
+- 你有一段 iPhone 录制的面部表演视频 → 导入为 FootageCaptureData，通过 MetaHuman Animator 流水线生成 MetaHuman 面部动画
+- 你使用 Live Link Face 实时捕捉演员表演 → 通过 MetaHumanCaptureProtocolStack 实时接收并处理捕捉数据
+- 你需要将 MetaHuman 角色与真实演员的面部表情同步 → 用 MetaHumanFaceFittingSolver 进行面部拟合
+- 你需要从对话音频自动驱动面部动画 → 用 MetaHumanSpeech2Face 模块
+- 你需要批量处理大量面部捕捉数据 → 用 MetaHumanBatchProcessor 模块
+- 你需要在编辑器中预览和编辑捕捉数据 → 用 MetaHumanCaptureDataEditor 提供的预览组件和相机选择控件
 
-## 子模块概览
+## 蓝图用法
 
-由于本插件包含 28 个模块（544+ 源文件），属于 **xlarge** 规模，以下按功能域分类说明：
+MetaHumanCaptureDataEditor 模块主要提供 C++/Slate 编辑器工具，无直接蓝图可调用节点。蓝图层面的 MetaHuman 动画工作流主要通过 MetaHumanPerformance 和 MetaHumanSequencer 等其他模块的资产驱动，而非直接调用蓝图函数。
 
-| 功能域 | 模块 | 说明 |
+### 编辑器工具
+
+| 工具 | 说明 | 类型 |
 |---|---|---|
-| 核心基础 | `MetaHumanCore`, `MetaHumanCoreEditor` | 核心类型定义、编辑器基础设施 |
-| 数据配置 | `MetaHumanConfig`, `MetaHumanConfigEditor` | 配置数据管理 |
-| 素材采集 | `MetaHumanCaptureSource`, `MetaHumanCaptureUtils`, `MetaHumanCaptureProtocolStack` | 捕获数据导入与协议栈 |
-| 素材编辑 | `MetaHumanCaptureDataEditor`, `MetaHumanImageViewerEditor` | 捕获数据的编辑器 UI |
-| 素材导入 | `MetaHumanFootageIngest` | 影视素材导入流程 |
-| 面部追踪 | `MetaHumanFaceContourTracker`, `MetaHumanFaceContourTrackerEditor` | 面部轮廓追踪 |
-| 深度生成 | `MetaHumanDepthGenerator` | 单目深度估计 |
-| 面部拟合 | `MetaHumanFaceFittingSolver`, `MetaHumanFaceFittingSolverEditor` | 面部网格拟合求解 |
-| 动画求解 | `MetaHumanFaceAnimationSolver`, `MetaHumanFaceAnimationSolverEditor` | 追踪数据到动画曲线的转换 |
-| 语音驱动 | `MetaHumanSpeech2Face` | 音频驱动面部动画 |
-| 角色身份 | `MetaHumanIdentity`, `MetaHumanIdentityEditor` | MetaHuman 角色身份创建 |
-| 性能动画 | `MetaHumanPerformance` | 表演数据管理 |
-| 管线编排 | `MetaHumanPipeline` | 处理步骤串联编排 |
-| 批量处理 | `MetaHumanBatchProcessor` | 大批量素材自动化处理 |
-| Sequencer | `MetaHumanSequencer` | Sequencer 集成 |
-| 网格追踪 | `MeshTrackerInterface` | 网格追踪接口抽象 |
-| 平台支持 | `MetaHumanPlatform` | 平台相关适配 |
-| 工具集 | `MetaHumanToolkit` | 通用工具函数 |
-| 控制器转换测试 | `MetaHumanControlsConversionTest` | 控制器数据转换的自动化测试 |
+| `SMetaHumanCameraCombo` | 捕捉数据相机选择下拉框控件 | Slate Widget |
+| `CaptureDataUtils::CreatePreviewComponent` | 从捕捉数据创建预览场景组件 | C++ 工具函数 |
 
----
+## C++ 用法
 
-## MetaHumanCaptureDataEditor 模块
-
-> 当前聚焦模块 — 提供捕获数据（Capture Data）的编辑器界面和工具
-
-### 用途
-
-MetaHumanCaptureDataEditor 为捕获数据提供编辑器侧的 UI 控件和工具函数。它主要解决：
-
-1. **摄像机选择**：当素材包含多个摄像机视角时，提供下拉选择控件
-2. **预览组件创建**：为不同类型的捕获数据创建对应的 3D 预览组件
-3. **数据变更响应**：当源素材（视频/音频）发生变化时，联动更新编辑器 UI
-
-### 蓝图用法
-
-本模块主要提供编辑器 Slate 控件，不直接暴露蓝图节点。核心功能通过 C++ 编辑器扩展使用。
-
-### C++ 用法
-
-#### 头文件引入
+### 头文件引入
 
 ```cpp
 #include "CaptureDataUtils.h"
+#include "SMetaHumanCameraCombo.h"
 ```
 
-#### 基本用法 — 创建预览组件
+### 基本用法
 
-为任意 `UCaptureData` 类型的资产创建对应的 3D 预览组件：
+从捕捉数据创建预览组件（用于编辑器中的数据预览场景）：
 
 ```cpp
+// 来源: Public/CaptureDataUtils.h
 #include "CaptureDataUtils.h"
-#include "Engine/World.h"
+#include "CaptureData.h"
 
-// 假设你有一个 UCaptureData 对象（如 UFootageCaptureData）
-UCaptureData* CaptureData = /* ... */;
+// 为捕捉数据创建一个预览场景组件，用于在编辑器视口中显示
+UObject* Owner = GetOuter(); // 拥有者对象
+UCaptureData* CaptureData = LoadObject<UCaptureData>(nullptr, TEXT("/Game/MyCaptureData"));
 
-// 创建预览组件用于在编辑器视口中显示捕获数据
-USceneComponent* PreviewComponent = MetaHumanCaptureDataUtils::CreatePreviewComponent(
-    CaptureData,    // 捕获数据资产
-    OuterObject     // Outer 对象（通常是编辑器工具实例）
-);
-
+USceneComponent* PreviewComponent = MetaHumanCaptureDataUtils::CreatePreviewComponent(CaptureData, Owner);
 if (PreviewComponent)
 {
-    // 预览组件已创建，可附加到编辑器 Actor 上显示
-    PreviewComponent->RegisterComponent();
+    // 预览组件已创建并附加到 Owner 上
+    // 可以进一步设置位置、旋转等
 }
 ```
 
-#### 摄像机选择控件
+### 进阶用法
 
-`SMetaHumanCameraCombo` 是一个 Slate 复合控件，用于在属性编辑器中提供摄像机下拉选择：
+在自定义编辑器面板中集成相机选择下拉框：
 
 ```cpp
-#include "SMetaHumanCameraCombo.h"
-
-// 创建摄像机选项列表
+// 来源: Public/SMetaHumanCameraCombo.h
+// 在 Slate UI 中使用 SMetaHumanCameraCombo 选择捕捉数据的相机
 TArray<TSharedPtr<FString>> CameraOptions;
 CameraOptions.Add(MakeShared<FString>(TEXT("CameraA")));
 CameraOptions.Add(MakeShared<FString>(TEXT("CameraB")));
 
-// 在 Slate 层级中构造控件
-TSharedRef<SMetaHumanCameraCombo> CameraCombo = SNew(SMetaHumanCameraCombo)
-    .InOptionsSource(&CameraOptions)
-    .InCamera(&SelectedCamera)
-    .InPropertyOwner(PropertyOwnerObject)
-    .InProperty(PropertyHandle);
+FString SelectedCamera = TEXT("CameraA");
+
+// 创建相机选择下拉框
+SNew(SMetaHumanCameraCombo, &CameraOptions, &SelectedCamera, PropertyOwner, PropertyHandle)
 ```
 
-### Demo 示例
-
-以下展示如何在编辑器工具中集成捕获数据预览：
+当捕捉数据源发生变化时，通知控件更新：
 
 ```cpp
-// MyCaptureDataTool.h
+// 来源: Public/SMetaHumanCameraCombo.h
+// 当 FootageCaptureData 或音频源变化时，通知相机下拉框刷新
+CameraCombo->HandleSourceDataChanged(FootageCaptureData, SoundWave, /*bResetRanges=*/true);
+
+// 仅重置范围，不重新加载数据源
+CameraCombo->HandleSourceDataChanged(/*bResetRanges=*/false);
+```
+
+## Demo 示例
+
+以下是 MetaHumanCaptureDataEditor 模块的最小可编译使用示例，展示如何创建预览组件并集成相机选择控件：
+
+### MetaHumanCaptureDemo.h
+
+```cpp
 #pragma once
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "MyCaptureDataTool.generated.h"
+#include "MetaHumanCaptureDemo.generated.h"
 
 class UCaptureData;
 class USceneComponent;
 
-UCLASS()
-class UMyCaptureDataTool : public UObject
+UCLASS(BlueprintType)
+class MYPROJECT_API UMetaHumanCaptureDemo : public UObject
 {
     GENERATED_BODY()
 
 public:
-    /** 设置要预览的捕获数据 */
-    void SetCaptureData(UCaptureData* InCaptureData);
+    /** 为指定捕捉数据创建预览组件 */
+    UFUNCTION(BlueprintCallable, Category = "MetaHuman|CaptureDemo")
+    USceneComponent* CreatePreview(UCaptureData* InCaptureData);
 
     /** 获取当前预览组件 */
+    UFUNCTION(BlueprintPure, Category = "MetaHuman|CaptureDemo")
     USceneComponent* GetPreviewComponent() const { return PreviewComponent; }
 
 private:
-    UPROPERTY()
-    TObjectPtr<UCaptureData> CaptureData;
-
     UPROPERTY()
     TObjectPtr<USceneComponent> PreviewComponent;
 };
 ```
 
-```cpp
-// MyCaptureDataTool.cpp
-#include "MyCaptureDataTool.h"
-#include "CaptureDataUtils.h"
-#include "CaptureData/CaptureData.h"
+### MetaHumanCaptureDemo.cpp
 
-void UMyCaptureDataTool::SetCaptureData(UCaptureData* InCaptureData)
+```cpp
+#include "MetaHumanCaptureDemo.h"
+#include "CaptureDataUtils.h"
+#include "CaptureData.h"
+
+USceneComponent* UMetaHumanCaptureDemo::CreatePreview(UCaptureData* InCaptureData)
 {
-    // 清理旧的预览组件
+    if (!InCaptureData)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("CreatePreview: CaptureData is null"));
+        return nullptr;
+    }
+
+    // 使用 MetaHumanCaptureDataEditor 模块的工具函数创建预览组件
+    PreviewComponent = MetaHumanCaptureDataUtils::CreatePreviewComponent(InCaptureData, this);
+
     if (PreviewComponent)
     {
-        PreviewComponent->DestroyComponent();
-        PreviewComponent = nullptr;
+        UE_LOG(LogTemp, Log, TEXT("Preview component created for capture data: %s"),
+            *InCaptureData->GetName());
     }
 
-    CaptureData = InCaptureData;
-
-    // 为新的捕获数据创建预览组件
-    if (CaptureData)
-    {
-        PreviewComponent = MetaHumanCaptureDataUtils::CreatePreviewComponent(
-            CaptureData, this
-        );
-    }
+    return PreviewComponent;
 }
 ```
 
 ## 模块依赖
 
-以下是本插件独特的依赖模块（已省略 Core/Engine/Slate 等标准模块）：
+以 MetaHumanCaptureDataEditor 模块为例，其 Build.cs 中声明的依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanImageViewerEditor` | MetaHumanCaptureDataEditor 的直接依赖，提供图像查看器编辑器功能 |
-| `MetaHumanCoreTechLib` | MetaHumanConfig 依赖，核心技术计算库 |
-| `SkeletalMeshUtilitiesCommon` | MetaHumanIdentity 依赖，骨骼网格体通用工具 |
-| `ControlRigDeveloper` | MetaHumanIdentity 依赖，ControlRig 开发者工具 |
-| `MetaHumanSDKEditor` | MetaHumanIdentity 依赖，MetaHuman SDK 编辑器接口 |
+| `MetaHumanImageViewerEditor` | 提供图像查看器编辑器功能，用于预览捕捉的视频帧 |
 
-**注意**：如果你只需要使用捕获数据编辑功能，只需依赖 `MetaHumanCaptureDataEditor` 及其传递依赖 `MetaHumanImageViewerEditor`。
+整个插件（28 个模块）的跨模块依赖关系：
+
+| 模块 | 用途 |
+|---|---|
+| `MetaHumanCoreTechLib` | MetaHuman 核心技术库，提供底层面部求解算法 |
+| `MetaHumanSDKEditor` | MetaHuman SDK 编辑器工具 |
+| `SkeletalMeshUtilitiesCommon` | 骨骼网格体通用工具，用于面部网格处理 |
+| `ControlRigDeveloper` | ControlRig 开发工具，用于面部动画驱动 |
+
+其余均为标准 Core/Engine/Slate 等常见依赖。
 
 ## 维护状态
 
@@ -219,21 +199,19 @@ void UMyCaptureDataTool::SetCaptureData(UCaptureData* InCaptureData)
 |---|---|---|---|
 | 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出 |
 | 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 渲染瑕疵 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪模式下过滤可视化对象 |
 | 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为已有网格体导出动画序列 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复序列器缓存导致的问题 |
 
 ### 维护评价
 
-- **活跃维护**：最近更新集中在 2026 年 5 月，持续有功能更新和 Bug 修复
-- **更新频率**：日级别更新，非常活跃
-- **更新质量**：涵盖功能增强（动画序列导出）、Bug 修复（渲染瑕疵、缓存问题）、行为优化（追踪过滤）
-- **整体规模**：28 个模块、544+ 源文件，是 UE5 中最大的功能插件之一
-- **推荐度**：⭐⭐⭐⭐⭐ — Epic Games 官方维护的旗舰级工具链，如果你在做 MetaHuman 角色动画，这是必备插件
-
-**注意**：此插件默认未安装（`Installed: false`），需要从 Epic Games 商业许可渠道获取或单独启用。
+- **活跃维护**：最近更新集中在 2026-05-20 至 2026-05-22，短短 3 天内有 5 次提交，表明该插件处于高频活跃开发阶段
+- **功能迭代中**：近期更新涉及身体追踪支持、动画序列导出、渲染修复等实质性功能改进，而非仅仅编译适配
+- **已知限制**：身体追踪模式下部分功能（如关卡序列导出、可视化对象显示）存在限制，正在逐步解除
+- **推荐使用**：作为 Epic Games 官方工具，MetaHuman Animator 是制作 MetaHuman 角色面部动画的首选方案，适合所有需要高质量面部动画的项目。该模块仍在积极迭代中，建议跟进最新版本
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档](https://docs.unrealengine.com/en-US/metahuman-animator/)（MetaHuman Animator 官方文档）
+- [MetaHuman 官方文档](https://docs.unrealengine.com/5.8/en-US/metahuman-unreal-engine/)
+- [MetaHumanCaptureDataEditor 源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureDataEditor)
