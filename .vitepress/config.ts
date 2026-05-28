@@ -176,7 +176,6 @@ export default defineConfig({
 
   ignoreDeadLinks: true,
   markdown: {
-    html: true,
     config: (md) => {
       // 定义常见的合法 HTML 标签（你之前正则里的那些）
       const htmlTags = /^\/?(?:div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th|thead|tbody|br|hr|code|pre|strong|em|b|i|u|s|script|style|template|slot|component|section|header|footer|nav|main|aside|article|form|input|button|select|option|label|textarea|link|meta|head|body|html|iframe|svg|path|circle|rect|g|video|audio|source|canvas|v-[a-z-]+)[\s>]/i;
