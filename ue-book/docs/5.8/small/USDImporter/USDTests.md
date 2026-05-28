@@ -1,19 +1,6 @@
-# USD Importer (USDTests 模块文档)
-
-> USD Importer 的子模块文档，聚焦 USDTests 测试工具模块
-
-## 文档结构
-
-本插件规模较大（187 源文件），按子模块拆分文档：
-
-- **[index.md](#usd-importer-1)** ← 插件总览页（见下方）
-- **USDTests.md** ← 本模块文档
-
----
-
 # USD Importer
 
-> Adds support for importing the USD file format into Unreal Engine
+> Adds support for importing the USD file format into Unreal Engine（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
@@ -21,138 +8,100 @@
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ✅ 有（测试资源） |
-| 模块 | `USDSchemas` (Runtime), `USDStage` (Runtime), `USDStageImporter` (Runtime), `USDExporter` (Runtime), `USDStageEditor` (Runtime), `USDStageEditorViewModels` (Runtime), `USDClassesEditor` (Runtime), `GeometryCacheUSD` (Runtime), `USDTests` (Runtime) |
+| 模块 | `USDSchemas` (Runtime), `GeometryCacheUSD` (Runtime), `USDClassesEditor` (Runtime), `USDExporter` (Runtime), `USDStage` (Runtime), `USDStageEditor` (Runtime), `USDStageEditorViewModels` (Runtime), `USDStageImporter` (Runtime), `USDTests` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-11-19 |
-| 年龄标签 | 🏛️ 文物（约 7 年） |
+| 年龄标签 | 👴 老古董（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter) | |
 
 ## 用途
 
-为 Unreal Engine 提供完整的 USD (Universal Scene Description) 工作流支持，包括：
+USD Importer 是 Unreal Engine 对 Pixar Universal Scene Description (USD) 格式的完整支持插件。它不仅提供 USD 文件的**导入**能力，还包含**导出**、**Stage 管理**、**几何缓存**和**编辑器集成**等完整工作流。
 
-- **导入**：将 `.usd`、`.usda`、`.usdc` 文件导入为 UE 内容资产
-- **Stage Actor**：提供 `AUsdStageActor` 在场景中实时引用 USD Stage，支持层级管理和 Prim 映射
-- **导出**：将 UE 场景内容导出为 USD 格式
-- **Schemas**：定义 USD Prim 与 UE Actor/Component 之间的映射关系
-- **Geometry Cache**：支持 USD 的动画几何体缓存
-- **编辑器集成**：提供 USD Stage 大纲视图、属性面板等编辑器工具
+该插件的核心价值在于：
+- **跨软件资产交换**：USD 是工业光魔(ILM)、皮克斯等工作室制定的开放标准，被 Maya、Houdini、Blender 等主流 DCC 工具广泛支持
+- **非破坏性引用工作流**：通过 USD Stage Actor 引用 USD 文件，可在 UE 内实时反映源文件变更
+- **多用途模块化架构**：9 个模块覆盖导入、导出、模式定义、编辑器可视化等完整生命周期
+
+> ⚠️ 注意：该插件默认未启用（`EnabledByDefault: false`）且标记为 Beta（`IsBetaVersion: true`），属于实验性功能。
 
 ## 使用场景
 
-- 你正在用 Maya/Houdini/Blender 制作资产，需要导入 UE → 用 USD 导入
-- 你需要在 UE 中实时引用 USD 文件，随源文件更新 → 用 AUsdStageActor
-- 你需要将 UE 关卡内容导出到 DCC 工具 → 用 USD Exporter
-- 你使用 USD 做管线资产交换格式 → 用完整的 USD 插件工作流
+- 你从 Maya/Houdini 等 DCC 工具导出了 USD 场景 → 用 USDImporter 导入到 Unreal Engine
+- 你需要在 UE 中引用外部 USD 文件并实时更新 → 用 USDStage 的 Stage Actor 工作流
+- 你需要将 UE 场景导出为 USD 格式供其他 DCC 工具使用 → 用 USDExporter
+- 你需要处理 USD 的几何缓存动画数据 → 用 GeometryCacheUSD
 
 ## 子模块概览
 
-| 模块 | 用途 | 文档 |
+| 模块 | 用途 | 详细文档 |
 |---|---|---|
-| `USDSchemas` | USD Prim 到 UE 类型的 Schema 映射 | TODO |
-| `USDStage` | Stage Actor 和 Stage 管理核心 | TODO |
-| `USDStageImporter` | USD 文件导入逻辑 | TODO |
-| `USDExporter` | UE 内容导出为 USD | TODO |
-| `USDStageEditor` | USD Stage 编辑器面板 | TODO |
-| `USDStageEditorViewModels` | 编辑器 MVVM ViewModel | TODO |
-| `USDClassesEditor` | 编辑器扩展类 | TODO |
-| `GeometryCacheUSD` | USD 几何缓存支持 | TODO |
-| `USDTests` | 测试工具库（已废弃） | [USDTests.md](#usd-tests) |
-
-## 模块依赖
-
-本插件的模块间依赖关系复杂，整体依赖以下非标准模块：
-
-| 模块 | 用途 |
-|---|---|
-| `USDSchemas` | 核心 Schema 定义，被大多数模块依赖 |
-| `USDStage` | Stage 管理核心 |
-| `USDClasses` | USD 相关基础类定义 |
-| `GeometryCache` | 几何缓存引擎支持 |
-
-## 维护状态
-
-### 近期更新
-
-| 日期 | Hash | 原文 | 中文解读 |
-|---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下的 double-to-float 截断警告 |
-| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | 新增支持分配独立于蓝图的控制绑定 |
-| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va | 修复 USD 26.03 更新导致的 LOD 变化时 AnimQuery 内部引用失效问题 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复 32 位/64 位格式化说明符不匹配问题 |
-| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | 烘焙曝光动画轨道的所有帧 |
-
-### 维护评价
-
-**活跃维护**。USD Importer 虽然标记为实验性（IsBetaVersion=true）且默认不启用，但持续收到实质性功能更新和 bug 修复。从 2018 年创建至今已约 7 年，近期内仍保持活跃开发节奏（每周都有提交）。主要更新集中在：
-- USD 版本升级兼容性（26.03）
-- 动画系统集成改进
-- 代码质量修复
-
-⚠️ **注意**：该插件默认未启用（`EnabledByDefault: false`），需要在项目设置中手动启用。IsBetaVersion=true 表明 API 可能不稳定。
+| USDSchemas | USD 类型/属性的 UE Schema 映射定义 | 待补充 |
+| GeometryCacheUSD | USD 几何缓存资产支持 | 待补充 |
+| USDClassesEditor | USD 相关编辑器类 | 待补充 |
+| USDExporter | USD 格式导出功能 | 待补充 |
+| USDStage | USD Stage 核心运行时逻辑 | 待补充 |
+| USDStageEditor | USD Stage 编辑器 UI | 待补充 |
+| USDStageEditorViewModels | Stage 编辑器的 MVVM 视图模型 | 待补充 |
+| USDStageImporter | USD Stage 导入管线 | 待补充 |
+| USDTests | 内部测试辅助函数 | [📄 文档](#usdtests-模块) |
 
 ---
 
-# USD Tests
+# USDTests 模块
 
-> 内部测试工具模块，提供 USD 测试辅助函数。
+> Adds support for importing the USD file format into Unreal Engine（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | USD 测试工具 |
-| 分类 | Importers (USDImporter 子模块) |
+| 中文名 | USD 测试模块 |
+| 分类 | Importers |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `USDTests` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-11-19 |
-| 年龄标签 | 🏛️ 文物（约 7 年） |
+| 年龄标签 | 👴 老古董（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests) | |
 
 ## 用途
 
-USDTests 模块是 USD Importer 的**内部测试辅助库**，为自动化测试提供 USD Stage Actor 的操控接口。该模块的所有公开 API 均已标记为 `UE_DEPRECATED`，明确标注"These functions were meant for internal testing only and will be removed in a future release"。
+USDTests 是 USDImporter 插件的**内部测试辅助模块**。它提供一组用于自动化测试的蓝图函数库，方便测试框架操控 USD Stage Actor 的行为，如重编译蓝图、获取子树顶点数、设置 Stage 路径等。
 
-**这不是一个面向用户的功能模块**，仅供引擎内部自动化测试框架使用。
+> ⚠️ **重要警告**：该模块中的所有公开函数均已被标记为 `UE_DEPRECATED`，官方明确说明"These functions were meant for internal testing only and will be removed in a future release"。**不应在正式项目中使用这些 API**。
 
-## 使用场景
-
-- ❌ **不推荐用于项目开发** — 这是内部测试工具
-- 仅在编写 USD 相关自动化测试时可能参考其用法
+该模块仅包含 2 个头文件，是整个 USDImporter 插件中规模最小的模块。
 
 ## 蓝图用法
 
-### ⚠️ 废弃警告
+所有函数均已在 `USDTestsBlueprintLibrary` 类中被标记为废弃。以下列出仅供了解，**不可用于生产代码**。
 
-所有蓝图节点均已标记为 `UE_DEPRECATED`，将在未来版本中移除。以下文档仅供了解 USD 测试用法参考：
-
-### 核心节点
+### 核心节点（已废弃）
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `RecompileBlueprintStageActor` | 重新编译蓝图派生的 Stage Actor | `UUSDTestsBlueprintLibrary` |
-| `DirtyStageActorBlueprint` | 标记 Stage Actor 蓝图为脏（需要重新编译） | `UUSDTestsBlueprintLibrary` |
-| `GetSubtreeVertexCount` | 获取指定 Prim 子树的顶点总数 | `UUSDTestsBlueprintLibrary` |
-| `GetSubtreeMaterialSlotCount` | 获取指定 Prim 子树的材质插槽总数 | `UUSDTestsBlueprintLibrary` |
-| `SetUsdStageCpp` | 设置 Stage Actor 的根层路径 | `UUSDTestsBlueprintLibrary` |
-| `ClearTransactionHistory` | 清除编辑器事务历史 | `UUSDTestsBlueprintLibrary` |
+| `RecompileBlueprintStageActor` | 重新编译蓝图派生的 Stage Actor | `USDTestsBlueprintLibrary` |
+| `DirtyStageActorBlueprint` | 标记 Stage Actor 蓝图为脏（触发重新编译） | `USDTestsBlueprintLibrary` |
+| `GetSubtreeVertexCount` | 获取指定 Prim 路径下子树的顶点总数 | `USDTestsBlueprintLibrary` |
+| `GetSubtreeMaterialSlotCount` | 获取指定 Prim 路径下子树的材质槽总数 | `USDTestsBlueprintLibrary` |
+| `SetUsdStageCpp` | 设置 Stage Actor 的 USD Stage 根层路径 | `USDTestsBlueprintLibrary` |
+| `ClearTransactionHistory` | 清除事务历史（Undo/Redo 栈） | `USDTestsBlueprintLibrary` |
 
-### 使用示例
+### 使用示例（蓝图描述）
 
-```
-[Get Subtree Vertex Count]
-    ├── Stage Actor: 引用场景中的 AUsdStageActor
-    ├── Prim Path: "/Root/Geometry"
-    └── Output → (int64 顶点数)
-```
+以下为测试蓝图中的典型用法流程：
 
-```
-[Set USD Stage Cpp]
-    ├── Stage Actor: 引用 AUsdStageActor
-    └── New Stage Root Layer: "D:/Assets/MyScene.usd"
-```
+1. 创建一个继承自 `AUsdStageActor` 的蓝图子类 `BP_MyStageActor`
+2. 调用 `SetUsdStageCpp` → 将 `BP_MyStageActor` 的 Stage 根层设置为指定 USD 文件路径
+3. 调用 `GetSubtreeVertexCount` → 传入 StageActor 和 PrimPath（如 `"/root/mesh"`），验证导入的顶点数量是否符合预期
+4. 调用 `GetSubtreeMaterialSlotCount` → 验证材质槽分配是否正确
+5. 调用 `DirtyStageActorBlueprint` → 强制蓝图标记为脏
+6. 调用 `RecompileBlueprintStageActor` → 重新编译并验证编译结果
+7. 测试结束时调用 `ClearTransactionHistory` → 清理 Undo 栈
 
 ## C++ 用法
+
+> ⚠️ 以下代码仅用于理解测试模块的设计意图，**不应在生产代码中使用**。
 
 ### 头文件引入
 
@@ -162,82 +111,84 @@ USDTests 模块是 USD Importer 的**内部测试辅助库**，为自动化测�
 
 ### 基本用法
 
-> ⚠️ 所有 API 已废弃，仅作为 USD 内部测试参考。
+以下示例展示了如何在自动化测试中使用这些函数。来源：`Source/USDTests/Public/USDTestsBlueprintLibrary.h`
 
 ```cpp
-// 获取 Stage Actor 子树顶点数（用于验证导入结果）
-int64 VertexCount = UUSDTestsBlueprintLibrary::GetSubtreeVertexCount(
-    StageActor,
-    TEXT("/Root/Geometry/Mesh")
-);
+// 测试用例：验证 USD Stage 的顶点导入数量
+// 注意：所有函数均已标记为 UE_DEPRECATED，仅供内部测试
 
-// 获取材质插槽数量（用于验证材质映射）
-int64 MaterialSlotCount = UUSDTestsBlueprintLibrary::GetSubtreeMaterialSlotCount(
-    StageActor,
-    TEXT("/Root/Materials")
-);
+// 1. 获取子树顶点计数
+AUsdStageActor* StageActor = /* 获取场景中的 Stage Actor */;
+FString PrimPath = TEXT("/root/geometry/mesh");
+int64 VertexCount = USDTestsBlueprintLibrary::GetSubtreeVertexCount(StageActor, PrimPath);
+// 验证: VertexCount 应该等于预期的顶点数
+
+// 2. 获取材质槽数量
+int64 SlotCount = USDTestsBlueprintLibrary::GetSubtreeMaterialSlotCount(StageActor, PrimPath);
+// 验证: SlotCount 应该等于预期的材质槽数
+
+// 3. 设置新的 USD Stage 根层
+FString NewStagePath = TEXT("D:/Assets/MyScene.usd");
+USDTestsBlueprintLibrary::SetUsdStageCpp(StageActor, NewStagePath);
 ```
 
 ### 进阶用法
 
-```cpp
-// 测试蓝图派生的 Stage Actor 生命周期
-UUSDTestsBlueprintLibrary::DirtyStageActorBlueprint(BlueprintDerivedStageActor);
-UUSDTestsBlueprintLibrary::RecompileBlueprintStageActor(BlueprintDerivedStageActor);
-
-// 切换 USD Stage 文件（测试不同 USD 文件的导入）
-UUSDTestsBlueprintLibrary::SetUsdStageCpp(StageActor, TEXT("NewPath/Scene.usd"));
-
-// 测试完成后清除事务历史
-UUSDTestsBlueprintLibrary::ClearTransactionHistory();
-```
-
-## Demo 示例
-
-该模块为内部测试工具，不提供独立示例。相关测试用法可参考 `USDTests.Build.cs` 中的依赖配置：
+结合蓝图重编译功能进行完整的工作流测试：
 
 ```cpp
-// USDTestsModule.h
-class IUsdTestsModule : public IModuleInterface
-{
-    // 无额外接口，仅模块注册
-};
-```
+// 测试蓝图派生的 Stage Actor 的编译行为
+AUsdStageActor* BlueprintDerivedStageActor = /* 继承自 AUsdStageActor 的蓝图实例 */;
 
-```cpp
-// USDTestsBlueprintLibrary.h - 所有函数已废弃
-UCLASS(MinimalAPI, meta = (ScriptName = "USDTestingLibrary"))
-class UE_DEPRECATED(all, "These functions were meant for internal testing only and will be removed in a future release")
-    USDTestsBlueprintLibrary : public UBlueprintFunctionLibrary
-{
-    // 所有函数均为 static，标记 UE_DEPRECATED
-};
+// 先标记蓝图为脏
+USDTestsBlueprintLibrary::DirtyStageActorBlueprint(BlueprintDerivedStageActor);
+
+// 重新编译并检查结果
+bool bSuccess = USDTestsBlueprintLibrary::RecompileBlueprintStageActor(BlueprintDerivedStageActor);
+// 验证: bSuccess 应为 true
+
+// 测试完成后清理事务历史，避免影响其他测试
+USDTestsBlueprintLibrary::ClearTransactionHistory();
 ```
 
 ## 模块依赖
 
+从 `USDTests.Build.cs` 的依赖关系推断：
+
 | 模块 | 用途 |
 |---|---|
-| `USDStage` | 提供 AUsdStageActor 类定义 |
-| `USDClasses` | USD 基础类 |
-| `AutomationController` | 自动化测试框架支持 |
-| `FunctionalTesting` | 功能测试框架 |
+| `USDStage` | 核心 Stage Actor 类（`AUsdStageActor` 所在模块） |
+| 无特殊依赖（仅标准 Core/Engine/Slate 等） | — |
 
 ## 维护状态
 
 ### 近期更新
 
-该模块随 USDImporter 主插件一起维护，近期无独立更新。最近的 commit 均为主插件功能和修复。
+以下为影响 USDImporter 插件目录的最近提交：
+
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 转 float 的警告 |
+| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | 新增支持分配独立于蓝图的 Control Rig |
+| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va... | 修复 26.03 更新导致 LOD 变化时 AnimQuery 内部引用失效的问题 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复 32 位/64 位格式化说明符匹配错误 |
+| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | 支持烘焙曝光动画轨道的所有帧 |
 
 ### 维护评价
 
-**不推荐使用**。所有公开 API 已标记为 `UE_DEPRECATED`，属于内部测试工具，未来版本将被移除。如需编写 USD 相关的自动化测试，建议参考引擎内部测试代码的模式，但不要直接依赖此模块。
+**整体插件（USDImporter）**：
+- ✅ **活跃维护**：最近 6 个月内有持续的功能性更新和 bug 修复
+- ✅ 从 2018 年创建至今仍在持续迭代，从最初的导入功能发展为包含导出、Stage 管理等完整工作流
+- ⚠️ 仍标记为 Beta (`IsBetaVersion: true`)，表明 API 可能仍有变动
+- ⚠️ 默认未启用 (`EnabledByDefault: false`)，需手动在 Plugins 面板中启用
 
----
+**USDTests 模块**：
+- ⚠️ **已废弃**：所有公开 API 均标记为 `UE_DEPRECATED`，官方明确表示将在未来版本移除
+- 该模块仅为内部自动化测试设计，功能极其有限（仅 2 个头文件）
+- ❌ **不推荐使用**：生产项目中不应依赖此模块的任何函数
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
-- [官方文档](https://docs.unrealengine.com)（请搜索 USD 相关页面）
-- [USD 官方网站](https://openusd.org/)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests)
+- [USDTests 模块源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests)
+- [USDTestsBlueprintLibrary 头文件](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests/Public/USDTestsBlueprintLibrary.h)

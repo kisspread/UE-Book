@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 序列器脚本 |
+| 中文名 | Sequencer 脚本扩展 |
 | 分类 | Scripting |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产） |
+| 包含内容 | ✅ 有（蓝图资产、Python 脚本示例） |
 | 模块 | `SequencerScripting` (Runtime), `SequencerScriptingEditor` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-05-09 |
@@ -16,22 +16,22 @@
 
 ## 用途
 
-SequencerScripting 是 Sequencer（关卡序列器）与 Python/蓝图脚本之间的桥梁。Sequencer 自身的 C++ API 暴露复杂、面向内部设计，不适合直接脚本化操作。此插件通过封装层（UObject 包装器）将 Sequencer 的核心能力暴露为易用的蓝图节点和 Python 函数。
+这个插件为 Unreal Engine 的 Sequencer（过场动画编辑器）提供完整的脚本化接口。它解决的核心问题是：**Sequencer 底层 API 过于复杂，无法直接暴露给蓝图和 Python**，因此该插件通过一系列 UObject 包装器，将 Sequencer 的核心功能（绑定管理、轨道操作、曲线编辑、FBX 导入导出、动画序列关联等）封装为易于使用的脚本 API。
 
-**解决的核心问题**：允许开发者通过 Python 脚本或蓝图自动化 Sequencer 工作流——包括导入/导出 FBX 动画数据、管理 Sequencer 曲线编辑器、创建事件绑定、关联 AnimSequence 与 LevelSequence 等。
+插件分为两层：
+- **SequencerScripting**（运行时）：对 LevelSequence 的基础脚本操作（添加绑定、管理轨道/区段、设置范围等）
+- **SequencerScriptingEditor**（编辑器扩展）：面向编辑器的高级工具（FBX 导入导出、动画序列关联、曲线编辑器操作、事件绑定等）
 
-插件分为两个模块：
-- **SequencerScripting**（Runtime）：核心序列器脚本功能，包括 UMG 动画轨道支持
-- **SequencerScriptingEditor**（Runtime）：编辑器工具集，包括 FBX 导入导出、曲线编辑器操作、动画序列链接等
+该插件是 Epic 推动"全流程 Python 自动化"战略的关键组件，使得影视制作管线和大型项目可以通过 Python 脚本批量操作 Sequencer，实现自动化过场动画制作。
 
 ## 使用场景
 
-- 你需要通过 Python 脚本批量导出 Sequencer 中的动画数据到 FBX 文件 → 使用 `ExportLevelSequenceFBX`
-- 你需要在自动化流程中将 LevelSequence 的骨骼动画烘焙为 AnimSequence → 使用 `ExportAnimSequence`
-- 你需要通过蓝图控制 Sequencer 曲线编辑器（选择关键帧、自定义颜色等） → 使用 `USequencerCurveEditorObject`
-- 你需要在 Sequencer 事件轨道中通过脚本快速创建蓝图事件绑定 → 使用 `CreateQuickBinding` + `CreateEvent`
-- 你需要将 FBX 文件批量导入到 ControlRig 轨道 → 使用 `ImportFBXToControlRig`
-- 你需要在 Python 中将 LevelSequence 与 AnimSequence 建立双向链接 → 使用 `LinkAnimSequence` / `GetLevelSequenceLinkFromAnimSequence`
+- 你有一百个过场动画需要批量修改相机轨道参数 → 用 Python 脚本遍历所有 LevelSequence 自动化修改
+- 你需要将 Sequencer 中的骨骼动画导出为 FBX 或 AnimSequence → 用 `ExportLevelSequenceFBX` / `ExportAnimSequence`
+- 你需要从外部 DCC 工具（如 Maya）导入 FBX 动画到 Sequencer 绑定 → 用 `ImportLevelSequenceFBX`
+- 你需要在蓝图中操作 Sequencer 曲线编辑器（选择关键帧、调整曲线颜色等） → 用 `SequencerCurveEditorObject`
+- 你需要为 Sequencer 事件轨道创建快速绑定 → 用 `CreateQuickBinding` / `CreateEvent`
+- 你需要在 ControlRig 轨道上导入/导出 FBX → 用 `ImportFBXToControlRig` / `ExportFBXFromControlRig`
 
 ## 蓝图用法
 
@@ -39,81 +39,83 @@ SequencerScripting 是 Sequencer（关卡序列器）与 Python/蓝图脚本之�
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Export Level Sequence FBX` | 将指定绑定和轨道导出为 FBX 文件 | `USequencerToolsFunctionLibrary` |
-| `Import Level Sequence FBX` | 从 FBX 文件导入动画数据到指定绑定 | `USequencerToolsFunctionLibrary` |
-| `Import FBX To Control Rig` | 将 FBX 导入到 ControlRig 轨道 | `USequencerToolsFunctionLibrary` |
-| `Export FBX From Control Rig` | 从 ControlRig 轨道导出 FBX | `USequencerToolsFunctionLibrary` |
+| `ExportLevelSequenceFBX` | 将指定绑定和轨道导出为 FBX 文件 | `USequencerToolsFunctionLibrary` |
+| `ImportLevelSequenceFBX` | 从 FBX 文件导入动画到指定绑定 | `USequencerToolsFunctionLibrary` |
+| `ExportFBXFromControlRig` | 从 ControlRig 轨道区段导出 FBX | `USequencerToolsFunctionLibrary` |
+| `ImportFBXToControlRig` | 将 FBX 导入到 ControlRig 轨道 | `USequencerToolsFunctionLibrary` |
 
-### 动画序列链接
+### 动画序列关联
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Export Anim Sequence` | 将绑定中的骨骼动画烘焙为 AnimSequence | `USequencerToolsFunctionLibrary` |
-| `Export Anim Sequence Wait For Delegate` | 等待委托返回 true 后再导出（用于异步场景） | `USequencerToolsFunctionLibrary` |
-| `Link Anim Sequence` | 将 LevelSequence 的骨骼绑定链接到已有 AnimSequence | `USequencerToolsFunctionLibrary` |
-| `Clear Linked Anim Sequences` | 清除 LevelSequence 的所有 AnimSequence 链接 | `USequencerToolsFunctionLibrary` |
-| `Get Level Sequence Link From Anim Sequence` | 从 AnimSequence 获取关联的 LevelSequence 链接 | `USequencerToolsFunctionLibrary` |
-| `Get Anim Sequence Link From Level Sequence` | 从 LevelSequence 获取关联的 AnimSequence 链接 | `USequencerToolsFunctionLibrary` |
+| `ExportAnimSequence` | 将绑定的骨骼动画导出为 AnimSequence | `USequencerToolsFunctionLibrary` |
+| `ExportAnimSequenceWaitForDelegate` | 导出动画序列，等待委托确认后再执行 | `USequencerToolsFunctionLibrary` |
+| `LinkAnimSequence` | 关联 LevelSequence 的骨骼绑定到已有 AnimSequence | `USequencerToolsFunctionLibrary` |
+| `ClearLinkedAnimSequences` | 清除 LevelSequence 上所有动画关联 | `USequencerToolsFunctionLibrary` |
+| `GetAnimSequenceLinkFromLevelSequence` | 获取 LevelSequence 的动画链接对象 | `USequencerToolsFunctionLibrary` |
+| `GetLevelSequenceLinkFromAnimSequence` | 获取 AnimSequence 的关卡序列链接对象 | `USequencerToolsFunctionLibrary` |
 
 ### 事件快速绑定
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Create Quick Binding` | 为 Actor 成员方法创建事件快速绑定端点 | `USequencerToolsFunctionLibrary` |
-| `Create Event` | 从端点和负载创建 MovieSceneEvent | `USequencerToolsFunctionLibrary` |
-| `Is Event Endpoint Valid` | 检查端点是否有效 | `USequencerToolsFunctionLibrary` |
+| `CreateQuickBinding` | 创建到 Actor 方法的快速事件绑定 | `USequencerToolsFunctionLibrary` |
+| `CreateEvent` | 从已创建的端点和负载创建事件 | `USequencerToolsFunctionLibrary` |
+| `IsEventEndpointValid` | 检查事件端点是否有效 | `USequencerToolsFunctionLibrary` |
 
 ### 曲线编辑器
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Open Curve Editor` | 打开 Sequencer 曲线编辑器 | `USequencerCurveEditorObject` |
-| `Close Curve Editor` | 关闭 Sequencer 曲线编辑器 | `USequencerCurveEditorObject` |
-| `Is Curve Editor Open` | 曲线编辑器是否已打开 | `USequencerCurveEditorObject` |
-| `Apply Filter` | 对曲线编辑器应用滤镜 | `USequencerCurveEditorObject` |
-| `Get Channels With Selected Keys` | 获取包含选中关键帧的通道列表 | `USequencerCurveEditorObject` |
-| `Get Selected Keys` | 获取指定通道中的选中关键帧索引 | `USequencerCurveEditorObject` |
-| `Select Keys` | 选择指定通道中的关键帧 | `USequencerCurveEditorObject` |
-| `Empty Selection` | 清空当前选择 | `USequencerCurveEditorObject` |
-| `Show Curve` | 显示/隐藏指定曲线 | `USequencerCurveEditorObject` |
-| `Is Curve Shown` | 曲线是否正在显示 | `USequencerCurveEditorObject` |
+| `OpenCurveEditor` | 打开曲线编辑器 | `USequencerCurveEditorObject` |
+| `CloseCurveEditor` | 关闭曲线编辑器 | `USequencerCurveEditorObject` |
+| `IsCurveEditorOpen` | 曲线编辑器是否已打开 | `USequencerCurveEditorObject` |
+| `ApplyFilter` | 对曲线编辑器应用过滤器 | `USequencerCurveEditorObject` |
+| `GetChannelsWithSelectedKeys` | 获取包含已选关键帧的通道列表 | `USequencerCurveEditorObject` |
+| `GetSelectedKeys` | 获取指定通道中已选关键帧的索引 | `USequencerCurveEditorObject` |
+| `SelectKeys` | 选择指定通道中的关键帧 | `USequencerCurveEditorObject` |
+| `EmptySelection` | 清空当前选择 | `USequencerCurveEditorObject` |
+| `ShowCurve` | 显示/隐藏指定通道的曲线 | `USequencerCurveEditorObject` |
+| `IsCurveShown` | 指定通道的曲线是否正在显示 | `USequencerCurveEditorObject` |
 
 ### 曲线颜色管理
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Has Custom Color For Channel` | 指定通道是否有自定义颜色 | `USequencerCurveEditorObject` |
-| `Get Custom Color For Channel` | 获取通道自定义颜色（无则返回白色） | `USequencerCurveEditorObject` |
-| `Set Custom Color For Channel` | 设置通道自定义颜色（存储在编辑器用户偏好中） | `USequencerCurveEditorObject` |
-| `Set Random Color For Channels` | 为多个通道设置随机颜色 | `USequencerCurveEditorObject` |
-| `Delete Color For Channels` | 删除通道自定义颜色 | `USequencerCurveEditorObject` |
+| `HasCustomColorForChannel` | 检查通道是否有自定义颜色 | `USequencerCurveEditorObject` |
+| `GetCustomColorForChannel` | 获取通道自定义颜色 | `USequencerCurveEditorObject` |
+| `SetCustomColorForChannel` | 设置通道自定义颜色 | `USequencerCurveEditorObject` |
+| `SetCustomColorForChannels` | 批量设置通道自定义颜色 | `USequencerCurveEditorObject` |
+| `SetRandomColorForChannels` | 为通道设置随机颜色 | `USequencerCurveEditorObject` |
+| `DeleteColorForChannels` | 删除通道的自定义颜色 | `USequencerCurveEditorObject` |
 
 ### 使用示例（蓝图描述）
 
-**导出 FBX 动画**：
-1. 创建 `FSequencerExportFBXParams` 结构体，填入 World、Sequence、Bindings、Tracks、FBX 文件路径
-2. 调用 `Export Level Sequence FBX` 节点，传入参数结构体
-3. 检查返回值判断是否导出成功
+**示例 1：导出 LevelSequence 为 FBX**
 
-**曲线编辑器操作流程**：
-1. 获取 `USequencerCurveEditorObject` 实例
-2. 调用 `Open Curve Editor` 打开编辑器
-3. 调用 `Get Channels With Selected Keys` 获取已选中关键帧的通道
-4. 对选中通道调用 `Set Custom Color For Channel` 设置高亮颜色
+1. 创建 `FSequencerExportFBXParams` 结构体，设置 World、Sequence、Bindings、Tracks 和 FBXFileName
+2. 调用 `ExportLevelSequenceFBX`，传入该参数结构体
+3. 返回 `true` 表示导出成功
 
-**创建事件快速绑定**：
-1. 调用 `Create Quick Binding`，传入 Sequence、目标 Object、函数名（如 `"Set Actor Scale 3D"`）
-2. 获取返回的 `FSequencerQuickBindingResult`
-3. 调用 `Create Event` 将端点和负载字符串组合为 `FMovieSceneEvent`
-4. 将事件添加到 Sequencer 事件轨道的通道中
+**示例 2：管理曲线编辑器颜色**
+
+1. 调用 `SetRandomColorForChannels` 为目标通道设置随机颜色，传入通道的 Class 和 Identifier 数组
+2. 使用 `HasCustomColorForChannel` 检查是否已存在自定义颜色
+3. 调用 `GetCustomColorForChannel` 读取颜色值
+
+**示例 3：创建事件快速绑定**
+
+1. 调用 `CreateQuickBinding`，传入 Sequence、目标 Object、函数名和是否在编辑器中调用
+2. 使用 `IsEventEndpointValid` 验证返回的 `FSequencerQuickBindingResult`
+3. 调用 `CreateEvent` 创建最终的事件，传入 Endpoint 和 Payload 字符串数组
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "SequencerTools.h"              // USequencerToolsFunctionLibrary
-#include "SequencerCurveEditorObject.h"  // USequencerCurveEditorObject
+#include "SequencerTools.h"
+#include "SequencerCurveEditorObject.h"
 ```
 
 ### 基本用法 — FBX 导出
@@ -123,40 +125,72 @@ SequencerScripting 是 Sequencer（关卡序列器）与 Python/蓝图脚本之�
 #include "SequencerTools.h"
 #include "LevelSequence.h"
 
-// 构建 FBX 导出参数
-FSequencerExportFBXParams ExportParams;
-ExportParams.World = GetWorld();
-ExportParams.Sequence = MyLevelSequence;
-ExportParams.RootSequence = MyLevelSequence;
-ExportParams.Bindings = MyBindings;  // TArray<FMovieSceneBindingProxy>
-ExportParams.Tracks = MyTracks;      // TArray<UMovieSceneTrack*>
-ExportParams.FBXFileName = TEXT("/Game/ExportedAnim.fbx");
+void ExportSequenceToFBX(UWorld* World, ULevelSequence* Sequence)
+{
+    // 构建导出参数
+    FSequencerExportFBXParams Params;
+    Params.World = World;
+    Params.Sequence = Sequence;
+    Params.RootSequence = Sequence;
+    Params.Bindings = { FMovieSceneBindingProxy(FGuid(), Sequence) }; // 按需填充绑定
+    Params.Tracks = {}; // 按需填充轨道
+    Params.OverrideOptions = nullptr; // 使用默认 FBX 导出选项
+    Params.FBXFileName = TEXT("C:/Export/output.fbx");
 
-// 执行导出
-bool bSuccess = USequencerToolsFunctionLibrary::ExportLevelSequenceFBX(ExportParams);
+    bool bSuccess = USequencerToolsFunctionLibrary::ExportLevelSequenceFBX(Params);
+    UE_LOG(LogTemp, Log, TEXT("FBX Export %s"), bSuccess ? TEXT("succeeded") : TEXT("failed"));
+}
 ```
 
-### 基本用法 — 事件快速绑定
+### 基本用法 — 动画序列关联
 
 ```cpp
 // 来源: Public/SequencerTools.h
 #include "SequencerTools.h"
 
-// 为 Actor 的成员函数创建快速绑定
-FSequencerQuickBindingResult Result = USequencerToolsFunctionLibrary::CreateQuickBinding(
-    MySequence,         // UMovieSceneSequence*
-    MyActor,            // UObject*
-    TEXT("Set Actor Scale 3D"),
-    false               // bCallInEditor
-);
-
-if (USequencerToolsFunctionLibrary::IsEventEndpointValid(Result))
+void LinkAndExportAnimSequence(UWorld* World, ULevelSequence* Sequence,
+    UAnimSequence* AnimSeq, UAnimSeqExportOption* ExportOptions,
+    const FMovieSceneBindingProxy& Binding)
 {
-    // 创建事件，传入负载参数
-    TArray<FString> Payload = { TEXT("1.0,1.0,1.0") };
+    // 导出动画序列并创建双向链接
+    bool bExported = USequencerToolsFunctionLibrary::ExportAnimSequence(
+        World, Sequence, AnimSeq, ExportOptions, Binding, /*bCreateLink=*/true);
+
+    // 之后可以通过以下方式查询链接关系
+    UAnimSequenceLevelSequenceLink* Link =
+        USequencerToolsFunctionLibrary::GetLevelSequenceLinkFromAnimSequence(AnimSeq);
+
+    // 获取 LevelSequence 的所有动画链接
+    ULevelSequenceAnimSequenceLink* SeqLinks =
+        USequencerToolsFunctionLibrary::GetAnimSequenceLinkFromLevelSequence(Sequence);
+}
+```
+
+### 进阶用法 — 事件快速绑定
+
+```cpp
+// 来源: Public/SequencerTools.h
+#include "SequencerTools.h"
+#include "MovieSceneEventSection.h"
+
+void CreateSequencerEvent(UMovieSceneSequence* Sequence, UObject* TargetObject,
+    UMovieSceneEventSectionBase* EventSection)
+{
+    // 创建快速绑定到目标对象的函数
+    FSequencerQuickBindingResult Endpoint = USequencerToolsFunctionLibrary::CreateQuickBinding(
+        Sequence, TargetObject, TEXT("Set Actor Scale 3D"), /*bCallInEditor=*/false);
+
+    // 验证端点有效性
+    if (!USequencerToolsFunctionLibrary::IsEventEndpointValid(Endpoint))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Invalid event endpoint"));
+        return;
+    }
+
+    // 创建事件并添加到区段
+    TArray<FString> Payload = { TEXT("1.0, 1.0, 1.0") }; // 负载参数
     FMovieSceneEvent Event = USequencerToolsFunctionLibrary::CreateEvent(
-        MySequence, MyEventSection, Result, Payload
-    );
+        Sequence, EventSection, Endpoint, Payload);
 }
 ```
 
@@ -166,159 +200,131 @@ if (USequencerToolsFunctionLibrary::IsEventEndpointValid(Result))
 // 来源: Public/SequencerCurveEditorObject.h
 #include "SequencerCurveEditorObject.h"
 
-// 创建曲线编辑器对象并关联 Sequencer
-USequencerCurveEditorObject* CurveEditorObj = NewObject<USequencerCurveEditorObject>();
-CurveEditorObj->SetSequencer(MySequencer);
-
-// 打开曲线编辑器
-CurveEditorObj->OpenCurveEditor();
-
-// 获取包含选中关键帧的通道
-TArray<FSequencerChannelProxy> Channels = CurveEditorObj->GetChannelsWithSelectedKeys();
-
-for (const FSequencerChannelProxy& Channel : Channels)
+void ManipulateCurves(USequencerCurveEditorObject* CurveEditor)
 {
-    // 显示该通道的曲线
-    CurveEditorObj->ShowCurve(Channel, true);
-    
-    // 获取选中的关键帧索引
-    TArray<int32> SelectedKeys = CurveEditorObj->GetSelectedKeys(Channel);
-    
-    // 设置自定义颜色
-    CurveEditorObj->SetCustomColorForChannel(
-        Channel.Section->GetClass(),
-        Channel.ChannelName.ToString(),
-        FLinearColor::Red
-    );
+    // 打开曲线编辑器
+    CurveEditor->OpenCurveEditor();
+
+    // 获取包含已选关键帧的通道
+    TArray<FSequencerChannelProxy> Channels = CurveEditor->GetChannelsWithSelectedKeys();
+
+    for (const FSequencerChannelProxy& Channel : Channels)
+    {
+        // 获取该通道的已选关键帧索引
+        TArray<int32> SelectedIndices = CurveEditor->GetSelectedKeys(Channel);
+
+        // 设置自定义颜色
+        CurveEditor->SetCustomColorForChannel(
+            Channel.Section->GetClass(),
+            Channel.ChannelName.ToString(),
+            FLinearColor::Red);
+
+        // 显示曲线
+        CurveEditor->ShowCurve(Channel, true);
+    }
 }
-```
-
-### 进阶用法 — AnimSequence 链接管理
-
-```cpp
-// 来源: Public/SequencerTools.h
-#include "SequencerTools.h"
-
-// 将 LevelSequence 的骨骼动画烘焙到 AnimSequence 并建立链接
-bool bExported = USequencerToolsFunctionLibrary::ExportAnimSequence(
-    GetWorld(),
-    MyLevelSequence,
-    MyAnimSequence,      // UAnimSequence*
-    ExportOptions,        // UAnimSeqExportOption*
-    BindingProxy,         // FMovieSceneBindingProxy
-    true                  // bCreateLink
-);
-
-// 查询链接关系
-UAnimSequenceLevelSequenceLink* AnimLink = 
-    USequencerToolsFunctionLibrary::GetLevelSequenceLinkFromAnimSequence(MyAnimSequence);
-
-ULevelSequenceAnimSequenceLink* SeqLink = 
-    USequencerToolsFunctionLibrary::GetAnimSequenceLinkFromLevelSequence(MyLevelSequence);
 ```
 
 ## Demo 示例
 
-### 完整的 FBX 导出与曲线编辑器示例
+### 最小完整示例 — 通过蓝图函数库操作 Sequencer
 
 ```cpp
-// SequencerScriptingDemo.h
+// MySequencerAutomation.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SequencerTools.h"
-#include "SequencerCurveEditorObject.h"
+#include "Kismet/BlueprintFunctionLibrary.h"
 #include "LevelSequence.h"
+#include "MovieSceneBindingProxy.h"
+#include "SequencerTools.h"
+#include "MySequencerAutomation.generated.h"
 
-class FSequencerScriptingDemo
+UCLASS()
+class UMySequencerAutomation : public UBlueprintFunctionLibrary
 {
+    GENERATED_BODY()
+
 public:
-    /** 导出 LevelSequence 中指定绑定的动画到 FBX */
-    static bool ExportSequenceToFBX(UWorld* World, ULevelSequence* Sequence, 
-                                     const FString& OutputPath);
-
-    /** 为 LevelSequence 创建动画事件快速绑定 */
-    static FSequencerQuickBindingResult CreateAnimEventBinding(
-        UMovieSceneSequence* Sequence, UObject* TargetActor, const FString& FunctionName);
-
-    /** 打开曲线编辑器并为选中通道设置高亮颜色 */
-    static void HighlightSelectedCurves(USequencerCurveEditorObject* CurveEditorObj, 
-                                         const FLinearColor& Color);
+    /**
+     * 批量导出指定 LevelSequence 中所有绑定的动画为 AnimSequence。
+     * 适用于需要从过场动画中批量提取骨骼动画的管线场景。
+     */
+    UFUNCTION(BlueprintCallable, Category = "My Tools | Sequencer")
+    static bool BatchExportAnimSequences(
+        UWorld* World,
+        ULevelSequence* Sequence,
+        UAnimSeqExportOption* ExportOptions,
+        const TArray<FMovieSceneBindingProxy>& Bindings,
+        const FString& OutputDirectory);
 };
 ```
 
 ```cpp
-// SequencerScriptingDemo.cpp
-#include "SequencerScriptingDemo.h"
+// MySequencerAutomation.cpp
+#include "MySequencerAutomation.h"
+#include "AnimSequence.h"
+#include "MovieScene.h"
 
-bool FSequencerScriptingDemo::ExportSequenceToFBX(
-    UWorld* World, ULevelSequence* Sequence, const FString& OutputPath)
+bool UMySequencerAutomation::BatchExportAnimSequences(
+    UWorld* World,
+    ULevelSequence* Sequence,
+    UAnimSeqExportOption* ExportOptions,
+    const TArray<FMovieSceneBindingProxy>& Bindings,
+    const FString& OutputDirectory)
 {
-    if (!World || !Sequence)
+    if (!World || !Sequence || Bindings.Num() == 0)
     {
         return false;
     }
 
-    // 构建导出参数
-    FSequencerExportFBXParams Params;
-    Params.World = World;
-    Params.Sequence = Sequence;
-    Params.RootSequence = Sequence;
-    Params.FBXFileName = OutputPath;
+    int32 SuccessCount = 0;
 
-    // 获取序列中所有绑定
-    UMovieScene* MovieScene = Sequence->GetMovieScene();
-    if (MovieScene)
+    for (int32 i = 0; i < Bindings.Num(); ++i)
     {
-        for (const FMovieSceneBinding& Binding : MovieScene->GetBindings())
+        const FMovieSceneBindingProxy& Binding = Bindings[i];
+
+        // 为每个绑定创建新的 AnimSequence 资产
+        FString AssetName = FString::Printf(TEXT("AnimSeq_%s_%d"),
+            *Sequence->GetName(), i);
+        FString PackagePath = FPaths::Combine(OutputDirectory, AssetName);
+        UPackage* Package = CreatePackage(*PackagePath);
+        UAnimSequence* AnimSeq = NewObject<UAnimSequence>(Package, *AssetName, RF_Public | RF_Standalone);
+
+        // 使用 SequencerTools 导出并创建双向链接
+        bool bExported = USequencerToolsFunctionLibrary::ExportAnimSequence(
+            World, Sequence, AnimSeq, ExportOptions, Binding, /*bCreateLink=*/true);
+
+        if (bExported)
         {
-            Params.Bindings.Add(FMovieSceneBindingProxy(Binding.GetGuid(), Sequence));
+            // 保存资产
+            FAssetRegistryModule::AssetCreated(AnimSeq);
+            Package->MarkPackageDirty();
+            UPackage::SavePackage(Package, AnimSeq,
+                EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
+            ++SuccessCount;
         }
     }
 
-    return USequencerToolsFunctionLibrary::ExportLevelSequenceFBX(Params);
-}
-
-FSequencerQuickBindingResult FSequencerScriptingDemo::CreateAnimEventBinding(
-    UMovieSceneSequence* Sequence, UObject* TargetActor, const FString& FunctionName)
-{
-    return USequencerToolsFunctionLibrary::CreateQuickBinding(
-        Sequence, TargetActor, FunctionName, false);
-}
-
-void FSequencerScriptingDemo::HighlightSelectedCurves(
-    USequencerCurveEditorObject* CurveEditorObj, const FLinearColor& Color)
-{
-    if (!CurveEditorObj || !CurveEditorObj->IsCurveEditorOpen())
-    {
-        return;
-    }
-
-    TArray<FSequencerChannelProxy> Channels = CurveEditorObj->GetChannelsWithSelectedKeys();
-
-    for (const FSequencerChannelProxy& Channel : Channels)
-    {
-        CurveEditorObj->SetCustomColorForChannel(
-            Channel.Section->GetClass(),
-            Channel.ChannelName.ToString(),
-            Color
-        );
-    }
+    UE_LOG(LogTemp, Log, TEXT("Batch export: %d/%d succeeded"),
+        SuccessCount, Bindings.Num());
+    return SuccessCount > 0;
 }
 ```
 
 ## 模块依赖
 
+从 Build.cs 分析，该插件依赖以下非通用模块：
+
 | 模块 | 用途 |
 |---|---|
-| `MovieScene` | Sequencer 核心电影场景系统 |
-| `LevelSequence` | 关卡序列资产和播放 |
-| `MovieSceneTools` | Sequencer 编辑器工具集 |
-| `MovieSceneCapture` | 影片渲染捕获（已废弃，迁移至 Movie Render Queue） |
-| `ControlRig` | ControlRig 动画系统集成 |
-| `FBX` | FBX 文件格式导入导出 |
+| `MovieScene` | Sequencer 核心数据模型（MovieSceneSection、MovieSceneTrack 等） |
+| `LevelSequenceEditor` | 编辑器中的 LevelSequence 操作（打开/关闭序列编辑器） |
+| `LevelSequence` | LevelSequence 资产类型和评估器 |
+| `ControlRig` | ControlRig 轨道的 FBX 导入导出支持 |
+| `FbxExport` / `FbxImport` | FBX 文件格式的读写 |
 | `AnimGraph` | 动画图表相关功能 |
-| `BlueprintGraph` | 蓝图图表节点（用于事件快速绑定的 K2Node） |
+| `UnrealEd` | 编辑器功能（序列录制、FBX 对话框等） |
 
 ## 维护状态
 
@@ -326,21 +332,25 @@ void FSequencerScriptingDemo::HighlightSelectedCurves(
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-12 | `b209798d` | Anim In Engine: Add bRemoveExcludedCurves option to animation recording so we can remove curves alre | 动画录制新增排除曲线选项 |
-| 2026-04-24 | `8b8110b4` | [EDA] Add Sequencer tool wrappers + fix sequencer toolset tests | 新增 Sequencer 工具包装器并修复测试 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移至 UE_LOGF |
-| 2026-04-10 | `77af3950` | [EDA] Add SequencerTools toolset with Anim Mixer split into separate plugin | 新增 SequencerTools 工具集，动画混合器拆分为独立插件 |
-| 2026-04-10 | `8bd8f719` | [Backout] - CL52569948 | 回退变更 CL52569948 |
+| 2026-05-12 | `b209798d` | Anim In Engine: Add bRemoveExcludedCurves option to animation recording so we can remove curves alre | 添加动画录制中移除排除曲线的选项 |
+| 2026-04-24 | `8b8110b4` | [EDA] Add Sequencer tool wrappers + fix sequencer toolset tests | 添加 Sequencer 工具包装器并修复工具集测试 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏到 UE_LOGF 新格式 |
+| 2026-04-10 | `77af3950` | [EDA] Add SequencerTools toolset with Anim Mixer split into separate plugin | 添加 SequencerTools 工具集，动画混合器拆分为独立插件 |
+| 2026-04-10 | `8bd8f719` | [Backout] - CL52569948 | 回退之前的提交 |
 
 ### 维护评价
 
-- **活跃维护中**：最近一次更新距今约 5 个月（2026-05），且 2026 年 4 月有密集的功能性更新
-- 虽然 `.uplugin` 标记为 `IsBetaVersion: true`，但该插件自 2018 年创建至今持续更新超过 8 年，功能已相当成熟
-- 近期更新集中在 Sequencer 工具集扩展（EDA 项目）、动画录制增强、以及代码现代化
-- ⚠️ 注意：部分旧 API（`RenderMovie`、`IsRenderingMovie`、`CancelMovieRender`、`GetBoundObjects`、`GetObjectBindings`）已在 UE 5.3 中标记为废弃，建议使用 Movie Render Queue 和 `ULevelSequenceEditorBlueprintLibrary` 替代
-- **推荐使用**：对于需要脚本化 Sequencer 工作流（特别是 FBX 导入导出、动画序列链接、事件绑定）的项目，此插件是官方推荐方案
+该插件处于**活跃维护**状态：
+
+- **年龄**：2018 年创建，已有约 8 年历史
+- **实验性标记**：尽管已存在 8 年，`.uplugin` 中 `IsBetaVersion` 仍为 `true`，表明 Epic 将其视为仍在演进中的 API
+- **近期活跃度**：2026 年 4-5 月有多次功能性更新（EDA 工具集、动画录制增强），维护非常活跃
+- **API 演进**：许多早期函数（`RenderMovie`、`IsRenderingMovie`、`GetBoundObjects`、`GetObjectBindings`）已在 5.3 标记为废弃，建议迁移到 Movie Render Queue 和 `ULevelSequenceEditorBlueprintLibrary`
+- **架构方向**：正在向更模块化的 EDA（Editor Development Architecture）方向重构，动画混合器等组件被拆分为独立插件
+
+**推荐使用**：✅ 推荐。该插件是 Sequencer 自动化的核心接口，虽然标记为 Beta，但 API 已经相当稳定且持续得到维护。注意关注废弃函数的迁移路径，优先使用新推荐的 API（如 Movie Render Queue 替代 `RenderMovie`）。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MovieScene/SequencerScripting)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MovieScene/SequencerScripting/Tests)
+- 官方文档（无公开链接）

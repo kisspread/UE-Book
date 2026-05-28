@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 布料资产 |
+| 中文名 | 混沌布料资产 |
 | 分类 | Physics |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（布料资产类型、蓝图交互接口） |
+| 包含内容 | ✅ 有（蓝图资产、材质模板） |
 | 模块 | `ChaosClothAsset` (Runtime), `ChaosClothAssetEngine` (Runtime), `ChaosClothAssetTools` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-03-22 |
@@ -16,92 +16,113 @@
 
 ## 用途
 
-ChaosClothAsset 是 UE5 基于 Chaos 物理引擎的**新一代布料资产系统**，采用基于裁片图案（Pattern-based）的布料模拟方式。它替代了旧版 Cloth 系统中直接在 SkeletalMesh 上标记布料区域的方式，转而引入独立的布料资产（`UChaosClothAsset`）和布料组件（`UChaosClothComponent`），将布料模拟与角色骨骼动画解耦。
+Chaos Cloth Asset 插件为 UE5 提供了**基于版型（Pattern）的布料模拟资产系统**。它将传统的骨骼网格体蒙皮与 Chaos 物理引擎的布料模拟相结合，允许用户通过 Dataflow 图形系统构建布料资产，然后由 `UChaosClothComponent` 在运行时驱动物理模拟。
 
-该插件的核心价值在于：
+这个插件解决的核心问题是：**将布料的视觉表现（渲染网格）与物理模拟（仿真网格）统一管理**。传统的 Cloth 系统依赖 Skeletal Mesh 的 Clothing Data，而 Chaos Cloth Asset 引入了独立的资产类型（`UChaosClothAsset`），支持：
 
-1. **资产化管理布料**：布料几何、模拟参数、LOD 数据封装为独立资产，可在多个角色间共享和复用
-2. **Dataflow 工作流**：通过 Dataflow 图表驱动布料资产的创建和编辑，支持节点化、非破坏性的布料建模
-3. **独立模拟组件**：`UChaosClothComponent` 可独立于 SkeletalMeshComponent 运行布料模拟，支持更灵活的组合方式
-4. **Outfit 支持**：基类 `UChaosClothAssetBase` 同时支持单件布料资产和套装资产（Outfit Asset），适用于复杂的多件服装系统
-5. **运行时属性修改**：通过 `UChaosClothAssetInteractor` 在蓝图中动态修改模拟参数（风力、重力、阻尼等），无需重建资产
+- 通过 Dataflow 节点图进行布料数据的程序化构建
+- 多 LOD 布料模拟
+- 服装套装（Outfit）资产，将多块布料组合管理
+- 运行时通过蓝图交互器动态调整模拟参数
+- 与 Chaos 缓存系统集成，支持录制和回放
 
-该插件从 Experimental 文件夹迁出并标记为 Beta（首次提交即说明），标志着 Epic 将其视为 Chaos 布料系统的主要发展方向。
+插件从 Experimental 文件夹迁移而来并标记为 Beta，表明 Epic 正在积极完善该系统，目标是取代旧的 Cloth 系统。
 
 ## 使用场景
 
-- 你在制作角色服装（衬衫、裙子、斗篷等）需要物理模拟 → 用 ChaosClothAsset 创建独立的布料资产
-- 你需要用 Dataflow 节点图编辑布料裁片和缝合关系 → 用该插件的 Dataflow 集成工作流
-- 你需要在同一角色身上穿多件独立模拟的衣服（上衣+裙子+围巾）→ 用多个 ChaosClothComponent 或 Outfit 资产
-- 你需要在运行时动态调整布料的物理参数（如进入室内时减少风力影响）→ 用 UChaosClothAssetInteractor
-- 你需要布料与外部骨骼网格体碰撞（如武器碰撞衣服）→ 用 CollisionSource 系统
+- 你在制作角色服装系统，需要真实的布料飘动效果 → 使用 `UChaosClothComponent` + `UChaosClothAsset`
+- 你需要基于版型（Pattern）从 2D 样片构建布料网格 → 通过 Dataflow 图形系统构建 `UChaosClothAsset`
+- 你有多件服装需要统一管理（如上衣、裤子、裙子）→ 使用 Outfit 资产（`UChaosOutfitAsset`）
+- 你需要在运行时动态调整布料参数（如风力、刚度）→ 通过 `UChaosClothAssetInteractor` 蓝图接口
+- 你需要布料与外部骨骼网格体产生碰撞 → 通过 `AddCollisionSource` 添加碰撞源
+- 你需要录制布料模拟数据并回放 → 配合 Chaos Cache 系统
 
 ## 蓝图用法
 
-### 核心节点 — 布料组件 (`UChaosClothComponent`)
+### 组件设置与资产管理
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SetAsset` | 设置布料/套装资产 | `UChaosClothComponent` |
+| `SetAsset` | 设置布料/服装资产 | `UChaosClothComponent` |
 | `GetAsset` | 获取当前使用的布料资产 | `UChaosClothComponent` |
-| `ForceNextUpdateTeleport` | 下一帧传送布料到新位置，保持当前姿态 | `UChaosClothComponent` |
-| `ForceNextUpdateTeleportAndReset` | 下一帧传送并重置布料姿态和速度 | `UChaosClothComponent` |
+| `SetOverlayMaterial` | 设置覆盖材质 | `UChaosClothAssetBase` |
+| `GetOverlayMaterial` | 获取覆盖材质 | `UChaosClothAssetBase` |
+| `SetOverlayMaterialMaxDrawDistance` | 设置覆盖材质最大绘制距离 | `UChaosClothAssetBase` |
+| `GetOverlayMaterialMaxDrawDistance` | 获取覆盖材质最大绘制距离 | `UChaosClothAssetBase` |
+
+### 模拟控制
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `SetEnableSimulation` | 启用/禁用布料模拟 | `UChaosClothComponent` |
+| `IsSimulationEnabled` | 查询模拟是否启用 | `UChaosClothComponent` |
 | `SuspendSimulation` | 暂停模拟，保持当前姿态 | `UChaosClothComponent` |
 | `ResumeSimulation` | 恢复已暂停的模拟 | `UChaosClothComponent` |
-| `SetEnableSimulation` | 启用/禁用模拟 | `UChaosClothComponent` |
-| `IsSimulationEnabled` | 查询模拟是否启用 | `UChaosClothComponent` |
-| `IsSimulationSuspended` | 查询模拟是否已暂停 | `UChaosClothComponent` |
-| `ResetRestLengthsWithMorphTarget` | 用 MorphTarget 重置布料静止长度 | `UChaosClothComponent` |
-| `RecreateClothSimulationProxy` | 硬重置模拟（重建代理对象） | `UChaosClothComponent` |
-| `ResetConfigProperties` | 将模拟参数重置为资产原始值 | `UChaosClothComponent` |
-| `GetClothOutfitInteractor` | 获取布料属性交互器 | `UChaosClothComponent` |
+| `IsSimulationSuspended` | 查询模拟是否暂停 | `UChaosClothComponent` |
+| `ResetConfigProperties` | 重置模拟配置为资产默认值 | `UChaosClothComponent` |
+| `RecreateClothSimulationProxy` | 硬重置模拟（重建代理） | `UChaosClothComponent` |
+
+### 传送与重置
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `ResetTeleportMode` | 重置传送模式 | `UChaosClothComponent` |
+| `ForceNextUpdateTeleport` | 下一帧传送布料粒子，保留姿态和速度 | `UChaosClothComponent` |
+| `ForceNextUpdateTeleportAndReset` | 下一帧传送并重置姿态和速度 | `UChaosClothComponent` |
+| `ResetRestLengthsWithMorphTarget` | 使用 Morph Target 重置布料静止长度 | `UChaosClothComponent` |
+| `SetTeleportDistanceThreshold` | 设置自动传送的距离阈值 | `UChaosClothComponent` |
+| `SetTeleportRotationThreshold` | 设置自动传送的旋转阈值 | `UChaosClothComponent` |
+
+### 碰撞管理
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
 | `AddCollisionSource` | 添加外部碰撞源 | `UChaosClothComponent` |
 | `RemoveCollisionSource` | 移除指定碰撞源 | `UChaosClothComponent` |
+| `RemoveCollisionSources` | 移除指定组件的所有碰撞源 | `UChaosClothComponent` |
 | `ResetCollisionSources` | 清除所有碰撞源 | `UChaosClothComponent` |
 | `SetCollideWithEnvironment` | 设置是否与环境碰撞 | `UChaosClothComponent` |
-| `SetSimulateInEditor` | 编辑器中启用/禁用模拟 | `UChaosClothComponent` |
+| `GetCollideWithEnvironment` | 查询环境碰撞状态 | `UChaosClothComponent` |
 
-### 核心节点 — 属性交互器 (`UChaosClothAssetInteractor`)
+### 属性交互器（Cloth Asset Interactor）
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `GetAllPropertyNames` | 获取所有可修改的属性名称 | `UChaosClothAssetInteractor` |
-| `GetFloatPropertyValue` | 读取浮点属性值 | `UChaosClothAssetInteractor` |
-| `SetFloatPropertyValue` | 设置浮点属性值 | `UChaosClothAssetInteractor` |
-| `GetIntPropertyValue` | 读取整数属性值 | `UChaosClothAssetInteractor` |
-| `SetIntPropertyValue` | 设置整数属性值 | `UChaosClothAssetInteractor` |
-| `GetVectorPropertyValue` | 读取向量属性值 | `UChaosClothAssetInteractor` |
-| `SetVectorPropertyValue` | 设置向量属性值 | `UChaosClothAssetInteractor` |
-| `GetWeightedFloatPropertyValue` | 读取加权浮点属性（高低值） | `UChaosClothAssetInteractor` |
-| `SetWeightedFloatPropertyValue` | 设置加权浮点属性 | `UChaosClothAssetInteractor` |
-| `SetPropertySet` | 批量设置一组属性 | `UChaosClothAssetInteractor` |
-
-### 核心节点 — 资产基类 (`UChaosClothAssetBase`)
+通过 `GetClothOutfitInteractor` 获取交互器后，可读写布料模拟参数：
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `GetOverlayMaterial` | 获取覆盖材质 | `UChaosClothAssetBase` |
-| `SetOverlayMaterial` | 设置覆盖材质 | `UChaosClothAssetBase` |
-| `GetOverlayMaterialMaxDrawDistance` | 获取覆盖材质最大绘制距离 | `UChaosClothAssetBase` |
-| `SetOverlayMaterialMaxDrawDistance` | 设置覆盖材质最大绘制距离 | `UChaosClothAssetBase` |
+| `GetClothOutfitInteractor` | 获取布料属性交互器 | `UChaosClothComponent` |
+| `GetAllPropertyNames` | 获取所有可配置属性名 | `UChaosClothAssetInteractor` |
+| `GetFloatPropertyValue` | 读取浮点属性 | `UChaosClothAssetInteractor` |
+| `SetFloatPropertyValue` | 设置浮点属性 | `UChaosClothAssetInteractor` |
+| `GetIntPropertyValue` | 读取整数属性 | `UChaosClothAssetInteractor` |
+| `SetIntPropertyValue` | 设置整数属性 | `UChaosClothAssetInteractor` |
+| `GetVectorPropertyValue` | 读取向量属性 | `UChaosClothAssetInteractor` |
+| `SetVectorPropertyValue` | 设置向量属性 | `UChaosClothAssetInteractor` |
+| `GetStringPropertyValue` | 读取字符串属性 | `UChaosClothAssetInteractor` |
+| `SetStringPropertyValue` | 设置字符串属性 | `UChaosClothAssetInteractor` |
+| `GetWeightedFloatPropertyValue` | 读取加权浮点（低值/高值） | `UChaosClothAssetInteractor` |
+| `SetWeightedFloatPropertyValue` | 设置加权浮点 | `UChaosClothAssetInteractor` |
+| `SetPropertySet` | 从数据资产批量设置属性 | `UChaosClothAssetInteractor` |
 
 ### 使用示例（蓝图描述）
 
-**示例 1：设置布料资产并开始模拟**
-1. 创建一个 Actor，添加 `UChaosClothComponent`
-2. 调用 `SetAsset` 节点，连接你的 `UChaosClothAsset` 资产引用
-3. 布料组件会自动注册并开始模拟
+**基本布料设置流程：**
 
-**示例 2：运行时修改布料参数**
-1. 获取 `UChaosClothComponent` 引用
-2. 调用 `GetClothOutfitInteractor(0)` 获取交互器
-3. 调用 `SetFloatPropertyValue("WindSpeed", -1, 5.0)` 修改风速
-4. LODIndex 传 -1 表示对所有 LOD 生效
+1. 在角色的 Skeletal Mesh Component 上添加 `UChaosClothComponent`
+2. 创建或引用一个 `UChaosClothAsset`（通过 Dataflow 图构建）
+3. 在 `BeginPlay` 中调用 `SetAsset`，传入布料资产
+4. 布料自动开始模拟
 
-**示例 3：布料与外部角色碰撞**
-1. 获取目标角色的 `SkeletalMeshComponent` 引用
-2. 获取该角色的 `PhysicsAsset` 引用
-3. 调用 `AddCollisionSource(TargetSkeletalMesh, PhysicsAsset)` 添加碰撞
+**运行时调整布料参数：**
+
+1. 调用 `GetClothOutfitInteractor`（默认参数 ModelIndex=0）获取交互器
+2. 使用 `SetFloatPropertyValue` 设置如 `WindDragCoefficient` 等参数
+3. 或使用 `UClothAssetInteractorDataAsset` 预设多组参数，通过 `SetPropertySet` 一键应用
+
+**碰撞源设置：**
+
+1. 调用 `AddCollisionSource`，传入角色的 Skeletal Mesh Component 和 Physics Asset
+2. 布料将在每帧模拟时自动与这些碰撞体交互
 
 ## C++ 用法
 
@@ -112,208 +133,175 @@ ChaosClothAsset 是 UE5 基于 Chaos 物理引擎的**新一代布料资产系�
 #include "ChaosClothAsset/ClothComponent.h"
 #include "ChaosClothAsset/ClothAssetInteractor.h"
 #include "ChaosClothAsset/ClothSimulationModel.h"
-#include "ChaosClothAsset/ClothEngineTools.h"
 ```
 
 ### 基本用法
 
-**获取布料模拟模型数据**（来源：`ClothAssetBase.h`）
+**创建布料资产并设置到组件：**
 
 ```cpp
-// 获取布料资产的模拟模型
-UChaosClothAsset* ClothAsset = /* 从资产库或组件获取 */;
-TSharedPtr<const FChaosClothSimulationModel> SimModel = ClothAsset->GetClothSimulationModel(0);
-
-if (SimModel.IsValid())
-{
-    int32 NumLods = SimModel->GetNumLods();
-    int32 NumVertices = SimModel->GetNumVertices(0); // LOD 0 的顶点数
-    int32 NumTriangles = SimModel->GetNumTriangles(0); // LOD 0 的三角形数
-    
-    // 获取模拟网格位置数据
-    TConstArrayView<FVector3f> Positions = SimModel->GetPositions(0);
-    TConstArrayView<FVector3f> Normals = SimModel->GetNormals(0);
-    TConstArrayView<uint32> Indices = SimModel->GetIndices(0);
-}
+// 设置布料组件的资产（来源：Public/ChaosClothAsset/ClothComponent.h）
+UChaosClothComponent* ClothComponent = GetClothComponent();
+UChaosClothAsset* ClothAsset = LoadObject<UChaosClothAsset>(nullptr, TEXT("/Game/MyClothAsset"));
+ClothComponent->SetAsset(ClothAsset);
 ```
 
-**通过组件交互器修改运行时属性**（来源：`ClothComponent.h`、`ClothAssetInteractor.h`）
+**通过交互器修改模拟参数（运行时）：**
 
 ```cpp
-UChaosClothComponent* ClothComp = /* 获取组件引用 */;
+// 获取交互器并修改参数（来源：Public/ChaosClothAsset/ClothAssetInteractor.h）
+UChaosClothAssetInteractor* Interactor = ClothComponent->GetClothOutfitInteractor();
 
-// 获取交互器（ModelIndex=0, NAME_None 表示默认模型）
-UChaosClothAssetInteractor* Interactor = ClothComp->GetClothOutfitInteractor(0, NAME_None);
+// 读取当前参数值
+float WindDrag = Interactor->GetFloatPropertyValue(FName("WindDragCoefficient"), 0, 0.f);
 
-if (Interactor)
-{
-    // 读取当前风速
-    float WindSpeed = Interactor->GetFloatPropertyValue(FName("WindSpeed"), 0, 0.f);
-    
-    // 设置新的风速（LODIndex=-1 表示所有 LOD）
-    Interactor->SetFloatPropertyValue(FName("WindSpeed"), -1, 10.0f);
-    
-    // 批量设置属性
-    Interactor->SetVectorPropertyValue(FName("WindDirection"), -1, FVector(1, 0, 0));
-}
+// 设置新参数值（LODIndex=-1 表示所有 LOD）
+Interactor->SetFloatPropertyValue(FName("WindDragCoefficient"), -1, 0.5f);
+Interactor->SetVectorPropertyValue(FName("WindVelocity"), -1, FVector(100.f, 0.f, 0.f));
+
+// 获取所有可用属性名
+TArray<FName> AllProperties = Interactor->GetAllPropertyNames(-1);
 ```
 
 ### 进阶用法
 
-**构建布料资产并设置碰撞**（来源：`ClothAsset.h`、`ClothComponent.h`）
+**通过 C++ 硬重置模拟并控制传送：**
 
 ```cpp
-// 构建布料资产（从 ClothCollection 数据）
-UChaosClothAsset* ClothAsset = NewObject<UChaosClothAsset>();
+// 来源：Public/ChaosClothAsset/ClothComponent.h
+UChaosClothComponent* ClothComponent = GetClothComponent();
 
-TArray<TSharedRef<const FManagedArrayCollection>> ClothCollections;
-// ... 填充 ClothCollections 数据 ...
+// 硬重置整个布料模拟代理
+ClothComponent->RecreateClothSimulationProxy();
 
-FText ErrorText, VerboseText;
-ClothAsset->Build(ClothCollections, nullptr, &ErrorText, &VerboseText);
+// 传送布料但保留姿态和速度
+ClothComponent->ForceNextUpdateTeleport();
 
-if (!ErrorText.IsEmpty())
-{
-    UE_LOG(LogChaosClothAsset, Error, TEXT("Build failed: %s"), *ErrorText.ToString());
-}
+// 传送并完全重置姿态
+ClothComponent->ForceNextUpdateTeleportAndReset();
 
-// 设置物理碰撞资产
-UPhysicsAsset* PhysicsAsset = LoadObject<UPhysicsAsset>(nullptr, TEXT("/Game/Character/Physics/BodyPhysics"));
-ClothAsset->SetPhysicsAsset(PhysicsAsset);
-
-// 在组件上添加外部碰撞源
-UChaosClothComponent* ClothComp = /* 获取组件 */;
-USkinnedMeshComponent* EnemyMesh = /* 获取敌方骨骼组件 */;
-UPhysicsAsset* EnemyPhysics = /* 获取敌方物理资产 */;
-
-ClothComp->AddCollisionSource(EnemyMesh, EnemyPhysics, /* bUseSphylsOnly = */ false);
-ClothComp->SetCollideWithEnvironment(true);
-
-// 使用引擎工具生成 Tether 数据（用于约束布料模拟）
-TSharedRef<FManagedArrayCollection> Collection = /* 获取 ClothCollection */;
-FName WeightMap = FName("MaxDistance");
-FClothEngineTools::GenerateTethers(Collection, WeightMap, /* bGeodesicTethers = */ true);
+// 设置自动传送阈值
+ClothComponent->SetTeleportDistanceThreshold(200.f);  // 移动超过 200 单位自动传送
+ClothComponent->SetTeleportRotationThreshold(45.f);   // 旋转超过 45 度自动传送
 ```
 
-**设置外部碰撞并控制模拟生命周期**（来源：`ClothComponent.h`、`ClothSimulationProxy.h`）
+**添加外部碰撞源：**
 
 ```cpp
-UChaosClothComponent* ClothComp = /* 获取组件 */;
+// 来源：Public/ChaosClothAsset/ClothComponent.h
+ClothComponent->AddCollisionSource(
+    OtherSkeletalMeshComponent,
+    OtherPhysicsAsset,
+    true   // 仅使用 Sphyls（球体和胶囊体），性能更优
+);
+```
 
-// 暂停模拟
-ClothComp->SuspendSimulation();
+**访问布料模拟模型数据：**
 
-// 恢复模拟
-ClothComp->ResumeSimulation();
+```cpp
+// 来源：Public/ChaosClothAsset/ClothSimulationModel.h
+const UChaosClothAsset* ClothAsset = Cast<UChaosClothAsset>(ClothComponent->GetAsset());
+TSharedPtr<const FChaosClothSimulationModel> SimModel = ClothAsset->GetClothSimulationModel(0);
 
-// 强制传送布料（角色瞬移时使用）
-ClothComp->ForceNextUpdateTeleportAndReset();
+if (SimModel.IsValid())
+{
+    int32 NumLODs = SimModel->GetNumLods();
+    int32 NumVertices = SimModel->GetNumVertices(0);  // LOD 0 的顶点数
+    int32 NumTriangles = SimModel->GetNumTriangles(0);
+    
+    // 访问顶点位置
+    TConstArrayView<FVector3f> Positions = SimModel->GetPositions(0);
+    
+    // 访问蒙皮数据
+    TConstArrayView<FClothVertBoneData> BoneData = SimModel->GetBoneData(0);
+    
+    // 访问 2D 版型数据
+    TConstArrayView<FVector2f> PatternPositions = SimModel->GetPatternPositions(0);
+}
+```
 
-// 硬重置（配置更改后完全重建模拟代理）
-ClothComp->RecreateClothSimulationProxy();
+**批量设置属性从数据资产：**
 
-// 将模拟参数重置为资产原始值
-ClothComp->ResetConfigProperties();
+```cpp
+// 来源：Private/ChaosClothAsset/ClothAssetInteractorDataAsset.h
+UClothAssetInteractorDataAsset* DataAsset = LoadObject<UClothAssetInteractorDataAsset>(nullptr, TEXT("/Game/MyClothPresets"));
+UChaosClothAssetInteractor* Interactor = ClothComponent->GetClothOutfitInteractor();
+
+// 获取特定预设
+const FClothAssetInteractorPropertyBag& PropertySet = DataAsset->GetPropertySet(FName("HeavyWind"));
+
+// 批量应用
+Interactor->SetPropertySet(PropertySet, -1);
 ```
 
 ## Demo 示例
 
 ```cpp
-// ChaosClothDemoActor.h
+// MyClothActor.h
 #pragma once
-
-#include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "ChaosClothDemoActor.generated.h"
+#include "MyClothActor.generated.h"
 
 class UChaosClothComponent;
-class UChaosClothAssetInteractor;
+class UChaosClothAsset;
 
 UCLASS()
-class AChaosClothDemoActor : public AActor
+class AMyClothActor : public AActor
 {
     GENERATED_BODY()
 
 public:
-    AChaosClothDemoActor();
+    AMyClothActor();
 
-    virtual void BeginPlay() override;
-    virtual void Tick(float DeltaTime) override;
+    UPROPERTY(VisibleAnywhere)
+    UChaosClothComponent* ClothComponent;
 
-    /** 设置布料资产 */
-    UFUNCTION(BlueprintCallable, Category = "Cloth Demo")
-    void SetClothAsset(class UChaosClothAssetBase* InAsset);
+    UPROPERTY(EditAnywhere, Category = "Cloth")
+    TSoftObjectPtr<UChaosClothAsset> ClothAsset;
 
-    /** 修改风速 */
-    UFUNCTION(BlueprintCallable, Category = "Cloth Demo")
-    void SetWindSpeed(float Speed);
+    UPROPERTY(EditAnywhere, Category = "Cloth")
+    float WindStrength = 0.f;
 
-private:
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UChaosClothComponent> ClothComponent;
-
-    UPROPERTY()
-    float CurrentWindSpeed = 0.f;
+    UFUNCTION(BlueprintCallable, Category = "Cloth")
+    void ResetCloth();
 };
 ```
 
 ```cpp
-// ChaosClothDemoActor.cpp
-#include "ChaosClothDemoActor.h"
+// MyClothActor.cpp
+#include "MyClothActor.h"
 #include "ChaosClothAsset/ClothComponent.h"
 #include "ChaosClothAsset/ClothAsset.h"
 #include "ChaosClothAsset/ClothAssetInteractor.h"
 
-AChaosClothDemoActor::AChaosClothDemoActor()
+AMyClothActor::AMyClothActor()
 {
-    PrimaryActorTick.bCanEverTick = true;
-
     ClothComponent = CreateDefaultSubobject<UChaosClothComponent>(TEXT("ClothComponent"));
-    RootComponent = ClothComponent;
+    SetRootComponent(ClothComponent);
 }
 
-void AChaosClothDemoActor::BeginPlay()
+void AMyClothActor::ResetCloth()
 {
-    Super::BeginPlay();
-
-    // 编辑器中启用模拟以便预览
-#if WITH_EDITOR
-    ClothComponent->SetSimulateInEditor(true);
-#endif
-}
-
-void AChaosClothDemoActor::Tick(float DeltaTime)
-{
-    Super::Tick(DeltaTime);
-
-    // 运行时动态调整布料参数
+    // 强制下一帧传送并重置
+    ClothComponent->ForceNextUpdateTeleportAndReset();
+    
+    // 通过交互器修改风力参数
     if (UChaosClothAssetInteractor* Interactor = ClothComponent->GetClothOutfitInteractor())
     {
-        Interactor->SetFloatPropertyValue(FName("WindSpeed"), -1, CurrentWindSpeed);
+        Interactor->SetFloatPropertyValue(FName("WindDragCoefficient"), -1, WindStrength);
     }
-}
-
-void AChaosClothDemoActor::SetClothAsset(UChaosClothAssetBase* InAsset)
-{
-    ClothComponent->SetAsset(InAsset);
-}
-
-void AChaosClothDemoActor::SetWindSpeed(float Speed)
-{
-    CurrentWindSpeed = Speed;
 }
 ```
 
 ## 模块依赖
 
-从 `.uplugin` 的 Plugins 字段和源码引用分析，以下是该插件的独特依赖：
-
 | 模块 | 用途 |
 |---|---|
-| `ChaosCloth` | Chaos 布料物理求解器核心，提供底层模拟引擎 |
-| `GeometryCache` | 几何缓存系统，用于存储和回放缓布料几何数据 |
-| `Dataflow` | Dataflow 图表系统，用于节点化编辑布料资产 |
-| `ClothingSystemRuntimeCommon` | 运行时衣物系统通用框架，提供 `UClothingAssetBase`、`UClothingInteractor` 等基类 |
+| `ChaosCloth` | Chaos 物理布料模拟引擎核心 |
+| `GeometryCache` | 几何体缓存支持 |
+| `Dataflow` | Dataflow 数据流图系统，用于程序化构建布料数据 |
+| `ClothingSystemRuntimeCommon` | 服装系统运行时基础框架 |
+| `Chaos` | Chaos 物理引擎 |
 
 ## 维护状态
 
@@ -321,22 +309,31 @@ void AChaosClothDemoActor::SetWindSpeed(float Speed)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `89e20f15` | [ChaosClothAsset] Preserve the Cloth Component bSimulateInEditor and Asset properties across Bluepri | 蓝图构造脚本重运行时保留布料组件的编辑器模拟和资产属性 |
-| 2026-05-26 | `8953a713` | [Cloth] Move parallel cloth simulation wait from EOF to TG_LastDemotable. | 将并行布料模拟等待从帧末移至 TG_LastDemotable 阶段，优化调度 |
-| 2026-05-25 | `1db5232a` | [ChaosCloth] Implement RefershBoneMapping for ClothAssetSKMClothingAsset. | 为骨骼网格衣物资产实现骨骼映射刷新功能 |
-| 2026-05-22 | `e98c5896` | [Chaos Cloth Asset] Refresh the editor-only Asset alias after a duplicate or paste of an actor. | 复制/粘贴 Actor 后刷新编辑器专用的资产别名 |
+| 2026-05-26 | `89e20f15` | [ChaosClothAsset] Preserve the Cloth Component bSimulateInEditor and Asset properties across Blueprint | 修复蓝图重建脚本中布料组件属性丢失问题 |
+| 2026-05-26 | `8953a713` | [Cloth] Move parallel cloth simulation wait from EOF to TG_LastDemotable. | 将并行模拟等待从帧末移至 TG_LastDemotable 优化性能 |
+| 2026-05-25 | `1db5232a` | [ChaosCloth] Implement RefershBoneMapping for ClothAssetSKMClothingAsset. | 实现 SKM 服装资产的骨骼映射刷新 |
+| 2026-05-22 | `e98c5896` | [Chaos Cloth Asset] Refresh the editor-only Asset alias after a duplicate or paste of an actor. | 修复复制粘贴 Actor 后编辑器资产引用不更新的问题 |
 | 2026-05-20 | `b9a938ae` | Cleanup Chaos Cloth Asset converter | 清理布料资产转换器代码 |
 
 ### 维护评价
 
-- **活跃维护**：最近的提交集中在 2026 年 5 月下旬，更新频率很高（几乎每天都有提交），属于活跃开发状态
-- **功能仍在完善**：近期更新涵盖了 Bug 修复（蓝图属性保留）、性能优化（并行模拟调度）和新功能（骨骼映射刷新），说明该插件仍在积极迭代
-- **Beta 阶段**：虽然从 Experimental 迁出，但仍标记为 Beta，API 可能会有变化（多个函数和属性已标记 `UE_DEPRECATED`，计划在 5.9 移除旧接口）
-- **EnabledByDefault = false**：需要在项目设置中手动启用该插件
-- **推荐使用**：如果你的项目需要基于物理的布料模拟，这是 Epic 官方推荐的 Chaos 布料方案。但需注意 API 仍在演进，建议关注版本更新中的废弃标记。截至当前时间（约 2 年历史），插件已从实验阶段进入 Beta，适合在生产项目中评估使用。
+Chaos Cloth Asset 是 Epic 正在**积极维护**的 Beta 阶段插件。最近一次更新在 2026 年 5 月，更新频率很高（几乎每天都有提交），内容涵盖：
+
+- **功能完善**：骨骼映射刷新、并行模拟优化
+- **稳定性修复**：蓝图重建脚本属性保留、复制粘贴引用修复
+- **代码清理**：转换器重构
+
+该插件于 2024 年 3 月从 Experimental 迁移至正式插件目录并标记为 Beta，是 Epic 布料系统的下一代方案。当前仍在快速迭代中，API 有大量 deprecated 标记（5.4-5.7 多个版本），说明接口尚未完全稳定。
+
+**注意事项：**
+- 插件默认不启用（`EnabledByDefault: false`），需在项目设置中手动启用
+- 仅限 Win64/Mac/Linux 平台
+- 标记为 Beta，生产环境使用需谨慎，API 可能在后续版本发生变化
+- 依赖 ChaosCloth、Dataflow 等插件，需确保这些插件已启用
+
+**推荐使用**：如果你的项目需要高质量布料模拟，且可以接受 Beta 状态的 API 变动风险，推荐使用此插件。它提供了比旧版 Cloth 系统更灵活的 Dataflow 工作流和更强大的运行时控制能力。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAsset)
-- 官方文档（暂无）
-- 测试用例（未在插件目录内发现独立测试文件）
+- [官方文档]()（暂无）

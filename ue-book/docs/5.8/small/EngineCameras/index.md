@@ -7,93 +7,109 @@
 | 中文名 | 引擎相机 |
 | 分类 | Cameras |
 | 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（动画序列、蓝图资产等） |
+| 包含内容 | ❌ 无 |
 | 模块 | `EngineCameras` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2024-08-24 |
-| 年龄标签 | 🆕（约 1 年） |
+| 年龄标签 | 🆕（约 2 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Cameras/EngineCameras) | |
 
 ## 用途
 
-`EngineCameras` 插件的核心目的是将 Unreal Engine 中“遗留的”（Legacy）相机抖动（Camera Shake）和相机动画序列（Camera Animation Sequence）功能从主引擎模块中剥离出来，形成一个独立的、便于维护的插件。
+此插件是 UE5.5 版本重构中，从引擎核心分离出的“旧版”相机系统模块。它将原先 `APlayerCameraManager` 中与相机摇动（Camera Shake）和相机动画序列（Camera Animation Sequence）相关的代码独立出来，作为一个标准的插件进行管理。
 
-此举的动机是为了与新的 `GameplayCameras` 系统（计划在 UE 5.5 中作为实验性功能发布）进行清晰的分离。插件不仅承载了旧的相机行为，还为未来重构 `APlayerCameraManager` 以更好地支持自定义相机系统预留了位置。简而言之，它确保了旧有相机功能的向后兼容性和独立性。
+其主要作用是：
+1.  **统一管理**：提供一个世界子系统 `UEngineCamerasSubsystem`，作为播放和管理相机动画序列的统一入口。
+2.  **提供实现**：包含了多种内置的相机摇动模式（Perlin 噪声、波振荡器等）和播放相机动画序列的核心逻辑。
+3.  **保持兼容**：保留了旧版的 `ULegacyCameraShake`，并为旧有的 `APlayerCameraManager` 接口提供了兼容层，确保存量蓝图和代码能平稳过渡。
 
 ## 使用场景
 
-- **实现基础的相机抖动效果**：如爆炸冲击、武器后坐力、角色受击等。可以直接使用或继承 `ULegacyCameraShake`。
-- **播放基于序列的相机动画**：使用 `UCameraAnimationSequence` 资产创建平滑的、由关键帧驱动的相机移动，常用于过场动画、技能特效或UI交互反馈。
-- **需要对相机抖动/动画进行精细控制**：通过 `FCameraAnimationParams` 或 `FROscillator`、`FVOscillator` 等结构体精确调整混合时间、播放空间、振荡波形等参数。
-- **维护旧版本项目**：项目如果从 UE 5.4 或更早版本升级而来，依赖于 `MatineeCameraShake` 等旧API，本插件提供了完整的向后兼容支持。
+-   你需要为游戏中的角色受伤、爆炸、车辆碰撞等事件添加**屏幕震动效果**。
+-   你希望使用**序列资产（Camera Animation Sequence）** 来制作精确、可编排的复杂镜头动画（如过场动画、技能特写）。
+-   你正在维护一个 UE5.5 之前版本的项目，其中使用了旧的 `UCameraShake` 或 `StartCameraShake` 函数。
+-   你需要一个全局、易访问的接口来控制某个玩家控制器的相机动画。
 
 ## 蓝图用法
 
-本插件的主要蓝图功能围绕“播放、查询、停止相机动画”和“启动相机抖动”展开。
+蓝图功能主要通过 `UEngineCamerasSubsystem` 和 `UCameraAnimationCameraModifier` 提供。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Play Camera Animation` | 播放一个相机动画序列，并返回一个句柄。 | `UEngineCamerasSubsystem` |
-| `Stop Camera Animation` | 根据句柄停止一个特定的相机动画。 | `UEngineCamerasSubsystem` |
-| `Stop All Camera Animations Of` | 停止所有播放中的指定序列的动画实例。 | `UEngineCamerasSubsystem` |
-| `Is Camera Animation Active` | 检查某个相机动画是否正在播放。 | `UEngineCamerasSubsystem` |
-| `Start Legacy Camera Shake` | 启动一个旧版相机抖动类实例。 | `ULegacyCameraShake` |
-| `Get Camera Animation Camera Modifier` | 获取当前玩家控制器的相机动画修改器。 | `UCameraAnimationCameraModifier` |
+| `Get Engine Cameras Subsystem` | 获取当前世界的 `UEngineCamerasSubsystem` 实例，用于管理相机动画。 | `UEngineCamerasSubsystem` |
+| `Play Camera Animation` | 在指定的玩家控制器上播放一个相机动画序列。 | `UEngineCamerasSubsystem` |
+| `Stop Camera Animation` | 停止一个正在播放的相机动画。 | `UEngineCamerasSubsystem` |
+| `Stop All Camera Animations` | 停止指定玩家控制器上的所有相机动画。 | `UEngineCamerasSubsystem` |
+| `Get Camera Animation Camera Modifier` | 通过玩家控制器索引获取底层的 `UCameraAnimationCameraModifier`，用于更底层的控制。 | `UCameraAnimationCameraModifier` |
+| `Start Legacy Camera Shake` | **兼容性节点**，播放一个 `ULegacyCameraShake` 类，返回具体的摇动实例以便设置其属性。 | `ULegacyCameraShake` |
+| `Conv_LegacyCameraShake` | 自动转换节点，将基类 `UCameraShakeBase*` 转换为 `ULegacyCameraShake*`。 | `ULegacyCameraShakeFunctionLibrary` |
 
 ### 使用示例（蓝图描述）
 
-1.  **播放相机动画**：
-    *   首先，通过 `Get Engine Cameras Subsystem` 节点获取世界子系统。
-    *   连接 `Play Camera Animation` 节点，指定玩家控制器、要播放的序列资产（`UCameraAnimationSequence`）以及参数（`FCameraAnimationParams`，可设置播放速率、缩放、循环等）。
-    *   将返回的 `FCameraAnimationHandle` 存储起来，用于后续控制（如停止或检查状态）。
+**示例1：通过子系统播放一个相机动画序列**
 
-2.  **启动带振荡的相机抖动**：
-    *   从一个 `PlayerCameraManager` 引用开始。
-    *   使用 `Start Legacy Camera Shake` 节点，指定一个继承自 `ULegacyCameraShake` 的蓝图类。
-    *   可在该蓝图类中配置 `RotOscillation`、`LocOscillation` 等结构体来定义抖动模式。
+1.  在蓝图中，使用 `Get Engine Cameras Subsystem` 节点获取子系统引用。
+2.  拖拽引出一个玩家控制器变量（如 `Get Player Controller`）。
+3.  引用或创建一个 `Camera Animation Sequence` 资产。
+4.  将以上节点连接到 `Play Camera Animation` 节点。你可以设置 `FCameraAnimationParams` 结构体中的参数（如播放速率、缩放、是否循环等）。
+5.  该节点会返回一个 `FCameraAnimationHandle`，你可以保存它以便后续停止该动画。
+
+**示例2：播放一个传统的屏幕震动**
+
+1.  获取目标玩家的 `Player Camera Manager`。
+2.  使用 `Start Legacy Camera Shake` 节点，选择一个继承自 `ULegacyCameraShake` 的蓝图类。
+3.  节点返回的 `ULegacyCameraShake*` 引用可以直接用于在蓝图中设置其 `RotOscillation`、`LocOscillation` 等属性来控制震动。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "EngineCamerasSubsystem.h"
-#include "Animations/CameraAnimationCameraModifier.h"
-#include "Shakes/LegacyCameraShake.h"
+#include "EngineCamerasSubsystem.h" // 用于管理相机动画序列
+#include "Animations/CameraAnimationCameraModifier.h" // 用于底层访问
+#include "Shakes/LegacyCameraShake.h" // 用于旧版相机摇动
 ```
 
 ### 基本用法
 
-以下代码演示了如何在 C++ 中播放一个相机动画序列。
+以下示例展示了如何使用 `UEngineCamerasSubsystem` 播放一个相机动画序列。
 
 ```cpp
-// 假设在 AMyCharacter 的某个函数内
-void AMyCharacter::TriggerCameraShake()
+// 假设你拥有一个有效的 PlayerController 和一个 UCameraAnimationSequence 资产指针
+void AMyActor::PlayMyCameraAnimation()
 {
     if (UWorld* World = GetWorld())
     {
-        // 1. 获取引擎相机子系统
-        if (UEngineCamerasSubsystem* CameraSubsystem = UEngineCamerasSubsystem::GetEngineCamerasSubsystem(World))
+        // 获取世界子系统
+        UEngineCamerasSubsystem* Subsystem = UEngineCamerasSubsystem::GetEngineCamerasSubsystem(World);
+        if (Subsystem && MyPlayerController && MyCameraAnimationSequence)
         {
-            // 2. 准备动画参数
+            // 设置播放参数
             FCameraAnimationParams Params;
             Params.Scale = 1.5f;
+            Params.PlayRate = 1.0f;
             Params.bLoop = false;
+            
+            // 播放动画并获取句柄
+            FCameraAnimationHandle Handle = Subsystem->PlayCameraAnimation(MyPlayerController, MyCameraAnimationSequence, Params);
+            
+            // 保存句柄，以便后续停止
+            CurrentAnimationHandle = Handle;
+        }
+    }
+}
 
-            // 3. 播放动画 (MyCameraSequence 是在编辑器中创建的 UCameraAnimationSequence 资产)
-            if (UCameraAnimationSequence* Sequence = MyCameraSequence)
-            {
-                FCameraAnimationHandle Handle = CameraSubsystem->PlayCameraAnimation(
-                    GetController<APlayerController>(),
-                    Sequence,
-                    Params
-                );
-
-                // 可以将 Handle 存储起来用于后续停止等操作
-                CurrentAnimHandle = Handle;
-            }
+void AMyActor::StopMyCameraAnimation()
+{
+    if (UWorld* World = GetWorld())
+    {
+        UEngineCamerasSubsystem* Subsystem = UEngineCamerasSubsystem::GetEngineCamerasSubsystem(World);
+        if (Subsystem && MyPlayerController && CurrentAnimationHandle.IsValid())
+        {
+            // 立即停止动画（忽略淡出）
+            Subsystem->StopCameraAnimation(MyPlayerController, CurrentAnimationHandle, true);
         }
     }
 }
@@ -101,48 +117,38 @@ void AMyCharacter::TriggerCameraShake()
 
 ### 进阶用法
 
-使用旧版相机抖动类创建一个自定义的爆炸抖动。
+你可以直接访问 `UCameraAnimationCameraModifier` 以获得更底层的控制，或者创建和配置自定义的 `ULegacyCameraShake`。
 
 ```cpp
-// MyExplosionShake.h
-UCLASS()
-class UMyExplosionShake : public ULegacyCameraShake
-{
-    GENERATED_BODY()
-public:
-    UMyExplosionShake()
-    {
-        // 配置持续时间
-        OscillationDuration = 0.5f;
-        OscillationBlendInTime = 0.1f;
-        OscillationBlendOutTime = 0.3f;
+#include "Shakes/PerlinNoiseCameraShakePattern.h" // 引入具体的摇动模式
 
-        // 配置旋转振荡 (剧烈但快速的衰减)
-        RotOscillation.Pitch.Amplitude = 5.0f;
-        RotOscillation.Pitch.Frequency = 20.0f;
-        RotOscillation.Yaw.Amplitude = 3.0f;
-        RotOscillation.Yaw.Frequency = 15.0f;
-
-        // 配置位置振荡 (轻微的位移)
-        LocOscillation.Z.Amplitude = 2.0f;
-        LocOscillation.Z.Frequency = 10.0f;
-    }
-};
-
-// 使用处
-void AMyActor::Explode()
+void AMyActor::StartCustomPerlinShake()
 {
     if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
     {
-        if (APlayerCameraManager* PCM = PC->PlayerCameraManager)
+        // 获取相机动画修改器（它本质上是 Player Camera Manager 上的一个 Modifier）
+        UCameraAnimationCameraModifier* CamMod = UCameraAnimationCameraModifier::GetCameraAnimationCameraModifierFromPlayerController(PC);
+        if (CamMod)
         {
-            // 启动自定义抖动
-            ULegacyCameraShake* ShakeInstance = ULegacyCameraShake::StartLegacyCameraShake(
-                PCM,
-                UMyExplosionShake::StaticClass(),
-                1.0f, // Scale
-                ECameraShakePlaySpace::CameraLocal
-            );
+            // 你可以使用它来播放动画，或者访问其内部状态
+            // ...
+        }
+        
+        // 或者，直接启动一个使用特定模式的旧版摇动
+        ULegacyCameraShake* ShakeInstance = ULegacyCameraShake::StartLegacyCameraShake(
+            PC->PlayerCameraManager,
+            ULegacyCameraShake::StaticClass(), // 使用基类，通常你会传入自定义子类
+            1.0f,
+            ECameraShakePlaySpace::CameraLocal
+        );
+        
+        if (ShakeInstance)
+        {
+            // 直接配置摇动参数
+            ShakeInstance->RotOscillation.Pitch.Amplitude = 5.0f;
+            ShakeInstance->RotOscillation.Pitch.Frequency = 10.0f;
+            ShakeInstance->RotOscillation.Yaw.Amplitude = 2.0f;
+            ShakeInstance->OscillationDuration = 2.0f; // 持续2秒
         }
     }
 }
@@ -150,93 +156,82 @@ void AMyActor::Explode()
 
 ## Demo 示例
 
-一个最小的可编译示例，展示如何通过一个自定义Actor触发相机抖动和动画。
+以下是一个自定义 Actor 的简单示例，该 Actor 在开始游戏后播放一个相机动画。
 
-**MyCameraTestActor.h**
+**MyCameraActor.h**
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Shakes/LegacyCameraShake.h"
-#include "MyCameraTestActor.generated.h"
+#include "MyCameraActor.generated.h"
 
 class UCameraAnimationSequence;
+struct FCameraAnimationHandle;
 
 UCLASS()
-class AMyCameraTestActor : public AActor
+class MYPROJECT_API AMyCameraActor : public AActor
 {
-    GENERATED_BODY()
-    
-public:
-    AMyCameraTestActor();
+	GENERATED_BODY()
+	
+public:	
+	AMyCameraActor();
 
-    UPROPERTY(EditAnywhere, Category = "Camera")
-    TSubclassOf<ULegacyCameraShake> ShakeClassToUse;
+protected:
+	virtual void BeginPlay() override;
 
-    UPROPERTY(EditAnywhere, Category = "Camera")
-    TObjectPtr<UCameraAnimationSequence> AnimSequenceToUse;
-
-    UFUNCTION(BlueprintCallable)
-    void TriggerEffects();
+public:	
+	// 拖入一个相机动画序列资产
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	TObjectPtr<UCameraAnimationSequence> CameraSequence;
 
 private:
-    FCameraAnimationHandle CurrentAnimHandle;
+	FCameraAnimationHandle ActiveAnimationHandle;
 };
 ```
 
-**MyCameraTestActor.cpp**
+**MyCameraActor.cpp**
 ```cpp
-#include "MyCameraTestActor.h"
-#include "Engine/World.h"
-#include "Engine/EngineTypes.h"
-#include "GameFramework/PlayerController.h"
-#include "GameFramework/PlayerCameraManager.h"
+#include "MyCameraActor.h"
 #include "EngineCamerasSubsystem.h"
-#include "Animations/CameraAnimationCameraModifier.h"
 
-AMyCameraTestActor::AMyCameraTestActor()
+AMyCameraActor::AMyCameraActor()
 {
-    PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = false;
 }
 
-void AMyCameraTestActor::TriggerEffects()
+void AMyCameraActor::BeginPlay()
 {
-    UWorld* World = GetWorld();
-    if (!World) return;
+	Super::BeginPlay();
 
-    APlayerController* PC = World->GetFirstPlayerController();
-    if (!PC) return;
+	UWorld* World = GetWorld();
+	if (!World || !CameraSequence) return;
 
-    // 1. 播放相机动画序列
-    UEngineCamerasSubsystem* SubSystem = UEngineCamerasSubsystem::GetEngineCamerasSubsystem(World);
-    if (SubSystem && AnimSequenceToUse)
-    {
-        FCameraAnimationParams Params;
-        Params.PlayRate = 1.0f;
-        Params.Scale = 1.0f;
-        CurrentAnimHandle = SubSystem->PlayCameraAnimation(PC, AnimSequenceToUse, Params);
-    }
+	// 获取本地玩家控制器
+	APlayerController* PC = World->GetFirstPlayerController();
+	if (!PC) return;
 
-    // 2. 启动相机抖动
-    APlayerCameraManager* PCM = PC->PlayerCameraManager;
-    if (PCM && ShakeClassToUse)
-    {
-        ULegacyCameraShake::StartLegacyCameraShake(PCM, ShakeClassToUse, 1.0f, ECameraShakePlaySpace::CameraLocal);
-    }
+	// 获取相机子系统
+	UEngineCamerasSubsystem* Subsystem = UEngineCamerasSubsystem::GetEngineCamerasSubsystem(World);
+	if (!Subsystem) return;
+
+	// 配置播放参数
+	FCameraAnimationParams Params;
+	Params.Scale = 1.0f;
+	Params.PlayRate = 1.0f;
+	Params.bLoop = true;
+	Params.PlaySpace = ECameraAnimationPlaySpace::CameraLocal;
+
+	// 播放动画
+	ActiveAnimationHandle = Subsystem->PlayCameraAnimation(PC, CameraSequence, Params);
 }
 ```
 
 ## 模块依赖
 
-该插件自身依赖于 `TemplateSequence` 插件。
-在构建你的模块时，如果需要使用此插件的功能，需要在你的 `.Build.cs` 文件中添加以下依赖：
+从插件的依赖和模块类型分析，此插件提供了相机动画的核心功能。你的模块若要使用它，通常不需要额外的、不常见的模块依赖。
 
-| 模块 | 用途 |
-|---|---|
-| `EngineCameras` | 本插件的核心模块 |
-| `AnimGraphRuntime` | 用于支持 `UCameraAnimationSequence` 的动画蓝图功能 |
-| `GameplayTags` | `FCameraAnimationParams` 等结构体中使用了 GameplayTag |
+无特殊依赖（仅标准 Core/Engine/Slate 等）。
 
 ## 维护状态
 
@@ -244,22 +239,20 @@ void AMyCameraTestActor::TriggerEffects()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏至新版格式。 |
-| 2025-06-26 | `ec900998` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. | 为源文件添加内联生成宏，优化编译。 |
-| 2025-05-07 | `ee22987e` | Don't restart a camera animation blend out when reaching the blend out time if we were already stopp | 修复相机动画混合输出逻辑，避免重复开始。 |
-| 2025-04-23 | `6ae57335` | Used UnrealGame build target to find and convert all files to have dllstorage on methods/staticvar i | 为构建目标统一添加DLL导出标记。 |
-| 2025-02-12 | `ef64d6c3` | Engine Cameras: API for EngineCamerasSubsystem | 完善 `EngineCamerasSubsystem` 的API接口。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏迁移至新的 UE_LOGF 格式。 |
+| 2025-06-26 | `ec900998` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. | 为有对应 .gen.cpp 的文件添加了内联生成宏，可能优化编译。 |
+| 2025-05-07 | `ee22987e` | Don’t restart a camera animation blend out when reaching the blend out time if we were already stopp | 修复了动画在停止时，如果达到淡出时间会错误地重新开始淡出的 Bug。 |
+| 2025-04-23 | `6ae57335` | Used UnrealGame build target to find and convert all files to have dllstorage on methods/staticvar i | 为导出符号添加了 DLL 存储属性，属于内部构建系统维护。 |
+| 2025-02-12 | `ef64d6c3` | Engine Cameras: API for EngineCamerasSubsystem | 为 `EngineCamerasSubsystem` 添加了 API，这是该子系统的核心功能提交。 |
 
 ### 维护评价
 
-`EngineCameras` 是一个相对较新的插件（创建于2024年8月），旨在为UE的相机系统提供一个清晰的过渡和向后兼容方案。
+该插件创建于 2024 年 8 月，用于 UE5.5 版本的相机系统重构。从 Git 历史看，它至今（2026年）仍有**活跃维护**，最近一次提交是 2026 年 4 月。更新内容包括功能增强（API 完善）、Bug 修复（动画淡出逻辑）以及引擎内部的代码质量改进（日志、编译优化）。
 
-*   **活跃维护**：从提交记录看，该插件在创建后的一年内有多次提交，内容涉及API完善、编译优化和逻辑修复，表明Epic Games仍在积极维护它。
-*   **功能稳定**：它封装了旧有功能，API相对稳定，主要作为“遗产”代码的容器和提供向后兼容。
-*   **推荐使用**：对于新项目，如果需要简单的相机抖动或序列动画，且不想直接使用更实验性的`GameplayCameras`系统，本插件是一个可靠且官方支持的选择。对于从旧版本升级的项目，它是保证功能正常的关键组件。
-*   **注意事项**：它的设计初衷是向后兼容，未来可能会被更现代的`GameplayCameras`系统逐步取代。但对于UE 5.x的大多数项目而言，它仍然是实现相关功能的标准方式。
+**结论**：这是一个处于活跃维护状态的官方插件。它是 UE5.5+ 中处理“旧版”相机动画和摇动的**标准方式**。对于新项目或升级到 UE5.5 的项目，如果你想使用基于序列的相机动画或保留传统的屏幕震动功能，**强烈推荐使用此插件**。它取代了之前散落在引擎各处的相关代码，提供了更清晰、更模块化的架构。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Cameras/EngineCameras)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Cameras/EngineCameras/Source/EngineCameras/Private/Tests/)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/camera-shakes-in-unreal-engine/)（注：这是关于相机摇动的官方文档，此插件是其中的实现之一）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Cameras/EngineCameras/Private/Tests/)

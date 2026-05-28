@@ -7,159 +7,215 @@
 | 中文名 | 神经网络降噪器 |
 | 分类 | Denoising |
 | 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（数据资产） |
+| 包含内容 | ✅ 有（降噪器资产、数据表模板） |
 | 模块 | `NNEDenoiser` (Runtime), `NNEDenoiserShaders` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-08-26 |
-| 年龄标签 | 🆕（约 2 年） |
+| 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNEDenoiser) | |
 
 ## 用途
 
-NNEDenoiser 插件的核心目的是利用神经网络引擎（NNE）为虚幻引擎的路径追踪渲染器提供智能的图像降噪能力。路径追踪器能够生成物理上正确的图像，但往往需要大量采样才能收敛到清晰结果，这导致渲染时间很长。该插件通过集成一个经过训练的神经网络模型，在渲染过程中（或之后）对带有噪声的原始图像进行降噪处理，从而能够在使用较少采样数的情况下，获得视觉上可接受的结果，显著提升渲染效率。
+NNEDenoiser 为 Unreal 路径追踪渲染器提供基于神经网络的降噪功能。路径追踪（Path Tracing）虽然能产生物理准确的渲染结果，但需要大量采样才能消除噪点，渲染速度较慢。该插件通过 NNE（Neural Network Engine）加载预训练的去噪模型，在少量采样的情况下对渲染结果进行智能降噪，从而大幅减少路径追踪所需的时间。
 
-与传统基于滤波的降噪器不同，神经网络降噪器能够学习并理解复杂场景下的噪声模式，在保留细节和材质特性方面表现更佳。
+该插件的核心价值：
+- **替代传统的时空域降噪器**：用神经网络模型替代基于传统算法的降噪方案
+- **支持多种运行时**：可在 CPU、GPU 和 RDG（Render Dependency Graph）上运行模型推理
+- **支持时序降噪**：利用前几帧的信息（通过运动矢量/光流）实现更稳定的降噪效果
+- **智能分块处理**：对大尺寸图像自动分块推理，适配模型的输入尺寸限制并优化显存占用
+- **灵活的输入输出映射**：通过数据表配置神经网络张量与渲染资源（颜色、Albedo、法线等）之间的通道映射关系
 
 ## 使用场景
 
--   当你在项目中使用**路径追踪器**进行最终画面渲染或预览，但受困于漫长的收敛时间（渲染噪点多）时。
--   希望在保持路径追踪物理正确性的前提下，**实时或准实时地获得降噪后的画面**。
--   需要为大型开放世界场景或复杂光照环境配置一个高效、自适应的降噪流程时。
+- 你正在使用路径追踪渲染器，但渲染结果噪点太多且不想等待大量采样 → 使用 NNEDenoiser 自动降噪
+- 你需要在实时或近实时的路径追踪预览中获得干净的画面 → 配置 NNEDenoiser 并设置降噪器资产
+- 你有自训练的 ONNX 去噪模型，想集成到 UE5 路径追踪管线中 → 创建 `UNNEDenoiserAsset` 资产并配置映射表
+- 你需要对降噪过程进行细粒度控制（如分块大小、重叠区域、对齐要求）→ 通过 `FTilingConfig` 进行调整
+- 你需要同时支持空间降噪和时空域降噪 → 使用 `UNNEDenoiserAsset`（空间）和 `UNNEDenoiserTemporalAsset`（时空域）
 
 ## 蓝图用法
 
-NNEDenoiser 主要通过 C++ 接口与引擎的渲染管线集成。其提供了一些蓝图可访问的结构和枚举，用于数据配置。
+NNEDenoiser 主要是一个通过设置资产和 CVar 配置驱动的系统，不需要直接调用蓝图函数。它通过视图扩展（View Extension）自动注入路径追踪管线。
 
-### 核心结构
+### 核心资产类型
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `EInputResourceName` | 枚举，定义降噪器输入资源类型（Color, Albedo, Normal, Output）。 | `NNEDenoiserIOMappingData` |
-| `EOutputResourceName` | 枚举，定义降噪器输出资源类型（Output）。 | `NNEDenoiserIOMappingData` |
-| `FNNEDenoiserInputMappingData` | 数据表行结构体，用于定义神经网络输入张量通道到渲染资源（颜色、反照率等）通道的映射。 | `NNEDenoiserIOMappingData` |
-| `FNNEDenoiserOutputMappingData` | 数据表行结构体，用于定义神经网络输出张量通道到最终输出资源通道的映射。 | `NNEDenoiserIOMappingData` |
-| `FTilingConfig` | 结构体，配置降噪器的分块处理参数（对齐、重叠、尺寸范围）。 | `NNEDenoiserTilingConfig` |
-| `UNNEDenoiserAsset` | 数据资产，组合了 NNE 模型数据、输入/输出映射表和分块配置，是配置一个空间降噪器的完整包。 | `NNEDenoiserAsset` |
+| 资产类型 | 说明 |
+|---|---|
+| `UNNEDenoiserAsset` | 降噪器配置资产，包含模型数据、输入/输出映射表和分块配置 |
+| `UNNEDenoiserTemporalAsset` | 时序降噪器配置资产，额外支持光流输入和多帧历史 |
+| `UNNEDenoiserSettings` | 项目设置（CVar 驱动），选择使用的降噪器资产和运行时类型 |
 
-### 使用示例（蓝图描述）
+### 配置流程
 
-在编辑器中，你主要通过**项目设置**来配置 NNEDenoiser。
-1.  打开“项目设置” -> “引擎” -> “NNE Denoiser”。
-2.  在“Denoiser Asset”字段，指定一个你创建好的 `NNEDenoiserAsset` 资产。
-3.  （可选）配置“Runtime Type”（CPU/GPU/RDG）和“Maximum tile size override”来优化性能和内存使用。
-引擎的路径追踪渲染器在启用降噪后，会自动使用此插件提供的神经网络降噪功能。
+1. **创建降噪器资产**：在内容浏览器中右键 → Miscellaneous → Data Asset → 选择 `NNEDenoiserAsset`
+2. **配置模型数据**：将 ONNX 模型导入后生成的 `UNNEModelData` 赋值给 `ModelData` 字段
+3. **创建输入映射表**：新建 DataTable（行结构选择 `NNEDenoiserInputMappingData`），定义颜色、Albedo、法线等资源到张量的通道映射
+4. **创建输出映射表**：新建 DataTable（行结构选择 `NNEDenoiserOutputMappingData`），定义张量到输出资源的通道映射
+5. **配置分块参数**：设置 `TilingConfig` 中的对齐、重叠、最大/最小块尺寸
+6. **在项目设置中选择资产**：Project Settings → Engine → NNE Denoiser → 选择创建的降噪器资产
+
+### 映射表字段
+
+| 字段 | 说明 |
+|---|---|
+| `TensorIndex` | 张量索引（一个模型可能有多个输入/输出张量） |
+| `TensorChannel` | 张量通道 |
+| `ResourceChannel` | 渲染资源通道（如 R/G/B/A） |
+| `Resource` | 资源名称（Color/Albedo/Normal/Flow/Output） |
+| `FrameIndex` | 帧索引（仅时序降噪器，0=当前帧，1=上一帧等） |
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "NNEDenoiserSettings.h"
 #include "NNEDenoiserAsset.h"
+#include "NNEDenoiserTemporalAsset.h"
+#include "NNEDenoiserSettings.h"
 #include "NNEDenoiserIOMappingData.h"
+#include "NNEDenoiserTilingConfig.h"
+#include "NNEDenoiserResourceName.h"
 ```
 
-### 基本用法
+### 基本用法：程序化创建降噪器资产
 
-该插件主要通过引擎设置类 `UNNEDenoiserSettings` 进行配置，这些设置通常通过编辑器或 CVar 进行管理。核心逻辑由 `FViewExtension` 自动处理。
+以下代码展示如何通过 C++ 创建和配置一个降噪器资产（来源于资产结构定义 `Public/NNEDenoiserAsset.h`）：
 
 ```cpp
-// 通过全局设置访问降噪器配置 (通常不需要直接调用)
-const UNNEDenoiserSettings* Settings = GetDefault<UNNEDenoiserSettings>();
-if (Settings && Settings->DenoiserAsset.IsValid())
+// 创建降噪器资产
+UNNEDenoiserAsset* DenoiserAsset = NewObject<UNNEDenoiserAsset>();
+
+// 绑定 NNE 模型数据（假设已导入 ONNX 模型）
+UNNEModelData* ModelData = /* 从已导入的模型获取 */;
+DenoiserAsset->ModelData = ModelData;
+
+// 配置分块参数
+DenoiserAsset->TilingConfig.Alignment = 16;    // 对齐到 16 像素
+DenoiserAsset->TilingConfig.Overlap = 32;      // 32 像素重叠
+DenoiserAsset->TilingConfig.MaxSize = 512;     // 最大 512x512 分块
+DenoiserAsset->TilingConfig.MinSize = 64;      // 最小 64x64 分块
+```
+
+### 基本用法：配置输入/输出映射表
+
+（来源于 `Public/NNEDenoiserIOMappingData.h` 的结构体定义）
+
+```cpp
+// 创建输入映射表
+UDataTable* InputMappingTable = NewObject<UDataTable>();
+InputMappingTable->RowStruct = FNNEDenoiserInputMappingData::StaticStruct();
+
+// 添加颜色通道映射：将渲染的 Color RGB 映射到张量的通道 0/1/2
+FNNEDenoiserInputMappingData ColorR;
+ColorR.Resource = EInputResourceName::Color;
+ColorR.TensorIndex = 0;
+ColorR.TensorChannel = 0;
+ColorR.ResourceChannel = 0;  // R 通道
+InputMappingTable->AddRow(FName("ColorR"), ColorR);
+
+FNNEDenoiserInputMappingData ColorG = ColorR;
+ColorG.TensorChannel = 1;
+ColorG.ResourceChannel = 1;  // G 通道
+InputMappingTable->AddRow(FName("ColorG"), ColorG);
+
+FNNEDenoiserInputMappingData ColorB = ColorR;
+ColorB.TensorChannel = 2;
+ColorB.ResourceChannel = 2;  // B 通道
+InputMappingTable->AddRow(FName("ColorB"), ColorB);
+
+// 添加 Albedo 通道映射
+FNNEDenoiserInputMappingData AlbedoR;
+AlbedoR.Resource = EInputResourceName::Albedo;
+AlbedoR.TensorIndex = 1;
+AlbedoR.TensorChannel = 0;
+AlbedoR.ResourceChannel = 0;
+InputMappingTable->AddRow(FName("AlbedoR"), AlbedoR);
+
+// 创建输出映射表
+UDataTable* OutputMappingTable = NewObject<UDataTable>();
+OutputMappingTable->RowStruct = FNNEDenoiserOutputMappingData::StaticStruct();
+
+FNNEDenoiserOutputMappingData OutputR;
+OutputR.Resource = EOutputResourceName::Output;
+OutputR.TensorIndex = 0;
+OutputR.TensorChannel = 0;
+OutputR.ResourceChannel = 0;
+OutputMappingTable->AddRow(FName("OutputR"), OutputR);
+```
+
+### 进阶用法：时序降噪器配置
+
+（来源于 `Public/NNEDenoiserTemporalAsset.h` 和 `Public/NNEDenoiserIOMappingData.h`）
+
+```cpp
+// 创建时序降噪器资产
+UNNEDenoiserTemporalAsset* TemporalAsset = NewObject<UNNEDenoiserTemporalAsset>();
+TemporalAsset->ModelData = TemporalModelData;
+
+// 时序输入映射需要额外的 FrameIndex 字段
+UDataTable* TemporalInputTable = NewObject<UDataTable>();
+TemporalInputTable->RowStruct = FNNEDenoiserTemporalInputMappingData::StaticStruct();
+
+// 当前帧颜色
+FNNEDenoiserTemporalInputMappingData CurrentColor;
+CurrentColor.Resource = ETemporalInputResourceName::Color;
+CurrentColor.TensorIndex = 0;
+CurrentColor.TensorChannel = 0;
+CurrentColor.ResourceChannel = 0;
+CurrentColor.FrameIndex = 0;  // 当前帧
+TemporalInputTable->AddRow(FName("CurrentColorR"), CurrentColor);
+
+// 前一帧颜色（用于时序稳定性）
+FNNEDenoiserTemporalInputMappingData PrevColor = CurrentColor;
+PrevColor.FrameIndex = 1;  // 上一帧
+TemporalInputTable->AddRow(FName("PrevColorR"), PrevColor);
+
+// 光流输入（用于帧间对齐）
+FNNEDenoiserTemporalInputMappingData Flow;
+Flow.Resource = ETemporalInputResourceName::Flow;
+Flow.TensorIndex = 2;
+Flow.TensorChannel = 0;
+Flow.ResourceChannel = 0;
+Flow.FrameIndex = 0;
+TemporalInputTable->AddRow(FName("FlowX"), Flow);
+```
+
+### 进阶用法：通过 CVar 控制运行时
+
+（来源于 `Public/NNEDenoiserSettings.h`）
+
+```cpp
+// 控制台变量控制
+// NNEDenoiser.Runtime.Type - 运行时类型 (0=CPU, 1=GPU, 2=RDG)
+// NNEDenoiser.Runtime.Name - 运行时名称（如 "ORTDml" 使用 DirectML）
+
+// 在代码中设置
+IConsoleVariable* RuntimeTypeCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("NNEDenoiser.Runtime.Type"));
+if (RuntimeTypeCVar)
 {
-    UE_LOG(LogTemp, Log, TEXT("NNE Denoiser asset loaded: %s"), *Settings->DenoiserAsset.GetAssetName());
+    RuntimeTypeCVar->Set(2);  // 使用 RDG 运行时
 }
-// 运行时类型可通过控制台变量设置: nnedenisor.runtime.type 0 (CPU), 1 (GPU), 2 (RDG)
-```
 
-### 进阶用法（自定义模型实例）
-
-对于开发者，插件内部提供了对 CPU、GPU 和 RDG 三种运行时的模型实例封装，用于执行推理。这通常由插件内部的 `FGenericDenoiser` 管理。
-
-```cpp
-// 示例：创建一个基于 CPU 的模型实例 (来自 NNEDenoiserModelInstanceCPU.h)
-#include "NNEDenoiserModelInstanceCPU.h"
-#include "NNE.h"
-
-// 假设 ModelData 是一个 UNNEModelData* 对象
-TUniquePtr<UE::NNEDenoiser::Private::FModelInstanceCPU> CPUInstance = 
-    UE::NNEDenoiser::Private::FModelInstanceCPU::Make(*ModelData, TEXT("CPURuntimeName"));
-
-if (CPUInstance)
+IConsoleVariable* RuntimeNameCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("NNEDenoiser.Runtime.Name"));
+if (RuntimeNameCVar)
 {
-    // 获取输入输出张量描述
-    TConstArrayView<NNE::FTensorDesc> InputDescs = CPUInstance->GetInputTensorDescs();
-    TConstArrayView<NNE::FTensorDesc> OutputDescs = CPUInstance->GetOutputTensorDescs();
-    // ... 后续准备数据并推理
+    RuntimeNameCVar->Set(TEXT("ORTDml"));  // 使用 DirectML 加速
 }
-```
-
-## Demo 示例
-
-以下示例展示了如何创建一个最简单的 `UNNEDenoiserAsset`，用于空间降噪。
-
-**`MyDenoiserAsset.h`**
-```cpp
-#pragma once
-#include "CoreMinimal.h"
-#include "Engine/DataAsset.h"
-#include "NNEDenoiserAsset.h"
-#include "MyDenoiserAsset.generated.h"
-
-UCLASS(BlueprintType)
-class UMyDenoiserAsset : public UNNEDenoiserAsset
-{
-    GENERATED_BODY()
-public:
-    // 此类继承自 UNNEDenoiserAsset，你可以在编辑器中为其设置 ModelData, InputMapping, OutputMapping 和 TilingConfig。
-    // 这里不需要额外的代码，所有配置通过编辑器属性完成。
-};
-```
-
-**`MyDenoiserSubsystem.h` (示例用法)**
-```cpp
-#pragma once
-#include "CoreMinimal.h"
-#include "Subsystems/GameInstanceSubsystem.h"
-#include "NNEDenoiserSettings.h"
-#include "MyDenoiserSubsystem.generated.h"
-
-UCLASS()
-class UMyDenoiserSubsystem : public UGameInstanceSubsystem
-{
-    GENERATED_BODY()
-
-public:
-    virtual void Initialize(FSubsystemCollectionBase& Collection) override
-    {
-        // 获取默认设置并检查降噪器是否已配置
-        const UNNEDenoiserSettings* DenoiserSettings = GetDefault<UNNEDenoiserSettings>();
-        if (DenoiserSettings->DenoiserAsset.IsNull())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("NNE Denoiser asset is not configured in Project Settings."));
-        }
-        else
-        {
-            UE_LOG(LogTemp, Log, TEXT("NNE Denoiser is configured with asset: %s"), *DenoiserSettings->DenoiserAsset.GetAssetName());
-        }
-
-        // 提示：运行时类型可以通过控制台命令 `nnedenisor.runtime.type` 在运行时切换 (0: CPU, 1: GPU, 2: RDG)
-    }
-};
 ```
 
 ## 模块依赖
 
-从 `Build.cs` 分析，要使用此插件，你的项目需要依赖以下模块（标准核心模块已省略）：
+该插件依赖 `NNERuntimeORT` 插件（ONNX Runtime 推理后端）。
+
+从源码结构和接口来看，使用者的模块需要依赖以下特殊模块：
 
 | 模块 | 用途 |
 |---|---|
-| `NNE` | 核心神经网络引擎模块，提供模型加载、推理等基础功能。 |
-| `RenderCore` | 提供 RDG (Render Dependency Graph) 等底层渲染核心支持。 |
-| `Renderer` | 引擎渲染器，提供 `IPathTracingDenoiser` 等接口。 |
-| `RHI` | 渲染硬件接口，用于 GPU 资源操作和回读。 |
-| `Projects` | 用于访问插件和项目设置。 |
+| `NNE` | 神经网络引擎核心，提供模型加载和推理接口 |
+| `NNERuntimeORT` | ONNX Runtime 推理后端，实际执行模型推理 |
+| `Renderer` | 路径追踪降噪器接口（`IPathTracingDenoiser`、`IPathTracingSpatialTemporalDenoiser`） |
+| `RenderCore` | RDG 构建器、渲染目标池等核心渲染基础设施 |
+| `RHI` | 底层 GPU 资源（纹理、Buffer、Readback 等） |
 
 ## 维护状态
 
@@ -167,21 +223,25 @@ public:
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-15 | `2a295e97` | - Removed BlockUntilGPUIdle and SubmitCommandsAndFlushGPU in place of SubmitAndBlockUntilGPUIdle | 优化GPU同步，将分离的阻塞操作合并为单一函数调用。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志输出宏从 UE_LOG 迁移至 UE_LOGF。 |
-| 2026-03-15 | `2caebd20` | Add more missing includes and forward declarations for various rendering headers to files that have | 补充渲染相关头文件的前置声明和包含。 |
-| 2026-03-14 | `95105f12` | Split PooledRenderTarget and SceneRenderingAllocator off into separate header and add explicit inclu | 拆分头文件以改善编译依赖和编译时间。 |
-| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修复前一次提交中错误的查找替换操作。 |
+| 2026-04-15 | `2a295e97` | Removed BlockUntilGPUIdle and SubmitCommandsAndFlushGPU in place of SubmitAndBlockUntilGPUIdle | 合并 GPU 等待调用为统一 API |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移至 UE_LOGF |
+| 2026-03-15 | `2caebd20` | Add more missing includes and forward declarations for various rendering headers to files that have | 补充渲染相关头文件的前向声明 |
+| 2026-03-14 | `95105f12` | Split PooledRenderTarget and SceneRenderingAllocator off into separate header and add explicit inclu | 拆分渲染目标相关头文件结构 |
+| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修复批量替换导致的错误后重新提交 |
 
 ### 维护评价
 
-- **状态**：**活跃维护中**。创建于 2024 年 8 月，至今约 2 年，但属于较新的 UE5 功能。
-- **近期活动**：最近几个月有持续的代码提交，包括重构、优化和头文件整理，表明该插件正在积极开发和完善。
-- **注意事项**：该插件当前标记为 **Beta 版** (`IsBetaVersion=true`)，这意味着其 API 和功能可能在未来版本中发生变化。
-- **推荐度**：**推荐关注和使用**。作为 Epic Games 官方提供的、基于 NNE 的路径追踪降噪解决方案，它代表了引擎在智能渲染方面的重要方向。对于使用路径追踪且对性能或质量有要求的项目，非常值得尝试。但请注意其 Beta 状态，并在生产环境中做好兼容性测试。
+- **创建时间**：2024-08-26，约 1 年前从 Experimental 文件夹迁出至正式插件目录
+- **Beta 状态**：标记为 Beta，API 和行为可能在后续版本中发生变化
+- **更新频率**：最近 3 个月内有多次更新，但主要是编译适配和头文件整理，无功能性改动
+- **首次提交**：2024-08-26 的提交是将插件从 Experimental 迁移出来，说明此前已在实验阶段经过验证
+- **依赖关系**：依赖 `NNERuntimeORT` 插件，间接依赖 ONNX Runtime
+- **平台支持**：Win64、Linux、Mac
+
+⚠️ **Beta 警告**：该插件标记为 Beta，使用前请注意 API 可能不稳定。目前更新以维护性修复为主，功能层面已相对完善。推荐在路径追踪场景中尝试使用，但不建议在生产环境中作为唯一依赖。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNEDenoiser)
-- [官方文档]() (暂无)
-- [测试用例]() (暂未在提供的信息中定位到具体路径)
+- [NNE 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE)
+- [NNERuntimeORT 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNERuntimeORT)

@@ -4,9 +4,9 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | Sequencer 脚本 |
+| 中文名 | 序列器脚本 |
 | 分类 | Scripting |
-| 默认启用 | ✅ 是 |
+| 默认启用 | ❌ 否 |
 | 包含内容 | ✅ 有（蓝图资产） |
 | 模块 | `SequencerScripting` (Runtime), `SequencerScriptingEditor` (Runtime) |
 | 实验性 | ⚠️ 是 |
@@ -16,363 +16,432 @@
 
 ## 用途
 
-这个插件为 UE5 的 Sequencer（序列器）系统提供完整的蓝图和 Python 脚本 API。Sequencer 本身是一个底层 C++ 框架，没有对蓝图/Python 开放操作接口；本插件通过大量的 `UFUNCTION(BlueprintCallable)` 扩展库和脚本包装类，将 Sequencer 的核心对象（序列、绑定、轨道、区段、通道、关键帧等）全部暴露给脚本层。
+SequencerScripting 将 UE 的 Sequencer（序列器/过场动画编辑器）核心数据结构暴露为脚本友好的 API，支持蓝图和 Python 两种脚本环境。它解决的核心问题是：**通过代码批量创建、修改、查询 Sequencer 序列及其轨道/通道/关键帧数据**。
 
-**解决的问题**：没有这个插件，你无法通过蓝图或 Python 程序化地创建/编辑过场动画序列——只能手动在 Sequencer 编辑器中操作。有了它，你可以：
-- 批量生成过场动画序列
-- 自动化关键帧编辑和曲线调整
-- 通过 Python 脚本实现序列的导入导出、批处理
-- 在编辑器工具中程序化操作 Sequencer 数据
+该插件在 Sequencer 的底层 C++ 数据模型之上，构建了一套面向脚本的包装层（Scripting Layer），将 `FMovieSceneFloatChannel`、`FMovieSceneDoubleChannel` 等内部通道类型包装为蓝图可用的 `UMovieSceneScriptingFloatChannel`、`UMovieSceneScriptingDoubleChannel` 等对象。所有对脚本对象的修改会直接同步到底层数据结构，实现双向绑定。
+
+主要能力包括：
+- 创建和管理 Level Sequence、Master Track、Object Binding（Possessable/Spawnable）
+- 操作各种类型的动画通道（Float、Double、Bool、Integer、String、Text、Event、ActorReference、ObjectPath、Particle、Byte/Enum）
+- 对关键帧进行增删改查、设置切线/插值模式
+- 管理序列的播放范围、显示率、Tick 分辨率
+- 管理文件夹、标记帧、条件求值等辅助功能
+- 通过扩展库（Extension Libraries）将方法"提升"到原生类型上，使蓝图和 Python 调用体验更自然
 
 ## 使用场景
 
-- 你正在做电影级过场，需要批量处理上百个序列文件 → 用 Python 脚本遍历和修改
-- 你需要自动生成带动画关键帧的 Level Sequence → 用蓝图/Python 调用 `AddKey` 系列节点
-- 你正在开发编辑器工具来自动化 Sequencer 工作流 → 使用扩展库的 `ScriptMethod` 节点
-- 你需要程序化地设置序列的播放范围、时间分辨率 → 用 `SetPlaybackStart`、`SetDisplayRate` 等
-- 你需要管理 Sequencer 中的对象绑定、轨道和文件夹 → 用 Binding/Track/Folder 扩展
+- 你需要通过 Python 脚本批量生成大量过场动画序列 → 用 SequencerScripting
+- 你需要在编辑器工具中程序化地创建关键帧动画 → 用 SequencerScripting
+- 你需要通过蓝图在运行时动态修改 Sequencer 轨道数据 → 用 SequencerScripting
+- 你需要实现自动化的镜头/动画批处理流水线 → 用 SequencerScripting
+- 你需要通过代码查询和遍历序列中的所有绑定、轨道、通道 → 用 SequencerScripting
+- 你需要在无人值守环境（Commandlet）中处理 Level Sequence 资产 → 用 SequencerScripting
 
 ## 蓝图用法
 
-本插件的 API 主要通过 **扩展函数库**（Extension Libraries）暴露，使用 `meta=(ScriptMethod)` 将静态函数"提升"到目标类上。这意味着在蓝图中，这些函数会作为目标对象的方法出现。
+本插件大量使用 `ScriptMethod` 元数据将静态函数库的方法"提升"到目标类型上，因此在蓝图中你会看到这些函数直接出现在 Sequencer 相关对象的右键菜单中。
 
-### 序列操作（核心节点）
+### 核心节点
+
+#### 序列操作（UMovieSceneSequenceExtensions）
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
 | `GetMovieScene` | 获取序列的 MovieScene 数据对象 | `UMovieSceneSequenceExtensions` |
-| `GetTracks` / `FindTracksByType` | 获取/查找序列中的轨道 | `UMovieSceneSequenceExtensions` |
+| `GetTracks` | 获取序列中的所有轨道 | `UMovieSceneSequenceExtensions` |
+| `FindTracksByType` | 按类型查找轨道 | `UMovieSceneSequenceExtensions` |
 | `AddTrack` | 向序列添加新轨道 | `UMovieSceneSequenceExtensions` |
-| `GetDisplayRate` / `SetDisplayRate` | 获取/设置序列显示帧率 | `UMovieSceneSequenceExtensions` |
-| `GetPlaybackStart` / `SetPlaybackStart` | 获取/设置播放起始帧 | `UMovieSceneSequenceExtensions` |
-| `GetPlaybackEnd` / `SetPlaybackEnd` | 获取/设置播放结束帧 | `UMovieSceneSequenceExtensions` |
+| `RemoveTrack` | 从序列移除轨道 | `UMovieSceneSequenceExtensions` |
+| `GetDisplayRate` / `SetDisplayRate` | 获取/设置显示帧率 | `UMovieSceneSequenceExtensions` |
+| `GetTickResolution` / `SetTickResolution` | 获取/设置 Tick 分辨率 | `UMovieSceneSequenceExtensions` |
 | `MakeRange` / `MakeRangeSeconds` | 创建时间范围 | `UMovieSceneSequenceExtensions` |
-| `GetPlaybackRange` | 获取播放范围 | `UMovieSceneSequenceExtensions` |
-| `FindMarkedFrameByLabel` | 按标签查找标记帧 | `UMovieSceneSequenceExtensions` |
-| `SetReadOnly` | 设置序列为只读 | `UMovieSceneSequenceExtensions` |
-| `AddMasterTrack` | 添加主轨道 | `UMovieSceneSequenceExtensions` |
-| `GetBindings` | 获取所有对象绑定 | `UMovieSceneSequenceExtensions` |
-| `MakeBindingID` / `LocateBoundObjects` | 创建绑定ID / 定位绑定对象 | `UMovieSceneSequenceExtensions` |
+| `GetPlaybackStart` / `SetPlaybackEnd` | 获取/设置播放范围 | `UMovieSceneSequenceExtensions` |
+| `FindOrAddMasterTrack` | 查找或添加主轨道 | `UMovieSceneSequenceExtensions` |
+| `AddMarkedFrame` / `GetMarkedFrames` | 管理标记帧 | `UMovieSceneSequenceExtensions` |
 
-### 绑定操作
+#### 绑定操作（UMovieSceneBindingExtensions）
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
 | `GetId` | 获取绑定的 GUID | `UMovieSceneBindingExtensions` |
-| `GetDisplayName` / `SetDisplayName` | 获取/设置绑定显示名称 | `UMovieSceneBindingExtensions` |
-| `GetTracks` / `AddTrack` | 获取/添加绑定内的轨道 | `UMovieSceneBindingExtensions` |
-| `Remove` | 删除整个绑定 | `UMovieSceneBindingExtensions` |
+| `GetDisplayName` / `SetDisplayName` | 获取/设置显示名称 | `UMovieSceneBindingExtensions` |
+| `GetTracks` | 获取绑定下的所有轨道 | `UMovieSceneBindingExtensions` |
+| `AddTrack` | 向绑定添加轨道 | `UMovieSceneBindingExtensions` |
+| `RemoveTrack` | 从绑定移除轨道 | `UMovieSceneBindingExtensions` |
+| `GetChildPossessables` | 获取子 Possessable | `UMovieSceneBindingExtensions` |
 | `GetParent` / `SetParent` | 获取/设置父绑定 | `UMovieSceneBindingExtensions` |
-| `GetChildPossessables` | 获取子 Possessable 绑定 | `UMovieSceneBindingExtensions` |
-| `TagBinding` / `UntagBinding` | 给绑定打标签/移除标签 | `UMovieSceneBindingTagExtensions` |
-| `MoveBindingContents` | 移动绑定内容到另一个绑定 | `UMovieSceneBindingExtensions` |
+| `MoveBindingContents` | 迁移绑定内容 | `UMovieSceneBindingExtensions` |
 
-### 轨道操作
+#### 轨道操作（UMovieSceneTrackExtensions）
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `GetSections` / `AddSection` / `RemoveSection` | 获取/添加/删除区段 | `UMovieSceneTrackExtensions` |
-| `SetDisplayName` / `GetDisplayName` | 获取/设置轨道显示名 | `UMovieSceneTrackExtensions` |
-| `GetPropertyName` / `SetPropertyNameAndPath` | 获取/设置属性轨道的属性名 | `UMovieScenePropertyTrackExtensions` |
-| `SetObjectPropertyClass` | 设置对象属性轨道的目标类 | `UMovieScenePropertyTrackExtensions` |
-| `SetByteTrackEnum` | 设置字节轨道的枚举 | `UMovieScenePropertyTrackExtensions` |
-| `SetNumChannelsUsed` | 设置向量轨道使用的通道数 | `UMovieSceneFloatVectorTrackExtensions` |
+| `AddSection` | 向轨道添加 Section | `UMovieSceneTrackExtensions` |
+| `GetSections` | 获取轨道的所有 Section | `UMovieSceneTrackExtensions` |
+| `RemoveSection` | 从轨道移除 Section | `UMovieSceneTrackExtensions` |
+| `SetDisplayName` / `GetDisplayName` | 设置/获取轨道显示名 | `UMovieSceneTrackExtensions` |
+| `SetColorTint` / `GetColorTint` | 设置/获取轨道颜色 | `UMovieSceneTrackExtensions` |
 
-### 区段操作
+#### Section 操作（UMovieSceneSectionExtensions）
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `HasStartFrame` / `HasEndFrame` | 检查区段是否有起止帧 | `UMovieSceneSectionExtensions` |
-| `GetStartFrame` / `GetEndFrame` | 获取区段起止帧 | `UMovieSceneSectionExtensions` |
-| `SetRange` / `SetRangeSeconds` | 设置区段范围 | `UMovieSceneSectionExtensions` |
-| `SetStartFrameBounded` / `SetEndFrameBounded` | 设置区段是否为有限范围 | `UMovieSceneSectionExtensions` |
-| `GetAllChannels` / `GetChannelsByType` | 获取区段内的通道 | `UMovieSceneSectionExtensions` |
-| `GetSectionCondition` / `SetSectionCondition` | 获取/设置区段条件 | `UMovieSceneConditionExtensions` |
-| `GetEaseInDuration` / `SetEaseInDuration` | 获取/设置缓入时长 | `UMovieSceneSectionEasingExtensions` |
+| `HasStartFrame` / `HasEndFrame` | 查询是否有起止帧 | `UMovieSceneSectionExtensions` |
+| `GetStartFrame` / `GetEndFrame` | 获取起止帧号 | `UMovieSceneSectionExtensions` |
+| `SetRange` / `SetRangeSeconds` | 设置时间范围 | `UMovieSceneSectionExtensions` |
+| `GetAllChannels` | 获取 Section 的所有通道 | `UMovieSceneSectionExtensions` |
+| `GetChannelsByType` | 按类型获取通道 | `UMovieSceneSectionExtensions` |
+| `GetChannel` | 按名称获取通道 | `UMovieSceneSectionExtensions` |
 
-### 关键帧与通道操作
+#### 通道与关键帧操作
 
-每种数据类型都有对应的 Key 和 Channel 类，API 模式一致：
-
-| 数据类型 | Key 类 | Channel 类 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| 浮点数 | `UMovieSceneScriptingFloatKey` | `UMovieSceneScriptingFloatChannel` |
-| 双精度浮点 | `UMovieSceneScriptingDoubleKey` | `UMovieSceneScriptingDoubleChannel` |
-| 整数 | `UMovieSceneScriptingIntegerKey` | `UMovieSceneScriptingIntegerChannel` |
-| 布尔值 | `UMovieSceneScriptingBoolKey` | `UMovieSceneScriptingBoolChannel` |
-| 字符串 | `UMovieSceneScriptingStringKey` | `UMovieSceneScriptingStringChannel` |
-| 文本 | `UMovieSceneScriptingTextKey` | `UMovieSceneScriptingTextChannel` |
-| 字节/枚举 | `UMovieSceneScriptingByteKey` | `UMovieSceneScriptingByteChannel` |
-| 事件 | `UMovieSceneScriptingEventKey` | `UMovieSceneScriptingEventChannel` |
-| 粒子 | `UMovieSceneScriptingParticleKey` | `UMovieSceneScriptingParticleChannel` |
-| 对象引用 | `UMovieSceneScriptingActorReferenceKey` | `UMovieSceneScriptingActorReferenceChannel` |
-| 对象路径 | `UMovieSceneScriptingObjectPathKey` | `UMovieSceneScriptingObjectPathChannel` |
+| `AddKey` | 向通道添加关键帧 | 各 `UMovieSceneScripting*Channel` |
+| `RemoveKey` | 从通道移除关键帧 | 各 `UMovieSceneScripting*Channel` |
+| `GetKeys` / `GetKeysByIndex` | 获取通道的关键帧 | 各 `UMovieSceneScripting*Channel` |
+| `GetNumKeys` | 获取关键帧数量 | 各 `UMovieSceneScripting*Channel` |
+| `EvaluateKeys` | 按范围求值关键帧 | 各 `UMovieSceneScripting*Channel` |
+| `SetDefault` / `GetDefault` | 设置/获取通道默认值 | 各 `UMovieSceneScripting*Channel` |
+| `HasDefault` | 查询是否有默认值 | 各 `UMovieSceneScripting*Channel` |
+| `RemoveDefault` | 移除默认值 | 各 `UMovieSceneScripting*Channel` |
+| `Transform` | 对关键帧进行偏移/缩放变换 | 各 `UMovieSceneScripting*Channel` |
+| `GetTime` / `SetTime` | 获取/设置关键帧时间 | 各 `UMovieSceneScripting*Key` |
+| `GetValue` / `SetValue` | 获取/设置关键帧值 | 各 `UMovieSceneScripting*Key` |
 
-每个 Channel 的通用操作：
+#### 文件夹操作（UMovieSceneFolderExtensions）
 
-| 节点 | 说明 |
-|---|---|
-| `AddKey` | 在指定时间添加关键帧 |
-| `RemoveKey` | 删除指定关键帧 |
-| `GetKeys` | 获取所有关键帧 |
-| `GetKeysByIndex` | 按索引获取关键帧 |
-| `SetDefault` / `GetDefault` / `RemoveDefault` | 设置/获取/移除默认值 |
-| `HasDefault` | 检查是否有默认值 |
-| `Transform` | 对关键帧进行时间变换（偏移、缩放） |
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GetFolderName` / `SetFolderName` | 获取/设置文件夹名 | `UMovieSceneFolderExtensions` |
+| `GetChildFolders` / `AddChildFolder` | 管理子文件夹 | `UMovieSceneFolderExtensions` |
+| `GetChildTracks` / `AddChildTrack` | 管理文件夹内轨道 | `UMovieSceneFolderExtensions` |
+| `GetChildObjectBindings` / `AddChildObjectBinding` | 管理文件夹内绑定 | `UMovieSceneFolderExtensions` |
 
-每个 Key 的通用操作：
+#### 条件操作（UMovieSceneConditionExtensions）
 
-| 节点 | 说明 |
-|---|---|
-| `GetTime` / `SetTime` | 获取/设置关键帧时间 |
-| `GetValue` / `SetValue` | 获取/设置关键帧值 |
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GetSectionCondition` / `SetSectionCondition` | 获取/设置 Section 条件 | `UMovieSceneConditionExtensions` |
+| `GetTrackCondition` / `SetTrackCondition` | 获取/设置轨道条件 | `UMovieSceneConditionExtensions` |
+| `GetTrackRowCondition` / `SetTrackRowCondition` | 获取/设置轨道行条件 | `UMovieSceneConditionExtensions` |
+
+### 支持的通道类型
+
+| 通道类型 | Key 类型 | 值类型 |
+|---|---|---|
+| `UMovieSceneScriptingFloatChannel` | `UMovieSceneScriptingFloatKey` | `float` |
+| `UMovieSceneScriptingDoubleChannel` | `UMovieSceneScriptingDoubleKey` | `double` |
+| `UMovieSceneScriptingBoolChannel` | `UMovieSceneScriptingBoolKey` | `bool` |
+| `UMovieSceneScriptingIntegerChannel` | `UMovieSceneScriptingIntegerKey` | `int32` |
+| `UMovieSceneScriptingStringChannel` | `UMovieSceneScriptingStringKey` | `FString` |
+| `UMovieSceneScriptingTextChannel` | `UMovieSceneScriptingTextKey` | `FText` |
+| `UMovieSceneScriptingByteChannel` | `UMovieSceneScriptingByteKey` | `uint8` (枚举) |
+| `UMovieSceneScriptingEventChannel` | `UMovieSceneScriptingEventKey` | `FMovieSceneEvent` |
+| `UMovieSceneScriptingActorReferenceChannel` | `UMovieSceneScriptingActorReferenceKey` | `FMovieSceneObjectBindingID` |
+| `UMovieSceneScriptingObjectPathChannel` | `UMovieSceneScriptingObjectPathKey` | `UObject*` |
+| `UMovieSceneScriptingParticleChannel` | `UMovieSceneScriptingParticleKey` | `EParticleKey` |
 
 ### 使用示例（蓝图描述）
 
-**示例 1：程序化创建序列并添加关键帧**
+**示例 1：创建序列并添加 Float 关键帧**
 
-1. 使用 `LevelSequenceActor` 节点获取现有的 Level Sequence（或用 `CreateLevelSequence` 新建）
-2. 调用 `GetMovieScene` 获取内部 MovieScene
-3. 调用 `AddTrack` (传入 `UMovieSceneFloatTrack` 类型) 添加浮点轨道
-4. 从返回的 Track 调用 `AddSection` 创建区段
-5. 调用 `SetRange` 设置区段时间范围
-6. 调用 `GetAllChannels` 或 `GetChannelsByType` 获取浮点通道
-7. 在通道上调用 `AddKey` 添加关键帧
+1. 调用 `Asset > Create Asset` 创建一个 `LevelSequence` 资产
+2. 从序列返回值拉线，调用 `SequenceExtensions > SetPlaybackStart` 和 `SetPlaybackEnd` 设置播放范围（如 0-150 帧）
+3. 调用 `SequenceExtensions > AddMasterTrack`（传入 `UMovieSceneFloatTrack` 类型）添加主轨道
+4. 从返回的 Track 拉线，调用 `TrackExtensions > AddSection` 添加 Section
+5. 从 Section 拉线，调用 `SectionExtensions > GetAllChannels` 获取通道列表
+6. 从通道数组取第一个元素，转换为 `UMovieSceneScriptingFloatChannel` 类型
+7. 调用通道的 `AddKey (Float)` 节点，传入帧号 0 和值 0.0
+8. 再次调用 `AddKey (Float)`，传入帧号 150 和值 1.0
 
-**示例 2：遍历并修改所有绑定**
+**示例 2：遍历序列中的所有绑定并重命名**
 
-1. 对目标序列调用 `GetBindings` 获取所有绑定数组
-2. 遍历数组，对每个 `FMovieSceneBindingProxy` 调用 `GetDisplayName` 获取名称
-3. 用 `GetTracks` 获取该绑定的轨道
-4. 对每个轨道调用 `GetSections` 获取区段并修改
+1. 获取 Level Sequence 引用
+2. 调用 `SequenceExtensions > GetBindings` 获取所有绑定（返回 `FMovieSceneBindingProxy` 数组）
+3. 用 ForEach 循环遍历每个绑定
+4. 对每个绑定调用 `BindingExtensions > GetDisplayName` 获取当前名称
+5. 用 String 操作拼接新名称后，调用 `BindingExtensions > SetDisplayName` 设置新名称
+
+**示例 3：批量修改关键帧插值模式**
+
+1. 获取目标 Section 的 Float 通道
+2. 调用 `GetKeys` 获取所有关键帧
+3. 遍历每个关键帧，Cast 为 `UMovieSceneScriptingActualFloatKey`
+4. 对每个关键帧调用 `SetInterpolationMode` 设为 `RCIM_Cubic`
+5. 调用 `SetArriveTangent` 和 `SetLeaveTangent` 设置切线值
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
+#include "MovieSceneScriptingChannel.h"
 #include "MovieSceneSequenceExtensions.h"
 #include "MovieSceneBindingExtensions.h"
 #include "MovieSceneSectionExtensions.h"
 #include "MovieSceneTrackExtensions.h"
-#include "MovieScenePropertyTrackExtensions.h"
-#include "MovieSceneScriptingChannel.h"
 ```
 
-### 基本用法：操作序列和轨道
+### 基本用法：创建序列并添加关键帧
 
 ```cpp
-// 来源: Public/ExtensionLibraries/MovieSceneSequenceExtensions.h
+#include "MovieSceneSequenceExtensions.h"
+#include "MovieSceneScriptingChannel.h"
+#include "MovieSceneSectionExtensions.h"
+#include "MovieSceneTrackExtensions.h"
+#include "LevelSequence.h"
 
-// 获取序列的 MovieScene 数据
-UMovieScene* MovieScene = UMovieSceneSequenceExtensions::GetMovieScene(MyLevelSequence);
-
-// 获取所有轨道
-TArray<UMovieSceneTrack*> AllTracks = UMovieSceneSequenceExtensions::GetTracks(MyLevelSequence);
-
-// 按类型查找轨道
-TArray<UMovieSceneTrack*> FloatTracks = UMovieSceneSequenceExtensions::FindTracksByType(
-    MyLevelSequence, UMovieSceneFloatTrack::StaticClass());
-
-// 添加新轨道
-UMovieSceneTrack* NewTrack = UMovieSceneSequenceExtensions::AddTrack(
-    MyLevelSequence, UMovieSceneFloatTrack::StaticClass());
-
-// 设置显示帧率为 30fps
-UMovieSceneSequenceExtensions::SetDisplayRate(MyLevelSequence, FFrameRate(30, 1));
+// 创建或加载一个 Level Sequence
+ULevelSequence* Sequence = NewObject<ULevelSequence>();
 
 // 设置播放范围
-UMovieSceneSequenceExtensions::SetPlaybackStart(MyLevelSequence, 0);
-UMovieSceneSequenceExtensions::SetPlaybackEnd(MyLevelSequence, 300);
+UMovieSceneSequenceExtensions::SetPlaybackStart(Sequence, 0);
+UMovieSceneSequenceExtensions::SetPlaybackEnd(Sequence, 150);
 
-// 创建时间范围
-FSequencerScriptingRange Range = UMovieSceneSequenceExtensions::MakeRange(MyLevelSequence, 0, 300);
+// 添加主轨道
+UMovieSceneFloatTrack* FloatTrack = Cast<UMovieSceneFloatTrack>(
+    UMovieSceneSequenceExtensions::AddMasterTrack(Sequence, UMovieSceneFloatTrack::StaticClass())
+);
 
-// 获取所有绑定
-TArray<FMovieSceneBindingProxy> Bindings = UMovieSceneSequenceExtensions::GetBindings(MyLevelSequence);
-```
+// 添加 Section
+UMovieSceneSection* Section = UMovieSceneTrackExtensions::AddSection(FloatTrack);
 
-### 进阶用法：操作区段和通道
-
-```cpp
-// 来源: Public/ExtensionLibraries/MovieSceneSectionExtensions.h
-// 来源: Public/ExtensionLibraries/MovieSceneTrackExtensions.h
-
-// 获取轨道的区段
-TArray<UMovieSceneSection*> Sections = UMovieSceneTrackExtensions::GetSections(MyTrack);
-
-if (Sections.Num() > 0)
+// 获取 Float 通道
+TArray<UMovieSceneScriptingChannel*> Channels = UMovieSceneSectionExtensions::GetAllChannels(Section);
+if (Channels.Num() > 0)
 {
-    UMovieSceneSection* Section = Sections[0];
-    
-    // 检查并获取起止帧
-    if (UMovieSceneSectionExtensions::HasStartFrame(Section))
+    UMovieSceneScriptingFloatChannel* FloatChannel = Cast<UMovieSceneScriptingFloatChannel>(Channels[0]);
+    if (FloatChannel)
     {
-        int32 StartFrame = UMovieSceneSectionExtensions::GetStartFrame(Section);
-    }
-    
-    // 设置区段范围（秒）
-    UMovieSceneSectionExtensions::SetRangeSeconds(Section, 0.0f, 10.0f);
-    
-    // 获取区段内的通道
-    TArray<UMovieSceneScriptingChannel*> Channels = 
-        UMovieSceneSectionExtensions::GetAllChannels(Section);
-    
-    // 按类型过滤通道
-    TArray<UMovieSceneScriptingChannel*> FloatChannels = 
-        UMovieSceneSectionExtensions::GetChannelsByType(
-            Section, UMovieSceneScriptingFloatChannel::StaticClass());
-    
-    if (FloatChannels.Num() > 0)
-    {
-        UMovieSceneScriptingFloatChannel* FloatChannel = 
-            Cast<UMovieSceneScriptingFloatChannel>(FloatChannels[0]);
-        
-        // 在第 0 帧添加值为 1.0 的关键帧
-        UMovieSceneScriptingFloatKey* Key = FloatChannel->AddKey(
-            FFrameNumber(0), 1.0f, 0.f, EMovieSceneTimeUnit::DisplayRate);
-        
-        // 设置关键帧的插值模式
-        Key->SetInterpolationMode(ERichCurveInterpMode::RCIM_Cubic);
-        Key->SetArriveTangent(0.0f);
-        Key->SetLeaveTangent(0.0f);
+        // 在第 0 帧添加值为 0.0 的关键帧
+        FloatChannel->AddKey(FFrameNumber(0), 0.0f);
+        // 在第 150 帧添加值为 1.0 的关键帧
+        FloatChannel->AddKey(FFrameNumber(150), 1.0f);
     }
 }
-
-// 来源: Public/ExtensionLibraries/MovieSceneBindingExtensions.h
-
-// 操作绑定
-FMovieSceneBindingProxy Binding = Bindings[0];
-
-// 获取绑定信息
-FGuid BindingId = UMovieSceneBindingExtensions::GetId(Binding);
-FText DisplayName = UMovieSceneBindingExtensions::GetDisplayName(Binding);
-
-// 获取子绑定
-TArray<FMovieSceneBindingProxy> Children = 
-    UMovieSceneBindingExtensions::GetChildPossessables(Binding);
-
-// 给绑定添加标签（用于运行时查找）
-UMovieSceneBindingTagExtensions::TagBinding(Binding, FName("MyTag"));
-TArray<FName> Tags = UMovieSceneBindingTagExtensions::GetBindingTags(Binding);
 ```
 
-### 高级用法：条件系统与缓动
+### 进阶用法：遍历绑定并操作多类型通道
 
 ```cpp
-// 来源: Public/ExtensionLibraries/MovieSceneConditionExtensions.h
-// 来源: Public/ExtensionLibraries/MovieSceneSectionEasingExtensions.h
+#include "MovieSceneSequenceExtensions.h"
+#include "MovieSceneBindingExtensions.h"
+#include "MovieSceneScriptingChannel.h"
+#include "MovieSceneSectionExtensions.h"
+#include "MovieSceneTrackExtensions.h"
 
-// 为区段设置条件
-UMovieSceneConditionExtensions::SetSectionCondition(
-    MySection, UMyCustomCondition::StaticClass());
+void ManipulateSequence(ULevelSequence* Sequence)
+{
+    // 获取所有绑定
+    TArray<FMovieSceneBindingProxy> Bindings = UMovieSceneSequenceExtensions::GetBindings(Sequence);
+    
+    for (const FMovieSceneBindingProxy& Binding : Bindings)
+    {
+        // 获取显示名
+        FText Name = UMovieSceneBindingExtensions::GetDisplayName(Binding);
+        
+        // 获取该绑定下的所有轨道
+        TArray<UMovieSceneTrack*> Tracks = UMovieSceneBindingExtensions::GetTracks(Binding);
+        
+        for (UMovieSceneTrack* Track : Tracks)
+        {
+            // 获取所有 Section
+            TArray<UMovieSceneSection*> Sections = UMovieSceneTrackExtensions::GetSections(Track);
+            
+            for (UMovieSceneSection* Section : Sections)
+            {
+                // 获取 Float 通道
+                TArray<UMovieSceneScriptingChannel*> Channels = 
+                    UMovieSceneSectionExtensions::GetChannelsByType(Section, UMovieSceneScriptingFloatChannel::StaticClass());
+                
+                for (UMovieSceneScriptingChannel* Channel : Channels)
+                {
+                    UMovieSceneScriptingFloatChannel* FloatChannel = 
+                        Cast<UMovieSceneScriptingFloatChannel>(Channel);
+                    
+                    if (FloatChannel)
+                    {
+                        // 遍历所有关键帧并修改切线
+                        TArray<UMovieSceneScriptingKey*> Keys = FloatChannel->GetKeys();
+                        for (UMovieSceneScriptingKey* Key : Keys)
+                        {
+                            UMovieSceneScriptingFloatKey* FloatKey = Cast<UMovieSceneScriptingFloatKey>(Key);
+                            if (FloatKey)
+                            {
+                                FloatKey->SetInterpolationMode(ERichCurveInterpMode::RCIM_Cubic);
+                                FloatKey->SetArriveTangent(0.0f);
+                                FloatKey->SetLeaveTangent(0.0f);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
 
-// 清除区段条件
-UMovieSceneConditionExtensions::ClearSectionCondition(MySection);
+### 进阶用法：使用标记帧和范围操作
 
-// 设置缓入缓出
-UMovieSceneSectionEasingExtensions::SetEaseInDuration(MySection, 5);
-UMovieSceneSectionEasingExtensions::SetEaseOutDuration(MySection, 10);
+```cpp
+#include "MovieSceneSequenceExtensions.h"
+#include "SequencerScriptingRange.h"
 
-int32 EaseIn = UMovieSceneSectionEasingExtensions::GetEaseInDuration(MySection);
+void WorkWithRangesAndMarks(ULevelSequence* Sequence)
+{
+    // 添加标记帧
+    int32 MarkIndex = UMovieSceneSequenceExtensions::AddMarkedFrame(Sequence, TEXT("Important Shot"));
+    UMovieSceneSequenceExtensions::SetMarkedFrame(Sequence, MarkIndex, FFrameNumber(72));
+    
+    // 创建时间范围
+    FSequencerScriptingRange PlaybackRange = UMovieSceneSequenceExtensions::GetPlaybackRange(Sequence);
+    
+    // 检查范围属性
+    if (USequencerScriptingRangeExtensions::HasStart(PlaybackRange))
+    {
+        int32 StartFrame = USequencerScriptingRangeExtensions::GetStartFrame(PlaybackRange);
+        float StartSeconds = USequencerScriptingRangeExtensions::GetStartSeconds(PlaybackRange);
+    }
+    
+    // 设置显示率和 Tick 分辨率
+    UMovieSceneSequenceExtensions::SetDisplayRate(Sequence, FFrameRate(24, 1));
+    UMovieSceneSequenceExtensions::SetTickResolution(Sequence, FFrameRate(24000, 1));
+}
 ```
 
 ## Demo 示例
 
 ```cpp
-// MySequenceScriptTool.h
+// SequencerDemo.h
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "MySequenceScriptTool.generated.h"
-
-class ULevelSequence;
+#include "MovieSceneSequenceExtensions.h"
+#include "MovieSceneScriptingChannel.h"
+#include "MovieSceneSectionExtensions.h"
+#include "MovieSceneTrackExtensions.h"
+#include "MovieSceneBindingExtensions.h"
+#include "LevelSequence.h"
+#include "SequencerDemo.generated.h"
 
 UCLASS()
-class UMySequenceScriptTool : public UBlueprintFunctionLibrary
+class USequencerDemoLibrary : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 
 public:
-    // 演示：程序化创建一个包含浮点动画的序列区段
-    UFUNCTION(BlueprintCallable, Category = "Demo")
-    static void Demo_AddFloatTrackWithKeys(ULevelSequence* Sequence, float StartValue, float EndValue);
-};
-```
-
-```cpp
-// MySequenceScriptTool.cpp
-#include "MySequenceScriptTool.h"
-#include "LevelSequence.h"
-#include "MovieSceneSequenceExtensions.h"
-#include "MovieSceneTrackExtensions.h"
-#include "MovieSceneSectionExtensions.h"
-#include "MovieSceneScriptingChannel.h"
-#include "Tracks/MovieSceneFloatTrack.h"
-
-void UMySequenceScriptTool::Demo_AddFloatTrackWithKeys(
-    ULevelSequence* Sequence, float StartValue, float EndValue)
-{
-    if (!Sequence)
+    /**
+     * 演示：创建一个简单的动画序列
+     * 在指定绑定上创建一个 Float 动画通道，并设置两个关键帧
+     */
+    UFUNCTION(BlueprintCallable, Category = "SequencerDemo")
+    static UMovieSceneScriptingFloatChannel* CreateSimpleAnimation(
+        ULevelSequence* Sequence,
+        const FMovieSceneBindingProxy& Binding,
+        int32 StartFrame,
+        int32 EndFrame,
+        float StartValue,
+        float EndValue)
     {
-        return;
-    }
+        if (!Sequence || !Binding.Sequence)
+        {
+            return nullptr;
+        }
 
-    // 1. 添加浮点轨道
-    UMovieSceneTrack* Track = UMovieSceneSequenceExtensions::AddTrack(
-        Sequence, UMovieSceneFloatTrack::StaticClass());
-    if (!Track) return;
+        // 向绑定添加 Float 轨道
+        UMovieSceneTrack* Track = UMovieSceneBindingExtensions::AddTrack(
+            Binding, UMovieSceneFloatTrack::StaticClass());
+        if (!Track)
+        {
+            return nullptr;
+        }
 
-    // 2. 创建区段并设置范围（0~60帧，约2秒@30fps）
-    UMovieSceneSection* Section = UMovieSceneTrackExtensions::AddSection(Track);
-    UMovieSceneSectionExtensions::SetRange(Section, 0, 60);
+        // 添加 Section
+        UMovieSceneSection* Section = UMovieSceneTrackExtensions::AddSection(Track);
+        if (!Section)
+        {
+            return nullptr;
+        }
 
-    // 3. 获取浮点通道并添加关键帧
-    TArray<UMovieSceneScriptingChannel*> Channels = 
-        UMovieSceneSectionExtensions::GetChannelsByType(
-            Section, UMovieSceneScriptingFloatChannel::StaticClass());
+        // 设置 Section 范围
+        UMovieSceneSectionExtensions::SetRange(Section, StartFrame, EndFrame);
 
-    for (UMovieSceneScriptingChannel* Channel : Channels)
-    {
-        UMovieSceneScriptingFloatChannel* FloatChannel = 
-            Cast<UMovieSceneScriptingFloatChannel>(Channel);
-        if (!FloatChannel) continue;
+        // 获取 Float 通道
+        TArray<UMovieSceneScriptingChannel*> Channels = 
+            UMovieSceneSectionExtensions::GetAllChannels(Section);
+        
+        UMovieSceneScriptingFloatChannel* FloatChannel = nullptr;
+        for (UMovieSceneScriptingChannel* Channel : Channels)
+        {
+            FloatChannel = Cast<UMovieSceneScriptingFloatChannel>(Channel);
+            if (FloatChannel)
+            {
+                break;
+            }
+        }
 
-        // 在第 0 帧添加起始值
+        if (!FloatChannel)
+        {
+            return nullptr;
+        }
+
+        // 添加起始关键帧
         UMovieSceneScriptingFloatKey* StartKey = FloatChannel->AddKey(
-            FFrameNumber(0), StartValue, 0.f, EMovieSceneTimeUnit::DisplayRate,
-            EMovieSceneKeyInterpolation::Cubic);
-
-        // 在第 60 帧添加结束值
-        UMovieSceneScriptingFloatKey* EndKey = FloatChannel->AddKey(
-            FFrameNumber(60), EndValue, 0.f, EMovieSceneTimeUnit::DisplayRate,
-            EMovieSceneKeyInterpolation::Cubic);
-
-        // 设置切线为自动
+            FFrameNumber(StartFrame), StartValue);
         if (StartKey)
         {
             StartKey->SetInterpolationMode(ERichCurveInterpMode::RCIM_Cubic);
-            StartKey->SetArriveTangent(0.f);
-            StartKey->SetLeaveTangent(0.f);
+            StartKey->SetArriveTangent(0.0f);
+            StartKey->SetLeaveTangent(0.0f);
         }
+
+        // 添加结束关键帧
+        UMovieSceneScriptingFloatKey* EndKey = FloatChannel->AddKey(
+            FFrameNumber(EndFrame), EndValue);
         if (EndKey)
         {
             EndKey->SetInterpolationMode(ERichCurveInterpMode::RCIM_Cubic);
+            EndKey->SetArriveTangent(0.0f);
+            EndKey->SetLeaveTangent(0.0f);
         }
+
+        return FloatChannel;
     }
-}
+
+    /**
+     * 演示：查询序列中所有绑定的名称
+     */
+    UFUNCTION(BlueprintCallable, Category = "SequencerDemo")
+    static TArray<FString> GetAllBindingNames(ULevelSequence* Sequence)
+    {
+        TArray<FString> Names;
+        if (!Sequence)
+        {
+            return Names;
+        }
+
+        TArray<FMovieSceneBindingProxy> Bindings = 
+            UMovieSceneSequenceExtensions::GetBindings(Sequence);
+        
+        for (const FMovieSceneBindingProxy& Binding : Bindings)
+        {
+            Names.Add(Binding.DisplayName.ToString());
+        }
+
+        return Names;
+    }
+};
 ```
 
 ## 模块依赖
 
 | 模块 | 用途 |
 |---|---|
-| `LevelSequence` | 核心序列资产类型 |
-| `MovieScene` | Sequencer 底层电影场景数据结构 |
-| `MovieSceneTracks` | 内置轨道类型（Float、Transform 等） |
-
-无其他特殊依赖（仅标准 Core/Engine/Slate 等）。
+| `LevelSequence` | Level Sequence 核心资产类型 |
+| `MovieScene` | MovieScene 核心框架，包含序列、轨道、通道等基础类型 |
+| `MovieSceneTracks` | 内置的 MovieScene 轨道实现（Float、Transform、Event 等） |
 
 ## 维护状态
 
@@ -380,21 +449,23 @@ void UMySequenceScriptTool::Demo_AddFloatTrackWithKeys(
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-12 | `b209798d` | Anim In Engine: Add bRemoveExcludedCurves option to animation recording so we can remove curves already on the existing sequence | 动画录制添加排除曲线选项 |
-| 2026-04-24 | `8b8110b4` | [EDA] Add Sequencer tool wrappers + fix sequencer toolset tests | 添加 Sequencer 工具封装并修复测试 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移至 UE_LOGF |
-| 2026-04-10 | `77af3950` | [EDA] Add SequencerTools toolset with Anim Mixer split into separate plugin | 添加 SequencerTools 工具集，Anim Mixer 拆分独立插件 |
-| 2026-04-10 | `8bd8f719` | [Backout] - CL52569948 | 回退之前的提交 |
+| 2026-05-12 | `b209798d` | Anim In Engine: Add bRemoveExcludedCurves option to animation recording so we can remove curves alre | 动画录制新增移除排除曲线选项 |
+| 2026-04-24 | `8b8110b4` | [EDA] Add Sequencer tool wrappers + fix sequencer toolset tests | 添加序列器工具包装器并修复工具集测试 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移为 UE_LOGF 新日志宏 |
+| 2026-04-10 | `77af3950` | [EDA] Add SequencerTools toolset with Anim Mixer split into separate plugin | 添加 SequencerTools 工具集，动画混合器拆分为独立插件 |
+| 2026-04-10 | `8bd8f719` | [Backout] - CL52569948 | 回退变更 CL52569948 |
 
 ### 维护评价
 
-- **活跃维护**：最近 6 个月内有持续的功能性更新（Sequencer 工具封装、日志迁移、动画录制改进）
-- **持续演进**：插件从 2018 年创建至今 8 年，仍在持续添加新 API（如条件系统、绑定标签、时间扭曲扩展等 5.x 新增功能）
-- **实验性标签**：`IsBetaVersion=true`，但实际已在生产环境广泛使用多年，此标签更多是 Epic 的惯性保留
-- **推荐使用**：这是操作 Sequencer 的唯一官方脚本接口，没有替代方案。所有需要程序化操作序列的工作流都必须依赖此插件
-- **注意事项**：部分 API 标记为 `DevelopmentOnly`（如视图范围设置、排序顺序等），这些功能仅在编辑器开发环境中可用
+- **年龄**：创建于 2018 年 5 月，至今约 8 年
+- **活跃度**：非常活跃。2026 年 4-5 月仍有密集更新，持续接收新功能（EDA 序列器工具集成、动画录制改进）和维护性改动（日志宏迁移）
+- **实验性状态**：`IsBetaVersion = true`，但已有 8 年历史且被大量使用，属于成熟度较高但官方尚未正式摘除 Beta 标签的插件
+- **依赖关系**：依赖 Python 插件（在 .uplugin 的 Plugins 字段中声明），是 UE5 Sequencer 脚本化的核心基础设施
+- **推荐程度**：**强烈推荐**。这是 UE5 中通过脚本（蓝图/Python）操作 Sequencer 的唯一官方方式，功能全面且持续维护。尽管标记为 Beta，但已成为 Sequencer 生态中不可或缺的组件
+
+⚠️ **注意**：虽然插件标记为 `IsBetaVersion = true`，但其 API 已相当稳定，且在 UE5 各版本中持续迭代维护，实际使用风险较低。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MovieScene/SequencerScripting)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/sequencer-scripting-in-unreal-engine/)（Sequencer 脚本概述）
+- 官方文档：无（.uplugin 中 DocsURL 为空）

@@ -1,13 +1,13 @@
 # TechAudioTools
 
-> A collection of audio-related tools and utilities.
+> A collection of audio-related tools and utilities.（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 音频技术工具箱 |
+| 中文名 | 音频技术工具 |
 | 分类 | Audio |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、视图模型） |
+| 包含内容 | ✅ 有（蓝图资产） |
 | 模块 | `TechAudioTools` (Runtime), `TechAudioToolsMetaSound` (Runtime), `TechAudioToolsMetaSoundEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-04-22 |
@@ -16,170 +16,184 @@
 
 ## 用途
 
-该插件的核心功能是为音频参数在内部系统（如 MetaSound 节点）和用户界面（如自定义 Widget 或 Preset 控件）之间提供一套健壮、可配置的转换和映射框架。它主要解决以下问题：
-1.  **单位转换与范围映射**：内部系统可能使用线性增益（`0.0 - 1.0`），而 UI 需要显示为分贝（`-60 dB - 6 dB`）；内部使用频率乘数（`0.5`），而 UI 可能显示为半音（`-12`）。`UTechAudioToolsFloatMapping` 类自动化了这种双向转换。
-2.  **ViewModel 绑定**：通过 `UAudioComponentViewModel`，将 `UAudioComponent` 的实时播放状态（如播放、停止、淡入淡出）以一种响应式的方式（`FieldNotify`）暴露给 UI Widget，简化了基于 MVVM 架构的音频 UI 开发。
-3.  **MetaSound 集成**：提供与 MetaSound 编辑器深度集成的工具，用于改善节点（如 Literal）的交互体验。
-
-简而言之，该插件是构建高级音频工具、自定义音频控件或封装 MetaSound 预设的底层基础设施。
+TechAudioTools 插件旨在为音频工具开发提供底层支持，特别是围绕 **MetaSound** 生态。它主要解决两个核心问题：
+1.  **数值域映射与转换**：在音频系统（如 MetaSound）内部使用的数值域（如线性增益、频率乘数）与用户界面（UI）或预设控件中显示的域（如分贝、半音）之间进行精确、非线性的转换。这允许开发者创建直观的音频参数控件，而无需在内部逻辑和UI显示之间手动编写复杂的转换代码。
+2.  **MVVM 状态绑定**：提供 ViewModel 层，用于将 `UAudioComponent` 的实时播放状态（播放、停止、淡入、淡出等）与 UI 控件（如 UMG）进行数据绑定，简化音频状态可视化工具的开发。
 
 ## 使用场景
 
--   你正在开发一个**音频混音工具或自定义音效控件**，需要在 UI 中使用分贝、半音等专业单位，而 MetaSound 内部使用线性值。
--   你正在为音频组件（`UAudioComponent`）创建一个**自定义的播放状态 UI**，希望使用数据绑定（MVVM）模式来实时更新播放、暂停、虚拟化等状态。
--   你正在扩展 **MetaSound 编辑器**，希望改善 Literal 节点或其它节点的参数输入/显示逻辑。
--   你需要一个统一的方案来管理游戏中所有音频参数（音量、音调、滤波器带宽等）的**内部值与显示值之间的映射规则**。
+-   你正在开发一个自定义的 MetaSound 预设或参数编辑器，并希望用分贝滑块控制内部的线性增益参数。
+-   你需要在游戏 UI 或编辑器工具中实时显示 `UAudioComponent` 的播放状态（播放、停止、虚拟化等）。
+-   你在构建音频相关的编辑器工具，需要一套标准化的音频单位转换和映射逻辑。
 
 ## 蓝图用法
 
 ### 核心节点
 
-#### 映射操作 (`UTechAudioToolsFloatMapping`)
-
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SourceToDisplay` | 将内部系统使用的源值转换为适合在 UI 上显示的值。 | `UTechAudioToolsFloatMapping` |
-| `DisplayToSource` | 将 UI 上编辑的显示值转换回内部系统可用的源值。 | `UTechAudioToolsFloatMapping` |
-| `NormalizedToSource` | 将归一化（0-1）值转换为源范围内的实际值。 | `UTechAudioToolsFloatMapping` |
-| `SourceToNormalized` | 将源范围内的实际值转换为归一化（0-1）值。 | `UTechAudioToolsFloatMapping` |
-| `NormalizedToDisplay` | 将归一化（0-1）值转换为显示范围内的实际值。 | `UTechAudioToolsFloatMapping` |
-| `DisplayToNormalized` | 将显示范围内的实际值转换为归一化（0-1）值。 | `UTechAudioToolsFloatMapping` |
-| `GetUnits` | 获取指定端点（Source 或 Display）所使用的单位。 | `UTechAudioToolsFloatMapping` |
-
-#### 视图模型操作 (`UAudioComponentViewModel`)
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `SetAudioComponent` | 绑定一个音频组件实例到此视图模型，开始监听其状态变化。 | `UAudioComponentViewModel` |
+| `SourceToDisplay` | 将源域值转换为显示域值 | `UTechAudioToolsFloatMapping` |
+| `DisplayToSource` | 将显示域值转换为源域值 | `UTechAudioToolsFloatMapping` |
+| `NormalizedToSource` | 将 [0,1] 归一化值转换为源域值 | `UTechAudioToolsFloatMapping` |
+| `SourceToNormalized` | 将源域值转换为 [0,1] 归一化值 | `UTechAudioToolsFloatMapping` |
+| `NormalizedToDisplay` | 将 [0,1] 归一化值转换为显示域值 | `UTechAudioToolsFloatMapping` |
+| `DisplayToNormalized` | 将显示域值转换为 [0,1] 归一化值 | `UTechAudioToolsFloatMapping` |
+| `GetSourceMin` / `GetSourceMax` | 获取源域范围的最小/最大值 | `UTechAudioToolsFloatMapping` |
+| `GetDisplayMin` / `GetDisplayMax` | 获取显示域范围的最小/最大值 | `UTechAudioToolsFloatMapping` |
+| `GetUnits` | 获取指定端点（源或显示）使用的单位 | `UTechAudioToolsFloatMapping` |
+| `SetAudioComponent` | 设置此 ViewModel 要绑定的音频组件 | `UAudioComponentViewModel` |
+| `GetPlayState` | 获取音频组件的枚举播放状态 | `UAudioComponentViewModel` |
+| `IsPlaying` / `IsStopped` 等 | 查询音频组件是否处于特定状态（布尔值） | `UAudioComponentViewModel` |
 
 ### 使用示例（蓝图描述）
 
-**示例 1：创建一个音量映射对象**
-1.  创建一个 `UTechAudioToolsFloatMapping` 类的对象实例（例如，在 Actor 或 Widget 的变量中）。
-2.  在对象的详细面板中，将 `Mapping Type` 设置为 `Volume`。
-3.  设置 `Source Volume Units` 为 `Linear Gain`，`Display Volume Units` 为 `Decibels`。
-4.  调整 `Display Decibel Range` 为你希望的 UI 范围（如 `-60` 到 `0`）。
-5.  在蓝图图表中，将 MetaSound 输入的线性增益值（如 `0.5`）连接到 `SourceToDisplay` 节点，输出结果（如 `-6.02`）即可绑定到滑动条的值上。
-6.  当用户拖动滑动条（显示分贝值）时，调用 `DisplayToSource` 将新值转换回线性增益，并传递给 MetaSound。
-
-**示例 2：绑定音频组件状态到 UI**
-1.  在你的 UI Widget 中，创建一个 `UAudioComponentViewModel` 类型的变量。
-2.  当拥有音频组件的 Actor 准备好时，调用 `SetAudioComponent` 并传入该 Actor 的音频组件引用。
-3.  在 Widget 的 `Construct` 或绑定逻辑中，将 `ViewModel` 的 `IsPlaying`、`PlayState` 等属性（带 `FieldNotify`）绑定到对应的 UI 元素（如按钮的文本、图片的可见性）上。
-4.  当音频组件的播放状态改变时，UI 将自动更新。
+1.  **音量映射**：创建一个 `UTechAudioToolsFloatMapping` 对象。在细节面板中，将 `MappingType` 设置为 `Volume`。设置 `SourceVolumeUnits` 为 `LinearGain`，`DisplayVolumeUnits` 为 `Decibels`，并调整 `DisplayRange_Decibels` 为 `-60` 到 `6`。在 UI 中，将滑块（范围 0-100）的值通过 `NormalizedToDisplay` 节点转换为分贝值，再通过 `DisplayToSource` 转换为线性增益，最后传递给 MetaSound 的输入。
+2.  **播放状态绑定**：在 UMG Widget 的 ViewModel 设置中，选择 `UAudioComponentViewModel`。在蓝图中，调用 `SetAudioComponent` 绑定目标组件。然后，可以直接将 Widget 的文本属性（如可见性、文本内容）绑定到 `IsPlaying`、`PlayState` 等 Field Notify 属性上，实现状态自动更新。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include “TechAudioToolsFloatMapping.h”
-#include “Viewmodels/AudioComponentViewModel.h”
+#include "TechAudioToolsFloatMapping.h"
+#include "Viewmodels/AudioComponentViewModel.h"
 ```
 
 ### 基本用法
 
-以下示例展示如何使用浮点映射进行单位转换。
-
+**创建和使用浮点映射器**
 ```cpp
-// 假设在某个类中有一个 UTechAudioToolsFloatMapping* 变量 VolumeMapping
-// 并且它已经被正确配置（例如，Source为LinearGain, Display为Decibels）
+// 创建一个用于音量映射的映射器实例
+UTechAudioToolsFloatMapping* VolumeMapper = NewObject<UTechAudioToolsFloatMapping>();
+VolumeMapper->MappingType = ETechAudioToolsFloatMappingType::Volume;
+VolumeMapper->SourceVolumeUnits = ETechAudioToolsVolumeUnit::LinearGain;
+VolumeMapper->DisplayVolumeUnits = ETechAudioToolsVolumeUnit::Decibels;
+VolumeMapper->DisplayRange_Decibels = FFloatInterval(-60.f, 6.f);
 
-// 1. 将内部线性增益转换为UI分贝值
-float LinearGain = 0.5f;
-float DisplayDecibels = VolumeMapping->SourceToDisplay(LinearGain);
-// DisplayDecibels 可能约为 -6.02
+// 在 UI 或预设系统中，将显示值（如滑块输入的 -24.f dB）转换为源值（线性增益）
+float DisplayValue_dB = -24.f;
+float SourceValue_Linear = VolumeMapper->DisplayToSource(DisplayValue_dB);
 
-// 2. 将用户在UI上设置的分贝值转换回内部线性增益
-float NewDisplayDecibels = -12.0f;
-float NewLinearGain = VolumeMapping->DisplayToSource(NewDisplayDecibels);
-// NewLinearGain 可能约为 0.25
+// 也可以进行归一化转换，便于通用 UI 控件（如 0-1 滑块）操作
+float NormalizedValue = 0.5f; // 滑块在中间位置
+float SourceValue = VolumeMapper->NormalizedToSource(NormalizedValue);
 ```
 
-### 进阶用法
-
-结合视图模型，构建一个响应式的音频组件监控器。
-
+**绑定音频组件视图模型**
 ```cpp
-// 在 Actor 的头文件 (.h) 中
-UPROPERTY(BlueprintReadOnly, Category = “UI”)
-TObjectPtr<UAudioComponentViewModel> AudioViewModel;
+// 获取或创建视图模型实例
+UAudioComponentViewModel* ViewModel = NewObject<UAudioComponentViewModel>();
 
-// 在 Actor 的初始化函数中 (.cpp)
-AudioViewModel = NewObject<UAudioComponentViewModel>(this);
-AudioViewModel->SetAudioComponent(MyAudioComponent); // MyAudioComponent 是 UAudioComponent*
+// 绑定到目标音频组件
+UAudioComponent* MyComponent = GetMyAudioComponent();
+if (MyComponent)
+{
+    ViewModel->SetAudioComponent(MyComponent);
+}
 
-// 现在可以在绑定的 Widget 中通过 AudioViewModel->IsPlaying() 等安全地访问状态。
-// 当 AudioComponent 状态变化时，ViewModel 会通过 FieldNotify 通知绑定的 UI。
+// 查询状态（例如，在 Tick 或响应式更新中）
+if (ViewModel->IsPlaying())
+{
+    // 更新 UI 显示为“正在播放”
+}
+EAudioComponentPlayState CurrentState = ViewModel->GetPlayState();
 ```
 
 ## Demo 示例
 
-这是一个最小可编译示例，展示了如何自定义映射并使用视图模型。
-
-**MyAudioTool.h**
+**音频工具 Widget 头文件 (MyAudioToolWidget.h)**
 ```cpp
+// MyAudioToolWidget.h
 #pragma once
-#include “CoreMinimal.h”
-#include “TechAudioToolsFloatMapping.h”
-#include “Viewmodels/AudioComponentViewModel.h”
-#include “MyAudioTool.generated.h”
+#include "CoreMinimal.h"
+#include "Blueprint/UserWidget.h"
+#include "MyAudioToolWidget.generated.h"
 
-UCLASS(BlueprintType)
-class MYPROJECT_API UMyAudioTool : public UObject
+class UTechAudioToolsFloatMapping;
+class UAudioComponent;
+class UAudioComponentViewModel;
+
+UCLASS()
+class UMyAudioToolWidget : public UUserWidget
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Instanced, Category = “Mapping”)
-	TObjectPtr<UTechAudioToolsFloatMapping> VolumeMapping;
+protected:
+    virtual void NativeConstruct() override;
 
-	UPROPERTY(BlueprintReadOnly, Category = “ViewModel”)
-	TObjectPtr<UAudioComponentViewModel> ViewModel;
+    UPROPERTY()
+    UTechAudioToolsFloatMapping* VolumeMapper;
 
-	UFUNCTION(BlueprintCallable, Category = “Tool”)
-	void Initialize(UAudioComponent* InComponent)
-	{
-		VolumeMapping = NewObject<UTechAudioToolsFloatMapping>(this);
-		VolumeMapping->MappingType = ETechAudioToolsFloatMappingType::Volume;
-		VolumeMapping->SourceVolumeUnits = ETechAudioToolsVolumeUnit::LinearGain;
-		VolumeMapping->DisplayVolumeUnits = ETechAudioToolsVolumeUnit::Decibels;
+    UPROPERTY()
+    UAudioComponentViewModel* ComponentViewModel;
 
-		ViewModel = NewObject<UAudioComponentViewModel>(this);
-		ViewModel->SetAudioComponent(InComponent);
-	}
+    UFUNCTION(BlueprintCallable)
+    void OnVolumeSliderChanged(float NewNormalizedValue);
 
-	UFUNCTION(BlueprintCallable, Category = “Tool”)
-	float GetDisplayVolume(float InLinearGain) const
-	{
-		return VolumeMapping ? VolumeMapping->SourceToDisplay(InLinearGain) : InLinearGain;
-	}
+    UPROPERTY(BlueprintReadOnly)
+    float CurrentDisplayVolumeDB;
 
-	UFUNCTION(BlueprintCallable, Category = “Tool”)
-	float SetSourceVolumeFromDisplay(float InDecibels) const
-	{
-		return VolumeMapping ? VolumeMapping->DisplayToSource(InDecibels) : InDecibels;
-	}
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsAudioPlaying;
 };
 ```
 
-**MyAudioTool.cpp**
+**音频工具 Widget 实现 (MyAudioToolWidget.cpp)**
 ```cpp
-#include “MyAudioTool.h”
-// 无复杂逻辑，所有实现均在头文件中内联或委托给插件API。
+// MyAudioToolWidget.cpp
+#include "MyAudioToolWidget.h"
+#include "TechAudioToolsFloatMapping.h"
+#include "Viewmodels/AudioComponentViewModel.h"
+#include "Components/AudioComponent.h"
+
+void UMyAudioToolWidget::NativeConstruct()
+{
+    Super::NativeConstruct();
+
+    // 初始化音量映射器
+    VolumeMapper = NewObject<UTechAudioToolsFloatMapping>(this);
+    VolumeMapper->MappingType = ETechAudioToolsFloatMappingType::Volume;
+    VolumeMapper->SourceVolumeUnits = ETechAudioToolsVolumeUnit::LinearGain;
+    VolumeMapper->DisplayVolumeUnits = ETechAudioToolsVolumeUnit::Decibels;
+    VolumeMapper->DisplayRange_Decibels = FFloatInterval(-60.f, 0.f);
+
+    // 初始化音频组件视图模型
+    ComponentViewModel = NewObject<UAudioComponentViewModel>(this);
+    // 假设我们已知要绑定的音频组件
+    UAudioComponent* TargetComponent = /* ... 获取目标组件 ... */;
+    ComponentViewModel->SetAudioComponent(TargetComponent);
+}
+
+void UMyAudioToolWidget::OnVolumeSliderChanged(float NewNormalizedValue)
+{
+    if (VolumeMapper)
+    {
+        // 1. 将 UI 滑块的归一化值 (0-1) 转换为显示域值 (dB)
+        CurrentDisplayVolumeDB = VolumeMapper->NormalizedToDisplay(NewNormalizedValue);
+        
+        // 2. 将显示域值 (dB) 转换为源域值 (线性增益)
+        float LinearGain = VolumeMapper->DisplayToSource(CurrentDisplayVolumeDB);
+        
+        // 3. 应用源域值到 MetaSound 或音频组件
+        // SetVolume(LinearGain); // 伪代码
+    }
+    
+    if (ComponentViewModel)
+    {
+        // 查询播放状态以更新 UI
+        bIsAudioPlaying = ComponentViewModel->IsPlaying();
+    }
+}
 ```
 
 ## 模块依赖
 
-该插件对 UE 核心模块的依赖较少，主要依赖其声明的插件依赖。
-
 | 模块 | 用途 |
 |---|---|
-| `MetaSound` | 为 TechAudioToolsMetaSound 和 Editor 模块提供核心 MetaSound 功能和节点基类。 |
-| `ModelViewViewModel` | 为 `UAudioComponentViewModel` 提供 MVVM 框架基类 `UMVVMViewModelBase`。 |
-| `MetasoundEditor` | （TechAudioToolsMetaSoundEditor 模块依赖）提供 MetaSound 编辑器的集成接口和工具。 |
-
-**说明**：你的项目或模块若需使用此插件（特别是 `TechAudioToolsMetaSound` 和 `TechAudioToolsMetaSoundEditor`），需在 `.Build.cs` 中添加对相应插件模块（`Metasound`, `ModelViewViewModel`, `MetasoundEditor`）的依赖。
+| `Metasound` | 核心 MetaSound 框架，用于音频图运行时和编辑器集成 |
+| `ModelViewViewModel` | UE 的 MVVM 框架，用于创建可绑定 UI 的 ViewModel |
+| `TechAudioToolsMetaSound` | 本插件的 MetaSound 集成模块，包含具体的节点和功能 |
+| `TechAudioToolsMetaSoundEditor` | 本插件的 MetaSound 编辑器扩展模块 |
 
 ## 维护状态
 
@@ -187,22 +201,20 @@ public:
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-16 | `cb44584a` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | MetaSound：整合了引脚类型注册及相关编辑器行为。 |
-| 2026-04-15 | `2010cdbb` | [Backout] - CL52717658 - CIS Compile Error | 回退了一个导致编译错误的提交。 |
-| 2026-04-14 | `d9dda16b` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | MetaSound：整合了引脚类型注册及相关编辑器行为。 |
-| 2026-04-09 | `77ec5174` | [TechAudioTools] Added support for transactions in MetaSound Literal Viewmodels | 为MetaSound的Literal视图模型添加了事务支持。 |
-| 2026-03-16 | `e8ed118a` | DocumentConfiguration Rename to MetaSound(Document)Template | 将“文档配置”重命名为“MetaSound(文档)模板”。 |
+| 2026-04-16 | `cb44584a` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 重构 MetaSound 引脚类型注册和编辑器行为，代码整合。 |
+| 2026-04-15 | `2010cdbb` | [Backout] - CL52717658 - CIS Compile Error | 回退一个导致编译错误的提交。 |
+| 2026-04-14 | `d9dda16b` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 对 MetaSound 引脚系统进行整理和统一。 |
+| 2026-04-09 | `77ec5174` | [TechAudioTools] Added support for transactions in MetaSound Literal Viewmodels | 为 MetaSound Literal ViewModel 添加事务支持，便于编辑器撤销/重做。 |
+| 2026-03-16 | `e8ed118a` | DocumentConfiguration Rename to MetaSound(Document)Template | 重命名 `DocumentConfiguration` 为更明确的 `MetaSoundTemplate`。 |
 
 ### 维护评价
 
--   **创建时间**：2025年4月，插件相对年轻。
--   **更新频率**：最近一个月内有多次提交，更新活跃。
--   **更新内容**：主要围绕 MetaSound 节点（尤其是 Literal）的交互改进和编辑器行为整合，表明正在积极开发和完善。
--   **实验性**：插件被标记为 `IsBetaVersion` 和 `IsExperimentalVersion`，且默认未安装（`Installed: false`），说明 API 和功能可能尚未稳定。
--   **推荐度**：**推荐尝试使用，但需谨慎**。该插件为解决特定的音频参数映射和 UI 绑定问题提供了专业的方案。由于其实验性状态，不建议在生产环境的核心功能中深度依赖，应做好未来 API 变更的准备。非常适合用于原型开发、内部工具或可控的实验性功能。
+-   **创建时间**：2025年4月，插件历史约1.5年，属于较新的实验性插件。
+-   **更新频率**：最近半年（2026年3月-4月）有持续的功能性更新和重构（如 ViewModel 事务支持、MetaSound 编辑器代码整合），表明**正在活跃维护**。
+-   **状态**：作为 `IsBetaVersion=true` 和 `IsExperimentalVersion=false` 的实验性插件，其 API 和功能可能不稳定，未来可能发生变化。
+-   **推荐度**：如果你的项目深度依赖 MetaSound 并需要开发复杂的音频工具或 UI，这个插件提供了有价值的基础架构。但由于其**实验性状态**，在生产项目中使用需谨慎，建议密切关注其更新日志和 breaking changes。
 
 ## 相关链接
 
 -   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/TechAudioTools)
--   [官方文档](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/)（暂无专门文档）
--   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/TechAudioTools/Tests)（路径假设，需确认）
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/TechAudioTools/Tests) (路径推测，可能位于插件根目录或Engine/Tests下)

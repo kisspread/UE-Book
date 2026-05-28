@@ -1,10 +1,10 @@
 # Alembic Importer
 
-> Support importing Alembic files
+> Support importing Alembic files（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | Alembic 导入器 |
+| 中文名 | 动画缓存导入器 |
 | 分类 | Importers |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
@@ -16,198 +16,214 @@
 
 ## 用途
 
-本插件用于导入 Alembic (.abc) 文件。Alembic 是影视和游戏行业中广泛使用的开放标准格式，用于在不同数字内容创建（DCC）工具（如 Houdini, Maya, Blender）与游戏引擎之间交换复杂的几何体和动画数据。
-
-插件解决了将 DCC 软件中生成的复杂模拟动画（如流体、布料、刚体）或角色动画导入到 Unreal Engine 中的问题。它能够解析 Alembic 文件中的网格体（PolyMesh）数据，并将其导入为 UE5 中的静态网格体（Static Mesh）、几何缓存（Geometry Cache）或骨骼网格体（Skeletal Mesh）资产，从而保留动画的时间轴信息。
+AlembicImporter 插件为 Unreal Engine 提供了导入 `.abc` 格式文件的能力。它不仅仅是简单的静态网格导入，更重要的是解决了从 DCC（数字内容创作）软件（如 Maya、Houdini、Blender 等）导出的**动画几何缓存**数据的导入问题。这意味着它可以将带有逐帧顶点动画、形变动画的角色、物体或特效动画无缝地带入引擎中，作为 `UGeometryCache` 资产使用，完美保留原始动画的每一帧细节。它是处理复杂动画资产流水线的核心工具。
 
 ## 使用场景
 
-- 你从 **Houdini** 导出了复杂的流体或刚体模拟动画，希望将其作为动画几何体在 UE5 中回放。
-- 你从 **Maya** 或 **Blender** 导出了角色动画或布料模拟，希望导入到 UE5 中进行进一步编辑或使用。
-- 你需要导入**带有时间轴的连续几何体变化**，例如变形目标（Morph Target）序列或完整的网格体动画。
-- 你需要**重新导入**已导入的 Alembic 资产以更新内容，而不希望丢失在引擎内已进行的材质分配或其他设置。
+- **影视动画与预演**：将 Maya 或 Houdini 中制作的复杂角色表演、布料、流体或粒子特效动画，以几何缓存的形式导入 UE，用于虚拟制片或实时预览。
+- **游戏过场动画**：导入由外部动画软件生成的高精度过场动画序列。
+- **建筑可视化**：导入包含精确时间动画（如日光变化、人群流动）的模型。
+- **资产流水线**：在需要版本迭代或从外部软件持续更新动画资产的团队中，作为标准的资产交换格式。
 
 ## 蓝图用法
 
-该插件的核心功能（文件导入和资产创建）主要通过编辑器界面（如“导入”按钮或右键菜单）触发，而非通过蓝图节点。`UAlembicImportFactory` 是编辑器工厂类，其函数（如 `FactoryCreateFile`）由编辑器在导入过程中自动调用。
+此插件主要通过编辑器 UI 进行交互（导入对话框、重导入选项），其核心功能封装在工厂类和 Slate UI 中，**并未暴露为蓝图可调用函数**。主要的“蓝图”交互是：
+1.  在内容浏览器中右键单击，选择 **“导入到...”**。
+2.  选择一个 `.abc` 文件。
+3.  在弹出的 **“Alembic 导入选项”** 窗口中进行配置。
 
-用户通常通过以下方式交互：
-1.  在内容浏览器中右键，选择“导入到此处”。
+### 核心节点
+
+该插件的核心逻辑不体现在蓝图节点上，而是体现在编辑器导入流程中。
+
+### 使用示例（蓝图描述）
+
+由于不直接暴露蓝图节点，典型用法是通过编辑器操作：
+1.  **内容浏览器** -> 右键 -> **导入资产**。
 2.  选择 `.abc` 文件。
-3.  在弹出的 `SAlembicImportOptions` 窗口中配置导入选项（如选择导入为 StaticMesh、GeometryCache 还是 SkeletalMesh，选择要导入的 Track 等）。
-4.  点击“导入”。
-
-该插件没有专门为蓝图运行时（Runtime）暴露可调用的函数节点。
+3.  在出现的 **“Alembic Import Options”** (SAlembicImportOptions) 对话框中：
+    - 设置导入类型（静态网格、几何缓存、骨骼网格体）。
+    - 选择要导入的轨道（如果有多个多边形网格轨道）。
+    - 调整网格简化、时间范围等参数。
+    - 点击 **“Import”** 按钮。
 
 ## C++ 用法
+
+该插件的核心是 `UFactory` 子类和相关的导入器类，主要用于引擎内部的文件导入流程。开发者若需进行程序化导入或自定义导入逻辑，可以参考其结构。
 
 ### 头文件引入
 
 ```cpp
 #include "AlembicImportFactory.h"
-// 通常还需要包含导入设置类
+// 如果需要访问具体导入数据结构，可能需要
 #include "AbcImportSettings.h"
 ```
 
 ### 基本用法
 
-在编辑器代码中，可以通过工厂类进行程序化导入（虽然通常由编辑器UI触发）。
+一个最基本的程序化导入 `.abc` 文件为 `UGeometryCache` 的流程（概念示例）：
 
 ```cpp
-// 假设你已经有了一个 FAbcImporter 实例（通常由工厂内部创建）
-// 这里演示如何从工厂类的角度调用导入函数。
-// 来源文件: Engine/Plugins/Importers/AlembicImporter/Source/AlembicImporter/Classes/AlembicImportFactory.h
-
-// 创建工厂实例
-UAlembicImportFactory* Factory = NewObject<UAlembicImportFactory>();
-
-// 设置导入参数（通常通过 UI 或导入数据填充）
-// Factory->ImportSettings = ... ;
-// Factory->bShowOption = false; // 如果不希望弹出选项窗口
-
-// 准备导入参数
-UClass* ClassToCreate = UStaticMesh::StaticClass(); // 或 UGeometryCache, USkeletalMesh
-UObject* ParentPackage = CreatePackage(TEXT("/Game/ImportedAssets"));
-FName AssetName = TEXT("MyAlembicAsset");
-EObjectFlags Flags = RF_Public | RF_Standalone;
-FString FilePath = TEXT("/path/to/your/file.abc");
-FFeedbackContext* Warn = GWarn;
-bool bOperationCanceled = false;
-
-// 调用工厂的创建文件函数
-UObject* ImportedObject = Factory->FactoryCreateFile(
-    ClassToCreate,
-    ParentPackage,
-    AssetName,
-    Flags,
-    FilePath,
-    nullptr, // Parms
-    Warn,
-    bOperationCanceled
-);
-```
-
-### 进阶用法
-
-重新导入（Reimport）已存在的资产是常见需求，该功能由 `FReimportHandler` 接口支持。
-
-```cpp
-// 假设你已经有一个之前导入的 UStaticMesh 指针
-// 来源文件: Engine/Plugins/Importers/AlembicImporter/Source/AlembicImporter/Classes/AlembicImportFactory.h
-
-UStaticMesh* ExistingMesh = ... ; // 之前导入的网格体
-UAlembicImportFactory* Factory = NewObject<UAlembicImportFactory>();
-
-// 检查是否可以重新导入
-TArray<FString> OutFilenames;
-if (Factory->CanReimport(ExistingMesh, OutFilenames))
-{
-    // 执行重新导入
-    EReimportResult::Type Result = Factory->Reimport(ExistingMesh);
-    if (Result == EReimportResult::Succeeded)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Alembic 文件重新导入成功。"));
-    }
-}
-```
-
-## Demo 示例
-
-以下是一个简单的编辑器命令示例，演示如何使用 Alembic 工厂进行导入。此示例用于说明原理，实际项目中通常直接使用编辑器的导入UI。
-
-**MyAlembicImportCommandlet.h**
-```cpp
-#pragma once
-#include "Commandlets/Commandlet.h"
-#include "MyAlembicImportCommandlet.generated.h"
-
-UCLASS()
-class UMyAlembicImportCommandlet : public UCommandlet
-{
-    GENERATED_BODY()
-public:
-    virtual int32 Main(const FString& Params) override;
-};
-```
-
-**MyAlembicImportCommandlet.cpp**
-```cpp
-#include "MyAlembicImportCommandlet.h"
+// 概念示例，非直接可用代码，需结合 Editor 模块和反馈上下文
 #include "AlembicImportFactory.h"
-#include "AssetRegistry/AssetRegistryModule.h"
+#include "AbcImportSettings.h"
 
-int32 UMyAlembicImportCommandlet::Main(const FString& Params)
+void ImportMyAbcFile(const FString& AbcFilePath, UObject* InParent)
 {
-    // 解析参数获取文件路径
-    TArray<FString> Tokens;
-    TArray<FString> Switches;
-    ParseCommandLine(*Params, Tokens, Switches);
-
-    if (Tokens.Num() < 1)
-    {
-        UE_LOG(LogTemp, Error, TEXT("请提供要导入的 .abc 文件路径。"));
-        return 1;
-    }
-
-    const FString AbcFilePath = FPaths::ConvertRelativePathToFull(Tokens[0]);
-    if (!FPaths::FileExists(AbcFilePath))
-    {
-        UE_LOG(LogTemp, Error, TEXT("文件不存在: %s"), *AbcFilePath);
-        return 1;
-    }
-
-    // 创建工厂
+    // 1. 创建或获取工厂实例
     UAlembicImportFactory* Factory = NewObject<UAlembicImportFactory>();
-    Factory->bShowOption = false; // 禁用选项窗口
+    
+    // 2. 准备导入设置（通常来自 UI 或默认值）
+    UAbcImportSettings* Settings = NewObject<UAbcImportSettings>();
+    // 配置 Settings，例如：
+    // Settings->ImportType = EAlembicImportType::GeometryCache;
+    // Settings->bFlattenTracks = true;
+    Factory->ImportSettings = Settings;
+    Factory->bShowOption = false; // 不显示UI
 
-    // 准备导入
-    FString AssetName = FPaths::GetBaseFilename(AbcFilePath);
-    UPackage* Pkg = CreatePackage(*FString::Printf(TEXT("/Game/ImportedABC/%s"), *AssetName));
-    bool bCanceled = false;
-
-    UE_LOG(LogTemp, Log, TEXT("开始导入: %s"), *AbcFilePath);
+    // 3. 执行导入
+    bool bOperationCanceled = false;
+    FFeedbackContext* Warn = GLog; // 使用日志作为反馈上下文
     UObject* ImportedAsset = Factory->FactoryCreateFile(
-        UStaticMesh::StaticClass(), // 尝试导入为静态网格体
-        Pkg,
-        *AssetName,
+        UGeometryCache::StaticClass(), // 目标类，根据导入类型调整
+        InParent,
+        FName(TEXT("MyGeometryCache")),
         RF_Public | RF_Standalone,
         AbcFilePath,
         nullptr,
-        GWarn,
-        bCanceled
+        Warn,
+        bOperationCanceled
     );
 
     if (ImportedAsset)
     {
-        UE_LOG(LogTemp, Log, TEXT("导入成功: %s"), *ImportedAsset->GetPathName());
-        // 保存资产
-        FAssetRegistryModule::AssetCreated(ImportedAsset);
-        Pkg->MarkPackageDirty();
-        Pkg->SetDirtyFlag(true);
+        UE_LOG(LogTemp, Log, TEXT("Successfully imported Alembic to: %s"), *ImportedAsset->GetPathName());
     }
-    else
+}
+```
+*（注：此为基于 `FactoryCreateFile` 接口的概念演示，实际使用时需处理编辑器上下文和更复杂的错误处理。）*
+
+### 进阶用法
+
+更高级的用法是重导入（Reimport）。当你需要通过代码更新一个已存在的 `UGeometryCache` 或 `UStaticMesh` 资产时：
+
+```cpp
+// 假设你已经有一个指向已导入资产的指针 UGeometryCache* ExistingCache
+void ReimportExistingAbcAsset(UObject* ExistingAsset)
+{
+    // 查找处理该资产类型的 ReimportHandler
+    TArray<UFactory*> ReimportFactories;
+    for (TObjectIterator<UClass> It; It; ++It)
     {
-        UE_LOG(LogTemp, Error, TEXT("导入失败。"));
+        if (It->IsChildOf(UFactory::StaticClass()) && !It->HasAnyClassFlags(CLASS_Abstract))
+        {
+            UFactory* Factory = Cast<UFactory>(It->GetDefaultObject());
+            if (Factory && Factory->CanReimport(ExistingAsset, /*OutFilenames*/TArray<FString>()))
+            {
+                ReimportFactories.Add(Factory);
+            }
+        }
     }
 
-    return ImportedAsset ? 0 : 1;
+    // 找到优先级最高的工厂（通常是 AlembicImportFactory）
+    UFactory* BestFactory = nullptr;
+    int32 HighestPriority = -1;
+    for (UFactory* Factory : ReimportFactories)
+    {
+        int32 Priority = Factory->GetPriority();
+        if (Priority > HighestPriority)
+        {
+            HighestPriority = Priority;
+            BestFactory = Factory;
+        }
+    }
+
+    if (BestFactory)
+    {
+        // 执行重导入
+        FReimportHandler* ReimportHandler = static_cast<FReimportHandler*>(BestFactory);
+        EReimportResult::Type Result = ReimportHandler->Reimport(ExistingAsset);
+        
+        switch (Result)
+        {
+        case EReimportResult::Succeeded:
+            UE_LOG(LogTemp, Log, TEXT("Reimport succeeded."));
+            break;
+        case EReimportResult::Failed:
+            UE_LOG(LogTemp, Error, TEXT("Reimport failed."));
+            break;
+        case EReimportResult::Cancelled:
+            UE_LOG(LogTemp, Warning, TEXT("Reimport cancelled."));
+            break;
+        }
+    }
+}
+```
+*（注：重导入通常依赖于资产中存储的源文件路径 (`UAssetImportData`)。）*
+
+## Demo 示例
+
+这是一个最小化的、展示如何作为自定义工厂扩展导入流程的示例框架。
+
+**MyAbcAnalyzerFactory.h**
+```cpp
+#pragma once
+#include "Factories/Factory.h"
+#include "MyAbcAnalyzerFactory.generated.h"
+
+// 一个假想的、只分析 Alembic 文件结构的工厂
+UCLASS()
+class UMyAbcAnalyzerFactory : public UFactory
+{
+    GENERATED_BODY()
+public:
+    UMyAbcAnalyzerFactory();
+
+    // 仅支持分析，不支持实际创建资产
+    virtual UObject* FactoryCreateFile(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, const FString& Filename, const TCHAR* Parms, FFeedbackContext* Warn, bool& bOutOperationCanceled) override;
+    virtual bool FactoryCanImport(const FString& Filename) override;
+};
+```
+
+**MyAbcAnalyzerFactory.cpp**
+```cpp
+#include "MyAbcAnalyzerFactory.h"
+#include "AbcImportSettings.h" // 可能需要访问解析库的类型
+
+UMyAbcAnalyzerFactory::UMyAbcAnalyzerFactory()
+{
+    SupportedClass = nullptr; // 不创建任何资产类
+    bCreateNew = false;
+    bEditAfterNew = false;
+    bEditorImport = true;
+    ImportPriority = -1; // 低优先级，避免干扰真正的导入器
+}
+
+bool UMyAbcAnalyzerFactory::FactoryCanImport(const FString& Filename)
+{
+    return FPaths::GetExtension(Filename).Equals(TEXT("abc"), ESearchCase::IgnoreCase);
+}
+
+UObject* UMyAbcAnalyzerFactory::FactoryCreateFile(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, const FString& Filename, const TCHAR* Parms, FFeedbackContext* Warn, bool& bOutOperationCanceled)
+{
+    // 在此添加你的自定义 Alembic 文件解析逻辑
+    // 例如：使用 AlembicLibrary 的底层 API 读取文件头、打印结构信息
+    // 这里只是示意
+    
+    UE_LOG(LogTemp, Display, TEXT("Analyzing Alembic file: %s"), *Filename);
+    
+    // 不实际导入资产，返回nullptr
+    bOutOperationCanceled = false;
+    return nullptr;
 }
 ```
 
 ## 模块依赖
 
-从 `Build.cs` 文件分析，使用该插件的功能时，你的模块可能需要依赖：
-
 | 模块 | 用途 |
 |---|---|
-| `AlembicLibrary` | 核心 Alembic 解析和处理库，必须依赖。 |
-| `GeometryCache` | 用于创建和操作 `UGeometryCache` 资产。插件依赖它。 |
-| `RenderCore` | 涉及渲染数据处理。 |
-| `MeshDescription` | 用于构建网格体数据。 |
-| `SkeletalMeshDescription` | 用于构建骨骼网格体数据。 |
-| `StaticMeshDescription` | 用于构建静态网格体数据。 |
-
-*注：常见的 Core, CoreUObject, Engine, Slate, EditorStyle, UnrealEd 等模块已省略。*
+| `AlembicLibrary` | 提供底层的 Alembic 文件解析库 (`libAlembic`) 和核心数据结构（`FAbcImporter`, `FAbcPolyMesh` 等），是 `AlembicImporter` 模块的基础。 |
+| `GeometryCache` | 提供 `UGeometryCache` 和 `AGeometryCacheActor` 的运行时支持，是导入几何缓存的目标类型。 |
 
 ## 维护状态
 
@@ -215,21 +231,22 @@ int32 UMyAlembicImportCommandlet::Main(const FString& Params)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了 64 位参数与 32 位格式说明符不匹配的问题，提升了平台兼容性。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移到 UE_LOGF，是引擎日志系统现代化的一部分。 |
-| 2026-02-27 | `8ce7ca27` | AlembicImporter: Fixed import failure when it couldn't retrieve velocities even though those should | 修复了在应该存在速度数据但无法获取时导致的导入失败问题。 |
-| 2026-02-25 | `74e86b93` | Alembic Import: Fixed out of bouds access (potentially due to negative times). | 修复了可能由负数时间引起的越界访问错误，增强了稳定性。 |
-| 2026-02-03 | `88ba268b` | Fix unreachable code errors | 修复了不可达代码错误，属于代码清理和编译兼容性修复。 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了格式化字符串中位数不匹配导致的潜在问题。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏更新为新的 UE_LOGF 格式，跟进引擎日志系统改进。 |
+| 2026-02-27 | `8ce7ca27` | AlembicImporter: Fixed import failure when it couldn't retrieve velocities even though those should | 修复了在无法获取速度数据（理论上应该可以）时导致的导入失败问题。 |
+| 2026-02-25 | `74e86b93` | Alembic Import: Fixed out of bouds access (potentially due to negative times). | 修复了由负时间值引起的数组越界访问错误。 |
+| 2026-02-03 | `88ba268b` | Fix unreachable code errors | 修复了不可达代码的编译错误。 |
 
 ### 维护评价
 
-- **活跃维护**：该插件在 2022 年从实验性状态迁移至正式状态，并且**持续有活跃更新**。最近一次功能性修复发生在 2026 年 4 月，且 2026 年 2 月有多次错误修复。
-- **功能稳定**：近期的提交主要集中在**错误修复、平台兼容性改进和引擎基础设施适配**（如日志宏迁移），表明其核心功能已相对稳定，团队致力于保持其健壮性和与最新引擎版本的兼容。
-- **依赖关系**：作为 `GeometryCache` 插件的依赖项，它随着引擎核心功能一起维护。
-- **推荐使用**：该插件是 UE5 中处理 Alembic 文件的标准且官方的解决方案。鉴于其活跃的维护状态和近期的稳定性修复，**强烈推荐**在需要导入 Alembic 资产时使用。没有证据表明它已被废弃。
+AlembicImporter 插件目前处于**活跃维护**状态。它从 2022 年从实验性模块转为正式模块，年龄约 4 年，属于引擎中相对成熟的功能。
+- **最近更新频率**：在 2026 年 2-4 月有密集的更新，主要集中在**稳定性修复和错误处理**上（如越界访问、导入失败逻辑）。
+- **维护状态**：Epic Games 持续对其维护，修复 bug 并跟进引擎基础设施的变更（如日志宏迁移）。没有迹象表明它被废弃。
+- **已知限制**：由于 Alembic 格式本身的复杂性和 DCC 工具导出实现的差异，某些复杂的动画或拓扑结构可能仍会出现导入问题。官方文档是解决兼容性问题的首要参考。
+- **推荐使用**：**强烈推荐**。对于需要导入外部动画缓存的项目，这是 UE 内置的唯一官方解决方案，功能完整且经过长期迭代，是影视和游戏动画制作管线中的标准工具。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/AlembicImporter)
 - [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/AlembicImporter/)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/AlembicImporter/Tests) *(基于常规结构推断)*
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/AlembicImporter/Tests)

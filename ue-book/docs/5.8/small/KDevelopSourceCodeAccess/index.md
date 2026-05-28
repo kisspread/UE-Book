@@ -4,158 +4,116 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | KDevelop集成 |
+| 中文名 | KDevelop 集成 |
 | 分类 | Programming |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
 | 模块 | `KDevelopSourceCodeAccess` (UncookedOnly) |
 | 实验性 | 否 |
 | 创建时间 | 2014-11-04 |
-| 年龄标签 | 🏛️ 文物（约 11 年） |
+| 年龄标签 | 🏛️ 文物（约 12 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/KDevelopSourceCodeAccess) | |
 
 ## 用途
 
-该插件为 **Linux 平台**上的 Unreal Editor 提供了与 **KDevelop IDE** 的集成。它的核心作用是实现编辑器内置的“在 IDE 中打开文件”功能，但底层调用的是 KDevelop 而非 Visual Studio 或 Xcode。这解决了开发者在 Linux 环境下使用 KDevelop 进行 UE5 C++ 开发时的代码导航问题，使编辑器能直接将文件打开并定位到指定代码行，极大地提升了开发效率。
+为 Linux 平台上的 Unreal Engine 编辑器提供 KDevelop IDE 的源代码访问集成。当开发者在 Linux 上使用 KDevelop 作为主力 IDE 时，此插件允许编辑器直接跳转到源码文件的指定行号，打开解决方案，以及管理项目中的源文件——与 Visual Studio 在 Windows 上的"双击跳转"体验一致。
+
+该插件实现了 `ISourceCodeAccessor` 接口，属于 UE 源代码访问器插件体系的一部分。编辑器会根据用户在设置中选择的 IDE 自动调用对应的访问器插件。
 
 ## 使用场景
 
-- **你在 Linux 上使用 KDevelop 作为主 IDE 进行 UE5 插件或游戏开发**：当你需要在编辑器中快速查看某个蓝图节点背后的 C++ 实现，或调试时跳转到报错代码处，该插件会自动启动 KDevelop 并打开对应文件。
+- 你在 Linux 上使用 KDevelop 作为 UE 项目的 C++ IDE → 启用此插件
+- 你希望在蓝图中双击错误信息能直接在 KDevelop 中打开对应源码行 → 此插件提供该能力
+- 你需要从编辑器一键打开整个 KDevelop 解决方案 → 使用此插件的 OpenSolution 功能
+
+**限制**：仅在 Linux 平台可用（`PlatformAllowList: ["Linux"]`）。
 
 ## 蓝图用法
 
-该插件是编辑器源代码访问的基础架构插件，不包含任何可直接在蓝图中调用的节点。其功能通过编辑器的源代码访问器设置自动生效。
+此插件不暴露任何蓝图接口。所有功能通过编辑器内部的 `ISourceCodeAccessor` 接口自动集成，用户在 **编辑器偏好设置 → Source Code** 中选择 KDevelop 即可激活。
 
 ## C++ 用法
 
+此插件作为源代码访问器，通常不需要在 C++ 层面直接使用。以下信息供有兴趣了解或扩展其功能的开发者参考。
+
+### 头文件引入
+
+```cpp
+#include "KDevelopSourceCodeAccessor.h"
+#include "KDevelopSourceCodeAccessModule.h"
+```
+
 ### 核心接口
 
-该插件的核心是 `FKDevelopSourceCodeAccessor` 类，它实现了引擎的 `ISourceCodeAccessor` 接口。开发者通常不直接与之交互，而是通过编辑器设置将其配置为默认的源代码访问器。
-
-### 基本用法
-
-当插件被激活且 KDevelop 可用时，引擎会使用它来处理所有“打开源代码”的请求。
+`FKDevelopSourceCodeAccessor` 实现了 `ISourceCodeAccessor` 接口，提供以下能力：
 
 ```cpp
-// 引用自 Source/KDevelopSourceCodeAccess/Private/KDevelopSourceCodeAccessor.h
-// 该类被模块管理器实例化，并在编辑器设置中选择“KDevelop”后生效。
-// 核心功能通过实现 ISourceCodeAccessor 的纯虚函数来完成：
+// 判断 KDevelop 是否可用
+bool CanAccessSourceCode() const;
 
-// 1. 检查IDE是否可用
-virtual bool CanAccessSourceCode() const override;
+// 打开 KDevelop 解决方案
+bool OpenSolution() override;
 
-// 2. 在IDE中打开文件并跳转到特定行和列
-virtual bool OpenFileAtLine(const FString& FullPath, int32 LineNumber, int32 ColumnNumber = 0) override;
+// 在 KDevelop 中打开指定文件的指定行
+bool OpenFileAtLine(const FString& FullPath, int32 LineNumber, int32 ColumnNumber = 0) override;
 
-// 3. 打开UE5的解决方案文件 (.pro)
-virtual bool OpenSolution() override;
+// 在 KDevelop 中打开多个源文件
+bool OpenSourceFiles(const TArray<FString>& AbsoluteSourcePaths) override;
+
+// 向项目添加源文件
+bool AddSourceFiles(const TArray<FString>& AbsoluteSourcePaths, const TArray<FString>& AvailableModules) override;
+
+// 保存所有打开的文档
+bool SaveAllOpenDocuments() const override;
 ```
 
-### 模块使用示例
-
-如果你需要在自己的模块中以编程方式使用该源代码访问器，可以这样做：
+### 通过模块访问
 
 ```cpp
-// 引用自 Source/KDevelopSourceCodeAccess/Private/KDevelopSourceCodeAccessModule.h
-#include "KDevelopSourceCodeAccessModule.h"
-#include "KDevelopSourceCodeAccessor.h"
-
-// 获取 KDevelop 访问器模块
+// 获取模块实例
 FKDevelopSourceCodeAccessModule& Module = FModuleManager::Get().LoadModuleChecked<FKDevelopSourceCodeAccessModule>("KDevelopSourceCodeAccess");
 
-// 获取具体的访问器实例
+// 获取访问器
 FKDevelopSourceCodeAccessor& Accessor = Module.GetAccessor();
 
-// 现在可以使用访问器的功能，例如尝试打开一个文件
+// 使用访问器
 if (Accessor.CanAccessSourceCode())
 {
-    Accessor.OpenFileAtLine(TEXT("/path/to/your/SourceFile.cpp"), 42, 10);
+    Accessor.OpenFileAtLine(TEXT("/path/to/file.cpp"), 42, 0);
 }
 ```
+
+来源：`Source/KDevelopSourceCodeAccess/Private/KDevelopSourceCodeAccessModule.h`、`KDevelopSourceCodeAccessor.h`
 
 ## Demo 示例
 
-一个最小的编辑器模块，展示了如何尝试使用 KDevelop 源代码访问器。
+此插件为编辑器工具类，无需用户编写代码。以下展示最小的模块扩展示例：
 
-**MyEditorModule.h**
 ```cpp
+// MySourceCodeAccessor.h
 #pragma once
 
-#include "Modules/ModuleManager.h"
+#include "ISourceCodeAccessor.h"
 
-class FMyEditorModule : public IModuleInterface
+class FMySourceCodeAccessor : public ISourceCodeAccessor
 {
 public:
-    virtual void StartupModule() override;
-    virtual void ShutdownModule() override;
-
-private:
-    void OnOpenTestFile();
+    virtual bool CanAccessSourceCode() const override { return true; }
+    virtual FName GetFName() const override { return TEXT("MyAccessor"); }
+    virtual FText GetNameText() const override { return NSLOCTEXT("MyAccessor", "Name", "My IDE"); }
+    virtual FText GetDescriptionText() const override { return NSLOCTEXT("MyAccessor", "Desc", "My custom IDE accessor"); }
+    virtual bool OpenSolution() override { /* 实现打开逻辑 */ return true; }
+    virtual bool OpenFileAtLine(const FString& FullPath, int32 LineNumber, int32 ColumnNumber) override { /* 实现跳转逻辑 */ return true; }
+    virtual bool SaveAllOpenDocuments() const override { return true; }
+    virtual void Tick(const float DeltaTime) override { }
 };
-```
-
-**MyEditorModule.cpp**
-```cpp
-#include "MyEditorModule.h"
-#include "KDevelopSourceCodeAccessModule.h"
-#include "KDevelopSourceCodeAccessor.h"
-
-#define LOCTEXT_NAMESPACE "FMyEditorModule"
-
-void FMyEditorModule::StartupModule()
-{
-    // 可以注册一个控制台命令来测试
-    IConsoleManager::Get().RegisterConsoleCommand(
-        TEXT("MyModule.OpenTestInKDevelop"),
-        TEXT("Opens a test file using the KDevelop source accessor."),
-        FConsoleCommandDelegate::CreateRaw(this, &FMyEditorModule::OnOpenTestFile)
-    );
-}
-
-void FMyEditorModule::ShutdownModule()
-{
-}
-
-void FMyEditorModule::OnOpenTestFile()
-{
-    // 尝试加载 KDevelop 访问器模块
-    if (FModuleManager::Get().IsModuleLoaded("KDevelopSourceCodeAccess"))
-    {
-        FKDevelopSourceCodeAccessModule& KDevelopModule = FModuleManager::Get().LoadModuleChecked<FKDevelopSourceCodeAccessModule>("KDevelopSourceCodeAccess");
-        FKDevelopSourceCodeAccessor& Accessor = KDevelopModule.GetAccessor();
-
-        if (Accessor.CanAccessSourceCode())
-        {
-            // 尝试打开此模块自身的头文件，跳转到第一行
-            FString MyHeaderPath = FPaths::ProjectPluginsDir() / TEXT("MyPlugin/Source/MyEditorModule/Public/MyEditorModule.h");
-            Accessor.OpenFileAtLine(MyHeaderPath, 1);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("KDevelop is not available."));
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("KDevelopSourceCodeAccess module is not loaded."));
-    }
-}
-
-#undef LOCTEXT_NAMESPACE
-
-IMPLEMENT_MODULE(FMyEditorModule, MyEditorModule)
 ```
 
 ## 模块依赖
 
-从模块构建文件分析，使用者无需直接依赖此插件。该插件通过引擎的 `ISourceCodeAccessor` 接口被集成。如果其他模块需要调用它，应确保：
+无特殊依赖（仅标准 Core/Engine/Slate 等）。
 
-| 模块 | 用途 |
-|---|---|
-| `KDevelopSourceCodeAccess` | 提供 KDevelop 源代码访问器的实现 |
-| `HotReload` | 模块构建依赖，用于支持编辑器内的代码热重载功能 |
-
-**说明**：该插件本身依赖 `HotReload` 模块，因为源代码访问器功能与开发时的代码编译和重载紧密相关。
+内部依赖了 `HotReload` 模块，用于在热重载时协调 IDE 状态。
 
 ## 维护状态
 
@@ -163,20 +121,25 @@ IMPLEMENT_MODULE(FMyEditorModule, MyEditorModule)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将旧式日志宏更新为新的 UE_LOGF 宏，属于代码质量维护。 |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件的通用批量更新，无具体功能说明。 |
-| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 将插件的供应商链接更新为 HTTPS，安全维护。 |
-| 2022-04-14 | `6f118cb9` | Add ShortNames to Code Access plugins to reduce the pressure on path length. Problem reported on UDN | 为代码访问器插件添加简称，以缓解因路径过长导致的问题。 |
-| 2021-10-13 | `a12d56ff` | Merge from Release-Engine-Staging @ 17791557 to Release-Engine-Test | 引擎发布分支间的合并，无具体功能说明。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移为 UE_LOGF 宏 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件批量更新 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 将插件内链接更新为安全协议 |
+| 2022-04-14 | `6f118cb9` | Add ShortNames to Code Access plugins to reduce the pressure on path length. Problem reported on UDN | 为源码访问器插件添加短名称以缓解路径过长问题 |
+| 2021-10-13 | `a12d56ff` | Merge from Release-Engine-Staging @ 17791557 to Release-Engine-Test | 从 Staging 分支合并到 Test 分支 |
 
 ### 维护评价
 
-- **创建时间**：创建于 2014 年，是 UE4 早期为 Linux 开发环境添加的插件，历史悠久。
-- **最近更新频率和内容**：最近一次有实质意义的更新是 2022 年添加简称（`6f118cb9`）。之后的更新均为被动维护，如合并分支、安全协议更新和日志宏迁移。
-- **是否还在活跃维护**：**不活跃**。该插件功能稳定且单一，没有新的功能需求或重大 Bug 修复，处于“维持可运行”状态。
-- **是否推荐使用**：如果你**在 Linux 平台上使用 KDevelop 作为 Unreal 的 IDE**，此插件仍然有用且可用。但对于新项目，考虑到 KDevelop 在 UE 社区的流行度低于 VS Code/CLion，其必要性可能不高。该插件本身稳定，可以信赖。
+该插件自 2014 年创建以来已有 12 年历史，属于成熟的基础设施级插件。近 3 年的更新全部为编译器适配、路径优化和格式清理等维护性改动，**无任何功能性更新**。最后一次实质性代码变更可追溯至 2018 年之前。
+
+考虑到以下因素：
+- 功能已完整且稳定，无需频繁更新
+- 仅限 Linux 平台，用户群体较小
+- KDevelop IDE 本身用户群体在缩小
+- 作为 UncookedOnly 模块，不影响打包后的产品
+
+**推荐使用**：如果你在 Linux 上使用 KDevelop，此插件开箱即用，无需顾虑。它属于"稳定且不需要更新"的类型。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/KDevelopSourceCodeAccess)
-- 官方文档：无（`.uplugin` 中 `DocsURL` 为空）
+- [KDevelop 官网](https://www.kdevelop.org/)

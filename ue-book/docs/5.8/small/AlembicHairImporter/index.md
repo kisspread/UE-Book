@@ -4,185 +4,114 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | Alembic毛发导入器 |
+| 中文名 | Alembic 毛发导入器 |
 | 分类 | Geometry |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `AlembicHairTranslatorModule` (Editor) |
 | 实验性 | 否 |
 | 创建时间 | 2020-11-24 |
-| 年龄标签 | 👴 老古董（约 5 年） |
+| 年龄标签 | 🆕（约 5 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/AlembicHairImporter) | |
 
 ## 用途
 
-此插件为 UE5 的毛发系统（Groom）提供了一种关键的资产导入通道。它实现了 `IGroomTranslator` 接口，专门用于解析来自数字内容创建工具（如 Maya, Blender, Houdini）的 Alembic (.abc) 格式文件中的毛发数据（Hair Strands）。其核心作用是将外部工具精心制作的高精度毛发几何体、动画（如果存在）转换为 UE5 内部使用的 `FHairDescription` 数据结构，从而实现在虚幻引擎中进行高品质毛发渲染和物理模拟的基础。
+该插件为 Unreal Engine 提供从 Alembic（`.abc`）文件导入毛发数据（Groom / Hair Strands）的能力。它通过实现 `IGroomTranslator` 接口，将 Alembic 文件中的毛发曲线数据转换为引擎内部的 `FHairDescription` 结构，供 HairStrands 渲染系统使用。
+
+该插件**默认未启用**，需要在项目设置中手动启用，同时依赖 HairStrands 插件。它是一个纯编辑器插件（不参与运行时），仅在导入流程中发挥作用。
 
 ## 使用场景
 
-- **数字人/角色制作**：当你在 Maya 或 Blender 等 DCC 工具中为角色创建了复杂的、基于梳理的毛发（Groom），需要将其导入 UE5 进行最终的渲染和动力学模拟时。
-- **高精度毛发动画**：当你从外部工具导出了包含毛发动画（例如，风吹效果）的 Alembic 文件，需要将其作为动画序列导入 UE5 时。
-- **跨平台资产流水线**：作为使用 Alembic 作为通用毛发交换格式的资产生产流程中的关键一环。
+- 你从 Blender、Houdini、XGen 等 DCC 工具导出了毛发造型（Alembic 格式），需要导入 UE5 中使用 Groom 系统渲染
+- 你需要导入包含毛发动画的 Alembic 文件（多帧 Groom 动画）
+- 你的项目使用了 HairStrands 毛发渲染方案，需要从外部资产导入毛发数据
+
+**前置条件**：
+1. 启用 `HairStrands` 插件
+2. 启用 `AlembicHairImporter` 插件
 
 ## 蓝图用法
 
-此插件主要为编辑器导入流程提供底层支持，**不直接暴露可调用的蓝图节点**。其功能通过 UE5 的标准资产导入对话框触发：当用户在内容浏览器中导入一个 `.abc` 文件，且该文件包含毛发数据时，引擎会自动调用此插件中的翻译器进行处理。
+该插件不暴露任何蓝图可调用函数。它是一个纯编辑器导入器，仅通过编辑器的 **Import** 流程（Content Browser → Import）或 **Groom 资产**的导入界面工作，无法在运行时蓝图中调用。
 
 ## C++ 用法
 
+该插件的核心是一个 `IGroomTranslator` 接口的实现类 `FAlembicHairTranslator`，由模块在启动时注册到 Groom 导入管线中。使用者通常无需直接调用其 C++ API，而是在编辑器中通过 UI 导入。
+
+### 核心类
+
+```cpp
+// 私有头文件，仅供插件内部使用
+class FAlembicHairTranslator : public IGroomTranslator
+{
+public:
+    // 静态导入：一次性翻译整个文件
+    virtual bool Translate(const FString& FilePath, FHairDescription& OutHairDescription,
+                           const FGroomConversionSettings& ConversionSettings) override;
+
+    // 判断是否可以翻译该文件
+    virtual bool CanTranslate(const FString& FilePath) override;
+
+    // 判断文件扩展名是否受支持
+    virtual bool IsFileExtensionSupported(const FString& FileExtension) const override;
+
+    // 返回支持的文件格式描述
+    virtual FString GetSupportedFormat() const override;
+
+    // 带动画信息的导入
+    virtual bool Translate(const FString& FilePath, FHairDescription& OutHairDescription,
+                           const FGroomConversionSettings& ConversionSettings,
+                           FGroomAnimationInfo* OutAnimInfo) override;
+
+    // 逐帧导入（动画支持）
+    virtual bool BeginTranslation(const FString& FilePath) override;
+    virtual bool Translate(float FrameTime, FHairDescription& OutHairDescription,
+                           const FGroomConversionSettings& ConversionSettings) override;
+    virtual void EndTranslation() override;
+};
+```
+
 ### 头文件引入
 
-```cpp
-#include "AlembicHairTranslator/AlembicHairTranslator.h"
-```
-
-### 基本用法
-
-此插件的核心是一个翻译器（Translator），通常由 UE5 的毛发导入器（Groom Importer）在后台调用。以下展示了其接口的基本使用方式（参考 `FAlembicHairTranslator` 的实现）。
+由于该插件是 Editor-only 且类为私有实现，外部模块通常不需要直接引入其头文件。如果需要在自定义导入管线中使用：
 
 ```cpp
-// 假设我们有一个 Alembic 文件路径和转换设置
-FString AbcFilePath = TEXT("/Game/Hair/character_hair.abc");
-FGroomConversionSettings ConversionSettings;
-
-// 创建翻译器实例
-FAlembicHairTranslator Translator;
-
-// 检查文件是否可以被翻译
-if (Translator.CanTranslate(AbcFilePath))
-{
-    FHairDescription HairDescription;
-    // 执行翻译，将 Alembic 数据加载到 HairDescription 中
-    bool bSuccess = Translator.Translate(AbcFilePath, HairDescription, ConversionSettings);
-    
-    if (bSuccess)
-    {
-        // 翻译成功，HairDescription 现在包含了毛发数据
-        // 后续可以将其保存为 .groom 资产或直接用于渲染
-    }
-}
-```
-
-### 进阶用法
-
-如果 Alembic 文件包含毛发动画，可以使用其分帧翻译接口。
-
-```cpp
-FString AnimatedAbcPath = TEXT("/Game/Hair/animated_hair.abc");
-FGroomConversionSettings ConversionSettings;
-FAlembicHairTranslator Translator;
-
-// 开始翻译，打开文件并准备读取动画帧
-if (Translator.BeginTranslation(AnimatedAbcPath))
-{
-    TArray<FHairDescription> FrameDescriptions;
-    
-    // 假设动画有 30 帧，每帧间隔 1/30 秒
-    for (int32 Frame = 0; Frame < 30; ++Frame)
-    {
-        float FrameTime = static_cast<float>(Frame) / 30.0f;
-        FHairDescription CurrentFrameDescription;
-        
-        // 翻译特定时间点的毛发状态
-        if (Translator.Translate(FrameTime, CurrentFrameDescription, ConversionSettings))
-        {
-            FrameDescriptions.Add(MoveTemp(CurrentFrameDescription));
-        }
-    }
-    
-    // 结束翻译，释放资源
-    Translator.EndTranslation();
-    
-    // 此时 FrameDescriptions 包含了每一帧的毛发描述
-}
+#include "GroomTranslator.h"  // IGroomTranslator 接口（来自 HairStrands 模块）
 ```
 
 ## Demo 示例
 
-下面是一个创建自定义毛发翻译器的最小示例，展示了如何将 Alembic 毛发翻译器集成到更广泛的导入流程中。
+该插件没有公开的可直接使用的 C++ API，以下展示的是在编辑器中导入 Alembic 毛发的标准流程：
 
-**MyHairTranslator.h**
+1. 在 Content Browser 中右键 → **Import**
+2. 选择 `.abc` 文件（包含毛发曲线数据）
+3. 导入器自动识别文件格式并调用 `FAlembicHairTranslator::Translate()`
+4. 生成 **Groom** 资产，可在 Skeletal Mesh 上绑定使用
+
+如果需要通过代码触发导入（高级用法）：
+
 ```cpp
-#pragma once
-
-#include "CoreMinimal.h"
+// 通常不需要直接这样做，编辑器 UI 已覆盖此流程
+// 以下为示意性代码，展示 IGroomTranslator 的使用模式
 #include "GroomTranslator.h"
 
-class FMyCustomHairTranslator : public IGroomTranslator
+void ImportGroomFromAlembic(const FString& AbcFilePath, const FGroomConversionSettings& Settings)
 {
-public:
-    virtual ~FMyCustomHairTranslator() override = default;
-
-    // 声明来自 IGroomTranslator 的接口函数
-    virtual bool Translate(const FString& FilePath, FHairDescription& OutHairDescription, const FGroomConversionSettings& ConversionSettings) override;
-    virtual bool CanTranslate(const FString& FilePath) override;
-    virtual bool IsFileExtensionSupported(const FString& FileExtension) const override;
-    virtual FString GetSupportedFormat() const override;
-
-    // 可以添加您自己的私有辅助方法
-private:
-    // ... 私有成员
-};
-```
-
-**MyHairTranslator.cpp**
-```cpp
-#include "MyHairTranslator.h"
-#include "HairDescription.h"
-
-bool FMyCustomHairTranslator::Translate(const FString& FilePath, FHairDescription& OutHairDescription, const FGroomConversionSettings& ConversionSettings)
-{
-    // 在这里实现您自己的 .abc 文件解析逻辑
-    // 或者，您可以包装并调用原始的 FAlembicHairTranslator
-    // 例如: FAlembicHairTranslator AlembicTranslator;
-    //       return AlembicTranslator.Translate(FilePath, OutHairDescription, ConversionSettings);
+    // 插件注册后，Groom 导入管线会自动选择合适的 Translator
+    // 外部代码通过 FHairDescription 获得结果即可
+    FHairDescription HairDescription;
     
-    UE_LOG(LogTemp, Warning, TEXT("Custom translation not yet implemented for: %s"), *FilePath);
-    return false;
-}
-
-bool FMyCustomHairTranslator::CanTranslate(const FString& FilePath)
-{
-    // 检查文件扩展名或文件头内容，决定是否由本翻译器处理
-    return FilePath.EndsWith(TEXT(".abc"), ESearchCase::IgnoreCase);
-}
-
-bool FMyCustomHairTranslator::IsFileExtensionSupported(const FString& FileExtension) const
-{
-    // 仅支持 .abc 扩展名
-    return FileExtension.Equals(TEXT("abc"), ESearchCase::IgnoreCase);
-}
-
-FString FMyCustomHairTranslator::GetSupportedFormat() const
-{
-    return TEXT("Alembic Groom (*.abc)|*.abc");
-}
-```
-
-要使用此翻译器，需要在模块启动时将其注册到 GroomImporter：
-
-```cpp
-// 在您的模块 StartupModule 函数中
-#include "GroomTranslator.h"
-#include "GroomImporter.h"
-
-void FMyModule::StartupModule()
-{
-    // ... 其他初始化代码
-    
-    // 注册自定义翻译器（通常由 AlembicHairTranslatorModule 完成对 AlembicHairTranslator 的注册）
-    // FGroomImporter::Get().RegisterTranslator<FMyCustomHairTranslator>();
+    // IGroomTranslator 实例由 GroomImportSubsystem 管理
+    // 通常不直接实例化 FAlembicHairTranslator
 }
 ```
 
 ## 模块依赖
 
-根据插件的功能和接口，使用此插件时需要依赖以下模块：
-
 | 模块 | 用途 |
 |---|---|
-| `HairStrandsCore` | 提供 `FHairDescription` 等核心毛发数据结构 |
-| `GroomImporter` | 提供 `IGroomTranslator` 接口和 Groom 导入框架 |
+| `HairStrands` | 毛发渲染核心模块，提供 FHairDescription、IGroomTranslator 等基础类型 |
+| `GeometryCache` | Alembic 文件解析支持（通过 Alembic 库读取毛发曲线数据） |
 
 ## 维护状态
 
@@ -190,19 +119,25 @@ void FMyModule::StartupModule()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志系统调用更新至新的 UE_LOGF 宏，属于常规代码现代化维护。 |
-| 2024-05-03 | `1fde5666` | PR #10617: AlembicHairImporterFixes: RootUV from Blender Hair / no RootUV registration when not pars | 修复了从 Blender 导出的毛发根部 UV 问题，并优化了当解析失败时的处理逻辑。 |
-| 2024-04-16 | `96a33f78` | Fixed potential uninitialized FVectors in AlembicHairImporter. | 修复了导入器中可能存在的 FVector 未初始化问题，提高了代码健壮性。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 宏迁移到 UE_LOGF 新日志格式 |
+| 2024-05-03 | `1fde5666` | PR #10617: AlembicHairImporterFixes: RootUV from Blender Hair / no RootUV registration when not pars | 修复 Blender 毛发 RootUV 导入及未解析时不注册 RootUV 的问题 |
+| 2024-04-16 | `96a33f78` | Fixed potential uninitialized FVectors in AlembicHairImporter. | 修复导入器中 FVector 可能未初始化的问题 |
+| 2023-10-13 | `ba50d6b0` | Alembic: Fix import issues with corrupted Alembic files. | 修复损坏的 Alembic 文件导入失败的问题 |
+| 2023-08-08 | `bdb4199e` | Remove unnecessary WindowsHWrapper.h & MinWindows.h include - both files will be automatically inclu | 移除不必要的 Windows 平台头文件引用 |
 
 ### 维护评价
 
-- **年龄**：插件创建于 2020 年底，已有约 5 年历史，属于成熟模块。
-- **更新频率**：最近一次功能性更新（Fixes）在 2024 年 5 月，最近一次维护性更新在 2026 年 4 月。更新频率不高，但持续有维护。
-- **维护状态**：**维护中**。虽然更新不频繁，但近期仍有针对特定问题（如 Blender 兼容性）的修复，表明它仍在使用和维护范围内。
-- **已知限制**：作为仅编辑器（Editor）模块，它不能在运行时打包使用。对 Alembic 文件格式的支持程度和特定版本 DCC 工具的兼容性可能有限制。
-- **推荐度**：**推荐使用**。它是 UE5 原生工作流中从 Alembic 导入高质量毛发的唯一官方途径，对于需要高精度毛发资产的项目是必要工具。
+- **创建时间**：2020 年 11 月，约 5 年历史
+- **最近更新**：最近一次功能性修复在 2024 年 5 月（RootUV 问题），2026 年的更新仅为日志宏迁移
+- **维护状态**：**维护中**——作为 Alembic 毛发导入的核心组件，偶尔收到 bug 修复，但更新频率较低
+- **已知限制**：
+  - 默认未启用，需要手动激活
+  - 依赖 HairStrands 插件
+  - 不支持运行时动态导入（纯编辑器功能）
+  - 仅 4 个源文件，功能边界清晰但扩展性有限
+- **推荐使用**：如果你需要从 DCC 工具导入 Alembic 格式的毛发数据到 UE5 HairStrands 系统，这是**必须使用**的插件，没有替代方案。建议启用。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/AlembicHairImporter)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/AlembicHairImporter/Source/AlembicHairTranslator/Tests) （路径推断，测试通常位于模块的Tests目录）
+- 官方文档：无（.uplugin 中 DocsURL 为空）

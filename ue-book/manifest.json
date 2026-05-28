@@ -280,9 +280,10 @@
       "doc_path": "docs/5.7/small/CameraCalibrationML/"
     },
     "CameraShakePreviewer": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/CameraShakePreviewer/"
+      "doc_path": "docs/5.8/small/CameraShakePreviewer/",
+      "forced": true
     },
     "ChangelistReview": {
       "generated_in": "5.7",
@@ -1074,9 +1075,10 @@
       "doc_path": "docs/5.7/small/RenderTrace/"
     },
     "ReplayTracks": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ReplayTracks/"
+      "doc_path": "docs/5.8/small/ReplayTracks/",
+      "forced": true
     },
     "ReplicationGraph": {
       "generated_in": "5.7",
@@ -1758,9 +1760,10 @@
       "doc_path": "docs/5.7/medium/OperatorStack/"
     },
     "PCGGeometryScriptInterop": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/PCGGeometryScriptInterop/"
+      "doc_path": "docs/5.8/medium/PCGGeometryScriptInterop/",
+      "forced": true
     },
     "PerforceSourceControl": {
       "generated_in": "5.7",
@@ -2259,9 +2262,10 @@
       "doc_path": "docs/5.7/xlarge/Composure/"
     },
     "ConcertSharedSlate": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/ConcertSharedSlate/"
+      "doc_path": "docs/5.8/xlarge/ConcertSharedSlate/",
+      "forced": true
     },
     "ConcertSyncCore": {
       "generated_in": "5.7",
@@ -3117,9 +3121,10 @@
       "doc_path": "docs/5.7/medium/BackChannel/"
     },
     "BlueprintSnapNodes": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/BlueprintSnapNodes/"
+      "doc_path": "docs/5.8/small/BlueprintSnapNodes/",
+      "forced": true
     },
     "BlueprintStats": {
       "generated_in": "5.8",
@@ -3380,9 +3385,10 @@
       "forced": true
     },
     "GameInputWindows": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/GameInputWindows/"
+      "doc_path": "docs/5.8/small/GameInputWindows/",
+      "forced": true
     },
     "GameplayBehaviors": {
       "generated_in": "5.8",
@@ -3733,9 +3739,10 @@
       "doc_path": "docs/5.7/small/PCGNiagaraInterop/"
     },
     "PCGWaterInterop": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/PCGWaterInterop/"
+      "doc_path": "docs/5.8/small/PCGWaterInterop/",
+      "forced": true
     },
     "PSDImporter": {
       "generated_in": "5.8",
@@ -3937,9 +3944,10 @@
       "doc_path": "docs/5.7/medium/SpatialReadiness/"
     },
     "StateGraph": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/StateGraph/"
+      "doc_path": "docs/5.8/small/StateGraph/",
+      "forced": true
     },
     "StructUtils": {
       "generated_in": "5.8",

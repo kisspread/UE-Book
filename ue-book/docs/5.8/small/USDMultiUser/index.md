@@ -4,131 +4,82 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | USD多用户同步 |
+| 中文名 | USD多人同步 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `USDMultiUser` (UncookedOnly) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2021-03-05 |
-| 年龄标签 | 🆕（约 4 年） |
+| 年龄标签 | 👴 老古董（约 5 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDMultiUser) | |
 
 ## 用途
 
-该插件为 UE 的 USD (Universal Scene Description) 导入器 (`USDImporter`) 提供了**多用户同步（Multi-User Editing）** 功能。它通过将 USD 相关的资产操作（如创建、修改、删除图元）转换为可同步的“事务”，并利用 `MultiUserClient` 插件的框架，使得多个用户可以通过 Multi-User Editing 服务器在同一个 UE 会话中协作编辑 USD 资产。它解决了 USD 资产在多人协作编辑场景下的数据同步问题。
+本插件是 `USDImporter` 插件的扩展，专为 Unreal Engine 的**多人编辑（Multi-User Editing）** 功能设计。它解决了在多人协作编辑同一关卡时，如何同步 USD（Universal Scene Description）数据变更的问题。没有此插件，通过 `USDImporter` 插件导入或编辑的 USD 资产（如网格体、材质等）在多人会话中不会被自动同步，导致不同客户端看到的状态不一致。本插件通过监听和同步 USD 相关的操作，确保所有参与者都能看到一致的 USD 数据修改。
 
 ## 使用场景
 
-- 你的团队正在使用 UE 的 USD 流程，并且需要多个艺术家或开发者**同时编辑同一个 USD 场景或资产**。
-- 你需要在一个基于服务器的协作编辑环境（Multi-User Editing）中**追踪和同步 USD 层（Layer）或图元（Prim）的更改**。
-- 你在开发需要整合 USD 和 Multi-User Editing 功能的工具链或管线。
+- 你的团队使用 Unreal Engine 的多人编辑功能进行关卡协作。
+- 你导入了 USD 格式的资产（例如来自 Maya、Houdini 或 Blender），并需要在多人会话中对其进行实时修改和同步。
+- 你需要确保团队中一个人对 USD 资产所做的变换、材质或几何体修改，能实时反映到其他所有成员的编辑器中。
 
 ## 蓝图用法
 
-该插件主要提供 C++ 层面的集成，不包含可直接在蓝图中使用的函数节点。其核心功能是通过 C++ 类注册到 Multi-User 事务系统。
-
-### 核心节点
-该插件不提供蓝图可调用节点。
-
-### 使用示例（蓝图描述）
-不适用。
+本插件主要提供后台同步功能，其核心节点并非直接暴露给蓝图使用，而是作为 `MultiUserClient` 和 `USDImporter` 插件之间的桥梁自动运行。启用该插件后，在多人编辑会话中对 USD 资产的**蓝图**操作（例如通过蓝图脚本修改 USD Stage 的属性）应能被自动同步。具体的同步逻辑是自动化的，无需在蓝图中直接调用特定函数。
 
 ## C++ 用法
 
-该插件的核心是提供一个基类，用于自定义 USD 操作的同步行为。用户需要创建该基类的子类来实现具体的同步逻辑。
+该插件的用法主要体现在其模块依赖和作为“粘合剂”的自动注册行为。在 C++ 代码层面，你通常**不直接**调用该插件提供的函数，而是依赖其自动生效的同步机制。
 
 ### 头文件引入
 
-```cpp
-#include "USDMultiUser.h"
-```
+无需直接引入。插件的 `USDMultiUser` 模块类型为 `UncookedOnly`，其功能在编辑器打包/开发环境中自动生效。
 
 ### 基本用法
 
-**来源文件**: `Engine/Plugins/Importers/USDMultiUser/Source/USDMultiUser/Private/USDMultiUser.cpp`
-
-要启用 USD 多用户同步，你需要创建一个 `FUSDMultiUser` 的子类并重写其方法。基本步骤是实现对 USD 操作的拦截和转换。
-
-```cpp
-// MyCustomUSDMultiUser.h
-#pragma once
-#include "USDMultiUser.h"
-
-class FMyCustomUSDMultiUser : public FUSDMultiUser
-{
-public:
-    // 重写以自定义事务过滤和操作转换
-    virtual void RegisterTransactionFilter() override;
-    virtual void UnregisterTransactionFilter() override;
-};
-```
+1.  **启用插件**：在你的项目插件列表中启用 `USDMultiUser`。
+2.  **启动多人会话**：像往常一样通过 `Multi-User Editing` 面板启动或加入一个会话。
+3.  **编辑 USD 资产**：在参与多人会话的任意编辑器实例中，使用 `USDImporter` 插件的功能导入或编辑 USD Stage。你的修改应会自动同步给会话中的其他参与者。
 
 ### 进阶用法
 
-结合 `IConcertClientTransactionBridge` 接口，你的自定义多用户类需要将 USD 操作（如添加、修改图元）转换为 `FConcertTransactionFinalized` 事务对象，并通过 `IConcertClientTransactionBridge::RegisterTransactionFilter` 方法注册一个过滤器，由 Multi-User 系统进行广播。
+插件的核心代码通过实现 `IConcertClientTransactionBridge::RegisterTransactionFilter` 来注册一个事务过滤器。这个过滤器会拦截与 USD 相关的编辑器事务（Transaction），并将其序列化为可在网络上传输的格式，从而实现同步。
+
+```cpp
+// 概念性代码，展示插件如何注册其同步逻辑
+// 来源：插件模块初始化代码
+void FUSDMultiUserModule::StartupModule()
+{
+    // 注册一个事务过滤器，用于处理USD相关的操作同步
+    if (IConcertClientTransactionBridge* TransactionBridge = ...)
+    {
+        TransactionBridge->RegisterTransactionFilter(
+            MakeShared<FUSDMultiUserTransactionFilter>()
+        );
+    }
+}
+```
 
 ## Demo 示例
 
-一个最小化的自定义 USD 多用户同步类实现。
+本插件无需单独的 Demo 项目。其效果通过启用插件后，在多人编辑工作流中体现。
 
-```cpp
-// MyCustomUSDMultiUser.h
-#pragma once
-#include "CoreMinimal.h"
-#include "USDMultiUser.h"
-
-class FMyCustomUSDMultiUser : public FUSDMultiUser
-{
-public:
-    virtual void RegisterTransactionFilter() override;
-    virtual void UnregisterTransactionFilter() override;
-
-private:
-    // 可以在此添加自定义的 USD 操作处理逻辑
-    void HandleUSDOperation(/* 参数 */);
-};
-```
-
-```cpp
-// MyCustomUSDMultiUser.cpp
-#include "MyCustomUSDMultiUser.h"
-
-void FMyCustomUSDMultiUser::RegisterTransactionFilter()
-{
-    // 调用父类或 Multi-User 桥接接口来注册你的自定义过滤器
-    // 例如，通过 IConcertClientTransactionBridge::RegisterTransactionFilter(...)
-    UE_LOG(LogTemp, Log, TEXT("Custom USD Multi-User transaction filter registered."));
-}
-
-void FMyCustomUSDMultiUser::UnregisterTransactionFilter()
-{
-    // 注销过滤器
-    UE_LOG(LogTemp, Log, TEXT("Custom USD Multi-User transaction filter unregistered."));
-}
-
-void FMyCustomUSDMultiUser::HandleUSDOperation(/* 参数 */)
-{
-    // 在此将具体的 USD 操作（如 UsdPrim 创建）转换为
-    // Multi-User 事务系统可识别的格式。
-}
-```
+**验证步骤：**
+1.  在两台或多台机器上打开同一个 Unreal Engine 项目。
+2.  在所有实例中启用 `USDMultiUser` 和 `USDImporter` 插件。
+3.  使用一台机器作为“服务器”发起多人会话，其他机器加入。
+4.  在**客户端A**上导入一个 USD 文件，并将其放置到关卡中。
+5.  在**客户端B**上，观察 USD 资产是否出现。
+6.  在**客户端A**上移动该 USD 资产，或在**USD Stage**窗口修改其属性。
+7.  验证**客户端B**是否实时看到了相同的修改。
 
 ## 模块依赖
 
-该插件的模块 `USDMultiUser` 依赖于以下非标准核心模块（来自其 `Build.cs` 和插件依赖）：
-
 | 模块 | 用途 |
 |---|---|
-| `USDMultiUser` | 提供 `FUSDMultiUser` 基类，是同步逻辑的核心 |
-| `USD` | 处理 USD 资产的底层操作 |
-| `USDExporter` | 与 USD 导出相关功能 |
-| `USDStage` | 管理 USD 舞台（Stage） |
-| `MultiUserClient` | 提供多用户编辑的客户端框架，是事务同步的基础 |
-| `ConcertSyncClient` | 多用户同步的底层客户端实现 |
-| `Concert` | 多用户同步的核心事务和协议定义 |
-
-**注意**：使用者自己的模块还需要依赖 `USDMultiUser` 以及相关的 USD 模块（如 `USD`）来使用此功能。
+| `MultiUserClient` | 提供多人编辑客户端的核心功能和接口，是本插件服务的目标。 |
+| `USDImporter` | 提供 USD 资产导入和编辑的基础功能，本插件负责将其操作同步化。 |
 
 ## 维护状态
 
@@ -136,22 +87,18 @@ void FMyCustomUSDMultiUser::HandleUSDOperation(/* 参数 */)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移到 UE_LOGF，属于引擎日志系统更新。 |
-| 2024-06-03 | `6f6faa16` | Change signature of IConcertClientTransactionBridge::RegisterTransactionFilter: replaces FTransactio | 修改了多用户事务桥接口 `RegisterTransactionFilter` 的签名，是底层API变更。 |
-| 2024-05-31 | `177057a8` | [Backout] - CL34028050 | 撤销了一次更改（CL34028050），可能是一次有问题的提交。 |
-| 2024-05-31 | `7dfa271c` | Change signature of IConcertClientTransactionBridge::RegisterTransactionFilter: replaces FTransactio | 同上，修改了多用户事务桥接口签名。 |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件的通用维护或编译修复。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志系统迁移，将旧版 UE_LOG 宏替换为新版 UE_LOGF。 |
+| 2024-06-03 | `6f6faa16` | Change signature of IConcertClientTransactionBridge::RegisterTransactionFilter: replaces FTransactio | 底层接口签名变更，使用新的事务过滤器类型。 |
+| 2024-05-31 | `177057a8` | [Backout] - CL34028050 | 回退了一次之前的提交（可能是因引入问题）。 |
+| 2024-05-31 | `7dfa271c` | Change signature of IConcertClientTransactionBridge::RegisterTransactionFilter: replaces FTransactio | 尝试修改接口签名，但随后被回退。 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件目录的通用维护性提交。 |
 
 ### 维护评价
 
-- **创建时间**：该插件创建于 2021 年，是一个相对较新的功能插件。
-- **更新频率**：最近的更新主要集中在 2024 年和 2026 年，间隔较长。更新内容多为适配 Multi-User 底层接口变更（如 `IConcertClientTransactionBridge`）和引擎通用日志系统迁移，**并非功能增强**。
-- **维护状态**：**维护不活跃**。该插件自创建以来仅经历几次适配性更新，没有看到新功能的开发。其依赖的底层 Multi-User 框架接口（Concert）也在变化，这增加了维护成本。
-- **实验性**：`.uplugin` 明确标记为 `IsBetaVersion: true`，表明它仍处于测试阶段，API 和功能可能不稳定。
-- **推荐使用**：**谨慎使用**。该插件解决了特定场景（USD + 多用户编辑）的需求，但由于是实验性功能且更新维护节奏慢，在生产环境中使用前需充分测试，并准备好应对未来可能的接口变更。它更适合作为内部工具链或研究性用途。
+该插件创建于 2021 年，标记为**实验性（Beta）**，且**默认未启用**。从提交历史看，其最近的更新（2026年）仅是日志宏迁移，无功能性改动。之前的实质性改动停留在 2024 年年中，且主要是适应底层 `MultiUserClient` 插件的接口变更，而非插件自身功能增强。最近一次明确的功能性相关更新在 2023 年初。综合来看，该插件处于**维护不活跃**状态，更像一个依赖于 `MultiUserClient` 和 `USDImporter` 的“胶水”模块，功能已基本完成且稳定，但可能缺乏对新 UE 版本的主动适配和功能扩展。**推荐在需要 USD 多人同步功能的项目中谨慎使用，并充分测试其与当前引擎版本的兼容性。**
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDMultiUser)
-- [官方文档]( ) （无）
-- [测试用例]( ) （未发现专门的测试用例目录）
+- [官方文档]()（无）
+- [测试用例]()（未提供）

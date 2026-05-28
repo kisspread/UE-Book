@@ -9,42 +9,35 @@
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `SurfaceEffects` (Runtime) |
-| 实验性 | ⚦️ 是 |
+| 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-01-16 |
-| 年龄标签 | 🆕（约 2 年） |
+| 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/SurfaceEffects) | |
 
 ## 用途
 
-这个插件提供了一套基于规则的、数据驱动的框架，用于根据游戏上下文动态确定表面类型。它解决的核心问题是：将“材质/物理表面 → 游戏性表面效果（如脚步声、材质纹理、交互反馈）”的映射逻辑从代码中解耦出来，改为由数据表驱动。
+SurfaceEffects 是一个基于上下文（Context）驱动的表面材质类型判定系统。它解决的核心问题是：**在运行时根据不同的上下文数据（如物理材质、环境条件等），动态确定当前交互的表面类型**。
 
-插件的用途在于实现一个灵活的表面查询系统。它通过 `USurfaceEffectsSubsystem` 子系统作为入口点，接受一个包含上下文信息的 `FSurfaceEffectContextBase` 结构体（例如：命中位置、物理材质、Actor等），然后查询一个由策划配置的数据表。数据表中的每一行（`FSurfaceEffectTableRow`）关联一个 `USurfaceEffectRule` 数据资产，该规则根据传入的上下文，决定返回哪个具体的表面枚举值。这使得同一个查询逻辑（例如“角色脚下的表面是什么”）可以根据不同的游戏对象（角色、载具）或上下文（奔跑、跳跃）返回不同的结果，并且规则完全由策划在编辑器中配置。
+典型应用是脚步声系统——角色踩在不同表面上（木板、金属、泥土）时，需要返回对应的表面枚举值，从而播放不同的音效或生成不同的粒子效果。传统做法是直接查询物理材质并硬编码映射关系，而该插件将这个过程抽象为数据驱动的规则系统：通过数据表（DataTable）配置规则，运行时由子系统统一查询。
+
+为什么存在：
+- 将表面类型判定逻辑从具体游戏逻辑中解耦
+- 支持多种枚举类型，不需要为每种表面分类写单独的查询逻辑
+- 通过数据资产和数据表实现配置化，策划人员可直接编辑规则
 
 ## 使用场景
 
-- **脚步声系统**：角色在不同地面材质（如金属、泥土、木板）上行走或奔跑时，需要播放不同的脚步声音效。该系统可以根据角色脚下的物理材质或重叠的触发器区域，返回对应的表面枚举，驱动音效系统。
-- **车辆轮胎交互**：车辆的轮胎在不同路面上行驶，需要产生不同的粒子效果、声音或物理摩擦力。此系统可以根据轮胎接触点的物理材质，返回相应的表面类型。
-- **武器与环境交互**：子弹射击到不同表面时，需要产生不同的弹孔材质、粒子火花和声音。可以通过查询命中点的表面信息来实现。
-- **可定制的游戏性表面**：任何需要根据环境表面类型改变游戏逻辑的场景，例如滑索在不同材质上的滑行声音、载具在泥泞地面上的速度衰减等。
+- 你需要根据脚步接触的表面类型播放不同音效 → 用 SurfaceEffects 查询表面枚举
+- 你的游戏有多种表面交互（子弹击中效果、载具轮胎痕迹等） → 用 SurfaceEffects 统一管理表面规则
+- 你希望表面映射规则由数据驱动而非硬编码 → 配置 DataTable + 自定义 Rule 资产
 
 ## 蓝图用法
 
+该插件的核心 API 主要面向 C++，蓝图端的直接可用节点有限。子系统通过模板函数暴露，需要在 C++ 层封装后才能在蓝图中使用。
+
 ### 核心节点
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `Get Surface<TEnum>` | 根据上下文查询并返回指定枚举类型的表面值。这是一个模板化函数，在蓝图中通常通过特定的枚举类型节点来调用。 | `USurfaceEffectsSubsystem` |
-
-**注意**：`USurfaceEffectsSubsystem` 的主要接口 `GetSurface` 是 C++ 模板函数，无法直接在蓝图中作为单一节点使用。在蓝图中实现表面查询通常需要通过以下方式之一：
-1. **使用自定义的蓝图函数库 (Blueprint Function Library)**：在 C++ 中创建一个辅助类，包装对 `GetSurface` 的调用，并暴露特定枚举类型的 `UFUNCTION(BlueprintCallable)` 函数给蓝图。
-2. **使用已存在的、特定于项目的封装**：你的项目可能已经有了访问此子系统的蓝图接口。
-
-**典型工作流**：
-1. 在 C++ 中定义你的表面枚举（例如 `EMySurfaceType`）。
-2. 创建对应的 `USurfaceEffectRule` 子类，实现 `GetSurface` 虚函数，其中包含判断逻辑。
-3. 在项目设置中，配置 `Surface Effects` 设置，指向一个 `UDataTable`。
-4. 在数据表中，为 `EMySurfaceType` 枚举添加一行，关联你创建的规则资产。
-5. 在游戏逻辑（如角色移动组件）中，通过 `GetGameInstance()->GetSubsystem<USurfaceEffectsSubsystem>()` 获取子系统实例，然后调用 `GetSurface<EMySurfaceType>(Context)`。
+该插件没有直接暴露 BlueprintCallable 节点。所有核心功能通过 C++ 模板函数 `GetSurface<TEnum>()` 访问，蓝图使用需要自行封装 BlueprintCallable 包装函数。
 
 ## C++ 用法
 
@@ -56,207 +49,194 @@
 
 ### 基本用法
 
-首先，定义你自己的表面枚举和对应的规则类。
+**定义你的表面枚举和上下文**
 
-**1. 定义表面枚举**
 ```cpp
-// MySurfaceTypes.h
-UENUM(BlueprintType)
-enum class EMyGameSurface : uint8
+// 自定义表面类型枚举
+UENUM()
+enum class EMySurfaceType : uint8
 {
     Default,
+    Wood,
     Metal,
     Dirt,
-    Wood,
     Water,
-    // ... 其他表面类型
+    Max UMETA(Hidden)
 };
-```
 
-**2. 创建自定义规则类**
-```cpp
-// MyGameSurfaceRule.h
-#include "SurfaceEffectsSubsystem.h"
-#include "MySurfaceTypes.h"
-
-UCLASS()
-class UMyGameSurfaceRule : public USurfaceEffectRule
+// 自定义上下文数据（可携带物理材质等信息）
+USTRUCT()
+struct FMySurfaceContext : public FSurfaceEffectContextBase
 {
     GENERATED_BODY()
 
-public:
-    virtual bool GetSurface(uint8& OutSurfaceValue, const FSurfaceEffectContextBase& Context) override
-    {
-        // 示例：根据物理材质判断
-        if (const FHitResult* HitResult = Context.GetHitResult())
-        {
-            if (HitResult->PhysMaterial.IsValid())
-            {
-                if (HitResult->PhysMaterial->SurfaceType == EPhysicalSurface::SurfaceType1) // 金属
-                {
-                    OutSurfaceValue = static_cast<uint8>(EMyGameSurface::Metal);
-                    return true;
-                }
-                // ... 其他材质判断
-            }
-        }
-        // 默认返回
-        OutSurfaceValue = static_cast<uint8>(EMyGameSurface::Default);
-        return true;
-    }
+    UPROPERTY()
+    TWeakObjectPtr<UPhysicalMaterial> PhysicalMaterial;
 };
 ```
 
-**3. 查询表面值**
+**查询表面类型**
+
 ```cpp
-// 在某个类中（例如 AMyCharacter 的移动组件）
-#include "SurfaceEffectsSubsystem.h"
-#include "MySurfaceTypes.h"
+// 获取子系统
+USurfaceEffectsSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USurfaceEffectsSubsystem>();
 
-void AMyCharacter::CheckFootstepSurface()
+// 构造上下文
+FMySurfaceContext Context;
+Context.PhysicalMaterial = HitResult.PhysicalMaterial;
+
+// 查询表面枚举值（模板参数传入你的枚举类型）
+TSurfaceEffectResult<EMySurfaceType> Result = Subsystem->GetSurface<EMySurfaceType>(Context);
+
+if (Result.bSuccess)
 {
-    // 1. 准备上下文（需要构造 FSurfaceEffectContextBase 或其子类）
-    FSurfaceEffectContextBase Context;
-    // 假设你有从 LineTrace 获得的 HitResult
-    // Context.SetHitResult(MyHitResult);
-
-    // 2. 获取子系统实例
-    USurfaceEffectsSubsystem* SurfaceSubsystem = GetGameInstance()->GetSubsystem<USurfaceEffectsSubsystem>();
-    if (SurfaceSubsystem)
+    switch (Result.OutSurface)
     {
-        // 3. 调用模板函数查询
-        TSurfaceEffectResult<EMyGameSurface> Result = SurfaceSubsystem->GetSurface<EMyGameSurface>(Context);
-
-        if (Result.bSuccess)
-        {
-            EMyGameSurface SurfaceType = Result.OutSurface;
-            // 4. 使用返回的枚举值（例如播放对应的声音）
-            PlayFootstepSound(SurfaceType);
-        }
+    case EMySurfaceType::Wood:
+        // 播放木头脚步声
+        break;
+    case EMySurfaceType::Metal:
+        // 播放金属脚步声
+        break;
+    // ...
     }
 }
 ```
 
 ### 进阶用法
 
-该系统的核心优势在于其规则是 `UDataAsset`，可以包含复杂的逻辑和引用其他资产（如物理材质列表、配置表格等）。你可以创建更智能的规则，例如：
+**自定义规则资产（继承 USurfaceEffectRule）**
 
-- **基于距离和视口的规则**：在不同的游戏模式或摄像机距离下，可能需要不同的表面细节级别。
-- **组合规则**：创建一个规则资产，内部包含多个子规则，并根据优先级或组合逻辑返回最终结果。
-- **上下文丰富的规则**：`FSurfaceEffectContextBase` 可以被子类化，以携带更多特定信息（如天气状态、角色状态），规则可以据此做出更精细的判断。
+```cpp
+// .h
+UCLASS()
+class UMySurfaceEffectRule : public USurfaceEffectRule
+{
+    GENERATED_BODY()
+
+public:
+    virtual bool GetSurface(uint8& OutSurfaceValue, const FSurfaceEffectContextBase& Context) override;
+
+    UPROPERTY(EditAnywhere)
+    TMap<TObjectPtr<UPhysicalMaterial>, EMySurfaceType> MaterialMap;
+
+    UPROPERTY(EditAnywhere)
+    EMySurfaceType DefaultSurface = EMySurfaceType::Default;
+};
+
+// .cpp
+bool UMySurfaceEffectRule::GetSurface(uint8& OutSurfaceValue, const FSurfaceEffectContextBase& Context)
+{
+    const FMySurfaceContext& MyContext = static_cast<const FMySurfaceContext&>(Context);
+
+    if (MyContext.PhysicalMaterial.IsValid())
+    {
+        if (const EMySurfaceType* Found = MaterialMap.Find(MyContext.PhysicalMaterial.Get()))
+        {
+            OutSurfaceValue = static_cast<uint8>(*Found);
+            return true;
+        }
+    }
+
+    OutSurfaceValue = static_cast<uint8>(DefaultSurface);
+    return true;
+}
+```
+
+**配置数据表**
+
+1. 创建一个 DataTable，行类型选择 `SurfaceEffectTableRow`
+2. 行名称设为你的枚举类名（如 `MySurfaceType`）
+3. 该行的 `Rule` 字段指向你创建的 `UMySurfaceEffectRule` 资产
+4. 在 Project Settings → Surface Effects 中指定该 DataTable
 
 ## Demo 示例
 
-以下是一个可编译的最小示例，演示如何定义枚举、规则并查询表面。
+### SurfaceEffectRule 示例（.h）
 
-**MyDemoSurfaceTypes.h**
-```cpp
-#pragma once
-
-#include "CoreMinimal.h"
-#include "MyDemoSurfaceTypes.generated.h"
-
-UENUM(BlueprintType)
-enum class EDemoSurfaceType : uint8
-{
-    Generic,
-    Metal,
-    Glass
-};
-```
-
-**MyDemoSurfaceRule.h**
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
 #include "SurfaceEffectsSubsystem.h"
-#include "MyDemoSurfaceTypes.h"
-#include "MyDemoSurfaceRule.generated.h"
+#include "MySurfaceEffectRule.generated.h"
+
+UENUM()
+enum class EGroundType : uint8
+{
+    Default,
+    Stone,
+    Grass,
+    Sand,
+    Max UMETA(Hidden)
+};
+
+USTRUCT()
+struct FGroundContext : public FSurfaceEffectContextBase
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FName MaterialTag;
+};
 
 UCLASS()
-class UMyDemoSurfaceRule : public USurfaceEffectRule
+class UGroundSurfaceRule : public USurfaceEffectRule
 {
     GENERATED_BODY()
 
 public:
-    virtual bool GetSurface(uint8& OutSurfaceValue, const FSurfaceEffectContextBase& Context) override
+    virtual bool GetSurface(uint8& OutSurfaceValue, const FSurfaceEffectContextBase& Context) override;
+
+    UPROPERTY(EditAnywhere)
+    TMap<FName, EGroundType> TagToSurface;
+
+    UPROPERTY(EditAnywhere)
+    EGroundType DefaultSurface = EGroundType::Default;
+};
+```
+
+### SurfaceEffectRule 示例（.cpp）
+
+```cpp
+#include "MySurfaceEffectRule.h"
+
+bool UGroundSurfaceRule::GetSurface(uint8& OutSurfaceValue, const FSurfaceEffectContextBase& Context)
+{
+    const FGroundContext& Ctx = static_cast<const FGroundContext&>(Context);
+
+    if (const EGroundType* Found = TagToSurface.Find(Ctx.MaterialTag))
     {
-        // 简化的示例：根据上下文中存储的整数标签返回
-        // 实际项目中会使用 HitResult, Material 等信息
-        int32 Tag = Context.GetIntTag();
-        if (Tag == 1)
-        {
-            OutSurfaceValue = static_cast<uint8>(EDemoSurfaceType::Metal);
-        }
-        else if (Tag == 2)
-        {
-            OutSurfaceValue = static_cast<uint8>(EDemoSurfaceType::Glass);
-        }
-        else
-        {
-            OutSurfaceValue = static_cast<uint8>(EDemoSurfaceType::Generic);
-        }
+        OutSurfaceValue = static_cast<uint8>(*Found);
         return true;
     }
-};
+
+    OutSurfaceValue = static_cast<uint8>(DefaultSurface);
+    return true;
+}
 ```
 
-**DemoComponent.h**
+### 运行时查询示例
+
 ```cpp
-#pragma once
-
-#include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "DemoComponent.generated.h"
-
-class USurfaceEffectsSubsystem;
-
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class YOURPROJECT_API UDemoComponent : public UActorComponent
+// 在 Actor 或 Component 中查询
+void AMyCharacter::PlayFootstepSound(const FHitResult& Hit)
 {
-    GENERATED_BODY()
+    USurfaceEffectsSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USurfaceEffectsSubsystem>();
+    if (!Subsystem) return;
 
-public:
-    UPROPERTY(EditAnywhere, Category = "Demo")
-    int32 TestContextTag = 0;
+    FGroundContext Context;
+    Context.MaterialTag = /* 从 Hit 中提取材质标签 */;
 
-    UFUNCTION(BlueprintCallable, Category = "Demo")
-    void QuerySurfaceDemo();
+    TSurfaceEffectResult<EGroundType> Result = Subsystem->GetSurface<EGroundType>(Context);
 
-private:
-    UPROPERTY()
-    TObjectPtr<USurfaceEffectsSubsystem> CachedSubsystem;
-};
-```
-
-**DemoComponent.cpp**
-```cpp
-#include "DemoComponent.h"
-#include "SurfaceEffectsSubsystem.h"
-#include "MyDemoSurfaceTypes.h"
-
-void UDemoComponent::QuerySurfaceDemo()
-{
-    if (!CachedSubsystem)
+    if (Result.bSuccess)
     {
-        CachedSubsystem = GetOwner()->GetGameInstance()->GetSubsystem<USurfaceEffectsSubsystem>();
-    }
-
-    if (CachedSubsystem)
-    {
-        // 构建一个简单的上下文（这里假设 FSurfaceEffectContextBase 有设置整数的方法）
-        FSurfaceEffectContextBase Context;
-        // 注意：FSurfaceEffectContextBase 默认可能没有 SetIntTag 方法。
-        // 这是一个示意，你需要根据实际上下文类来填充数据。
-        // Context.SetIntTag(TestContextTag);
-
-        TSurfaceEffectResult<EDemoSurfaceType> Result = CachedSubsystem->GetSurface<EDemoSurfaceType>(Context);
-
-        if (Result.bSuccess)
+        // 根据 Result.OutSurface 播放对应音效
+        USoundBase* Sound = GetFootstepSound(Result.OutSurface);
+        if (Sound)
         {
-            UE_LOG(LogTemp, Warning, TEXT("查询到表面类型: %s"),
-                *UEnum::GetValueAsString(Result.OutSurface));
+            UGameplayStatics::PlaySoundAtLocation(this, Sound, Hit.ImpactPoint);
         }
     }
 }
@@ -265,7 +245,10 @@ void UDemoComponent::QuerySurfaceDemo()
 ## 模块依赖
 
 无特殊依赖（仅标准 Core/Engine/Slate 等）。
-*(插件本身的 `Build.cs` 未提供，但从代码推断其依赖 `Engine` 模块以使用 `UDataTable`, `UGameInstanceSubsystem` 等，以及 `CoreUObject`。)*
+
+| 模块 | 用途 |
+|---|---|
+| `DeveloperSettings` | 提供 `UDeveloperSettings` 基类用于项目设置配置 |
 
 ## 维护状态
 
@@ -273,22 +256,21 @@ void UDemoComponent::QuerySurfaceDemo()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2025-04-23 | `939cc6e5` | Used FortniteClient build target to find and convert all files to have dllstorage on methods/staticv | 为编译兼容性，将函数和静态变量导出符号从默认改为 DLL 导出。 |
-| 2024-11-22 | `36771d79` | Updated uplugin descriptor files marked as both Experimental and Beta. Plugins with both flags in th | 批量更新同时标记为实验和测试版的插件描述文件，规范其状态标识。 |
-| 2024-01-30 | `fac760fa` | First implementation of Surface Effects MVP - Footsteps | 首次实现表面效果最小可行产品（MVP），聚焦于脚步声场景。 |
-| 2024-01-29 | `962fd46c` | [Backout] - CL30970339 | 回滚了之前的提交 CL30970339。 |
-| 2024-01-29 | `03f7e039` | First implementation of Surface Effects MVP - Footsteps | 首次实现表面效果最小可行产品（MVP），聚焦于脚步声场景。 |
+| 2025-04-23 | `939cc6e5` | Used FortniteClient build target to find and convert all files to have dllstorage on methods/staticv | 为所有方法和静态变量添加 DLL 导出宏，修复跨模块链接问题 |
+| 2024-11-22 | `36771d79` | Updated uplugin descriptor files marked as both Experimental and Beta. Plugins with both flags in th | 批量清理同时标记为 Experimental 和 Beta 的插件描述符 |
+| 2024-01-30 | `fac760fa` | First implementation of Surface Effects MVP - Footsteps | 表面效果系统 MVP 首次实现，聚焦脚步声场景 |
+| 2024-01-29 | `962fd46c` | [Backout] - CL30970339 | 回退了一次提交 |
+| 2024-01-29 | `03f7e039` | First implementation of Surface Effects MVP - Footsteps | 表面效果系统 MVP 首次实现（后被回退再重新提交） |
 
 ### 维护评价
 
-- **创建时间**：2024年1月，是一个相对年轻的插件。
-- **近期更新**：最近一次实质性更新（MVP 实现）在2024年1月底。2024年11月和2025年4月的更新主要是编译和元数据维护，未引入新功能。更新频率较低。
-- **活跃度**：处于**维护中**状态，但非活跃开发。有基础实现，但功能集可能还未完全成熟。
-- **已知限制**：作为实验性插件，API 和功能可能会发生变化。上下文系统 (`FSurfaceEffectContextBase`) 的具体能力需要查看其完整定义（未在提供的片段中）。
-- **推荐使用**：适合在需要灵活、数据驱动表面查询的**新项目**中进行探索和原型开发。如果用于生产环境，需要评估其稳定性并准备好自行维护和扩展。不建议在旧项目中仓促引入。
+- **实验性插件**：`IsExperimentalVersion=true`，标记为实验性，API 可能随时变更
+- **功能稳定但不活跃**：核心功能在 2024-01 完成 MVP 后，后续仅有一批 DLL 导出修复（2025-04），无功能性更新
+- **代码量极小**：仅 5 个源文件，属于最小级别的插件
+- **使用前提**：需要手动在 Project Settings 中配置数据表才能生效
+- **推荐程度**：⚠️ 谨慎使用。作为实验性插件，适合内部项目或原型验证，不建议在生产环境中强依赖。如果你只需要简单的物理材质→脚步声映射，自己写一个更简单的方案可能更合适。但如果你需要一个支持多枚举类型、数据驱动的通用表面判定系统，这个插件的架构设计是合理的。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/SurfaceEffects)
-- [官方文档](无)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/SurfaceEffects/Tests) (假设存在，路径未在提供信息中确认)
+- 官方文档：无

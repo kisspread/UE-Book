@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 音频技术工具箱 |
+| 中文名 | 音频技术工具集 |
 | 分类 | Audio |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产） |
+| 包含内容 | ✅ 有（代码资产：视图模型、接口） |
 | 模块 | `TechAudioTools` (Runtime), `TechAudioToolsMetaSound` (Runtime), `TechAudioToolsMetaSoundEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-04-22 |
@@ -16,104 +16,155 @@
 
 ## 用途
 
-该插件旨在为 **MetaSound** 提供一套 UMG（UI）视图模型（ViewModel）和相关工具，以简化在用户界面中操作和可视化 MetaSound 参数的过程。其核心目的是解决 MetaSound 与 UI 控件（如滑块、旋钮、文本框）之间的数据绑定问题，特别是处理不同类型（布尔、整数、浮点数、字符串等）的 MetaSound 字面值（Literal）。
-
-插件通过 **MVVM**（Model-View-ViewModel）架构，让 UI 控件能够与 MetaSound 的输入/输出参数进行双向绑定，使音频设计师和技术美术能够更直观地在运行时或编辑器 UI 中创建、调试和控制 MetaSound。
+TechAudioTools 插件主要解决 **MetaSound 编辑器与用户自定义 UI 控件之间的数据绑定和交互问题**。它通过提供一系列基于 MVVM（Model-View-ViewModel）模式的 ViewModel 类，将 MetaSound 的输入参数（Literal）和输出数据抽象为蓝图可绑定的属性。这使得开发者能够在 UMG（Unreal Motion Graphics）中创建自定义的音频参数控件（如旋钮、滑块），并实现与 MetaSound 图表输入/输出的双向实时同步，从而扩展和定制 MetaSound 的编辑体验。
 
 ## 使用场景
 
--   **音频调试 UI**：你需要为游戏或应用创建一个实时调试界面，用来调整 MetaSound 的各种参数（如音量、频率、滤波器截止点等），并且希望这些调整能实时反映在声音中。
--   **自定义音频控制面板**：你希望在游戏中创建一个音频控制面板，允许玩家自定义音效（例如调整环境音的氛围强度），这些设置需要驱动 MetaSound 图。
--   **MetaSound 预览工具**：你正在开发一个 MetaSound 编辑器扩展，需要在 UI 控件中预览和编辑 MetaSound 节点的输入默认值或输出值。
--   **数据驱动 UI**：你需要使用 MetaSound 的输出数据（如频谱信息、音量包络）来驱动 UI 元素的视觉表现（如频谱条、动画）。
+-   你正在创建一个自定义的音频混合器界面，需要通过UI滑块实时控制MetaSound图表中的音量、频率等参数。
+-   你希望为特定类型的MetaSound节点（如振荡器）设计一个专属的、用户友好的编辑面板，而不是使用通用的MetaSound编辑器。
+-   你需要监控MetaSound图表的实时输出数据（例如频谱分析结果），并将其可视化显示在游戏UI上。
+-   你的音频团队需要在不直接接触MetaSound节点图表的情况下，调整复杂的音频参数预设。
 
 ## 蓝图用法
-
-该插件主要通过蓝图视图模型（ViewModel）类和接口进行操作。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Initialize MetaSound` | 使用指定的 MetaSound 资产初始化视图模型。 | `UMetaSoundViewModel` |
-| `Initialize Builder` | 使用指定的 MetaSound Builder 初始化视图模型。 | `UMetaSoundViewModel` |
-| `Get Input Viewmodels` | 获取当前 MetaSound 的所有输入视图模型数组。 | `UMetaSoundViewModel` |
-| `Find Input Viewmodel` | 根据名称查找并返回一个特定的输入视图模型。 | `UMetaSoundViewModel` |
-| `Get Output Viewmodels` | 获取当前 MetaSound 的所有输出视图模型数组。 | `UMetaSoundViewModel` |
-| `Find Output Viewmodel` | 根据名称查找并返回一个特定的输出视图模型。 | `UMetaSoundViewModel` |
-| `Get Input Viewmodel Names` | 获取实现此接口的控件所需的输入视图模型名称列表。 | `IMetaSoundLiteralWidgetInterface` |
-| `Set Input Viewmodels` | 为实现此接口的控件设置输入视图模型映射。 | `IMetaSoundLiteralWidgetInterface` |
-| `Find MetaSound Input Viewmodel by Name` | 在数组中按名称查找输入视图模型。 | `UMetaSoundViewModelConversionFunctions` |
-| `Get MetaSound Literal Value as Text` | 将 MetaSound 字面值转换为文本显示。 | `UMetaSoundViewModelConversionFunctions` |
+| `Initialize MetaSound` | 使用MetaSound资产初始化ViewModel，为每个输入/输出创建对应的子ViewModel。 | `UMetaSoundViewModel` |
+| `Initialize Builder` | 使用MetaSound Builder初始化ViewModel。 | `UMetaSoundViewModel` |
+| `Reset` | 重置ViewModel到未初始化状态。 | `UMetaSoundViewModel` |
+| `Get Input Viewmodels` | 获取所有MetaSound输入的ViewModel数组。 | `UMetaSoundViewModel` |
+| `Get Output Viewmodels` | 获取所有MetaSound输出的ViewModel数组。 | `UMetaSoundViewModel` |
+| `Find Input Viewmodel` | 根据名称查找特定的输入ViewModel。 | `UMetaSoundViewModel` |
+| `Find Output Viewmodel` | 根据名称查找特定的输出ViewModel。 | `UMetaSoundViewModel` |
+| `Find MetaSound Input Viewmodel by Name` | 在输入ViewModel数组中根据名称查找。 | `UMetaSoundViewModelConversionFunctions` |
+| `Find MetaSound Output Viewmodel by Name` | 在输出ViewModel数组中根据名称查找。 | `UMetaSoundViewModelConversionFunctions` |
+| `Get MetaSound Literal Value as Text` | 将Literal值转换为可读文本。 | `UMetaSoundViewModelConversionFunctions` |
+| `Get Input Viewmodel Names` | 获取Widget所需的输入ViewModel名称列表。 | `IMetaSoundLiteralWidgetInterface` |
+| `Set Input Viewmodels` | 为Widget设置输入ViewModel。 | `IMetaSoundLiteralWidgetInterface` |
 
 ### 使用示例（蓝图描述）
 
-1.  **创建自定义音频控制面板**：
-    *   在你的 UMG 控件蓝图中，添加一个 `MetaSound Viewmodel` 成员变量（类型为 `UMetaSoundViewModel`）。
-    *   在控件初始化时（如 `Event Construct`），调用 `Initialize MetaSound` 并传入目标 MetaSound 资产。
-    *   从 `MetaSound Viewmodel` 中调用 `Get Input Viewmodels` 获取所有输入的视图模型。
-    *   将返回的 `MetaSound Input Viewmodel` 数组中的元素，通过 `SetViewModel` 或 `SetViewModelByClass` 分别绑定到你 UMG 中的各个具体控件（如滑块、复选框）。
-    *   对于支持单位转换的浮点输入（如将线性值显示为分贝），使用 `UMetaSoundLiteralViewModel_Float` 作为具体控件的视图模型，并配置其 `RangeValues` 对象。
-
-2.  **实现可复用的 MetaSound 控件接口**：
-    *   创建一个通用的音频滑块 UMG 控件，为其添加 `MetaSound Literal Widget Interface` 接口。
-    *   实现 `Get Input Viewmodel Names` 函数，返回该滑块需要绑定的输入名称（例如 `"Frequency"`）。
-    *   实现 `Set Input Viewmodels` 函数，接收传入的视图模型映射，并根据名称找到对应的视图模型，设置为滑块视图模型的 `Literal` 属性。
+1.  **创建控件蓝图**：创建一个新的UMG Widget蓝图（例如 `WBP_SliderControl`）。
+2.  **添加MVVM组件**：在Widget蓝图的 `Details` 面板中，添加一个 `MVVM View` 组件。
+3.  **选择ViewModel**：在 `MVVM View` 组件的 `ViewModel` 属性中，从下拉列表选择合适的 `Literal ViewModel` 类（例如 `UMetaSoundLiteralViewModel_Float`）。
+4.  **绑定属性**：在控件（如滑块）的绑定菜单中，选择 `ViewModel` -> `NormalizedValue` 或 `SourceValue` 进行双向绑定。
+5.  **父Widget中使用**：在主音频控制面板Widget中，实例化 `WBP_SliderControl`。通过 `MVVM View` 组件的 `SetViewModel` 函数，将主面板中 `UMetaSoundViewModel` 返回的某个 `InputViewModel` 传递给滑块控件的ViewModel。
+6.  **自动初始化**：主面板的 `UMetaSoundViewModel` 在 `Initialize MetaSound` 后，会自动为所有输入创建 `InputViewModel`。通过 `Get Input Viewmodels` 节点可以遍历它们，并分配给对应的自定义控件。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "TechAudioToolsMetaSound/ViewModels/MetaSoundViewModel.h"
-#include "TechAudioToolsMetaSound/ViewModels/MetaSoundLiteralViewModel.h"
-#include "TechAudioToolsMetaSound/Interfaces/MetaSoundLiteralInterface.h"
+#include "ViewModels/MetaSoundViewModel.h"
+#include "ViewModels/MetaSoundLiteralViewModel.h"
+#include "Interfaces/MetaSoundLiteralInterface.h"
+#include "ViewModels/MetaSoundViewModelConversionFunctions.h"
 ```
 
 ### 基本用法
 
-以下代码演示如何在 C++ 中创建并初始化一个 `MetaSoundViewModel`，并获取其输入视图模型。
-
+以下代码展示如何在C++中创建一个`UMetaSoundViewModel`并用它初始化UI。此模式通常用于管理音频编辑UI的“主控制器”Widget。
 ```cpp
-// 假设在某个 Actor 或 UI 类中
-UPROPERTY()
-TObjectPtr<UMetaSoundViewModel> MyMetaSoundViewModel;
+// MainAudioControlWidget.h
+#include "Components/MVVMView.h"
+#include "ViewModels/MetaSoundViewModel.h"
 
-void AMyActor::InitializeAudioUI()
+UCLASS()
+class UMainAudioControlWidget : public UUserWidget
 {
-    // 1. 创建 ViewModel 实例
-    MyMetaSoundViewModel = NewObject<UMetaSoundViewModel>(this);
+    GENERATED_BODY()
+public:
+    UPROPERTY(BlueprintReadOnly, Category = "View")
+    TObjectPtr<UMetaSoundViewModel> MetaSoundVM;
 
-    // 2. 使用 MetaSound 资产进行初始化
-    // MetaSoundAsset 是你的 UMetaSound* 或其他实现了 IMetaSoundDocumentInterface 的对象
-    if (MetaSoundAsset)
+    UPROPERTY(BlueprintReadOnly, Category = "View")
+    TObjectPtr<UMVVMView> MVVMView;
+
+    UFUNCTION(BlueprintCallable)
+    void InitializeWithMetaSoundAsset(TScriptInterface<IMetaSoundDocumentInterface> InMetaSound)
     {
-        MyMetaSoundViewModel->InitializeMetaSound(MetaSoundAsset);
-
-        // 3. 获取输入视图模型列表
-        TArray<UMetaSoundInputViewModel*> InputViewModels = MyMetaSoundViewModel->GetInputViewModels();
-
-        // 4. 可以遍历并处理这些视图模型
-        for (UMetaSoundInputViewModel* InputVM : InputViewModels)
+        if (!MetaSoundVM)
         {
-            UE_LOG(LogTemp, Log, TEXT("Input: %s, DataType: %s"), *InputVM->GetInputName().ToString(), *InputVM->GetDataType().ToString());
+            MetaSoundVM = NewObject<UMetaSoundViewModel>(this);
+        }
+        MetaSoundVM->InitializeMetaSound(InMetaSound);
+
+        // 初始化后，可以遍历InputViewModels来创建自定义控件
+        TArray<UMetaSoundInputViewModel*> InputVMs = MetaSoundVM->GetInputViewModels();
+        for (UMetaSoundInputViewModel* InputVM : InputVMs)
+        {
+            // 根据InputVM->GetDataType() 创建不同类型的LiteralViewModel并绑定到UI
         }
     }
-}
+};
 ```
 
 ### 进阶用法
 
-实现 `IMetaSoundLiteralWidgetInterface` 接口，创建一个自定义的音频控件类。
-
+实现一个支持多种数据类型的自定义音频控件Widget。需要实现`IMetaSoundLiteralWidgetInterface`接口，并根据数据类型动态设置正确的Literal ViewModel。
 ```cpp
-// MyAudioSliderWidget.h
-#include "Components/Widget.h"
-#include "TechAudioToolsMetaSound/Interfaces/MetaSoundLiteralInterface.h"
-#include "TechAudioToolsMetaSound/ViewModels/MetaSoundLiteralViewModel.h"
+// AudioKnobWidget.h
+#include "Interfaces/MetaSoundLiteralInterface.h"
+#include "ViewModels/MetaSoundLiteralViewModel.h"
 
 UCLASS()
-class UMyAudioSliderWidget : public UWidget, public IMetaSoundLiteralWidgetInterface
+class UAudioKnobWidget : public UUserWidget, public IMetaSoundLiteralWidgetInterface
+{
+    GENERATED_BODY()
+public:
+    // 来自 IMetaSoundLiteralWidgetInterface
+    virtual TArray<FName> GetInputViewModelNames_Implementation() const override
+    {
+        return { FName(TEXT("Frequency")) }; // 这个旋钮控件需要名为"Frequency"的输入
+    }
+
+    virtual void SetInputViewModels_Implementation(const TMap<FName, UMetaSoundInputViewModel*>& InputViewModels) override
+    {
+        if (UMetaSoundInputViewModel** FoundVM = InputViewModels.Find(FName(TEXT("Frequency"))))
+        {
+            UMetaSoundInputViewModel* InputVM = *FoundVM;
+            // 根据数据类型创建并设置对应的LiteralViewModel
+            if (InputVM->GetDataType() == FName("float"))
+            {
+                auto* FloatVM = NewObject<UMetaSoundLiteralViewModel_Float>(this);
+                // 绑定Literal属性以实现双向同步
+                FloatVM->SetLiteral(InputVM->GetLiteral());
+                // 将FloatVM设置给MVVMView
+                if (MVVMView)
+                {
+                    MVVMView->SetViewModel(FloatVM->GetClass(), FloatVM);
+                }
+            }
+        }
+    }
+
+private:
+    UPROPERTY()
+    TObjectPtr<UMVVMView> MVVMView;
+};
+```
+
+## Demo 示例
+
+一个最小化的可编译示例，展示如何创建一个简单的旋钮控件来控制MetaSound的浮点输入。
+
+**MyKnobControl.h**
+```cpp
+#pragma once
+#include "CoreMinimal.h"
+#include "Blueprint/UserWidget.h"
+#include "Interfaces/MetaSoundLiteralInterface.h"
+#include "MyKnobControl.generated.h"
+
+class UMetaSoundInputViewModel;
+class UMetaSoundLiteralViewModel_Float;
+class UMVVMView;
+
+UCLASS()
+class UMyKnobControl : public UUserWidget, public IMetaSoundLiteralWidgetInterface
 {
     GENERATED_BODY()
 
@@ -122,87 +173,55 @@ public:
     virtual TArray<FName> GetInputViewModelNames_Implementation() const override;
     virtual void SetInputViewModels_Implementation(const TMap<FName, UMetaSoundInputViewModel*>& InputViewModels) override;
 
-private:
-    UPROPERTY(Transient)
-    TObjectPtr<UMetaSoundLiteralViewModel_Float> SliderViewModel;
-};
+protected:
+    UPROPERTY(BlueprintReadOnly, Category = "ViewModels")
+    TObjectPtr<UMetaSoundLiteralViewModel_Float> FloatLiteralVM;
 
-// MyAudioSliderWidget.cpp
-TArray<FName> UMyAudioSliderWidget::GetInputViewModelNames_Implementation() const
+    UPROPERTY(BlueprintReadOnly, Category = "MVVM")
+    TObjectPtr<UMVVMView> MVVMView;
+};
+```
+
+**MyKnobControl.cpp**
+```cpp
+#include "MyKnobControl.h"
+#include "ViewModels/MetaSoundLiteralViewModel.h"
+#include "Components/MVVMView.h"
+
+TArray<FName> UMyKnobControl::GetInputViewModelNames_Implementation() const
 {
-    // 声明此控件需要一个名为 "Volume" 的输入视图模型
+    // 这个控件需要一个名为 "Volume" 的输入
     return { FName("Volume") };
 }
 
-void UMyAudioSliderWidget::SetInputViewModels_Implementation(const TMap<FName, UMetaSoundInputViewModel*>& InputViewModels)
+void UMyKnobControl::SetInputViewModels_Implementation(const TMap<FName, UMetaSoundInputViewModel*>& InputViewModels)
 {
-    // 查找名为 "Volume" 的输入视图模型
-    if (UMetaSoundInputViewModel** FoundVM = InputViewModels.Find(FName("Volume")))
+    // 查找名为 "Volume" 的输入ViewModel
+    if (const UMetaSoundInputViewModel* const* FoundVMPtr = InputViewModels.Find(FName("Volume")))
     {
-        // 创建一个 Float 类型的 Literal ViewModel 来处理具体的值转换
-        SliderViewModel = NewObject<UMetaSoundLiteralViewModel_Float>(this);
-        // 将输入视图模型的 Literal 与滑块的 Literal 进行双向绑定
-        // 这通常需要在 UMG 蓝图中通过 MVVM 绑定系统完成，或者在代码中通过监听 FieldNotify 手动同步
+        const UMetaSoundInputViewModel* VolumeInputVM = *FoundVMPtr;
+        // 为这个输入创建一个浮点类型的Literal ViewModel
+        FloatLiteralVM = NewObject<UMetaSoundLiteralViewModel_Float>(this);
+        // 将输入ViewModel的Literal数据同步到我们新建的FloatLiteralVM
+        FloatLiteralVM->SetLiteral(VolumeInputVM->GetLiteral());
+        // 将新建的ViewModel通过MVVMView注册到本控件，以便UI元素（如滑块）绑定
+        if (MVVMView)
+        {
+            MVVMView->SetViewModel(FloatLiteralVM->GetClass(), FloatLiteralVM);
+        }
     }
-}
-```
-
-## Demo 示例
-
-以下是一个简单的 C++ 自定义视图模型示例，用于演示如何扩展。假设我们有一个自定义的 `MyCustomInputViewModel`，它继承自 `UMetaSoundInputViewModel` 并添加了一些额外行为。
-
-**MyCustomInputViewModel.h**
-```cpp
-#pragma once
-
-#include "TechAudioToolsMetaSound/ViewModels/MetaSoundViewModel.h"
-#include "MyCustomInputViewModel.generated.h"
-
-UCLASS(DisplayName = "My Custom Input Viewmodel")
-class MYPROJECT_API UMyCustomInputViewModel : public UMetaSoundInputViewModel
-{
-    GENERATED_BODY()
-
-public:
-    // 一个自定义的属性，例如用于 UI 显示的额外标签
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Custom")
-    FText DisplayLabel;
-
-    // 重写父类的方法，添加自定义逻辑
-    virtual void SetLiteral(const FMetasoundFrontendLiteral& InLiteral) override;
-};
-```
-
-**MyCustomInputViewModel.cpp**
-```cpp
-#include "MyCustomInputViewModel.h"
-
-void UMyCustomInputViewModel::SetLiteral(const FMetasoundFrontendLiteral& InLiteral)
-{
-    // 先调用父类实现，完成基本设置
-    Super::SetLiteral(InLiteral);
-
-    // 在此处可以添加自定义逻辑，例如根据新的字面值更新 DisplayLabel
-    if (LiteralType == EMetasoundFrontendLiteralType::Float)
-    {
-        DisplayLabel = FText::AsNumber(Literal.Get<float>());
-    }
-    // 通知监听者该属性已改变
-    UE_MVVM_SET_PROPERTY_VALUE(DisplayLabel, DisplayLabel);
 }
 ```
 
 ## 模块依赖
 
-要使用此插件的功能，你的模块需要在 `.Build.cs` 文件中添加以下依赖：
+从 `TechAudioToolsMetaSound.Build.cs` 分析，使用该插件主要需要以下独特依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `TechAudioToolsMetaSound` | 包含核心的视图模型、接口和转换函数，是使用该插件功能的主要模块。 |
-| `Metasound` | 底层的 MetaSound 引擎模块，提供 `FMetasoundFrontendLiteral` 等基础类型。 |
-| `ModelViewViewModel` | 提供 MVVM 框架基类 `UMVVMViewModelBase`，是所有视图模型类的基础。 |
-
-**注意**：`Core`, `CoreUObject`, `Engine`, `UMG`, `Slate` 等为 UE 常见依赖，此处省略。
+| `MetaSound` | 提供 MetaSound 核心运行时和数据结构。 |
+| `MetaSoundFrontend` | 提供 `FMetasoundFrontendLiteral` 等前端数据类型和接口。 |
+| `ModelViewViewModel` | 提供 MVVM 框架基类 `UMVVMViewModelBase` 和相关工具。 |
 
 ## 维护状态
 
@@ -210,20 +229,18 @@ void UMyCustomInputViewModel::SetLiteral(const FMetasoundFrontendLiteral& InLite
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-16 | `cb44584a` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 整合了 MetaSound 引脚类型注册和相关的编辑器行为。 |
-| 2026-04-15 | `2010cdbb` | [Backout] - CL52717658 - CIS Compile Error | 回退了一个导致编译错误的提交。 |
-| 2026-04-14 | `d9dda16b` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 整合了 MetaSound 引脚类型注册和相关的编辑器行为。 |
-| 2026-04-09 | `77ec5174` | [TechAudioTools] Added support for transactions in MetaSound Literal Viewmodels | 为 MetaSound 字面值视图模型添加了事务（撤销/重做）支持。 |
-| 2026-03-16 | `e8ed118a` | DocumentConfiguration Rename to MetaSound(Document)Template | 将 `DocumentConfiguration` 重命名为 `MetaSoundTemplate`。 |
+| 2026-04-16 | `cb44584a` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 整合引脚类型注册及相关的MetaSound编辑器行为。 |
+| 2026-04-15 | `2010cdbb` | [Backout] - CL52717658 - CIS Compile Error | 回退了之前导致编译错误的提交。 |
+| 2026-04-14 | `d9dda16b` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 整合引脚类型注册及相关的MetaSound编辑器行为。 |
+| 2026-04-09 | `77ec5174` | [TechAudioTools] Added support for transactions in MetaSound Literal Viewmodels | 为MetaSound Literal视图模型添加了事务支持。 |
+| 2026-03-16 | `e8ed118a` | DocumentConfiguration Rename to MetaSound(Document)Template | 将DocumentConfiguration重命名为MetaSound模板。 |
 
 ### 维护评价
 
-该插件创建于 2025 年 4 月，是一个相对年轻的插件。从近期的 git 历史来看，它仍在**积极维护中**，最近几个月有多次功能更新和重构（如引脚类型整合、事务支持）。插件被标记为 `IsBetaVersion` 和 `IsExperimentalVersion`，表明它仍处于实验阶段，API 和功能可能会发生变化，且可能存在未发现的稳定性问题。
-
-**推荐使用**：如果你正在寻找一个成熟的、生产就绪的 MetaSound UI 绑定方案，需要谨慎评估此插件的实验性状态。如果你是 Epic 内部开发者、早期技术采纳者，或者你的项目可以容忍实验性 API 的变化，那么该插件提供了构建高级 MetaSound 控制界面的强大工具。建议在使用时密切关注引擎更新和此插件的变更日志。
+该插件创建于2025年4月，是一个非常新的、处于**实验性阶段**的插件。从近期Git历史来看（截至2026年4月），开发活动**相当活跃**，持续有功能添加（如事务支持）和代码重构（如引脚类型整合）。它依赖于前沿的MVVM框架，是Epic Games在MetaSound工具链现代化方面的探索。由于其`IsBetaVersion`和`IsExperimentalVersion`标志均为`true`，且默认未启用，它面向的是愿意尝试新技术的开发者。**推荐**用于项目原型开发和内部工具构建，但不建议直接用于需要长期稳定支持的商业产品核心功能。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/TechAudioTools)
-- [官方文档]() (暂无)
-- [测试用例]() (暂未发现)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/TechAudioTools)
+-   官方文档链接未提供。
+-   测试用例路径未明确提供，通常位于插件目录的 `Tests` 子目录或 `Engine/Tests` 目录下。

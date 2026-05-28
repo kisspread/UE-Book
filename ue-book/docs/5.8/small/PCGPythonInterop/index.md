@@ -1,162 +1,169 @@
-# PCG Python Interop
+# Procedural Content Generation Framework (PCG) Python Interop
 
 > Extra plugin for Procedural Content Generation Framework interacting with the Editor Python Interpreter.
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | PCG Python互操作 |
+| 中文名 | PCG Python 互操作插件 |
 | 分类 | Editor |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（测试资源） |
+| 包含内容 | ✅ 有（蓝图资产） |
 | 模块 | `PCGPythonInteropEditor` (Editor) |
-| 实验性 | ⚦️ 是 |
+| 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-07-14 |
 | 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/PCGInterops/PCGPythonInterop) | |
 
 ## 用途
 
-该插件是 **程序化内容生成框架 (PCG)** 与 **编辑器 Python 解释器** 之间的桥梁。它解决了在 PCG 图中需要编写复杂、自定义或非标准逻辑时，必须使用 C++ 编写自定义 PCG 节点的局限性。通过此插件，用户可以直接在 PCG 节点中编写或引用 Python 脚本，从而获得 Python 语言的灵活性、庞大的第三方库支持以及快速原型开发的能力。
+该插件在**程序化内容生成框架**与**编辑器 Python 脚本系统**之间架起了一座桥梁。它允许开发者和设计师在 PCG 图（Graph）中直接执行 Python 脚本，从而利用 Python 的强大灵活性和丰富的库生态来处理 PCG 数据、实现自定义的生成逻辑、算法或工作流集成。
 
-其核心功能是提供两个新的 PCG 节点：
-1.  **`Execute Python Script`**：执行一个简单的 Python 脚本，主要用于生成或修改 PCG 数据。
-2.  **`Python Data Processor`**：执行一个 Python 脚本，并直接接收和返回 `FPCGDataCollection`，为 Python 脚本提供对 PCG 数据结构（如属性、元数据）的完整读写访问权限。
-
-这允许用户利用 Python 来处理程序化生成中的复杂算法、文件I/O、API调用或其他现有工具链。
+其核心价值在于：传统 PCG 节点提供标准化的数据操作，而 Python 脚本则提供了近乎无限的自定义能力。通过此插件，用户可以在不编写 C++ 的情况下，用 Python 实现复杂的生成规则、数据处理、调用外部 API 等，极大地扩展了 PCG 的应用范围。
 
 ## 使用场景
 
-- **快速原型与迭代**：在不编写和编译 C++ 插件的情况下，快速测试新的程序化生成逻辑。
-- **复杂算法集成**：在 PCG 管线中集成使用 NumPy、SciPy 等 Python 科学计算库实现的算法。
-- **工具链复用**：调用已有的、用 Python 编写的资产处理、关卡设计或数据分析工具。
-- **数据后处理**：使用 Python 的丰富文本处理能力（如正则表达式、JSON解析）来修改 PCG 生成的数据。
-- **流程自动化**：结合 Unreal 的 Python 脚本能力，自动化 PCG 图的设置、运行和结果收集。
+-   你需要在 PCG 生成流程中执行复杂的、非标准的数据处理或逻辑判断（例如，基于特定算法筛选或变换点数据）。
+-   你希望利用 Python 的科学计算库（如 NumPy）或外部工具来处理 PCG 数据，然后再送回 PCG 图进行后续生成。
+-   你想快速原型验证新的 PCG 算法，使用 Python 脚本比用 C++ 或蓝图更快捷。
+-   你需要在运行时通过 PCG 执行一些动态脚本逻辑。
 
 ## 蓝图用法
 
-该插件的核心功能通过两个 PCG 节点暴露，这些节点在 PCG 图中作为设置（`UCLASS`）存在，而非传统的蓝图函数。
+本插件主要提供两个 PCG 节点，用于在蓝图可视化脚本中集成 Python 逻辑。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Execute Python Script` | 执行一个简单的 Python 脚本，用于生成输出数据。脚本可以从输入属性、内联编辑或外部 `.py` 文件加载。 | `UPCGExecutePythonScriptSettings` |
-| `Python Data Processor` | 执行一个 Python 脚本，直接操作 `FPCGDataCollection`。支持动态输入/输出引脚，允许 Python 脚本接收和返回任意类型的 PCG 数据集合。 | `UPCGPythonDataProcessorSettings` |
+| `Execute Python Script` | 执行 Python 脚本。支持内联脚本、从输入属性读取脚本或从 `.py` 文件执行。 | `UPCGExecutePythonScriptSettings` |
+| `Python Data Processor` | 使用 Python 脚本处理 PCG 数据集合。提供动态输入输出引脚，脚本可直接操作输入的 `FPCGDataCollection` 并生成输出集合。 | `UPCGPythonDataProcessorSettings` |
 
 ### 使用示例（蓝图描述）
 
-1.  **添加节点**：在 PCG 图编辑器中，右键搜索 “Execute Python Script” 或 “Python Data Processor”，将其拖入图表。
-2.  **配置脚本来源**：
-    *   **Input**：选择一个输入 PCG 数据的属性（如 String 属性）作为脚本源。该属性的值将被当作 Python 代码执行。
-    *   **Inline**：直接在节点的属性面板中编写 Python 代码。
-    *   **File**：指定一个本地 `.py` 文件的路径。
-3.  **连接数据**：
-    *   对于 `Execute Python Script`：通常将 PCG 数据（如点数据、属性数据）连接到输入引脚 `In`，Python 脚本可以处理这些数据并生成新的数据输出到 `Out` 引脚。
-    *   对于 `Python Data Processor`：可以添加任意数量的动态输入引脚。Python 脚本通过 `UPCGPythonDataBridge` 对象访问所有输入数据，并构建一个包含所需输出数据的 `FPCGDataCollection` 设置回去。
-4.  **编写 Python 逻辑**：在脚本中，你可以通过 `pcg` 模块或直接通过桥接对象与 PCG 数据交互。例如，在 Python Data Processor 中，你可以这样访问输入并设置输出：
-    ```python
-    import unreal
-    # 查找当前执行创建的桥接对象（名字是动态生成的）
-    bridge = unreal.find_object(None, "PCGPythonDataBridge_XX")
-    if bridge:
-        input_collection = bridge.get_input_collection()
-        # ... 处理 input_collection ...
-        new_data = # ... 创建新的 UPCGData 对象 ...
-        bridge.add_to_collection(new_data, "OutputPinName", [])
-    ```
+1.  **基本用法（Execute Python Script）：**
+    *   在 PCG 图中添加一个 `Execute Python Script` 节点。
+    *   在节点的细节面板中，设置 `Script Input Method`。例如选择 `Input`，然后将一个包含 Python 代码字符串的 PCG 属性连接到 `Script Source` 引脚。也可以选择 `File` 并指定 `.py` 文件路径。
+    *   节点具有固定的 `In` 和 `Out` 引脚。Python 脚本可以通过 `unreal` 模块访问引擎和 PCG API 进行操作，但其输入输出是通过固定的 `In`/`Out` 引脚传递的，无法直接访问其他 PCG 数据引脚。
+
+2.  **高级用法（Python Data Processor）：**
+    *   在 PCG 图中添加一个 `Python Data Processor` 节点。
+    *   节点有动态的输入引脚。你可以右键添加新的输入引脚，它们将被映射为 Python 中的变量。
+    *   在 Python 脚本中，可以通过一个名为 `DataBridge` 的对象（类型为 `UPCGPythonDataBridge`）的 `GetInputCollection()` 方法获取所有输入数据。
+    *   在脚本中处理数据后，需要构建一个 `FPCGDataCollection`，并调用 `DataBridge.AddToCollection()` 或 `DataBridge.SetOutputCollection()` 来设置输出。
+    *   节点也有动态的输出引脚，你可以在 Python 脚本中决定将数据输出到哪个引脚。
 
 ## C++ 用法
 
-此插件主要用于编辑器扩展，其 C++ API 主要是其节点类的接口，通常在实现自定义 PCG 元素或扩展插件功能时使用。
+该插件主要面向蓝图和 Python 脚本用户，其内部 C++ API 主要用于实现节点逻辑和数据桥接。
 
 ### 头文件引入
 
 ```cpp
 #include "Elements/PCGExecutePythonScript.h"
-#include "Elements/PCGPythonDataProcessor.h"
+#include "Helpers/PCGPythonDataBridge.h"
 ```
 
 ### 基本用法
 
-以下示例展示了如何在代码中动态创建并配置一个 `ExecutePythonScript` 节点。
-
-*注意：此代码片段基于插件提供的类接口推断，用于说明典型用法。*
+在内部，`Execute Python Script` 和 `Python Data Processor` 节点通过 `UPythonScriptPlugin` 的服务来执行 Python 代码。以下是其工作原理的简化示例：
 
 ```cpp
-// 创建一个 UPCGExecutePythonScriptSettings 实例
-UPCGExecutePythonScriptSettings* ScriptSettings = NewObject<UPCGExecutePythonScriptSettings>();
-
-// 配置脚本输入方式为内联
-ScriptSettings->ScriptInputMethod = EPCGPythonScriptInputMethod::Input;
-
-// 设置内联脚本内容（注意：实际属性为私有，通常通过节点UI设置，这里仅为演示）
-// 在实际场景中，可能通过序列化或特定方法设置。
-FString Script = TEXT("print('Hello from PCG Python!')");
-
-// 创建执行元素
-FPCGElementPtr Element = ScriptSettings->CreateElement();
-if (Element.IsValid())
+// 伪代码：展示 FPCGExecutePythonScriptElement::ExecuteInternal 的大致逻辑
+bool FPCGExecutePythonScriptElement::ExecuteInternal(FPCGContext* InContext) const
 {
-    // 准备执行上下文 (FPCGContext)，这通常由 PCG 框架管理
-    // FPCGContext* Context = ...
-    // Element->Execute(Context);
+    const UPCGExecutePythonScriptSettings* Settings = InContext->GetInputSettings<UPCGExecutePythonScriptSettings>();
+    FString ScriptContent;
+
+    // 根据设置获取脚本内容 (内联、属性或文件)
+    if (Settings->ScriptInputMethod == EPCGPythonScriptInputMethod::File)
+    {
+        FFileHelper::LoadFileToString(ScriptContent, *Settings->ScriptPath.FilePath);
+    }
+    // ... 其他获取方式
+
+    // 通过 PythonScriptPlugin 执行脚本
+    if (FPCGPythonHelpers::ExecutePythonScript(ScriptContent))
+    {
+        // 执行成功，处理输出（对于 ExecutePythonScript 节点，通常只是传递输入到输出）
+        return true;
+    }
+    else
+    {
+        // 错误处理
+        return false;
+    }
 }
 ```
 
-### 进阶用法
+### 进阶用法：使用数据桥（Data Bridge）
 
-更复杂的用法涉及与 `PythonDataProcessor` 和桥接对象 `UPCGPythonDataBridge` 交互，这通常发生在需要扩展或调试节点行为时。主要流程是：
-1.  理解 `UPCGPythonDataProcessorSettings` 如何管理动态引脚 (`FPCGDynamicPinContainer`)。
-2.  在元素执行（`FPCGPythonDataProcessorElement::ExecuteInternal`）时，框架会创建一个 `UPCGPythonDataBridge` 对象，用当前的输入 `FPCGDataCollection` 初始化它，并让 Python 脚本通过该对象读写数据。
-3.  执行结束后，元素从桥接对象中取出输出集合，继续 PCG 流水线。
+对于 `Python Data Processor` 节点，它使用 `UPCGPythonDataBridge` 在 Python 和 C++ 之间传递复杂的 PCG 数据结构。
+
+```cpp
+// 伪代码：展示 FPCGPythonDataProcessorElement::ExecuteInternal 的大致逻辑
+bool FPCGPythonDataProcessorElement::ExecuteInternal(FPCGContext* InContext) const
+{
+    const UPCGPythonDataProcessorSettings* Settings = ...;
+    // 1. 创建数据桥对象
+    UPCGPythonDataBridge* DataBridge = NewObject<UPCGPythonDataBridge>();
+    // 2. 将输入的 PCG 数据集合填充到桥中
+    FPCGDataCollection InputCollection = ...; // 从 InContext 中构建
+    DataBridge->Initialize(InputCollection);
+
+    // 3. 准备 Python 脚本和环境变量
+    FString ScriptContent = ...; // 获取脚本
+    // DataBridge 对象会通过特定的命名规则暴露给 Python
+
+    // 4. 执行 Python 脚本
+    FPCGPythonHelpers::ExecutePythonScript(ScriptContent);
+
+    // 5. 从桥中获取 Python 脚本设置的输出数据
+    if (DataBridge->HasOutputCollection())
+    {
+        const FPCGDataCollection& OutputCollection = DataBridge->GetOutputCollection();
+        // 6. 将输出数据应用到节点的输出引脚
+        // ...
+    }
+
+    return true;
+}
+```
 
 ## Demo 示例
 
-以下是一个最简单的自定义元素示例，演示了如何基于 `UPCGExecutePythonScriptSettings` 创建一个功能类似但名字不同的设置类。
+以下是一个可在 Python 脚本中使用 `PCGPythonDataBridge` 的示例，用于交换 PCG 数据。
 
-**PCGSimplePythonNode.h**
-```cpp
-#pragma once
+**PCG Python 脚本示例 (ExecutePythonScript节点):**
+```python
+import unreal
 
-#include "CoreMinimal.h"
-#include "Elements/PCGExecutePythonScript.h"
-#include "PCGSimplePythonNode.generated.h"
+# 获取由节点创建的 PCGPythonDataBridge 对象
+# 其名称在节点执行时唯一生成，但可以通过约定或设置来定位
+bridge = unreal.find_object("PCGPythonDataBridge_0") # 名称为示例
 
-UCLASS(MinimalAPI, BlueprintType, ClassGroup = (Procedural))
-class UPCGSimplePythonNodeSettings : public UPCGExecutePythonScriptSettings
-{
-    GENERATED_BODY()
+if bridge:
+    # 获取输入数据
+    input_data = bridge.get_input_collection()
+    # ... 对 input_data 进行处理 ...
 
-public:
-#if WITH_EDITOR
-    // 重写默认节点名称和标题
-    virtual FName GetDefaultNodeName() const override { return TEXT("SimplePythonNode"); }
-    virtual FText GetDefaultNodeTitle() const override { return NSLOCTEXT("PCGSimplePythonNode", "NodeTitle", "Simple Python Node"); }
-#endif // WITH_EDITOR
-};
-```
+    # 创建输出数据
+    output_data = unreal.FPCGDataCollection()
+    # ... 构建 output_data ...
 
-**PCGSimplePythonNode.cpp**
-```cpp
-#include "PCGSimplePythonNode.h"
+    # 将处理后的数据设置为输出
+    bridge.set_output_collection(output_data)
 
-// 实现创建元素的方法，直接使用父类的元素
-FPCGElementPtr UPCGSimplePythonNodeSettings::CreateElement() const
-{
-    // 由于功能与父类完全相同，直接返回父类创建的元素。
-    // 如果需要修改执行逻辑，可以创建自定义的 FPCGElement 子类。
-    return MakeShared<FPCGExecutePythonScriptElement>();
-}
+    # 或者逐个添加数据到指定的输出引脚
+    # some_pcg_data = ...
+    # bridge.add_to_collection(some_pcg_data, "ProcessedData", [])
 ```
 
 ## 模块依赖
 
-该插件自身依赖于其他插件。在你的项目中使用它，需要确保这些插件已启用。
-
-| 模块/插件 | 用途 |
+| 模块 | 用途 |
 |---|---|
-| `PCG` | 基础程序化内容生成框架 |
-| `PythonScriptPlugin` | 提供编辑器内的 Python 解释器和脚本执行能力 |
+| `PCG` | 核心的程序化内容生成框架，提供 `UPCGSettings`, `FPCGDataCollection` 等基础类型。 |
+| `PythonScriptPlugin` | UE 内置的 Python 脚本插件，负责在引擎内嵌的 Python 解释器中执行代码。 |
 
 ## 维护状态
 
@@ -164,24 +171,20 @@ FPCGElementPtr UPCGSimplePythonNodeSettings::CreateElement() const
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-30 | `d47477a3` | [PCG] Python Data Processor Node | 新增 Python Data Processor 节点，支持直接操作 PCG 数据集合。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志系统更新，将宏替换为新格式。 |
-| 2026-02-25 | `c0dd9731` | StringBuilder: Removing construction of TStringBuilderBase<T> | 代码重构，优化字符串构建器的初始化。 |
-| 2025-08-22 | `2de17507` | [PCG] Fixed bug causing Inline Constant not to respect required pin | 修复一个 Bug，该 Bug 导致内联常量不遵守必填引脚的设置。 |
-| 2025-07-14 | `002e7b67` | [PCG] Python Interop Plugin and Execute Python Script Node | 插件创建，包含首个 Execute Python Script 节点。 |
+| 2026-04-30 | `d47477a3` | [PCG] Python Data Processor Node | 新增了 Python Data Processor 节点，提供动态引脚和直接数据访问。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志系统迁移，使用新的 `UE_LOGF` 宏。 |
+| 2026-02-25 | `c0dd9731` | StringBuilder: Removing construction of TStringBuilderBase<T> | 代码重构，优化了字符串构建器的初始化。 |
+| 2025-08-22 | `2de17507` | [PCG] Fixed bug causing Inline Constant not to respect required pin | 修复了一个 bug：内联常量未正确关联到必需引脚。 |
+| 2025-07-14 | `002e7b67` | [PCG] Python Interop Plugin and Execute Python Script Node | 插件初始提交，创建了 `Execute Python Script` 节点。 |
 
 ### 维护评价
 
-该插件于 2025 年 7 月创建，至今约 1 年，处于**活跃维护**状态。最近的提交（2026年4月）增加了重要的新功能节点 (`Python Data Processor`)，表明 Epic 正在积极开发和完善它。
+该插件**创建时间很新（约 1 年）**，且**明确标记为 Beta 版本**，表明其处于积极开发阶段。从提交历史看，最近一次实质性功能更新（添加新节点）在 2 个月内，维护较为活跃。主要功能（执行脚本、数据桥接）已可用，但作为 Beta 版本，可能存在 API 变动、未处理的边缘情况或性能问题。
 
-**注意事项**：
-1.  **实验性 (Beta)**：插件在 `.uplugin` 中明确标记为 `IsBetaVersion: true`，并且默认未启用 (`EnabledByDefault: false`)。这意味着其 API 和功能在未来版本中可能会发生不兼容的变更。
-2.  **编辑器专用**：这是一个仅编辑器 (`Editor`) 插件，不能在打包的游戏中使用。
-3.  **依赖关系**：需要同时启用 `PCG` 和 `PythonScriptPlugin` 插件。
-
-**推荐使用**：非常适合用于编辑器工具、快速原型开发和自定义 PCG 逻辑的编写。但在生产环境中用于需要长期稳定的 PCG 图时，需谨慎评估其 Beta 状态带来的风险。
+**建议**：由于其 Beta 状态和依赖于 `PythonScriptPlugin`，不建议在需要长期稳定性的生产环境中作为核心功能使用。非常适合用于**工具开发、原型设计、内部管线扩展**等场景。推荐在非关键任务或探索性项目中试用。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/PCGInterops/PCGPythonInterop)
-- [官方文档](https://docs.unrealengine.com/latest/en-US/procedural-content-generation--framework-in-unreal-engine/) (PCG 框架文档，包含此插件的用法)
+- [官方文档](https://docs.unrealengine.com/latest/en-US/procedural-content-generation--framework-in-unreal-engine/)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/PCGInterops/PCGPythonInterop/Source/PCGPythonInteropEditor/Private/Tests/) (位于源码的 Private/Tests 目录)

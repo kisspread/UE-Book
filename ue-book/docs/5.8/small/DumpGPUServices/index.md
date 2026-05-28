@@ -1,32 +1,34 @@
 # Dump GPU Services
 
-> Implements automatic upload services for the DumpGPU command.（照抄，不翻译）
+> Implements automatic upload services for the DumpGPU command.
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | GPU转储上传服务 |
+| 中文名 | GPU 转储上传服务 |
 | 分类 | Rendering |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
 | 模块 | `DumpGPUServices` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2022-03-24 |
-| 年龄标签 | 🆕（约 3 年） |
+| 年龄标签 | 🆕（约 4 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/DumpGPUServices) | |
 
 ## 用途
 
-本插件是 UE 内置 `DumpGPU` 命令（常用于调试渲染问题、捕获 GPU 帧数据）的配套服务。其核心功能不是执行转储本身，而是为转储后的数据提供自动化的上传通道。解决了 `DumpGPU` 命令生成的数据（可能非常大）需要手动处理或分享的问题，通过集成此服务，可以将转储结果自动上传至指定的服务器或存储位置，便于团队协作、远程分析和自动化测试流水线。
+该插件为引擎的 `DumpGPU` 调试命令提供自动上传服务。`DumpGPU` 是一个用于捕获 GPU 渲染状态（如 Render Graph、资源、Pass 信息等）的诊断工具，而本插件为这些捕获的数据提供上传至远程服务器的能力，方便团队协作分析渲染问题。
+
+插件不包含任何游戏内容，仅作为渲染调试基础设施的一部分存在。目标排除列表明确禁止在 **Server** 目标和 **Shipping** 配置中加载，表明这是一个纯粹的开发调试工具。
 
 ## 使用场景
 
-- **性能与渲染自动化测试**：在持续集成（CI）流程中，自动化执行场景测试并调用 `DumpGPU`，随后利用本服务将捕获的 GPU 帧数据上传至分析服务器，用于后续的自动回归或性能分析。
-- **远程 GPU 问题诊断**：开发者在本地执行 `DumpGPU` 复现问题后，可以自动将数据上传，供远程的图形工程师或支持团队下载分析，无需手动传输大文件。
-- **团队共享与资产审查**：将具有特定视觉问题的帧捕获数据自动共享到团队存储库，用于 Bug 跟踪或美术资产效果审查。
+- 你在调试复杂的渲染问题（如 Pass 排序错误、资源泄漏），需要将 `DumpGPU` 捕获的数据上传至共享服务器供团队分析
+- 你在进行渲染功能的 Code Review，需要远程分享 GPU 状态快照
+- 你需要在多台设备间同步 GPU 转储数据进行对比分析
 
 ## 蓝图用法
 
-基于当前提供的源码分析，`IDumpGPUServices` 接口**未暴露任何蓝图可调用的函数（BlueprintCallable）或属性（BlueprintReadWrite）**。它主要提供的是 C++ 模块接口，用于程序化地访问上传服务。上传的触发很可能与 `DumpGPU` 控制台命令本身绑定，而非通过蓝图节点直接调用。
+该插件不暴露任何 `BlueprintCallable` 函数或 `BlueprintReadWrite` 属性。所有功能通过引擎控制台命令 `DumpGPU` 触发，上传服务在后台自动运行。
 
 ## C++ 用法
 
@@ -38,86 +40,58 @@
 
 ### 基本用法
 
-该模块的核心使用模式是获取其单例接口，并检查其可用性。这通常用于在尝试调用上传服务前进行安全检查。
-
-（来源：`Source/DumpGPUServices/Public/IDumpGPUServices.h`）
+该插件仅提供模块接口，用于检查模块是否可用。实际的 `DumpGPU` 和上传功能通过引擎控制台命令调用，无需直接 C++ 集成。
 
 ```cpp
-// 检查 DumpGPU 上传服务模块是否已加载并可用
+// 检查 DumpGPUServices 模块是否已加载
 if (IDumpGPUServices::IsAvailable())
 {
-    // 获取模块实例
-    IDumpGPUServices& DumpGPUServicesModule = IDumpGPUServices::Get();
-    
-    // 此时，该模块实例可用于触发或管理上传操作
-    // 具体的上传功能可能需要调用此模块提供的其他未在当前接口中暴露的方法
-    // （注：由于提供的接口仅为基本模块访问，实际上传函数可能位于模块内部实现中）
-}
-else
-{
-    UE_LOG(LogTemp, Warning, TEXT("DumpGPUServices module is not loaded. Upload functionality is unavailable."));
+    IDumpGPUServices& DumpGPUServices = IDumpGPUServices::Get();
+    // 模块已就绪，DumpGPU -upload 命令可正常使用
 }
 ```
 
-### 进阶用法
+来源：`Source/DumpGPUServices/Public/IDumpGPUServices.h`
 
-结合 `DumpGPU` 命令使用。你可能会在游戏模块或自定义编辑器工具中，通过控制台命令或程序化方式触发转储，并依赖本服务处理后续上传。
+### 控制台命令用法
 
-```cpp
-// 假设在某个上下文中需要触发GPU转储并上传
-if (IDumpGPUServices::IsAvailable())
-{
-    // 1. 首先，可能通过控制台系统执行DumpGPU命令来捕获数据
-    // （请注意，DumpGPU命令本身可能由渲染模块处理，此插件仅负责上传）
-    GEngine->Exec(GetWorld(), TEXT("DumpGPU"));
-    
-    // 2. 上传逻辑很可能在 DumpGPU 命令的实现内部被自动触发，或者通过
-    //    IDumpGPUServices 模块暴露的事件/回调来连接。
-    //    由于接口未公开具体函数，实际集成需要查阅 DumpGPUServices 模块的完整实现。
-    
-    UE_LOG(LogTemp, Log, TEXT("GPU dump initiated. Upload service is active and will handle the data."));
-}
+该插件的功能通过控制台命令触发，无需编写 C++ 代码：
+
+```
+// 执行 GPU 转储并自动上传
+DumpGPU -upload
 ```
 
 ## Demo 示例
 
-以下是一个最小化的示例，展示如何在你的游戏模块中安全地与 `DumpGPUServices` 模块交互。
-
-**MyGameServices.h**
 ```cpp
+// MyDebugHelper.h
 #pragma once
 
-class FMyGameServices
+#include "CoreMinimal.h"
+
+class FMyDebugHelper
 {
 public:
-    /** 检查GPU调试数据上传服务是否可用，并输出状态信息 */
-    static void CheckDumpGPUUploadService();
+    static void CaptureAndUploadGPUState()
+    {
+        // 通过控制台命令触发 DumpGPU 并上传
+        if (GEngine)
+        {
+            GEngine->Exec(nullptr, TEXT("DumpGPU -upload"));
+        }
+    }
 };
 ```
 
-**MyGameServices.cpp**
 ```cpp
-#include "MyGameServices.h"
-#include "IDumpGPUServices.h"
-
-void FMyGameServices::CheckDumpGPUUploadService()
-{
-    if (IDumpGPUServices::IsAvailable())
-    {
-        IDumpGPUServices& Service = IDumpGPUServices::Get();
-        UE_LOG(LogTemp, Display, TEXT("DumpGPU upload service is loaded and ready."));
-        // 此处可以添加调用具体上传服务方法的代码，例如设置上传目标等。
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("DumpGPU upload service is not available. Ensure the plugin is enabled."));
-    }
-}
+// MyDebugHelper.cpp
+#include "MyDebugHelper.h"
 ```
 
 ## 模块依赖
 
-无特殊依赖（仅标准 Core/Engine 模块等）。该插件主要提供服务接口，其具体实现可能依赖引擎的渲染模块和网络/存储模块，但作为使用者，通常无需在 `.Build.cs` 中额外添加依赖，除非你需要深度集成或扩展其功能。
+无特殊依赖（仅标准 Core/Engine 等）。
 
 ## 维护状态
 
@@ -125,21 +99,21 @@ void FMyGameServices::CheckDumpGPUUploadService()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏迁移至新的UE_LOGF格式，跟随引擎日志系统更新。 |
-| 2024-10-22 | `98a8e0e0` | Removed lots of UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_2 scopes. | 移除大量过时的包含顺序兼容性代码，清理技术债务。 |
-| 2024-01-19 | `f0294685` | Fixed up a lot of bool-taking container resize functions to take EAllowShrinking instead. | 修复了容器大小调整函数的接口，使用更明确的枚举类型。 |
-| 2023-02-21 | `8676f608` | Moving DumpGPU to Public so that DumpGPUServices can访问它 correctly. | 将DumpGPU相关接口公开，确保本服务插件能正确访问。 |
-| 2023-01-13 | `3c9aacb1` | [Engine/Plugins] | （提交信息不完整，疑为批量维护更新） |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移至新 API |
+| 2024-10-22 | `98a8e0e0` | Removed lots of UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_2 scopes | 清理 5.2 版本废弃的头文件包含宏 |
+| 2024-01-19 | `f0294685` | Fixed up a lot of bool-taking container resize functions to take EAllowShrinking instead. | 适配容器 resize API 签名变更 |
+| 2023-02-21 | `8676f608` | Moving DumpGPU to Public so that DumpGPUServices can access it correctly. | 将 DumpGPU 符号移至 Public 以修复访问权限 |
+| 2023-01-13 | `3c9aacb1` | [Engine/Plugins] | 引擎插件批量更新 |
 
 ### 维护评价
 
-- **年龄**：插件创建于 2022 年 3 月，年龄较轻（约 3 年）。
-- **更新频率**：近期（2024-2026年）仍有更新，但均为引擎全局的API清理和适配性提交，**非功能性更新**。最后一次实质性的功能修改可能追溯到创建初期。
-- **维护状态**：**维护不活跃**。该插件的功能相对固定和底层，自创建后可能已达到稳定状态，无需频繁更新。但近2年的提交均未涉及新功能或重大修复。
-- **已知限制**：源码分析显示，其公开接口非常精简，可能意味着其核心上传逻辑较为封闭，扩展性有限。作为实验性插件，其API和功能在引擎未来版本中可能发生变化。
-- **推荐使用**：**有条件推荐**。如果你的项目或工作流**确需**自动化 `DumpGPU` 结果的上传，这是一个官方的解决方案。但需注意它是实验性功能，且接口可能变化。对于简单的手动分析，直接使用 `DumpGPU` 命令并手动处理文件可能更直接。
+该插件创建于 2022 年 3 月，代码量极小（4 个文件），功能边界清晰。近年来的提交均为引擎级 API 适配和编译修复，无功能性更新。插件仍标记为 **实验性**（`IsExperimentalVersion=true`），且未见稳定性提升计划。
+
+作为 `DumpGPU` 命令的上传后端，其存在依赖于引擎渲染调试系统的整体架构。当前状态属于**维护型**——不会主动发展，但会随引擎 API 变更被动更新。
+
+**推荐使用**：如果你的团队需要共享 GPU 转储数据，该插件默认启用，无需额外配置。但需注意其**实验性**标记，不建议在生产环境的最终构建中依赖它。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/DumpGPUServices)
-- 官方文档：无（`.uplugin` 中 `DocsURL` 为空）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Tests)（无专属测试，DumpGPU 功能测试位于引擎测试目录）

@@ -4,183 +4,257 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 可变对象系统 |
+| 中文名 | 可定制对象系统 |
 | 分类 | CustomizableObjects |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（编辑器工具、运行时库、验证工具） |
+| 包含内容 | ❌ 无 |
 | 模块 | `MutableRuntime` (Runtime), `CustomizableObject` (Runtime), `CustomizableObjectEditor` (Runtime), `MutableTools` (Runtime), `MutableValidation` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-09-05 |
-| 年龄标签 | 🆕（约 1 年） |
+| 年龄标签 | 🆕（约 2 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable) | |
 
 ## 用途
 
-Mutable 是 UE5 中用于创建**运行时可自定义对象（Customizable Objects）**的完整工具链和运行时系统。它解决的核心问题是：如何在玩家游戏过程中，根据不同的参数（布尔开关、整数选择、浮点权重、投影器、纹理等）动态组合、修改和生成网格体（Mesh）与材质（Material）资源，而无需预先烘焙所有可能的组合。
+Mutable 是 UE5 的**运行时可定制对象（Customizable Object）系统**，用于在游戏运行时根据玩家参数动态组合、修改和生成网格体、纹理和材质。
 
-该插件包含一个自定义的**字节码虚拟机**（见 `CodeRunner` 和 `Operations.h`），能够执行数百种内置操作（图像混合、网格裁剪/变形、法线计算、纹理压缩、布局映射等），根据运行时参数实时构建最终的骨骼网格体和材质实例。其内部实现了完整的数据流图执行引擎、ROM 流式加载管理、内存预算控制以及多线程并行执行调度。
+它解决的核心问题是：在角色换装、捏脸、武器皮肤等需要大量视觉变体的场景中，如果为每种组合烘焙独立资产会导致爆炸式的内存和磁盘占用。Mutable 通过一个**基于虚拟机的程序化生成管线**，在运行时根据布尔、整数、浮点、投影器等参数动态组合网格体贴图布局（Layout）、纹理层混合（Layer Blend）、网格体 Morph/Reshape/ClipDeform 等操作，按需生成最终资源。
 
-**为什么存在：** 在角色自定义、装备系统、车辆涂装等场景中，排列组合会导致资产数量爆炸。Mutable 通过节点图描述资产之间的关系，运行时只生成当前参数组合所需的资源，大幅减少内存占用和磁盘空间。
+其架构分为三层：
+- **MutableTools**：编辑器编译器，将可视化节点图编译为字节码程序
+- **MutableRuntime**：运行时虚拟机（`CodeRunner`），解释执行字节码生成图像、网格体、材质等资源
+- **CustomizableObject**：UE 集成层，提供 `UCustomizableObject` 资产、`UCustomizableObjectInstance` 实例、`UCustomizableObjectSubsystem` 子系统等蓝图 API
 
 ## 使用场景
 
-- 你在做 RPG/MMO 角色自定义系统（换发型、换脸、换肤色、叠加纹身）→ 用 Mutable 编辑器工具定义 CustomizableObject，在运行时通过参数切换外观
-- 你需要车辆涂装系统（底漆颜色 + 贴花位置 + 磨损程度动态变化）→ 用 Mutable 的图像层混合、投影器和参数化材质
-- 你做装备系统（护甲部件可拆卸、金属颜色可选、附魔发光可开关）→ 用 Mutable 的网格体加减、条件分支和材质混合
-- 你需要运行时动态变形角色体型（高矮胖瘦）→ 用 Mutable 的网格体变形（Reshape/ClipDeform/Morph）操作
-- 你需要游戏内角色预览但不想实例化所有组合 → 用 Mutable 的虚拟机按需生成资源
+- 你在做一个角色换装/捏脸系统，需要运行时混合网格体、纹理和材质 → 用 Mutable
+- 你需要动态生成不同外观的武器/装备，且变体数量巨大 → 用 Mutable
+- 你需要运行时纹理压缩（BC/ASTC）和 Mipmap 生成 → MutableRuntime 内置 MIRO 压缩库
+- 你需要将网格体变形（Morph）、Reshape、ClipDeform、Smoothing 等操作组合在一起 → Mutable 的操作图
+
+## 模块结构总览
+
+| 模块 | 类型 | 说明 |
+|---|---|---|
+| `MutableRuntime` | Runtime | 核心运行时：虚拟机、图像/网格体资源、序列化、纹理压缩 |
+| `CustomizableObject` | Runtime | UE 集成层：资产、实例、子系统、蓝图 API |
+| `CustomizableObjectEditor` | Runtime | 编辑器 UI：CustomizableObject 编辑器、节点图 |
+| `MutableTools` | Runtime | 编译器：将节点图编译为字节码程序 |
+| `MutableValidation` | Runtime | 校验器：编译期和运行时数据校验 |
 
 ## 蓝图用法
 
-Mutable 的运行时 API 主要通过 `UCustomizableObject` 和 `UCustomizableObjectInstance` 类暴露。由于插件当前为 Beta 状态，且核心 API 以 C++ 为主，蓝图接口可能随版本变化。以下基于源码中 `CustomizableObject` 模块的公开接口推断。
+Mutable 的蓝图 API 主要通过 `UCustomizableObjectSubsystem` 和 `UCustomizableObjectInstance` 暴露。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `CreateInstance` | 从 CustomizableObject 创建一个可自定义实例 | `UCustomizableObject` |
-| `SetIntParameter` | 设置整数参数值 | `UCustomizableObjectInstance` |
-| `SetFloatParameter` | 设置浮点参数值（0.0~1.0） | `UCustomizableObjectInstance` |
-| `SetBoolParameter` | 设置布尔开关参数 | `UCustomizableObjectInstance` |
-| `SetColorParameter` | 设置颜色参数（RGBA 0.0~1.0） | `UCustomizableObjectInstance` |
-| `SetProjectorParameter` | 设置 3D 投影器参数（位置、方向、缩放） | `UCustomizableObjectInstance` |
-| `SetTextureParameter` | 设置外部纹理参数 | `UCustomizableObjectInstance` |
-| `UpdateSkeletalMeshAsync` | 异步更新实例的骨骼网格体 | `UCustomizableObjectInstance` |
-| `GetCurrentMesh` | 获取当前生成的骨骼网格体 | `UCustomizableObjectInstance` |
-| `GetProjectorValue` | 获取当前投影器参数值 | `UCustomizableObjectInstance` |
-| `GetFloatParameterRange` | 查询浮点参数的有效范围 | `UCustomizableObject` |
-| `GetIntParameterNumValues` | 查询整数参数的可选值数量 | `UCustomizableObject` |
+| `CreateCustomizableObjectInstance` | 创建一个可定制对象实例 | `UCustomizableObjectSubsystem` |
+| `SetIntParameterSelectedOption` | 设置整数参数选中值 | `UCustomizableObjectInstance` |
+| `SetBoolParameter` | 设置布尔参数 | `UCustomizableObjectInstance` |
+| `SetFloatParameter` | 设置浮点参数 | `UCustomizableObjectInstance` |
+| `SetVectorParameter` | 设置颜色/向量参数 | `UCustomizableObjectInstance` |
+| `SetProjectorParameter` | 设置投影器参数 | `UCustomizableObjectInstance` |
+| `SetTextureParameter` | 设置纹理参数 | `UCustomizableObjectInstance` |
+| `UpdateSkeletalMeshAsync` | 异步更新骨骼网格体 | `UCustomizableObjectInstance` |
+| `GetSkeletalMesh` | 获取生成的骨骼网格体 | `UCustomizableObjectInstance` |
+| `GetProjectorParameterType` | 获取投影器参数类型 | `UCustomizableObjectInstance` |
 
 ### 使用示例（蓝图描述）
 
-**角色换色示例：**
-
-1. 创建 `UCustomizableObject` 引用（指向编辑器中制作的 .co 资产）
-2. 调用 `CreateInstance` 获得 `UCustomizableObjectInstance`
-3. 调用 `SetColorParameter`（参数名 `"SkinColor"`，值 `(1.0, 0.8, 0.6, 1.0)`）
-4. 调用 `SetIntParameter`（参数名 `"HairStyle"`，值 `2`）
-5. 调用 `SetBoolParameter`（参数名 `"HasHat"`，值 `true`）
-6. 调用 `UpdateSkeletalMeshAsync`，绑定 `OnUpdateCompleted` 回调
-7. 回调中调用 `GetCurrentMesh` 获取结果，设置到 `SkeletalMeshComponent`
-
-**投影器贴花示例：**
-
-1. 设置投影器参数：位置（角色胸前世界坐标）、方向（角色正面）、上方向、缩放（控制贴花大小）
-2. 投影器类型可选 `Planar`（平面）、`Cylindrical`（圆柱）、`Wrapping`（自适应表面）
-3. 设置后调用 `UpdateSkeletalMeshAsync` 触发重新生成
+1. **创建实例**：使用 `UCustomizableObjectSubsystem::CreateCustomizableObjectInstance` 传入一个 `UCustomizableObject` 资产引用
+2. **设置参数**：依次调用 `SetIntParameterSelectedOption`（选择发型）、`SetBoolParameter`（是否戴帽子）、`SetFloatParameter`（肤色滑块）
+3. **触发更新**：调用 `UpdateSkeletalMeshAsync` 异步生成结果
+4. **应用结果**：在回调中调用 `GetSkeletalMesh` 获取生成的 `USkeletalMeshComponent`，设给角色 Mesh
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "CustomizableObject.h"
 #include "CustomizableObjectInstance.h"
+#include "CustomizableObjectSubsystem.h"
+#include "MuR/External/Value.h"
 ```
 
 ### 基本用法
 
-从 `CustomizableObject` 模块的测试用例中提取的用法模式：
+以下示例展示如何在 C++ 中创建实例并设置参数。
 
 ```cpp
-// 获取 CustomizableObject 资产
-UCustomizableObject* CustomizableObject = LoadObject<UCustomizableObject>(
-    nullptr, TEXT("/Game/MyObjects/CharacterCO"));
-    
+// 来源: 基于 CustomizableObjectInstance API
+
+// 获取子系统
+UCustomizableObjectSubsystem* COSubsystem = UGameplayStatics::GetGameInstance(GetWorld())
+    ->GetSubsystem<UCustomizableObjectSubsystem>();
+
 // 创建实例
-UCustomizableObjectInstance* Instance = CustomizableObject->CreateInstance();
+UCustomizableObjectInstance* Instance = COSubsystem->CreateCustomizableObjectInstance(CustomizableObject);
 
 // 设置参数
-Instance->SetIntParameterValue(FName("HairStyle"), 3);
-Instance->SetFloatParameterValue(FName("BodyFat"), 0.5f);
-Instance->SetBoolParameterValue(FName("HasGlasses"), true);
-Instance->SetColorParameterValue(FName("HairColor"), 
-    FLinearColor(0.3f, 0.15f, 0.05f, 1.0f));
+Instance->SetIntParameterSelectedOption(TEXT("HairStyle"), TEXT("Long"));
+Instance->SetBoolParameter(TEXT("HasHat"), true);
+Instance->SetFloatParameter(TEXT("SkinTone"), 0.75f);
 
-// 异步更新（推荐，避免卡帧）
+// 异步更新
 Instance->UpdateSkeletalMeshAsync();
-
-// 更新完成后获取结果
-USkeletalMesh* ResultMesh = Instance->GetSkeletalMesh();
 ```
 
-### 进阶用法
+### 进阶用法：自定义外部资源提供器
 
-**使用投影器参数进行贴花：**
+Mutable 运行时支持通过 `FExternalResourceProvider` 接口异步加载外部纹理和网格体：
 
 ```cpp
-// 设置投影器参数
-FCustomizableObjectProjector Projector;
-Projector.Position = FVector(100.0f, 0.0f, 50.0f);
-Projector.Direction = FVector(0.0f, 1.0f, 0.0f);
-Projector.Up = FVector(0.0f, 0.0f, 1.0f);
-Projector.Scale = FVector(0.1f, 0.1f, 0.1f);
-Projector.Angle = 0.0f;
-Projector.ProjectionType = ECustomizableObjectProjectorType::Planar;
+// 来源: Internal/MuR/System.h
 
-Instance->SetProjectorParameterValue(FName("DecalProjector"), Projector);
+class FExternalResourceProvider
+{
+public:
+    virtual ~FExternalResourceProvider() = default;
+
+    // 异步获取外部纹理
+    virtual TTuple<UE::Tasks::FTask, TFunction<void()>> GetImageAsync(
+        UTexture* Texture, uint8 MipmapsToSkip, bool bLoadMipTail,
+        TFunction<void(UE::Mutable::Private::TManagedPtr<FImage>)>& ResultCallback) = 0;
+
+    // 异步获取外部网格体
+    virtual TTuple<UE::Tasks::FTask, TFunction<void()>> GetMeshAsync(
+        USkeletalMesh* SkeletalMesh, int32 InLODIndex, int32 InSectionIndex,
+        uint8 InConversionFlags,
+        TFunction<void(UE::Mutable::Private::TManagedPtr<FMesh>)>& ResultCallback) = 0;
+};
 ```
 
-**设置纹理参数（外部纹理）：**
+## Demo 示例
+
+以下是一个最小的 C++ 示例，展示如何在 GameMode 中创建并更新一个 CustomizableObject 实例。
+
+### MyGameMode.h
 
 ```cpp
-UTexture2D* PlayerSkinTexture = LoadObject<UTexture2D>(
-    nullptr, TEXT("/Game/Textures/CustomSkin"));
-Instance->SetTextureParameterValue(FName("BodySkin"), PlayerSkinTexture);
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/GameModeBase.h"
+#include "MyGameMode.generated.h"
+
+class UCustomizableObject;
+class UCustomizableObjectInstance;
+
+UCLASS()
+class AMyGameMode : public AGameModeBase
+{
+    GENERATED_BODY()
+
+public:
+    UPROPERTY(EditAnywhere, Category = "Mutable")
+    TSoftObjectPtr<UCustomizableObject> CustomizableObjectAsset;
+
+    virtual void BeginPlay() override;
+
+private:
+    UPROPERTY()
+    UCustomizableObjectInstance* ObjectInstance = nullptr;
+
+    void OnUpdateCompleted();
+};
 ```
 
-**使用范围索引处理多实例参数（如多装备槽位）：**
+### MyGameMode.cpp
 
 ```cpp
-// FRangeIndex 用于处理范围/维度参数
-FRangeIndex RangeIndex = Instance->CreateRangeIndex(FName("EquipSlot"));
-RangeIndex.SetPosition(0, 0); // 第一个装备槽
-Instance->SetIntParameterValue(FName("ArmorType"), 1, RangeIndex);
-RangeIndex.SetPosition(0, 1); // 第二个装备槽
-Instance->SetIntParameterValue(FName("ArmorType"), 3, RangeIndex);
+#include "MyGameMode.h"
+#include "CustomizableObjectSubsystem.h"
+#include "CustomizableObjectInstance.h"
+#include "CustomizableObject.h"
+#include "Kismet/GameplayStatics.h"
+
+void AMyGameMode::BeginPlay()
+{
+    Super::BeginPlay();
+
+    UGameInstance* GI = UGameplayStatics::GetGameInstance(this);
+    UCustomizableObjectSubsystem* Subsystem = GI->GetSubsystem<UCustomizableObjectSubsystem>();
+
+    UCustomizableObject* CO = CustomizableObjectAsset.LoadSynchronous();
+    if (!CO) return;
+
+    ObjectInstance = Subsystem->CreateCustomizableObjectInstance(CO);
+    if (!ObjectInstance) return;
+
+    // 设置一些默认参数
+    ObjectInstance->SetIntParameterSelectedOption(FName("BodyType"), 0);
+    ObjectInstance->SetBoolParameter(FName("HasHelmet"), false);
+
+    // 异步更新
+    ObjectInstance->UpdateSkeletalMeshAsync(/*bNeverSkipUpdate=*/false, FOnCustomizableObjectUpdated());
+}
 ```
-
-**查询参数元数据：**
-
-```cpp
-// 获取整数参数的可选值数量
-int32 NumValues = CustomizableObject->GetIntParameterNumValues(
-    CustomizableObject->FindParameter(FName("HairStyle")));
-
-// 获取浮点参数范围
-float MinValue, MaxValue;
-CustomizableObject->GetFloatParameterRange(
-    CustomizableObject->FindParameter(FName("BodyFat")), MinValue, MaxValue);
-```
-
-## 内部架构（高级）
-
-Mutable 的核心是一个自定义的字节码虚拟机，源码中包含以下关键子系统：
-
-| 子系统 | 关键文件 | 说明 |
-|---|---|---|
-| 字节码虚拟机 | `CodeRunner.h`, `Operations.h` | 执行 Mutable 字节码程序，支持 100+ 种操作类型 |
-| 程序缓存 | `ProgramCache.h` | 缓存中间计算结果，支持锁定、弱引用、内存回收 |
-| 图像处理 | `Image.h`, `OpImageBlend.h`, `OpImageDisplace.h` 等 | 图像混合、位移、饱和度调整、变换、Mipmap 生成 |
-| 网格处理 | `Mesh.h`, `OpMeshBind.h`, `OpMeshClipDeform.h` 等 | 网格绑定、裁剪变形、法线重计算、平滑、姿势应用 |
-| 纹理压缩 | `Miro.h` | 运行时 BC1-BC5 和 ASTC 压缩 |
-| RLE 压缩 | `ImageRLE.h` | 自定义 RLE 无损压缩格式 |
-| 序列化 | `Serialisation.h` | 自定义序列化系统（`FInputArchive`/`FOutputArchive`） |
-| 内存管理 | `ManagedPointer.h`, `MemoryTrackingAllocationPolicy.h` | 自定义智能指针和内存追踪分配器 |
-| ROM 流加载 | `RomManager.h` | 大资源（图像/网格）的按需流式加载 |
-| 参数系统 | `Parameters.h` | 支持 Bool/Int/Float/Color/Projector/Texture/String/Matrix 等参数类型 |
 
 ## 模块依赖
 
 | 模块 | 用途 |
 |---|---|
-| `MutableRuntime` | 核心运行时（虚拟机、图像/网格操作、缓存、序列化） |
-| `MutableTools` | 编译工具链（将 CustomizableObject 节点图编译为字节码程序） |
-| `CustomizableObject` | UE5 资产集成层（UCustomizableObject/UCustomizableObjectInstance） |
-| `CustomizableObjectEditor` | 编辑器工具（节点图编辑器、预览、编译 UI） |
-| `MutableValidation` | 验证工具（检查 CustomizableObject 资产正确性） |
-| `DerivedDataCache` | 使用 UE DDC 缓存编译产物 |
-| `MessageLog` | 编辑器消息日志输出 |
+| `MutableTools` | CustomizableObject 依赖 MutableTools 进行编译（编辑器） |
+| `DerivedDataCache` | 用于缓存编译后的 Mutable 数据 |
+| `MessageLog` | 编辑器日志/消息面板集成 |
+
+无其他特殊依赖（仅标准 Core/Engine/Slate 等）。
+
+## 关键内部架构
+
+### MutableRuntime 核心类型
+
+| 类 | 说明 |
+|---|---|
+| `FSystem` | Mutable 运行时系统入口，管理实例如 `FLiveInstance` |
+| `FModel` | 编译后的可定制对象模型，包含字节码程序和常量资源 |
+| `FInstance` | 一个可定制对象的运行时实例数据 |
+| `FLiveInstance` | 正在处理中的实例（BeginUpdate/EndUpdate 之间） |
+| `FProgram` | 字节码程序，包含操作码、状态、常量资源等 |
+| `FProgramCache` | 运行时程序缓存，加速重复更新 |
+| `CodeRunner` | 虚拟机执行器，解释执行字节码操作 |
+
+### 运行时资源类型
+
+| 类 | 说明 |
+|---|---|
+| `FImage` | 2D 图像资源，支持多级 Mipmap，兼容所有 EImageFormat |
+| `FMesh` | 网格体资源，包含顶点缓冲、索引缓冲、骨骼映射、Morph 数据 |
+| `FLayout` | 纹理布局，定义 UV 图集中的块（Block）排列 |
+| `FPhysicsBody` | 物理体数据（球体、盒体、胶囊体、凸包） |
+| `FSkeleton` | 骨骼数据 |
+
+### 运行时操作（Operations）
+
+Mutable 运行时是一个基于栈的虚拟机，`EOpType` 枚举定义了所有操作类型：
+
+- **布尔/整数/标量/颜色/字符串**：常量、参数、条件、Switch
+- **图像操作**：Layer、ColorMap、PixelFormat、Mipmap、Resize、Compose、Interpolate、Saturate、Swizzle、Displace、Transform、NormalComposite 等
+- **网格体操作**：Morph、ApplyLayout、Difference、ClipDeform、ClipMorphPlane、Reshape、Smoothing、ComputeNormals、ApplyPose、Bind 等
+- **材质操作**：MaterialBreak、Material 实例化
+
+### MIRO 纹理压缩库
+
+MutableRuntime 内置 MIRO（Mutable Internal Runtime Op），支持运行时纹理压缩：
+- **BC 格式**：BC1、BC2、BC3、BC4、BC5
+- **ASTC 格式**：4x4、6x6、8x8、10x10、12x12 的 RGB/RGBA/RG 变体
+- 支持子图像压缩（SubImageCompression），可对图像局部区域进行压缩
+
+### RLE 压缩
+
+支持 RLE（Run-Length Encoding）压缩格式：
+- `L_UByteRLE`：单通道 RLE
+- `RGB_UByteRLE` / `RGBA_UByteRLE`：多通道 RLE
+- `L_UBitRLE`：二值 RLE
+
+### 自定义智能指针
+
+MutableRuntime 使用自定义的 `TManagedPtr` / `TManagedRef` / `TManagedWeakPtr` 智能指针系统（`ManagedPointer.h`），其引用计数策略与引擎 `TSharedPtr` 不同：
+- **弱引用也参与计数**：只有当所有强引用和弱引用都释放时才自动销毁对象
+- **手动删除支持**：`TryDeleteObject()` 可在仅有唯一强引用时立即删除
+- 用于管理 Mutable 内部资源的生命周期，避免循环引用问题
 
 ## 维护状态
 
@@ -188,22 +262,24 @@ Mutable 的核心是一个自定义的字节码虚拟机，源码中包含以下
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `70229bdc` | [Mutable] Fix duplicated Skeletal Mesh geometry if there is multiple SKM with the same name. | 修复同名多骨骼网格体时几何体重复的 bug |
-| 2026-05-26 | `2b0ca8bd` | [mutable] Fixed "Clip mesh with UV Mask" op not loading the appropriate mask mip. | 修复 UV 遮罩裁剪操作未加载正确 Mip 级别的问题 |
-| 2026-05-26 | `06ea27d3` | [Mutable] Fix texture parameters using the wrong method to compute the LODBias. An incorrect LODBias | 修复纹理参数计算 LODBias 方法错误的问题 |
-| 2026-05-26 | `e9c39661` | [Mutable] Allow more clothing asset types by using the ClothingAssetBase interface. | 通过使用 ClothingAssetBase 接口支持更多布料资产类型 |
-| 2026-05-25 | `c8ce9ff7` | [Mutable] Fix possible data race when comparing PassthroughObjects. | 修复比较 PassthroughObjects 时可能出现的数据竞争 |
+| 2026-05-26 | `70229bdc` | [Mutable] Fix duplicated Skeletal Mesh geometry if there is multiple SKM with the same name. | 修复同名多骨骼网格体导致几何体重复的问题 |
+| 2026-05-26 | `2b0ca8bd` | [mutable] Fixed "Clip mesh with UV Mask" op not loading the appropriate mask mip. | 修复 UV 蒙版裁剪操作未加载正确 Mip 级别 |
+| 2026-05-26 | `06ea27d3` | [Mutable] Fix texture parameters using the wrong method to compute the LODBias. | 修复纹理参数计算 LODBias 方法错误 |
+| 2026-05-26 | `e9c39661` | [Mutable] Allow more clothing asset types by using the ClothingAssetBase interface. | 使用 ClothingAssetBase 接口支持更多服装资产类型 |
+| 2026-05-25 | `c8ce9ff7` | [Mutable] Fix possible data race when comparing PassthroughObjects. | 修复比较 PassthroughObjects 时可能的数据竞争 |
 
 ### 维护评价
 
-- **创建时间**：2024 年 9 月从 Experimental 移至 Beta，实际上该技术在 Epic 内部已使用多年（首次 commit 的 CL 号为 36035608，表明其开发历史远早于开源）
-- **近期活跃度**：非常活跃，最近一周内有多次实质性功能修复和改进
-- **维护状态**：**活跃维护中**，Epic Games 持续投入开发，bug 修复频繁
-- **已知限制**：标记为 Beta，API 可能在未来版本中变更；部分模块标记为 Runtime 但实际包含编辑器相关功能（可能影响打包）
-- **推荐程度**：⭐⭐⭐⭐ 强烈推荐用于需要运行时角色/装备自定义的项目。源码规模巨大（1206 文件），建议从 `CustomizableObject` 模块的上层 API 入手，而非直接使用 `MutableRuntime` 内部接口
+Mutable 是 **Beta 状态的活跃维护项目**。从 2024 年 9 月从 Experimental 提升到 Beta 以来，持续有功能更新和 bug 修复。最近的提交集中在修复运行时 bug（数据竞争、LOD 计算、几何重复等）和扩展功能（更多服装类型支持）。
+
+- **创建时间**：2024 年 9 月（从 Experimental 迁移）
+- **当前版本**：1.8.0
+- **Beta 标记**：是（`IsBetaVersion=true`）
+- **更新频率**：高频（最近几天连续有多个修复提交）
+- **代码规模**：1206 个源文件，属于超大型插件
+- **推荐**：适合需要运行时角色/装备自定义的项目。由于仍处于 Beta 状态，API 可能有变动，建议锁定版本使用。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable)
-- [官方文档](https://docs.unrealengine.com/en-US/InteractiveExperiences/CustomizableObjects/)（Unreal Engine Customizable Objects 文档）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable/Source/MutableRuntime/Tests)（MutableRuntime 内部测试）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable/Tests)

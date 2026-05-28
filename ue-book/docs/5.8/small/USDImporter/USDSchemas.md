@@ -4,189 +4,175 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | USD 导入器 |
+| 中文名 | USD导入器 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、材质、测试资源） |
+| 包含内容 | ✅ 有（USD资产、配置） |
 | 模块 | `GeometryCacheUSD` (Runtime), `USDClassesEditor` (Runtime), `USDExporter` (Runtime), `USDSchemas` (Runtime), `USDStage` (Runtime), `USDStageEditor` (Runtime), `USDStageEditorViewModels` (Runtime), `USDStageImporter` (Runtime), `USDTests` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-11-19 |
-| 年龄标签 | 👴 老古董（约 7 年） |
+| 年龄标签 | 👴 老古董（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter) | |
 
 ## 用途
 
-USD Importer 插件为 Unreal Engine 提供了对 Universal Scene Description (USD) 文件格式的完整支持。它的核心作用是**实现 USD 与 UE 之间的双向资产与场景图交换**。这不仅包括将 USD 文件中的几何体、材质、光照、相机和动画导入为 UE 资产，还包括将 UE 场景导出为 USD 格式，以及通过一个持久化的 `USDStage` Actor 来管理、编辑和更新 USD 场景。它解决的是专业数字内容创作 (DCC) 工具（如 Maya, Houdini）与游戏引擎之间通过 USD 进行复杂资产和场景高效、无损交换的工业流程问题。
+USD (Universal Scene Description) Importer 是 Unreal Engine 与皮克斯 USD 格式生态系统进行数据交换的核心桥梁。它远不止一个简单的文件导入器，而是一个完整的双向（导入/导出）USD 场景处理套件。其核心解决的问题是：如何将 USD 强大的场景描述、动画、材质、骨骼等复杂数据，无损或低损地转换为 Unreal Engine 内部的资产和场景结构（如 StaticMesh、 SkeletalMesh、 Level Sequence、 Material 等）。这使得 UE 能够无缝融入以 USD 为标准的影视、动画和虚拟制片流水线，允许艺术家和开发者直接在 UE 中使用在 Maya、Houdini 等 DCC 工具中创建的资产，无需繁琐的格式转换。
 
 ## 使用场景
 
-- 你正在使用 Houdini 或 Maya 制作复杂的动画、特效或环境资产，并希望通过 USD 格式将其导入 UE 进行实时预览和最终集成。
-- 你的团队采用 USD 作为资产管道的标准交换格式，需要将 UE 中修改后的资产（如调整后的材质或光照设置）导出回 DCC 工具进行迭代。
-- 你需要管理一个由多个 USD 文件组成的大型场景，并希望在 UE 中动态加载、更新或替换其中的部分组件。
-- 你需要在 UE 中实时预览 USD 场景在不同渲染上下文下的效果。
+-   你正在开发一个虚拟制片（Virtual Production）项目，需要从 Houdini 等 DCC 工具导入复杂的程序化生成的 USD 场景到 Unreal Engine 中进行实时渲染和编辑。
+-   你的美术团队使用 USD 格式管理资产库，你需要将这些资产（包括复杂的材质图、骨骼动画）批量或交互式地导入到 UE 项目中。
+-   你需要在 Unreal Engine 中编辑一个 USD Stage（.usda/.usdc 文件），并能够将修改后的场景属性（如变换、可见性）导出回 USD 文件，实现非破坏性编辑流程。
+-   你需要处理 USD 的变体（Variants）、有效载荷（Payloads）和引用（References）等高级特性，以实现大规模场景的模块化组装。
 
 ## 蓝图用法
 
-该插件的蓝图接口主要通过 `USDStage` Actor 暴露，而非一系列独立的蓝图函数库节点。
+USDImporter 的核心功能是通过编辑器菜单（如“File > Import”）和专用的 USD Stage Actor 面板进行操作的，而非典型的蓝图节点。它主要是一个数据导入/转换框架，其 C++ API 更为强大。
 
-### 核心节点（通过 USDStage Actor 属性）
+尽管如此，插件的某些高级功能（如资产缓存管理、自定义翻译器注册）可能通过 C++ 模块接口暴露给蓝图。以下是基于源码推断的核心 C++ 类和概念，它们构成了插件功能的基础，通常在 C++ 插件或编辑器扩展中被调用：
 
-| 属性 | 说明 | 所在类 |
-|---|---|---|
-| `StageInfo` | 获取当前 USDStage Actor 加载的 USD 文件路径和根 Prim 路径信息。 | `AUsdStageActor` |
-| `RootLayer` | 设置或获取要加载的根 USD 文件（.usda/.usdc/.usdz）的路径。 | `AUsdStageActor` |
-| `PurposesToLoad` | 设置加载 USD 数据时考虑的用途标签（如 `proxy`, `render`, `guide`）。 | `AUsdStageActor` |
-| `RenderContext` | 设置用于材质翻译的渲染上下文（如 `unreal`, `glslfx`）。 | `AUsdStageActor` |
-| `MetersPerUnit` | 设置场景的单位换算比例。 | `AUsdStageActor` |
-| `TimeCode` | 设置或获取当前评估的时间码，用于播放动画。 | `AUsdStageActor` |
-| `bIsAutomaticallyUpdated` | 控制 Actor 是否在编辑器或运行时自动响应底层 USD 文件的更改。 | `AUsdStageActor` |
+### 核心概念与类
 
-### 使用示例（蓝图描述）
-1. 在场景中放置一个 `USD Stage Actor`。
-2. 在其 `Details` 面板中，设置 `Root Layer` 属性为你想要导入的 USD 文件路径（例如 `/Game/MyScene.usdz`）。
-3. 根据需要调整 `Purposes To Load`、`Render Context` 等属性。
-4. 运行场景或在编辑器中，USD Stage Actor 会自动根据 USD 文件内容创建对应的 UE Actor 和组件。
+| 类/概念 | 说明 |
+|---|---|
+| `FUsdSchemaTranslator` | USD 原语（Prim）到 UE 对象翻译的抽象基类。所有针对特定 USD Schema（如 GeomMesh, Light, Camera）的翻译器都继承自它。 |
+| `FUsdGeomMeshTranslator` | 负责将 `UsdGeomMesh` 原语翻译为 `UStaticMesh` 资产和 `UStaticMeshComponent`。 |
+| `FUsdShadeMaterialTranslator` | 负责将 `UsdShadeMaterial` 原语翻译为 UE 的 `UMaterialInterface` 资产。 |
+| `FUsdSkelSkeletonTranslator` | 负责处理 `UsdSkelSkeleton` 及其相关的蒙皮网格，生成骨骼网格体资产和动画。 |
+| `UUsdAssetCache3` | 一个资产缓存系统，用于存储和管理导入过程中生成的 UE 资产，避免重复创建。 |
+| `FUsdPrimLinkCache` | 维护 USD 原语路径（SdfPath）与其生成的 UE 资产/组件之间的链接关系。 |
+| `FUsdSchemaTranslationContext` | 在整个导入/更新过程中传递上下文信息的对象，包含阶段（Stage）、缓存、标志等。 |
 
-## C++ 用法
+### 使用示例（C++ 交互）
 
-### 头文件引入
+以下示例展示了如何在 C++ 中初始化一个 USD 阶段并触发几何体的导入（概念性代码，具体实现需参考 `USDStageImporter` 或 `USDStage` 模块）：
+
 ```cpp
-#include "USDSchemas/USDSchemasModule.h" // 用于访问模块和工具函数
-#include "USDStage/USDStageActor.h" // 用于操作 USDStage Actor
-#include "USDCore/USDMemory.h" // 用于 USD SDK 类型 (UE::FUsdStage, UE::FSdfPath 等)
-```
+#include "USDStageImporter.h" // 假设的接口
+#include "USDSchemasModule.h" // 用于访问 Schema 翻译器注册表
 
-### 基本用法
-以下代码演示如何通过 C++ 在运行时创建一个 USD Stage Actor 并加载一个 USD 文件。
-```cpp
-// 假设已包含相关头文件，并有一个 UWorld* WorldContext
+// 获取 USD 导入器模块接口
+IUsdStageImporterModule* StageImporterModule = FModuleManager::GetModulePtr<IUsdStageImporterModule>(TEXT("USDStageImporter"));
 
-// 1. 生成一个 USDStage Actor
-AUsdStageActor* UsdStageActor = WorldContext->SpawnActor<AUsdStageActor>();
-
-// 2. 设置要加载的 USD 文件路径
-FFilePath UsdFile;
-UsdFile.FilePath = TEXT("/Game/MyAssets/Props/Chair.usda");
-UsdStageActor->SetRootLayer(UsdFile);
-
-// 3. 设置加载参数（可选）
-UsdStageActor->SetPurposesToLoad(EUsdPurpose::Render | EUsdPurpose::Proxy);
-UsdStageActor->SetRenderContext(EUsdRenderContext::Unreal);
-
-// 4. Actor 将在下一帧自动开始解析 USD 并创建 UE 表示
-```
-*来源：USDStage 模块的 Actor 创建逻辑。*
-
-### 进阶用法
-扩展自定义 Schema Translator 以支持自定义的 USD Schema。这允许你在导入过程中将特定的 USD Prim 类型转换为你自定义的 UE 组件或资产。
-```cpp
-// 假设你定义了一个自定义的 USD Schema `MyCustomSchema`。
-// 1. 创建 Translator 类
-class FMyCustomSchemaTranslator : public FUsdSchemaTranslator
+if (StageImporterModule)
 {
-public:
-    using FUsdSchemaTranslator::FUsdSchemaTranslator;
-    
-    virtual void CreateAssets() override
-    {
-        // 在这里将 USD Prim 数据转换为 UStaticMesh 或其他资产
-        // 可以使用 AssetCache 和 PrimLinkCache 来缓存和链接资产
-    }
-    
-    virtual USceneComponent* CreateComponents() override
-    {
-        // 在这里创建并返回自定义的 USceneComponent 子类实例
-        return NewObject<UMyCustomComponent>();
-    }
-    
-    virtual void UpdateComponents(USceneComponent* SceneComponent) override
-    {
-        // 在这里根据 USD Prim 的当前状态更新组件属性
-    }
-};
+    // 配置导入选项
+    FUsdStageImportOptions ImportOptions;
+    ImportOptions.bImportSkeletalMesh = true;
+    ImportOptions.bCreateLevelSequenceForAnimations = true;
 
-// 2. 在模块启动时注册 Translator
-IUsdSchemasModule& SchemasModule = FModuleManager::GetModuleChecked<IUsdSchemasModule>(TEXT("USDSchemas"));
-SchemasModule.GetTranslatorRegistry().RegisterTranslator<FMyCustomSchemaTranslator>(
-    TEXT("MyCustomSchema") // 你的 USD Schema 类型名称
-);
+    // 执行导入（具体路径和参数需根据实际API调整）
+    UObject* ImportedRootObject = StageImporterModule->ImportUSDStage(
+        TEXT("/Game/Path/To/Your/Scene.usd"),
+        TEXT("/Game/ImportedAssets/"),
+        ImportOptions
+    );
+
+    // ImportedRootObject 可能是包含导入子组件的 Actor 或其他根对象
+}
+
+// 示例：获取并使用 GeomMesh 翻译器（通常由框架内部调用）
+FUsdSchemaTranslatorRegistry& TranslatorRegistry = FUsdSchemaTranslatorRegistry::Get();
+// ... 在内部，翻译器会根据 USD 原语类型被自动查找和实例化
 ```
-*来源：基于 `FUsdGeomMeshTranslator` 等翻译器的结构设计。*
 
 ## Demo 示例
 
-一个最小化的自定义 USD Schema Translator 示例，用于将包含 `CustomData` 属性的 USD Prim 转换为带标签的 Static Mesh Actor。
+以下是一个自定义 USD Schema 翻译器的最小示例，用于将一个虚构的 `MyCustomPrim` 原语翻译为 Unreal 的 `UTextRenderComponent`。
 
-### CustomDataTranslator.h
+**MyCustomTranslator.h**
 ```cpp
 #pragma once
-#include "USDSchemas/USDSchemaTranslator.h"
+
+#include "CoreMinimal.h"
+#include "Objects/USDSchemaTranslator.h" // 引用来自 USDUtilities 的翻译器基类
 
 #if USE_USD_SDK
-class UStaticMesh;
+#include "USDIncludesStart.h"
+#include "pxr/usd/usd/prim.h"
+#include "USDIncludesEnd.h"
 
-class FCustomDataTranslator : public FUsdSchemaTranslator
+class FMyCustomTranslator : public FUsdSchemaTranslator
 {
 public:
     using FUsdSchemaTranslator::FUsdSchemaTranslator;
 
-    // 重写核心翻译函数
     virtual void CreateAssets() override;
     virtual USceneComponent* CreateComponents() override;
     virtual void UpdateComponents(USceneComponent* SceneComponent) override;
 
-    // 定义此 Translator 是否处理其子 Prim
     virtual bool CollapsesChildren(ECollapsingType CollapsingType) const override { return false; }
-    virtual bool CanBeCollapsed(ECollapsingType CollapsingType) const override { return false; }
+    virtual bool CanBeCollapsed(ECollapsingType CollapsingType) const override { return true; }
     virtual TSet<UE::FSdfPath> CollectAuxiliaryPrims() const override { return {}; }
 };
 
 #endif // USE_USD_SDK
 ```
 
-### CustomDataTranslator.cpp
+**MyCustomTranslator.cpp**
 ```cpp
-#include "CustomDataTranslator.h"
+#include "MyCustomTranslator.h"
 
 #if USE_USD_SDK
-#include "Components/StaticMeshComponent.h"
-#include "USDConversionUtils.h"
+#include "USDIncludesStart.h"
+#include "pxr/usd/usdGeom/xformable.h"
+#include "USDIncludesEnd.h"
 
-void FCustomDataTranslator::CreateAssets()
+#include "Components/TextRenderComponent.h"
+
+void FMyCustomTranslator::CreateAssets()
 {
-    // 示例：此处可从 Prim 中读取自定义数据并创建 UStaticMesh
-    // 通常会使用 AssetCache 来缓存资产
+    // 在此为自定义原语创建需要的资产（如字体资源），本例中无需创建资产。
 }
 
-USceneComponent* FCustomDataTranslator::CreateComponents()
+USceneComponent* FMyCustomTranslator::CreateComponents()
 {
-    // 创建一个基础的静态网格组件
-    return NewObject<UStaticMeshComponent>();
+    // 在 Context 指定的 Actor 上创建组件
+    AActor* Actor = Context->GetActor();
+    UTextRenderComponent* TextComp = NewObject<UTextRenderComponent>(Actor);
+    Actor->AddInstanceComponent(TextComp);
+    TextComp->RegisterComponent();
+    return TextComp;
 }
 
-void FCustomDataTranslator::UpdateComponents(USceneComponent* SceneComponent)
+void FMyCustomTranslator::UpdateComponents(USceneComponent* SceneComponent)
 {
-    if (UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(SceneComponent))
+    UTextRenderComponent* TextComp = Cast<UTextRenderComponent>(SceneComponent);
+    if (!TextComp) return;
+
+    // 从 USD 原语读取自定义属性
+    pxr::UsdPrim Prim = Context->Stage.GetPrimAtPath(PrimPath);
+    if (Prim)
     {
-        // 从 USD Prim 中读取自定义数据，例如一个标签
-        pxr::VtValue LabelValue;
-        if (GetPrim().GetCustomDataByKey(pxr::TfToken("ueLabel"), &LabelValue))
+        // 假设自定义原语有一个名为 `display:text` 的属性
+        pxr::UsdAttribute TextAttr = Prim.GetAttribute(pxr::TfToken("display:text"));
+        std::string TextValue;
+        if (TextAttr && TextAttr.Get(&TextValue))
         {
-            FString Label = UsdToUnreal::ConvertString(LabelValue.Get<std::string>());
-            MeshComp->SetTag(FName(*Label));
+            TextComp->SetText(FString(UTF8_TO_TCHAR(TextValue.c_str())));
         }
-        // 更新网格等其他属性...
     }
+
+    // 更新变换
+    FUsdSchemaTranslator::UpdateComponents(SceneComponent);
 }
+
 #endif // USE_USD_SDK
 ```
 
 ## 模块依赖
 
+USDImporter 插件结构复杂，包含多个子模块。要使用其核心导入/翻译功能，你的项目模块通常需要依赖 `USDCore` 或更具体的子模块。由于构建文件（Build.cs）未提供，以下为基于插件结构和常见实践的推断。
+
 | 模块 | 用途 |
 |---|---|
-| `USDCore` | 提供对底层 USD SDK (`pxr`) 的 C++ 封装和基础工具类（如 `FUsdStage`, `FUsdPrim`, `FSdfPath`）。 |
-| `USDUtilities` | 提供高级工具类，如 `FUsdSchemaTranslatorRegistry`, `FUsdPrimLinkCache`, `FUsdInfoCache`，是扩展和使用该插件的主要接口。 |
+| `USDCore` | 提供核心 USD SDK 封装、类型定义和基础工具（如 `UsdUtils`, `UsdUnreal`）。是几乎所有 USD 相关模块的基石。 |
+| `USDUtilities` | 提供更高级的实用工具类，如 `FUsdSchemaTranslator`、`FUsdPrimLinkCache`、`FUsdInfoCache` 等，用于资产管理和缓存。 |
+| `USDClasses` | 定义了与 USD 相关的 UE 类型和接口。 |
+| `UnrealUSDWrapper` | 底层 USD C++ API 的包装器模块。 |
+| `USDExporter` | 如果你需要将 UE 内容导出回 USD 格式，则依赖此模块。 |
+
+**注意**：`USDClassesEditor`, `USDStageEditor` 等模块是编辑器专用模块，仅在编辑器环境下加载。如果你仅在运行时使用 USD 相关功能（如游戏内加载 USD 资产），则应依赖 `Runtime` 类型的模块。
 
 ## 维护状态
 
@@ -194,16 +180,25 @@ void FCustomDataTranslator::UpdateComponents(USceneComponent* SceneComponent)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了严格浮点模式下双精度常量被截断为单精度的编译警告。 |
-| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | 为USD动画添加了支持蓝图无关的控制重定向功能。 |
-| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va | 修复了USD SDK 26.03更新导致动画查询在LOD变化时内部引用失效的问题。 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修正了32位格式说明符与64位参数不匹配的代码，提升了数值精度。 |
-| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | 优化了曝光动画轨道的烘焙，现在支持烘焙所有帧。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下双精度常量截断为浮点数导致的警告。 |
+| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | USD：支持分配独立于蓝图（BP）的控制绑定。 |
+| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va | USD：解决更新到 26.03 版本导致的在 LOD 变体切换时 AnimQuery 内部引用失效的问题。 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复格式说明符与参数位宽不匹配的问题（32/64位）。 |
+| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | USD：烘焙曝光动画轨道的所有帧。 |
 
 ### 维护评价
-该插件于 **2018 年** 创建，历史较长。从近期的 git 日志可以看出，它在 **2026 年 4 月至 5 月期间仍有频繁且实质性的更新**，修复了多项编译、兼容性和功能问题（如动画、LOD、数值精度）。这表明该插件虽然标记为实验性 (`IsBetaVersion: true`) 且默认禁用，但 **仍在积极维护和开发中**，是 Epic 为影视和虚拟制片行业提供的核心工具之一。鉴于其活跃的维护状态和强大的功能集，对于有专业 USD 管道需求的项目是**推荐使用**的，但需注意其实验性状态可能意味着 API 可能会发生变化。
+
+-   **状态**：**活跃维护中**。尽管插件标记为实验性（IsBetaVersion=true），但其最近的提交记录显示持续有新功能添加（如BP独立控制绑定）和重要Bug修复。
+-   **年龄**：创建于2018年，已有约8年历史，是一个成熟的模块。
+-   **更新频率**：更新非常频繁，最近一个月内就有5次提交，涵盖了功能增强、兼容性修复和Bug修复。
+-   **限制与警告**：
+    1.  **手动启用**：`EnabledByDefault=false`，**必须在项目插件设置中手动启用**才能使用。
+    2.  **测试版**：`IsBetaVersion=true`，表示API可能尚未完全稳定，未来版本可能发生变化，尤其是在5.6和5.8版本中已出现一些API迁移的废弃警告（如 `IUsdSchemasModule::GetTranslatorRegistry()` 被废弃）。
+    3.  **复杂性**：依赖多个外部USD SDK版本，集成和版本升级可能复杂。
+-   **推荐使用**：**强烈推荐**给需要进行USD集成的影视、虚拟制片和高级可视化项目。尽管标记为测试版，但它已是UE中处理USD的事实标准方案，且维护活跃。使用时请注意查阅最新文档和示例，以应对可能的API变化。
 
 ## 相关链接
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
-- 官方文档：无
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests)
+
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
+-   [官方文档](https://docs.unrealengine.com/5.8/en-US/working-with-usd-in-unreal-engine/) (UE 官方 USD 工作流程文档)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests) (插件内置的测试模块)

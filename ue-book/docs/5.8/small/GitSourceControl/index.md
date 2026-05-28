@@ -1,136 +1,258 @@
-# Git
+# Git Source Control
 
-> Git source control management（照抄，不翻译）
+> Git source control management
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | Git源代码控制 |
+| 中文名 | 源码管理 |
 | 分类 | Source Control |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
 | 模块 | `GitSourceControl` (Editor) |
-| 实验性 | ⚦ 是 |
+| 实验性 | ⚦️ 是 |
 | 创建时间 | 2015-01-19 |
-| 年龄标签 | 🏛️ 文物（约 11 年） |
+| 年龄标签 | 🏛️ 文物（约 10 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/GitSourceControl) | |
 
 ## 用途
 
-GitSourceControl 是 Unreal Engine 的官方 Git 版本控制插件。它将 Git 的核心功能（如提交、拉取、查看历史、解决冲突）直接集成到编辑器工作流中。该插件存在的核心目的是为了让使用 Git 进行版本控制的团队能够在编辑器内部无缝地管理资产和代码，而无需频繁切换到命令行或第三方 Git 客户端。它特别支持了 Git LFS（大文件存储），这对于管理游戏开发中的大型二进制资产（如纹理、模型、音频文件）至关重要。
+该插件将 Git 版本控制系统深度集成到 Unreal Engine 编辑器中，允许开发者在编辑器内直接执行大部分常见的版本控制操作，而无需频繁切换到命令行或外部 Git 客户端。它解决了在游戏开发工作流中管理资产和代码版本的需求，将版本控制状态可视化（如文件状态图标），并提供了提交、更新、差异对比、历史查看等编辑器内功能，极大地提升了团队协作的效率。
 
 ## 使用场景
 
--   你的团队使用 Git（包括 GitHub, GitLab 或自托管服务器）作为项目的主版本控制系统。
--   你希望在编辑器中直接提交资产、查看文件状态（修改、新增、删除等图标）、查看历史记录并进行可视化差异对比（如 Blueprint 差异）。
--   你的项目包含大量二进制资产，并且使用了 Git LFS 进行管理。
--   你需要初始化一个新的 Git 仓库，并自动配置适合 Unreal 项目的 `.gitignore` 文件。
+- 你在使用 Git 管理你的 Unreal Engine 项目，并希望直接在编辑器中查看文件的修改状态（如已修改、新增、冲突）并进行提交。
+- 你需要在编辑器中快速比较蓝图资产与仓库中的版本，或在不同提交版本间进行视觉差异对比。
+- 你希望执行 “Sync” 操作来拉取远程最新代码，但前提是没有未提交的本地修改。
 
 ## 蓝图用法
 
-此插件不提供任何 `BlueprintCallable` 或 `BlueprintReadWrite` 函数。它的所有功能都通过编辑器界面（如源代码控制菜单、状态图标、提交对话框）和 C++ 源代码控制 API 来提供。用户交互主要通过以下方式：
-1.  **菜单操作**：在内容浏览器或文件上右键，选择“源代码控制”菜单中的操作（如“提交...”、“更新状态”、“历史记录”等）。
-2.  **状态指示器**：文件图标上的状态标识（如绿色对勾、红色问号、蓝色加号等）反映其在 Git 中的状态。
-3.  **设置面板**：通过“编辑 -> 项目设置 -> 源代码控制 -> Git”进行配置，如指定 Git 可执行文件路径。
+此插件主要作为编辑器内 UI 功能集成，公开的蓝图 API 相对有限，大部分操作通过编辑器的“源码管理”菜单触发。
+
+### 核心设置节点
+
+插件提供了一个设置界面 (`SGitSourceControlSettings`)，允许在编辑器中配置 Git 路径并初始化仓库。相关的底层函数主要通过 `FGitSourceControlModule` 和 `FGitSourceControlProvider` 类访问，这些并非设计为蓝图可调用的节点。
+
+### 使用示例（蓝图描述）
+
+由于此插件主要提供编辑器集成而非游戏运行时蓝图 API，其使用流程通常如下：
+1.  在 `项目设置 > 插件 > 源码管理` 中选择 Git 作为提供者。
+2.  在编辑器内右键点击内容浏览器中的资产，选择“源码管理”子菜单进行操作（如提交、更新、查看差异）。
+3.  在“源码管理”面板中查看当前分支、用户信息以及操作队列。
 
 ## C++ 用法
 
-此插件主要作为编辑器扩展，其功能由引擎内部的源代码控制接口（`ISourceControlProvider`, `ISourceControlOperation`）调用。开发者通常不直接调用此插件的 C++ 类，而是通过引擎提供的统一源代码控制接口（如 `ISourceControlModule::Get().GetProvider()`）来与之交互。
+开发者可以通过 C++ 代码与 Git 源码管理提供者交互，执行自动化脚本或集成版本控制逻辑到编辑器工具中。
 
 ### 头文件引入
 
-对于直接使用此插件源码进行修改或研究的情况，可以引入相关头文件。但在一般开发中，应使用引擎提供的公共头文件。
-
 ```cpp
-// 引擎提供的源代码控制公共接口
-#include "SourceControlOperations.h"
-#include "ISourceControlProvider.h"
-
-// 插件内部头文件（通常不推荐直接使用）
+#include "GitSourceControlModule.h"
 #include "GitSourceControlProvider.h"
 #include "GitSourceControlUtils.h"
 ```
 
-### 基本用法（引擎接口）
+### 基本用法
 
-通过引擎的源代码控制接口执行操作，这些操作会被路由到当前的 Git 提供者。
+以下代码展示了如何获取 Git 提供者并检查其可用性。
+（参考 `GitSourceControlModule.h`, `GitSourceControlProvider.h`）
 
 ```cpp
-// 引用：Engine/Source/Editor/UnrealEd/Classes/Editor/EditorEngine.h
-// 以及 Source/Developer/SourceControl/Public/ISourceControlModule.h
+// 获取 Git 源码管理模块
+FGitSourceControlModule& GitModule = FModuleManager::LoadModuleChecked<FGitSourceControlModule>("GitSourceControl");
 
-// 1. 获取源代码控制模块和当前提供者（即 GitSourceControlProvider）
-ISourceControlModule& SourceControlModule = ISourceControlModule::Get();
-if (SourceControlModule.IsEnabled())
+// 获取提供者实例
+FGitSourceControlProvider& Provider = GitModule.GetProvider();
+
+// 检查 Git 是否可用且仓库已找到
+if (Provider.IsGitAvailable() && Provider.IsAvailable())
 {
-    ISourceControlProvider& SourceControlProvider = SourceControlModule.GetProvider();
+    // 获取当前分支名、用户信息等
+    FString BranchName = Provider.GetStatusText().ToString();
+    FString UserName = Provider.GetUserName();
+    FString UserEmail = Provider.GetUserEmail();
+    
+    UE_LOG(LogTemp, Log, TEXT("Git Ready. Branch: %s, User: %s <%s>"), *BranchName, *UserName, *UserEmail);
+}
+else
+{
+    UE_LOG(LogTemp, Warning, TEXT("Git source control is not available. Check binary path and repository."));
+}
+```
 
-    // 2. 创建一个“更新状态”操作
-    TSharedRef<FUpdateStatus, ESPMode::ThreadSafe> UpdateStatusOperation = ISourceControlOperation::Create<FUpdateStatus>();
+### 进阶用法
 
-    // 3. 指定要操作的文件
-    TArray<FString> FilesToCheck;
-    FilesToCheck.Add(TEXT("/Game/MyAsset.uasset"));
-    FilesToCheck.Add(TEXT("/Game/Blueprints/BP_MyActor.uasset"));
+利用 `GitSourceControlUtils` 中的静态函数，可以执行底层的 Git 命令。以下示例演示了如何运行一个自定义的 Git 状态命令。
+（参考 `GitSourceControlUtils.h`）
 
-    // 4. 通过提供者执行操作（这里为同步执行示例）
-    ECommandResult::Type Result = SourceControlProvider.Execute(UpdateStatusOperation, FilesToCheck);
-    if (Result == ECommandResult::Succeeded)
+```cpp
+#include "GitSourceControlUtils.h"
+#include "GitSourceControlProvider.h"
+
+void CheckCustomGitStatus(const TArray<FString>& FilesToCheck)
+{
+    FGitSourceControlModule& GitModule = FModuleManager::LoadModuleChecked<FGitSourceControlModule>("GitSourceControl");
+    FGitSourceControlProvider& Provider = GitModule.GetProvider();
+    
+    if (!Provider.IsGitAvailable()) return;
+
+    const FString GitBinaryPath = Provider.AccessSettings().GetBinaryPath();
+    const FString RepositoryRoot = Provider.GetPathToRepositoryRoot();
+    
+    TArray<FString> Parameters;
+    Parameters.Add(TEXT("--short")); // 使用简短格式
+    Parameters.Add(TEXT("--untracked-files=normal")); // 包含未跟踪文件
+    
+    TArray<FString> Results;
+    TArray<FString> Errors;
+    
+    // 执行 `git status --short` 命令
+    if (GitSourceControlUtils::RunCommand(TEXT("status"), GitBinaryPath, RepositoryRoot, Parameters, FilesToCheck, Results, Errors))
     {
-        // 操作已提交给后台线程，状态稍后会通过代理更新
+        for (const FString& Line : Results)
+        {
+            UE_LOG(LogTemp, Log, TEXT("Git Status: %s"), *Line);
+        }
+    }
+    else
+    {
+        for (const FString& Error : Errors)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Git Status Error: %s"), *Error);
+        }
     }
 }
 ```
 
 ## Demo 示例
 
-以下是一个最简化的 C++ 代码片段，演示了如何在插件代码中查找 Git 二进制文件并检查其可用性。这通常发生在插件启动或连接时。
+以下是一个简单的 Editor Utility Widget 蓝图类（或编辑器模块），用于显示当前 Git 仓库状态信息。
 
+**GitStatusWidget.h**
 ```cpp
-// .h 文件
 #pragma once
-#include "CoreMinimal.h"
 
-class FMyGitHelper
+#include "CoreMinimal.h"
+#include "Widgets/SCompoundWidget.h"
+
+class SGitStatusWidget : public SCompoundWidget
 {
 public:
-    static bool CheckGitInstallation();
+    SLATE_BEGIN_ARGS(SGitStatusWidget) {}
+    SLATE_END_ARGS()
+
+    void Construct(const FArguments& InArgs);
+
+private:
+    FText GetStatusText() const;
+    FText GetBranchText() const;
+    FText GetUserText() const;
+    
+    TSharedRef<SWidget> BuildInfoRow(const FText& Label, TAttribute<FText> Value) const;
+    
+    // 用于定时刷新状态的定时器
+    FTimerHandle RefreshTimerHandle;
+    void RefreshStatus();
+    
+    FText CurrentStatusText;
+    FText CurrentBranchText;
+    FText CurrentUserText;
 };
+```
 
-// .cpp 文件
-#include "MyGitHelper.h"
-#include "GitSourceControlUtils.h" // 来自插件
-#include "GitSourceControlProvider.h" // 来自插件，用于 FGitVersion
+**GitStatusWidget.cpp**
+```cpp
+#include "GitStatusWidget.h"
+#include "GitSourceControlModule.h"
+#include "GitSourceControlProvider.h"
+#include "Widgets/Text/STextBlock.h"
+#include "Widgets/Layout/SBox.h"
+#include "TimerManager.h"
+#include "Engine/World.h"
 
-bool FMyGitHelper::CheckGitInstallation()
+void SGitStatusWidget::Construct(const FArguments& InArgs)
 {
-    // 1. 查找 Git 可执行文件路径（搜索常见位置）
-    FString GitPath = GitSourceControlUtils::FindGitBinaryPath();
-    if (GitPath.IsEmpty())
+    ChildSlot
+    [
+        SNew(SVerticalBox)
+        + SVerticalBox::Slot().AutoHeight().Padding(4)
+        [
+            BuildInfoRow(NSLOCTEXT("GitWidget", "StatusLabel", "Status:"), TAttribute<FText>::Create(TAttribute<FText>::FGetter::CreateSP(this, &SGitStatusWidget::GetStatusText)))
+        ]
+        + SVerticalBox::Slot().AutoHeight().Padding(4)
+        [
+            BuildInfoRow(NSLOCTEXT("GitWidget", "BranchLabel", "Branch:"), TAttribute<FText>::Create(TAttribute<FText>::FGetter::CreateSP(this, &SGitStatusWidget::GetBranchText)))
+        ]
+        + SVerticalBox::Slot().AutoHeight().Padding(4)
+        [
+            BuildInfoRow(NSLOCTEXT("GitWidget", "UserLabel", "User:"), TAttribute<FText>::Create(TAttribute<FText>::FGetter::CreateSP(this, &SGitStatusWidget::GetUserText)))
+        ]
+        + SVerticalBox::Slot().AutoHeight().Padding(4)
+        [
+            SNew(SButton)
+            .Text(NSLOCTEXT("GitWidget", "RefreshButton", "Refresh"))
+            .OnClicked_Lambda([this]() -> FReply { RefreshStatus(); return FReply::Handled(); })
+        ]
+    ];
+    
+    // 启动一个5秒的定时器来刷新状态
+    if (GEngine && GEngine->GetWorldContexts().Num() > 0)
     {
-        UE_LOG(LogTemp, Error, TEXT("Git binary not found."));
-        return false;
+        GEngine->GetWorldContexts()[0].World()->GetTimerManager().SetTimer(RefreshTimerHandle, this, &SGitStatusWidget::RefreshStatus, 5.0f, true);
     }
+    RefreshStatus();
+}
 
-    // 2. 检查 Git 可用性并获取版本信息
-    FGitVersion GitVersion;
-    bool bAvailable = GitSourceControlUtils::CheckGitAvailability(GitPath, &GitVersion);
-    if (bAvailable)
+FText SGitStatusWidget::GetStatusText() const
+{
+    return CurrentStatusText;
+}
+
+FText SGitStatusWidget::GetBranchText() const
+{
+    return CurrentBranchText;
+}
+
+FText SGitStatusWidget::GetUserText() const
+{
+    return CurrentUserText;
+}
+
+TSharedRef<SWidget> SGitStatusWidget::BuildInfoRow(const FText& Label, TAttribute<FText> Value) const
+{
+    return SNew(SHorizontalBox)
+    + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+    [
+        SNew(STextBlock).Text(Label)
+    ]
+    + SHorizontalBox::Slot().FillWidth(1.0f).Padding(8, 0, 0, 0)
+    [
+        SNew(STextBlock).Text(Value)
+    ];
+}
+
+void SGitStatusWidget::RefreshStatus()
+{
+    FGitSourceControlModule& GitModule = FModuleManager::LoadModuleChecked<FGitSourceControlModule>("GitSourceControl");
+    FGitSourceControlProvider& Provider = GitModule.GetProvider();
+    
+    if (Provider.IsGitAvailable() && Provider.IsAvailable())
     {
-        UE_LOG(LogTemp, Log, TEXT("Git found at: %s, Version: %d.%d"), *GitPath, GitVersion.Major, GitVersion.Minor);
-        // 3. 检查是否支持 Git LFS（对于大型资产管理很重要）
-        GitSourceControlUtils::FindGitLfsCapabilities(GitPath, &GitVersion);
-        if (GitVersion.bHasGitLfs)
-        {
-            UE_LOG(LogTemp, Log, TEXT("Git LFS is available."));
-        }
+        CurrentBranchText = FText::FromString(Provider.GetBranchName());
+        CurrentUserText = FText::FromString(FString::Printf(TEXT("%s <%s>"), *Provider.GetUserName(), *Provider.GetUserEmail()));
+        CurrentStatusText = FText::FromString(Provider.GetStatusText().ToString());
     }
-    return bAvailable;
+    else
+    {
+        CurrentStatusText = NSLOCTEXT("GitWidget", "NotAvailable", "Git Not Available");
+        CurrentBranchText = FText::GetEmpty();
+        CurrentUserText = FText::GetEmpty();
+    }
 }
 ```
 
 ## 模块依赖
 
-无特殊依赖（仅标准 Core/Engine/Slate 等）。
+无特殊依赖（仅标准 Core/Engine/Slate 等）。根据 `GitSourceControl.Build.cs`，其依赖模块 `EditorFramework` 和 `UnrealEd` 是编辑器插件的常见依赖。
 
 ## 维护状态
 
@@ -138,18 +260,18 @@ bool FMyGitHelper::CheckGitInstallation()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-30 | `a7404169` | SourceControl: Add provider capability flag to use 'soft revert' when performing an FRevert prior to | 为 Git 提供者添加了“软还原”功能标志，在执行 Revert 操作前使用。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将插件的日志宏从 UE_LOG 迁移至 UE_LOGF，提升日志处理能力。 |
-| 2026-03-18 | `9271d5a5` | SourceControl: Deprecate IsAtLatestRevision() / GetNumLocalChanges() interfaces. | 弃用了 `IsAtLatestRevision()` 和 `GetNumLocalChanges()` 等旧版接口，推动使用新 API。 |
-| 2026-01-28 | `5f766aee` | Fixed modules that does not support portable toolchain | 修复了对便携式工具链的兼容性问题。 |
-| 2026-01-24 | `e793e61e` | Fixed more compile errors when using portable toolchain | 继续修复便携式工具链下的编译错误。 |
+| 2026-04-30 | `a7404169` | SourceControl: Add provider capability flag to use 'soft revert' when performing an FRevert prior to | 为“软回退”操作添加了能力标志，改进了回退逻辑 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏迁移到新的 UE_LOGF 格式 |
+| 2026-03-18 | `9271d5a5` | SourceControl: Deprecate IsAtLatestRevision() / GetNumLocalChanges() interfaces. | 弃用两个旧的查询接口，可能影响部分自动化脚本 |
+| 2026-01-28 | `5f766aee` | Fixed modules that does not support portable toolchain | 修复了对可移植工具链的支持问题 |
+| 2026-01-24 | `e793e61e` | Fixed more compile errors when using portable toolchain | 修复了更多可移植工具链的编译错误 |
 
 ### 维护评价
 
-**活跃维护**。虽然插件创建于 2015 年，但近期的提交记录（2026 年 1 月至 4 月）显示它仍在持续更新。最近的改动集中在功能增强（如“软还原”）、代码现代化（迁移日志宏）、API 清理（弃用旧接口）以及构建系统兼容性修复上。这表明该插件作为 Epic 官方支持的 Git 集成方案，仍在被积极维护和改进。考虑到其作为核心开发工具的地位，且最近有实质性更新，**推荐使用**。
+该插件是一个历史悠久（约10年）的核心编辑器功能插件。虽然被标记为实验性（IsBetaVersion=true），但它已成为 Unreal Engine 的标准组成部分，并且被广泛使用。从近期的 git 历史（2026年）可以看出，它仍然在被积极维护，主要是进行接口更新、bug 修复和编译器兼容性改进。尽管有些功能（如标签、分支管理）仍未集成到编辑器工作流中，但其核心的 Git 操作功能稳定可靠。对于使用 Git 管理项目的团队，**推荐使用**此插件。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Developer/GitSourceControl)
-- [官方文档](无，.uplugin 中 DocsURL 为空)
-- [测试用例](未在提供的信息中明确指定独立测试文件路径，通常包含在插件模块或引擎测试中)
+- [官方文档]() （无）
+- [测试用例]() （该插件的测试用例可能位于 `Engine/Tests/` 目录下，而非插件目录内）

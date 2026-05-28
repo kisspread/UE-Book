@@ -1,257 +1,220 @@
-# USD Geometry Cache
+# USD Importer
 
-> GeometryCacheUSD模块，为虚幻引擎提供从USD文件实时读取、流式加载和播放几何缓存（动态网格序列）的功能。
+> Adds support for importing the USD file format into Unreal Engine
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | USD几何缓存 |
+| 中文名 | USD导入器 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（材质资产、蓝图资产） |
-| 模块 | `GeometryCacheUSD` (Runtime) |
-| 实验性 | ⚦ 是 |
+| 包含内容 | ✅ 有（蓝图资产、材质、测试资源） |
+| 模块 | `USDClassesEditor` (Runtime), `USDExporter` (Runtime), `USDSchemas` (Runtime), `USDStage` (Runtime), `USDStageEditor` (Runtime), `USDStageEditorViewModels` (Runtime), `USDStageImporter` (Runtime), `GeometryCacheUSD` (Runtime), `USDTests` (Runtime) |
+| 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-11-19 |
-| 年龄标签 | 👴 老古董（约 7 年） |
+| 年龄标签 | 👴 老古董（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter) | |
-| [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests) | |
 
 ## 用途
 
-`GeometryCacheUSD` 模块的核心作用是扩展虚幻引擎的几何缓存（GeometryCache）系统，使其能够直接从 USD 文件中实时读取和播放动态网格序列（例如角色动画、物理模拟或程序化动画）。它解决了传统几何缓存需要预先烘焙为专有资产的问题，允许开发者直接使用标准 USD 文件作为动画源，实现了跨DCC工具的无缝资产管线。通过流式加载机制，它还能优化内存使用，按需加载帧数据。
+USDImporter 插件为 Unreal Engine 提供了对 Pixar Universal Scene Description (USD) 格式的全面支持。它不仅仅是一个简单的文件导入器，而是一个完整的 USD 资产流水线集成方案。该插件的核心功能是：
+
+1.  **USD 文件导入**：能够将 `.usd`, `.usda`, `.usdc`, `.usdz` 格式的文件直接导入到 UE 中，将其转换为引擎可以理解和渲染的资产（如静态网格体、动画序列、材质等）。
+2.  **USD Stage 编辑器**：提供了一个专用的编辑器窗口（USD Stage），允许用户在 UE 中可视化地查看、浏览和编辑 USD Stage（即一个 USD 文件中的完整场景树和属性）。这实现了 USD 与 UE 资产的实时双向同步。
+3.  **USD 到几何缓存**：能够将 USD 中的动画网格体序列导入为 GeometryCache 资产，用于高效的逐帧网格体播放。
+4.  **USD 导出**：允许用户将 UE 中的场景或资产导出为 USD 格式，实现与其它 DCC 工具（如 Maya, Houdini, Katana）的无缝数据交换。
+
+该插件的存在是为了解决影视、动画、虚拟制片和复杂游戏项目中，跨软件协作和资产管理标准化的需求。
 
 ## 使用场景
 
-- 你在使用USD格式进行资产交换，并希望直接在UE场景中预览或播放动态扫描的3D模型（如面部捕捉数据）。
-- 你的动画管线主要基于USD（例如使用Houdini、Maya+USD插件生成），需要在虚幻中实时播放这些动画序列而无需中间转换。
-- 你需要在建筑可视化或虚拟制片项目中，播放由外部程序生成的复杂、长序列的几何动画（如施工模拟、人群动画）。
+-   **影视和虚拟制片项目**：你需要将从 Maya、Houdini 或其它 DCC 工具中创建的复杂场景（包含模型、动画、灯光、摄像机）导入到 UE 中进行实时渲染或虚拟制片。
+-   **大规模场景协作**：多个团队（如建模、动画、特效）使用不同的软件，需要通过 USD 作为中间格式进行资产传递和场景组装，确保数据一致性和非破坏性编辑。
+-   **程序化内容生成 (PCG)**：使用 USD 作为程序化场景描述的输入格式，然后导入 UE 进行进一步处理。
+-   **需要高质量动画回放**：将 USD 中的角色或物体动画导入为 GeometryCache，以获得精确的逐帧网格体变形效果，用于过场动画或预览。
 
 ## 蓝图用法
 
-### 核心节点
+USDImporter 插件主要通过编辑器交互使用，但部分模块（如 `USDStage`）暴露了蓝图可调用的接口用于查询 USD Stage 状态。`GeometryCacheUSD` 模块提供了蓝图可用的组件。
 
-基于 `UGeometryCacheTrackUsd` 和 `UGeometryCacheUsdComponent` 的蓝图类型暴露。
+### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Initialize` | 使用USD Stage和Prim路径初始化几何缓存轨道 | `UGeometryCacheTrackUsd` |
-| `UpdateMeshData` | 根据当前时间和播放状态更新网格数据 | `UGeometryCacheTrackUsd` |
-| `GetMeshDataAtTime` | 获取指定时间点的网格数据 | `UGeometryCacheTrackUsd` |
-| `LoadUsdStage` | 加载或重新关联USD Stage | `UGeometryCacheTrackUsd` |
-| `UnloadUsdStage` | 卸载USD Stage以释放资源 | `UGeometryCacheTrackUsd` |
-| `RegisterStream` / `UnregisterStream` | 注册/注销数据流，控制数据加载行为 | `UGeometryCacheTrackUsd` |
-| （继承）播放、循环、速率控制等 | 来自父类 `UGeometryCacheComponent` | `UGeometryCacheUsdComponent` |
+| `创建 USD 几何缓存组件` | 向一个 Actor 添加一个从 USD 文件驱动几何缓存的组件。 | `UGeometryCacheUsdComponent` |
 
 ### 使用示例（蓝图描述）
 
-1.  **设置阶段**：在蓝图中创建一个 `GeometryCacheUsdComponent` 组件。
-2.  **初始化**：调用其关联的 `UGeometryCacheTrackUsd` 的 `Initialize` 节点，连接一个 `FUsdStage` 对象（通常由USD Stage资产提供），并指定Prim路径、起止帧和读取函数。
-3.  **生命周期管理**：在Actor的 `BeginPlay` 中调用 `LoadUsdStage`，在 `EndPlay` 中调用 `UnloadUsdStage` 以管理资源。
-4.  **播放控制**：通过组件的父类接口（如 `Play`、`SetPlaybackSpeed`）控制动画播放。动画播放时，组件内部会调用 `UpdateMeshData` 来获取新帧数据。
+1.  **在 Actor 中使用 USD 几何缓存**：
+    *   在 Actor 蓝图中，通过 `Add Component` 节点添加一个 `USD Geometry Cache` 组件。
+    *   为该组件设置一个 `USD 文件路径` 和 `Prim 路径`（即 USD Stage 中特定几何体的路径）。
+    *   组件将自动从指定的 USD 路径加载动画网格体数据并进行播放，其行为类似于标准的 GeometryCacheComponent，但数据源是 USD 文件。
 
 ## C++ 用法
+
+插件的主要 C++ 功能集中在 `USDStage` 和 `USDClasses` 模块中，用于编程式地与 USD Stage 交互。`GeometryCacheUSD` 模块则提供了从 USD 驱动几何缓存的能力。
 
 ### 头文件引入
 
 ```cpp
+// 使用 USD Stage 相关功能
+#include "USDStage.h"
+#include "USDSchemaConversion.h"
+
+// 使用 USD 几何缓存功能
 #include "GeometryCacheUSD.h"
-// 通常还需要包含 USD SDK 相关头文件
 ```
 
 ### 基本用法
 
-从 `UGeometryCacheTrackUsd` 类提取的初始化和使用逻辑。
+以下示例展示如何使用 `FUsdStage` 类打开并查询一个 USD Stage。
 
 ```cpp
-// 假设已有 UsdStage 和 PrimPath
-UE::FUsdStage MyStage = ...;
-FString PrimPath = TEXT("/My/Animated/Mesh");
-int32 StartFrame = 0;
-int32 EndFrame = 100;
+// 来源: 基于 USDStage 模块通用用法推断
+#include "USDStage.h"
 
-// 定义读取网格的回调函数
-FReadUsdMeshFunction ReadFunc = [](const TWeakObjectPtr<UGeometryCacheTrackUsd> Track, float Time, FGeometryCacheMeshData& OutMeshData) -> bool
+void AMyActor::ReadFromUsdFile()
 {
-    // 在这里实现从 USD Stage 读取特定时间网格数据的逻辑
-    // 例如使用 UsdToUnreal::ConvertMesh 等工具函数
-    return true; // 返回是否成功
-};
+    // 创建一个指向本地 USD 文件的 Stage
+    FString StagePath = TEXT("C:/MyProject/Content/MyScene.usda");
+    UE::FUsdStage Stage = UE::FUsdStage::Open(StagePath);
 
-// 在某个 UObject（如自定义资产或Actor组件）中创建并初始化 Track
-UGeometryCacheTrackUsd* Track = NewObject<UGeometryCacheTrackUsd>();
-Track->Initialize(MyStage, PrimPath, StartFrame, EndFrame, ReadFunc);
+    if (Stage)
+    {
+        // 获取 Stage 的根 Prim
+        UsdToUnreal::FUsdPrim RootPrim = Stage.GetPseudoRoot();
 
-// 在需要时加载 Stage 并注册流
-Track->LoadUsdStage();
-Track->RegisterStream();
+        // 遍历 Stage 中的所有 Prims
+        for (const UsdToUnreal::FUsdPrim& ChildPrim : Stage.TraverseAll())
+        {
+            UE_LOG(LogTemp, Log, TEXT("USD Prim: %s"), *ChildPrim.GetPrimPath().ToString());
+            
+            // 检查 Prim 是否是一个可导入的网格体
+            if (UsdToUnreal::IsMesh(ChildPrim))
+            {
+                UE_LOG(LogTemp, Log, TEXT("  Found a Mesh!"));
+                // 此处可以调用转换函数将 USD Mesh 转换为 UStaticMesh* 等 UE 资产
+            }
+        }
 
-// ... 在游戏运行时，通过 GeometryCacheUsdComponent 或直接调用 Track 的接口播放动画
-
-// 结束时清理
-Track->UnregisterStream();
-Track->UnloadUsdStage();
+        // 关闭 Stage，释放资源
+        Stage.Close();
+    }
+}
 ```
 
 ### 进阶用法
 
-结合 `UGeometryCacheUsdComponent` 在 Actor 中完整使用，并处理流式加载。
+结合 `FUsdStage` 和 `UsdToUnreal` 命名空间中的函数，可以读取和设置 USD Prim 的属性。
 
 ```cpp
-// MyActor.h
-UCLASS()
-class AMyUSDActor : public AActor
+// 来源: 基于 USDSchemaConversion 模块通用用法推断
+#include "USDStage.h"
+#include "USDSchemaConversion.h"
+
+void AMyActor::ManipulateUsdAttributes()
 {
-    GENERATED_BODY()
-public:
-    AMyUSDActor();
+    UE::FUsdStage Stage = UE::FUsdStage::Open(TEXT("C:/MyProject/Content/Box.usda"));
+    if (!Stage) return;
 
-    UPROPERTY(VisibleAnywhere)
-    UGeometryCacheUsdComponent* UsdGeoCacheComp;
-
-    virtual void BeginPlay() override;
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-private:
-    UPROPERTY()
-    UGeometryCacheTrackUsd* InternalTrack;
-};
-
-// MyActor.cpp
-AMyUSDActor::AMyUSDActor()
-{
-    UsdGeoCacheComp = CreateDefaultSubobject<UGeometryCacheUsdComponent>(TEXT("USDGeoCache"));
-    // 组件会自动管理其内部的 Track 资产
-}
-
-void AMyUSDActor::BeginPlay()
-{
-    Super::BeginPlay();
-
-    // 获取组件内部使用的 Track (假设已经通过蓝图或代码设置好)
-    if (UGeometryCache* GeoCache = UsdGeoCacheComp->GetGeometryCache())
+    // 通过路径获取一个具体的 Prim
+    UsdToUnreal::FUsdPrim BoxPrim = Stage.GetPrimAtPath(TEXT("/World/MyBox"));
+    if (BoxPrim.IsValid())
     {
-        if (UGeometryCacheTrackUsd* Track = Cast<UGeometryCacheTrackUsd>(GeoCache->Tracks[0]))
+        // 读取 Prim 的“可见性”属性
+        bool bVisible = true;
+        if (UsdToUnreal::GetAttribute<bool>(BoxPrim, TEXT("visibility"), bVisible))
         {
-            Track->LoadUsdStage();
-            Track->RegisterStream();
+            UE_LOG(LogTemp, Log, TEXT("Box visibility: %s"), bVisible ? TEXT("visible") : TEXT("invisible"));
+        }
+
+        // 读取一个变换矩阵（世界变换）
+        FTransform WorldTransform;
+        if (UsdToUnreal::GetWorldTransform(BoxPrim, WorldTransform))
+        {
+            UE_LOG(LogTemp, Log, TEXT("Box world location: %s"), *WorldTransform.GetLocation().ToString());
         }
     }
-}
-
-void AMyUSDActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    if (UGeometryCache* GeoCache = UsdGeoCacheComp->GetGeometryCache())
-    {
-        if (UGeometryCacheTrackUsd* Track = Cast<UGeometryCacheTrackUsd>(GeoCache->Tracks[0]))
-        {
-            Track->UnregisterStream();
-            Track->UnloadUsdStage();
-        }
-    }
-    Super::EndPlay(EndPlayReason);
 }
 ```
 
 ## Demo 示例
 
-一个最小的、可在Actor中播放USD几何缓存的C++示例。
+一个从 USD Stage 中读取特定 Prim 名称并打印出来的最小控制台应用程序示例。
 
-**USDGeometryActor.h**
+### USDStageReader.h
 ```cpp
-// 版权所有 Epic Games。保留所有权利。
+// MyUSDStageReader.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "USDGeometryActor.generated.h"
 
-class UGeometryCacheUsdComponent;
-class UGeometryCacheTrackUsd;
-
-UCLASS()
-class AUSDGeometryActor : public AActor
+class FMyUSDStageReader
 {
-    GENERATED_BODY()
-
 public:
-    AUSDGeometryActor();
-
-    // USD Stage 的路径
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "USD")
-    FFilePath UsdStagePath;
-
-    // 要加载的 Prim 路径
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "USD")
-    FString UsdPrimPath;
-
-protected:
-    virtual void BeginPlay() override;
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-private:
-    UPROPERTY(VisibleAnywhere)
-    UGeometryCacheUsdComponent* GeoCacheComponent;
+    void ReadAndPrintPrimNames(const FString& UsdFilePath, const FString& PrimPathPrefix);
 };
 ```
 
-**USDGeometryActor.cpp**
+### USDStageReader.cpp
 ```cpp
-// 版权所有 Epic Games。保留所有权利。
-#include "USDGeometryActor.h"
-#include "Components/GeometryCacheUsdComponent.h"
-#include "GeometryCacheUSD.h"
+// MyUSDStageReader.cpp
+#include "MyUSDStageReader.h"
+#include "USDStage.h"
+#include "USDSchemaConversion.h"
+#include "Misc/Paths.h"
 
-AUSDGeometryActor::AUSDGeometryActor()
+void FMyUSDStageReader::ReadAndPrintPrimNames(const FString& UsdFilePath, const FString& PrimPathPrefix)
 {
-    GeoCacheComponent = CreateDefaultSubobject<UGeometryCacheUsdComponent>(TEXT("USDGeoCache"));
-    RootComponent = GeoCacheComponent;
-}
-
-void AUSDGeometryActor::BeginPlay()
-{
-    Super::BeginPlay();
-
-    // 此示例假设通过蓝图或其他方式已经为组件设置了包含 UGeometryCacheTrackUsd 的 GeometryCache 资产
-    // 这里演示如何管理其内部 Track 的 Stage 生命周期
-    UGeometryCache* GeoCache = GeoCacheComponent->GetGeometryCache();
-    if (GeoCache && GeoCache->Tracks.Num() > 0)
+    // 将相对路径转换为完整路径
+    const FString FullPath = FPaths::ConvertRelativePathToFull(UsdFilePath);
+    
+    UE_LOG(LogTemp, Display, TEXT("Opening USD Stage: %s"), *FullPath);
+    UE::FUsdStage Stage = UE::FUsdStage::Open(FullPath);
+    
+    if (!Stage)
     {
-        UGeometryCacheTrackUsd* UsdTrack = Cast<UGeometryCacheTrackUsd>(GeoCache->Tracks[0]);
-        if (UsdTrack)
-        {
-            UsdTrack->LoadUsdStage();
-            UsdTrack->RegisterStream();
-            // 可以设置播放参数
-            GeoCacheComponent->Play();
-        }
+        UE_LOG(LogTemp, Error, TEXT("Failed to open USD Stage."));
+        return;
     }
-}
 
-void AUSDGeometryActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    UGeometryCache* GeoCache = GeoCacheComponent->GetGeometryCache();
-    if (GeoCache && GeoCache->Tracks.Num() > 0)
+    UE_LOG(LogTemp, Display, TEXT("Scanning for prims under: %s"), *PrimPathPrefix);
+    
+    // 使用 Stage 的遍历器查找匹配前缀的 Prims
+    for (const UsdToUnreal::FUsdPrim& Prim : Stage.TraverseAll())
     {
-        UGeometryCacheTrackUsd* UsdTrack = Cast<UGeometryCacheTrackUsd>(GeoCache->Tracks[0]);
-        if (UsdTrack)
+        const FString PrimPath = Prim.GetPrimPath().ToString();
+        if (PrimPath.StartsWith(PrimPathPrefix))
         {
-            UsdTrack->UnregisterStream();
-            UsdTrack->UnloadUsdStage();
+            // 获取 Prim 的类型名称
+            const UsdToUnreal::FUsdPrimType& PrimType = Prim.GetPrimTypeInfo().GetPrimType();
+            UE_LOG(LogTemp, Display, TEXT("Found Prim: %s (Type: %s)"), *PrimPath, *PrimType.GetUsdTypeName().ToString());
         }
     }
 
-    Super::EndPlay(EndPlayReason);
+    UE_LOG(LogTemp, Display, TEXT("USD Stage scan complete."));
+    Stage.Close();
 }
+```
+
+**如何使用**：
+```cpp
+// 在游戏模块的某个地方（如 GameInstance 初始化）
+FMyUSDStageReader Reader;
+Reader.ReadAndPrintPrimNames(TEXT("Content/MyScene.usda"), TEXT("/World/Characters/"));
 ```
 
 ## 模块依赖
 
-从 `GeometryCacheUSD.Build.cs` 和代码推断的依赖关系。
+要使用 USDImporter 插件的功能，你的模块需要依赖以下独特的模块（Core, Engine, GeometryCache 等常见依赖已省略）：
 
 | 模块 | 用途 |
 |---|---|
-| `GeometryCache` | 基础几何缓存系统，是本模块的基类所在 |
-| `USDIntegration` | USD SDK 与虚幻引擎集成的核心库 |
-| `USDUtilities` | USD 工具函数库，用于 Stage、Prim 操作 |
+| `USDStage` | 提供 `FUsdStage` 类，用于打开、查询和操作 USD Stage。这是与 USD 数据交互的核心运行时模块。 |
+| `USDSchemas` | 提供 USD Schema 转换函数（如 `UsdToUnreal` 命名空间下的函数），用于在 USD Prim 属性和 UE 资产/对象之间进行转换。 |
+| `USDClasses` | 提供 USD 相关的 UE 类型定义，如 `FUsdPrim`, `FUsdAttribute` 等，是 `USDStage` 和 `USDSchemas` 的基础。 |
+| `USDClassesEditor` | 编辑器专用的 USD 类型和工具，用于 USD Stage 编辑器窗口。 |
+| `USDStageImporter` | 实现具体的 USD 文件导入逻辑，将 USD 场景转换为 UE 资产。 |
+| `GeometryCacheUSD` | 提供 `UGeometryCacheUsdComponent` 和 `UGeometryCacheTrackUsd`，用于将 USD 动画网格体作为 GeometryCache 进行播放。 |
 
 ## 维护状态
 
@@ -259,19 +222,20 @@ void AUSDGeometryActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量转换为单精度时的警告。 |
-| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | USD: 新增对独立于蓝图的控制绑定的支持。 |
-| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD varies | USD: 解决升级到26.03后，因LOD变化导致AnimQuery内部引用失效的问题。 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修正32位格式说明符在参数为64位时的使用，反之亦然。 |
-| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | USD: 烘焙曝光动画轨道的所有帧。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下，双精度常量截断为浮点数导致编译警告的代码。 |
+| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | USD功能：添加了对蓝图无关控制绑定（Control Rig）赋值的支持。 |
+| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va... | USD功能：针对26.03版本更新导致AnimQuery内部引用在LOD变化时失效的问题进行了规避。 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修正了格式说明符：当参数为64位时，将32位格式符改为64位，反之亦然。 |
+| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | USD功能：烘焙曝光动画轨道的所有帧。 |
 
 ### 维护评价
 
-- **活跃维护**：尽管插件创建于2018年（约7年），但Git记录显示直到2026年仍有持续的功能更新和Bug修复（如控制绑定支持、LOD相关修复），表明**仍在积极维护**。
-- **实验性状态**：`.uplugin` 中 `IsBetaVersion=true` 且 `EnabledByDefault=false`，表明这仍是一个**实验性插件**，API和功能可能在未来版本中发生变化。
-- **推荐使用**：推荐在USD工作流中需要实时预览动态几何的**实验性或开发环境**中使用。在生产环境中使用需谨慎，关注版本兼容性，并做好应对未来API变更的准备。
+-   **创建时间**：插件创建于2018年底，已有相当长的历史。
+-   **活跃度**：基于提供的 Git 历史，该插件**仍在活跃维护和开发中**。最近的提交（2026年5月）显示团队正在修复编译问题并添加新功能（如 Control Rig 支持）。这表明它是一个重要的、持续发展的功能模块。
+-   **已知问题**：`.uplugin` 中明确标记为 `IsBetaVersion: true` 且 `EnabledByDefault: false`，这意味着该插件**目前处于测试阶段**，可能还未完全稳定，不建议在需要高度稳定性的生产项目中默认启用。它可能包含实验性 API 和未完成的功能。
+-   **推荐**：对于影视、虚拟制片或需要 USD 工作流的前沿项目，**强烈推荐使用和评估**。对于追求稳定性的传统游戏开发项目，建议仅在需要且经过充分测试后启用。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests)

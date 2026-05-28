@@ -1,13 +1,13 @@
 # PSD Importer
 
-> 用于在 Unreal Engine 中导入 Adobe Photoshop PSD 文件的插件
+> Import Adobe Photoshop (PSD) files as Unreal Engine assets.
 
 | 属性 | 值 |
 |---|---|
 | 中文名 | PSD 导入器 |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、材质模板、测试资源） |
+| 包含内容 | ✅ 有（PSD资产、蓝图角色） |
 | 模块 | `PSDImporter` (Runtime), `PSDImporterCore` (Runtime), `PSDImporterEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-04-28 |
@@ -16,270 +16,211 @@
 
 ## 用途
 
-PSDImporter 解决了将 Adobe Photoshop 的 PSD 分层文件直接导入 Unreal Engine 并在场景中还原图层结构的问题。传统做法是将 PSD 手动拆分为多个单独的 PNG/TGA 再逐一导入，丢失了图层层级、混合模式、蒙版等信息。该插件通过内置的 PsdSDK（第三方 PSD 解析库）直接读取 PSD 文件，自动为每个图层生成纹理资产，并可选择性地在场景中以分层四边形（Quad Mesh）的方式重建 PSD 的图层堆叠关系，支持：
-
-- **图层解析**：识别图层类型（普通图层/图层组）、混合模式、不透明度、可见性、剪切图层等
-- **蒙版支持**：导入图层的 Alpha 蒙版作为独立纹理
-- **图层裁剪**：自动检测并裁剪非全尺寸图层，节省纹理内存
-- **3D 场景重建**：将 PSD 图层以带有深度偏移的四边形网格排列在场景中，可用于 2.5D 美术效果、UI 布局预览等
-- **图层组支持**：识别 PSD 中的 Group 图层并维护父子关系
-
-插件依赖 GeometryMask 插件，仅支持 Win64 平台。
+这个插件用于将 Adobe Photoshop (PSD) 文件导入到 Unreal Engine 中。它的核心功能是解析 PSD 文件的文档结构、图层信息（包括图层顺序、可见性、混合模式、不透明度等），并将其转换为 UE 内部可管理的资产（`UPSDDocument`）。更重要的是，它能将每个 PSD 图层（或合并后的图层）导入为独立的纹理资产，并进一步将其组合为一个由多个四边形网格（`APSDQuadMeshActor`）组成的场景 Actor（`APSDQuadActor`）。这些四边形网格会保留原始 PSD 图层的层次结构，使得在 UE 中可以像操作原始设计稿一样，独立调整每个图层（元素）的位置、深度、材质等属性，从而实现了设计文件与游戏引擎资产之间的高保真转换和可编辑性。
 
 ## 使用场景
 
-- 你是一名技术美术，需要将 Photoshop 中设计好的多层 UI 布局快速导入到 UE5 中预览 → 使用 PSD Importer
-- 你需要在 3D 场景中还原 2D 美术的图层深度关系（如前景/背景分层） → 导入后自动创建带深度偏移的四边形网格
-- 你需要为每个 PSD 图层单独生成纹理资产用于运行时动态组合 → 导入时自动为每个图层创建 UTexture2D
-- 你需要保留 PSD 中的蒙版信息用于运行时效果 → 插件会将蒙版作为独立纹理导入
+- 你正在为一个 2D 风格的游戏或 UI 界面制作资源，美术同事提供的是 Photoshop 的分层源文件（.psd），你希望快速将这些 UI 元素（按钮、背景、图标等）导入 UE 并保持其独立性，以便后续进行交互绑定或动画。
+- 你需要将一张复杂的、分层的概念设计图导入场景作为背景或装饰，并希望每个图层（如前景树、中景建筑、背景山）在 UE 中能够单独设置深度和渲染参数以获得视差效果。
+- 你正在原型阶段，需要快速将美术设计稿转化为可交互的原型，直接使用设计图中的元素进行游戏逻辑测试。
 
 ## 蓝图用法
 
 ### 核心节点
 
-#### 文档信息（UPSDDocument）
-
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Get Document Name` | 获取 PSD 文档的原始文件名 | `UPSDDocument` |
-| `Get Size` | 获取文档分辨率（像素宽高） | `UPSDDocument` |
-| `Get Layers` | 获取文档中所有图层的数组 | `UPSDDocument` |
-| `Were Layers Resized On Import` | 图层在导入时是否被缩放至文档尺寸 | `UPSDDocument` |
-
-#### 图层操作（APSDQuadMeshActor）
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `Reset All` | 重置图层四边形的所有属性（位置、大小、深度、纹理、排序优先级） | `APSDQuadMeshActor` |
-| `Reset Depth` | 仅重置图层深度 | `APSDQuadMeshActor` |
-| `Reset Position` | 仅重置图层位置 | `APSDQuadMeshActor` |
-| `Reset Size` | 仅重置图层大小 | `APSDQuadMeshActor` |
-| `Reset Texture` | 仅重置图层纹理 | `APSDQuadMeshActor` |
-| `Reset Translucent Sort Priority` | 仅重置半透明排序优先级 | `APSDQuadMeshActor` |
-
-> 注：Reset 系列节点标记为 `CallInEditor`，通常在编辑器细节面板中使用，但也可在蓝图中调用。
+| `Get Document Name` | 获取导入的 PSD 文档原始名称 | `UPSDDocument` |
+| `Get Size` | 获取 PSD 文档的宽度和高度（像素） | `UPSDDocument` |
+| `Get Layers` | 获取文档内包含的所有图层信息数组 | `UPSDDocument` |
+| `Were Layers Resized On Import` | 检查图层在导入时是否被调整大小以匹配文档尺寸 | `UPSDDocument` |
+| `Reset All` | 重置对应 PSD 图层 Actor 的所有属性（深度、位置、大小、纹理等）到初始状态 | `APSDQuadMeshActor` |
+| `Reset Depth` | 仅重置图层 Actor 的深度（Z轴位置） | `APSDQuadMeshActor` |
+| `Reset Position` | 仅重置图层 Actor 的位置（X, Y） | `APSDQuadMeshActor` |
+| `Reset Size` | 仅重置图层 Actor 的大小（缩放） | `APSDQuadMeshActor` |
+| `Reset Texture` | 重新应用原始导入的纹理材质 | `APSDQuadMeshActor` |
+| `Reset Translucent Sort Priority` | 重置图层 Actor 的半透明排序优先级 | `APSDQuadMeshActor` |
 
 ### 使用示例（蓝图描述）
 
-1. **获取 PSD 文档信息**：拖入一个已导入的 `PSDDocument` 资产引用 → 连接 `Get Document Name` / `Get Size` / `Get Layers` 节点获取文档信息
-2. **遍历图层并处理**：从 `Get Layers` 输出的数组，使用 `ForEachLoop` 遍历 → 通过 `FPSDFileLayer` 结构体的 `Id.Name`、`Type`、`Opacity`、`BlendMode` 等属性进行条件过滤和逻辑处理
-3. **重置图层四边形**：获取 `APSDQuadMeshActor` 引用 → 调用 `Reset Quad`（或其细分变体）恢复默认状态
+1.  **查询文档信息**：从场景中拖拽一个 `PSD Layer Root Actor`（`APSDQuadActor`）到蓝图，调用 `Get PSD Document` 节点获取其关联的 `UPSDDocument` 对象。然后，即可连接到 `Get Document Name`、`Get Size`、`Get Layers` 等节点来读取元数据。
+2.  **操作单个图层**：通过 `APSDQuadActor` 的 `Get Quad Meshes` 函数获取其包含的所有 `APSDQuadMeshActor` 数组。通过数组索引或遍历获取特定图层的 Actor。例如，获取第一个图层（通常是背景），然后可以调用 `Reset Quad Position` 或 `Reset Quad Depth` 等 `CallInEditor` 节点（在编辑器内使用）来重置其状态，或者直接通过标准 Actor 节点（如 `Set Actor Location`）修改其位置。
+3.  **调整图层间距**：在 `PSD Layer Root Actor` 上设置 `Layer Depth Offset` 属性，这会影响所有子图层四边形之间的深度间隔，用于创建视差效果。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "PSDFile.h"
-#include "PSDDocument.h"
-#include "PSDQuadActor.h"
-#include "PSDQuadMeshActor.h"
+#include "PSDFile.h" // 提供 PSD 文件相关的数据结构，如 FPSDFileLayer, FPSDFileDocument
+#include "PSDDocument.h" // 提供 UPSDDocument 类
+#include "PSDQuadActor.h" // 提供 APSDQuadActor 类
+#include "PSDQuadMeshActor.h" // 提供 APSDQuadMeshActor 类
 ```
 
-### 基本用法：查询 PSD 文档信息
+### 基本用法
+
+此示例展示了如何通过 C++ 代码访问一个已导入场景的 `APSDQuadActor`，获取其关联的 `UPSDDocument`，并遍历其图层。
 
 ```cpp
-// 假设已有 UPSDDocument* PSDDocument
-UPSDDocument* Doc = /* 从资产或工厂获取 */;
+// 假设你已经通过某种方式（例如 SpawnActor 或在编辑器中获取引用）得到了一个 APSDQuadActor 指针
+APSDQuadActor* MyPSDActor = ...;
 
-// 获取文档基本信息
-const FString& Name = Doc->GetDocumentName();
-const FIntPoint& DocSize = Doc->GetSize();
-UE_LOG(LogTemp, Log, TEXT("PSD Document: %s, Size: %dx%d"), *Name, DocSize.X, DocSize.Y);
-
-// 遍历图层
-const TArray<FPSDFileLayer>& Layers = Doc->GetLayers();
-for (const FPSDFileLayer& Layer : Layers)
+if (MyPSDActor)
 {
-    UE_LOG(LogTemp, Log, TEXT("  Layer[%d]: %s, Visible: %d, Opacity: %.2f"),
-        Layer.Id.Index, *Layer.Id.Name, Layer.bIsVisible, Layer.Opacity);
-    
-    // 检查图层类型
-    if (Layer.Type == EPSDFileLayerType::Group)
+    // 1. 获取 PSD 文档对象
+    UPSDDocument* PSDDoc = MyPSDActor->GetPSDDocument();
+    if (PSDDoc)
     {
-        UE_LOG(LogTemp, Log, TEXT("    (Group Layer)"));
+        // 2. 打印文档基本信息
+        UE_LOG(LogTemp, Log, TEXT("PSD Document Name: %s, Size: %dx%d"),
+            *PSDDoc->GetDocumentName(),
+            PSDDoc->GetSize().X,
+            PSDDoc->GetSize().Y);
+
+        // 3. 遍历文档图层
+        const TArray<FPSDFileLayer>& AllLayers = PSDDoc->GetLayers();
+        for (const FPSDFileLayer& Layer : AllLayers)
+        {
+            // 打印每个图层的 ID 和可见性
+            UE_LOG(LogTemp, Log, TEXT("Layer '%s' (Index: %d), Visible: %s"),
+                *Layer.Id.Name,
+                Layer.Id.Index,
+                Layer.bIsVisible ? TEXT("Yes") : TEXT("No"));
+        }
+
+        // 4. 获取所有有效的（非完全透明、有尺寸、可见）图层
+        TArray<const FPSDFileLayer*> ValidLayers = PSDDoc->GetValidLayers();
+        UE_LOG(LogTemp, Log, TEXT("Number of valid layers for import: %d"), ValidLayers.Num());
     }
-    
-    // 检查是否有蒙版
-    if (Layer.HasMask())
+
+    // 5. 获取该 PSD Actor 下所有的图层网格 Actor
+    TArray<APSDQuadMeshActor*> MeshActors = MyPSDActor->GetQuadMeshes();
+    for (APSDQuadMeshActor* MeshActor : MeshActors)
     {
-        UE_LOG(LogTemp, Log, TEXT("    Has mask, MaskDefault: %.2f"), Layer.MaskDefaultValue);
+        if (MeshActor)
+        {
+            // 获取该网格 Actor 对应的图层信息
+            const FPSDFileLayer* LayerInfo = MeshActor->GetLayer();
+            if (LayerInfo)
+            {
+                // 这里可以对单个图层 Actor 进行操作
+                // 例如，重置其深度
+                // MeshActor->ResetQuadDepth(); // 注意：此函数通常用于编辑器操作
+            }
+        }
     }
 }
 ```
 
-### 基本用法：操作场景中的四边形网格
+### 进阶用法
 
-```cpp
-// 假设已有 APSDQuadActor* QuadActor
-APSDQuadActor* QuadRoot = /* 从场景获取 */;
-
-// 获取关联的文档
-UPSDDocument* Doc = QuadRoot->GetPSDDocument();
-
-// 获取所有子四边形网格
-TArray<APSDQuadMeshActor*> Meshes = QuadRoot->GetQuadMeshes();
-
-// 调整图层间距
-QuadRoot->SetLayerDepthOffset(2.0f);  // 每层间距 2 个单位
-
-// 设置基础半透明排序优先级
-QuadRoot->SetBaseTranslucentSortPriority(1);
-```
-
-### 进阶用法：自定义图层导入
-
-```cpp
-// 获取图层并检查是否需要裁剪
-const TArray<FPSDFileLayer>& Layers = Doc->GetLayers();
-const FIntPoint DocSize = Doc->GetSize();
-
-for (const FPSDFileLayer& Layer : Layers)
-{
-    // 判断图层是否为非全尺寸（需要裁剪）
-    if (Layer.NeedsCrop(DocSize))
-    {
-        UE_LOG(LogTemp, Log, TEXT("Layer '%s' needs crop: Bounds=[%d,%d - %d,%d]"),
-            *Layer.Id.Name,
-            Layer.Bounds.Min.X, Layer.Bounds.Min.Y,
-            Layer.Bounds.Max.X, Layer.Bounds.Max.Y);
-    }
-    
-    // 获取图层的裁剪信息
-    if (Layer.Clipping != 0)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Layer '%s' is a clipping layer"), *Layer.Id.Name);
-    }
-    
-    // 检查图层支持状态
-    if (!Layer.bIsSupportedLayerType)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Layer '%s' has unsupported type"), *Layer.Id.Name);
-    }
-}
-```
-
-### 进阶用法：访问纹理的图层元数据
-
-```cpp
-// 导入的纹理上附带有 UPSDLayerTextureUserData
-UTexture2D* Texture = /* 从 Layer.Texture 加载 */;
-
-if (UPSDLayerTextureUserData* UserData = Texture->GetAssetUserData<UPSDLayerTextureUserData>())
-{
-    UE_LOG(LogTemp, Log, TEXT("Texture layer: %s [%d]"),
-        *UserData->LayerId.Name, UserData->LayerId.Index);
-    UE_LOG(LogTemp, Log, TEXT("  Normalized Bounds: %s"),
-        *UserData->NormalizedBounds.ToString());
-    UE_LOG(LogTemp, Log, TEXT("  Pixel Bounds: [%d,%d - %d,%d]"),
-        UserData->PixelBounds.Min.X, UserData->PixelBounds.Min.Y,
-        UserData->PixelBounds.Max.X, UserData->PixelBounds.Max.Y);
-}
-```
+更复杂的用法可能涉及在导入流程中进行干预或自定义处理，这需要深入研究 `PSDImporterCore` 和 `PSDImporterEditor` 模块的工厂类和导入逻辑，以及 `PsdSDK` 的底层接口。通常，基本的资产查询和 Actor 操作使用上述 `UPSDDocument` 和 `APSDQuad*` 类的接口即可完成。
 
 ## Demo 示例
 
-### 创建 PSD 四边形网格并配置深度
+这是一个最小化的 C++ 示例，展示了如何编写一个简单的 Actor 组件，该组件可以在 BeginPlay 时查找场景中指定的 `APSDQuadActor`，并打印出其文档信息和图层列表。
 
+**PSDInfoPrinterComponent.h**
 ```cpp
-// MyPSDActor.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "PSDDocument.h"
-#include "PSDQuadActor.h"
-#include "MyPSDActor.generated.h"
+#include "Components/ActorComponent.h"
+#include "PSDInfoPrinterComponent.generated.h"
 
-UCLASS()
-class AMyPSDActor : public AActor
+class APSDQuadActor;
+class UPSDDocument;
+
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+class YOURPROJECT_API UPSDInfoPrinterComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
-    AMyPSDActor();
+    UPSDInfoPrinterComponent();
 
-    UPROPERTY(EditAnywhere, Category = "PSD")
-    TObjectPtr<UPSDDocument> PSDDocument;
+    // 要查找的 PSD Actor 的标签
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PSD Printer")
+    FName TargetPSDActorTag = "PSDLayerRoot";
 
-    UPROPERTY(EditAnywhere, Category = "PSD")
-    float LayerSpacing = 1.5f;
+protected:
+    virtual void BeginPlay() override;
 
-    UFUNCTION(BlueprintCallable, Category = "PSD")
-    void SetupDocument();
+private:
+    void FindAndPrintPSDInfo();
 };
 ```
 
+**PSDInfoPrinterComponent.cpp**
 ```cpp
-// MyPSDActor.cpp
-#include "MyPSDActor.h"
-#include "PSDQuadMeshActor.h"
+#include "PSDInfoPrinterComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "PSDQuadActor.h"
+#include "PSDDocument.h"
+#include "PSDFile.h"
 
-AMyPSDActor::AMyPSDActor()
+UPSDInfoPrinterComponent::UPSDInfoPrinterComponent()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryComponentTick.bCanEverTick = false;
 }
 
-void AMyPSDActor::SetupDocument()
+void UPSDInfoPrinterComponent::BeginPlay()
 {
-    if (!PSDDocument)
+    Super::BeginPlay();
+    FindAndPrintPSDInfo();
+}
+
+void UPSDInfoPrinterComponent::FindAndPrintPSDInfo()
+{
+    if (!GetWorld()) return;
+
+    TArray<AActor*> FoundActors;
+    UGameplayStatics::GetAllActorsWithTag(GetWorld(), TargetPSDActorTag, FoundActors);
+
+    for (AActor* Actor : FoundActors)
     {
-        UE_LOG(LogTemp, Warning, TEXT("No PSD Document assigned"));
-        return;
-    }
-
-    const FString& DocName = PSDDocument->GetDocumentName();
-    const FIntPoint& DocSize = PSDDocument->GetSize();
-    const TArray<FPSDFileLayer>& Layers = PSDDocument->GetLayers();
-
-    UE_LOG(LogTemp, Log, TEXT("Setting up PSD: %s (%dx%d), %d layers"),
-        *DocName, DocSize.X, DocSize.Y, Layers.Num());
-
-    // 遍历所有图层，检查有效图层
-    for (const FPSDFileLayer& Layer : Layers)
-    {
-        if (!Layer.bIsVisible)
+        APSDQuadActor* PSDQuadActor = Cast<APSDQuadActor>(Actor);
+        if (PSDQuadActor)
         {
-            UE_LOG(LogTemp, Log, TEXT("Skipping hidden layer: %s"), *Layer.Id.Name);
-            continue;
-        }
+            UPSDDocument* Doc = PSDQuadActor->GetPSDDocument();
+            if (Doc)
+            {
+                UE_LOG(LogTemp, Display, TEXT("=== PSD Document: %s ==="), *Doc->GetDocumentName());
+                UE_LOG(LogTemp, Display, TEXT("Size: %dx%d"), Doc->GetSize().X, Doc->GetSize().Y);
+                UE_LOG(LogTemp, Display, TEXT("Total Layers: %d"), Doc->GetLayers().Num());
 
-        // 设置图层间距
-        if (Layer.NeedsCrop(DocSize))
-        {
-            UE_LOG(LogTemp, Log, TEXT("Layer '%s' will be cropped to [%d,%d - %d,%d]"),
-                *Layer.Id.Name,
-                Layer.Bounds.Min.X, Layer.Bounds.Min.Y,
-                Layer.Bounds.Max.X, Layer.Bounds.Max.Y);
-        }
+                int32 LayerIndex = 0;
+                for (const FPSDFileLayer& Layer : Doc->GetLayers())
+                {
+                    UE_LOG(LogTemp, Display, TEXT("  [%d] %s (Visible: %s, Opacity: %.2f)"),
+                        LayerIndex,
+                        *Layer.Id.Name,
+                        Layer.bIsVisible ? TEXT("Yes") : TEXT("No"),
+                        Layer.Opacity);
+                    LayerIndex++;
+                }
 
-        // 检查蒙版信息
-        if (Layer.HasMask())
-        {
-            UE_LOG(LogTemp, Log, TEXT("Layer '%s' has mask: default=%.2f, bounds=[%d,%d - %d,%d]"),
-                *Layer.Id.Name, Layer.MaskDefaultValue,
-                Layer.MaskBounds.Min.X, Layer.MaskBounds.Min.Y,
-                Layer.MaskBounds.Max.X, Layer.MaskBounds.Max.Y);
+                UE_LOG(LogTemp, Display, TEXT("Valid layers for texture generation: %d"), Doc->GetTextureCount());
+            }
         }
     }
-
-    UE_LOG(LogTemp, Log, TEXT("Total textures to generate: %d"), PSDDocument->GetTextureCount());
 }
 ```
 
+**使用方法**：将 `UPSDInfoPrinterComponent` 添加到场景中任意一个 Actor 上（例如，关卡中的某个空 Actor），在 `TargetPSDActorTag` 属性中填写你的 `APSDQuadActor` 的标签（默认是 “PSDLayerRoot”）。运行游戏时，日志窗口将输出该 PSD 文档的详细信息。
+
 ## 模块依赖
+
+该插件自身依赖 `GeometryMask` 插件。对于使用该插件的项目，需要根据使用目的进行模块依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `GeometryMask` | 插件级依赖，用于几何蒙版功能支持 |
+| `PSDImporterCore` | 运行时核心逻辑，用于在打包后的项目中处理 PSD 数据（如果运行时需要动态解析） |
+| `PSDImporter` | 运行时资产和角色类（`UPSDDocument`, `APSDQuadActor`, `APSDQuadMeshActor`）的定义，是大多数项目需要引用的模块 |
+| `GeometryMask` | 提供几何遮罩功能，插件内部依赖，使用者通常无需直接引用 |
 
-**外部依赖**：
-- `PsdSDK`：第三方 PSD 文件解析库（位于 `Source/ThirdParty/PsdSDK/`），负责读取和解析 Photoshop 二进制格式
-
-**模块间依赖关系**：
-- `PSDImporterCore` → 核心数据类型和解析逻辑
-- `PSDImporter` → 运行时模块，依赖 `PSDImporterCore`
-- `PSDImporterEditor` → 编辑器导入工厂和 UI，依赖 `PSDImporter` 和 `PSDImporterCore`
+**重要提示**：由于此插件标记为 `Installed: false`（默认未启用），你需要手动在项目的 `.uproject` 文件或编辑器插件界面中启用它。
 
 ## 维护状态
 
@@ -287,21 +228,21 @@ void AMyPSDActor::SetupDocument()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏到新版 UE_LOGF 格式 |
-| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修复错误的批量替换操作 |
-| 2026-02-27 | `6759aa54` | [Backout] - CL51314860 | 回退一个有问题的变更 |
-| 2026-02-27 | `7723864b` | Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing regist | 修复引擎初始化委托的注册问题 |
-| 2025-07-15 | `bafe5da2` | Silence incorrect V1051 warnings | 抑制静态分析工具的误报警告 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志输出宏 `UE_LOG` 迁移至新的格式化宏 `UE_LOGF`。 |
+| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修复之前因错误的查找替换操作引入的问题（第二次尝试）。 |
+| 2026-02-27 | `6759aa54` | [Backout] - CL51314860 | 回退了 CL51314860 这次变更。 |
+| 2026-02-27 | `7723864b` | Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing regist | 将引擎初始化委托从静态变量改为通过函数获取，以修复可能的注册丢失问题。 |
+| 2025-07-15 | `bafe5da2` | Silence incorrect V1051 warnings | 抑制（Silence）静态代码分析工具 V1051 产生的不正确的警告信息。 |
 
 ### 维护评价
 
-- **活跃程度**：插件创建于 2025 年 4 月，最近一次更新在 2026 年 4 月，约 1 年的生命周期内保持了持续更新
-- **更新内容**：近期提交主要为代码质量维护（日志迁移、静态分析警告修复、API 重命名适配），未见重大功能变更
-- **实验性状态**：标记为 `IsExperimentalVersion=true` 且 `Installed=false`，属于实验阶段，尚未默认启用
-- **平台限制**：仅支持 Win64，跨平台使用受限
-- **推荐度**：如果你的工作流涉及大量 PSD 文件到 UE5 的转换（尤其是技术美术和 2.5D 项目），可以尝试使用。但由于是实验性插件，API 可能在未来版本中发生变化，不建议在生产环境中深度依赖
+- **年龄与状态**：这是一个于 2025 年 4 月创建的较新插件（约 1 年），目前仍处于 **实验性**（`IsExperimentalVersion: true`）阶段，并且默认未启用（`Installed: false`）。
+- **更新频率**：从提交记录看，近期（2026年）有多次维护性更新，主要是跟随 UE 引擎代码规范调整（如委托接口、日志宏）和修复内部问题。这表明插件仍被 Epic 内部维护或使用，以保持与引擎主干的兼容性。
+- **功能更新**：最近的提交没有包含重大的新功能开发，主要以维护和修复为主。
+- **推荐程度**：**适合实验和原型验证**。由于它是实验性插件，API 和功能可能在未来版本中发生变化或被移除。不推荐在追求稳定性的正式生产项目中深度依赖。对于需要将 PSD 文件导入 UE 并保持图层独立性的非关键路径或内部工具链，可以尝试使用。使用时需关注其随 UE 版本升级可能出现的兼容性问题。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/PSDImporter)
-- [GeometryMask 依赖插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/GeometryMask)
+- 官方文档：暂无
+- 测试用例：暂无（用户未提供路径）

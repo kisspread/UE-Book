@@ -1,10 +1,10 @@
 # Tech Audio Tools
 
-> A collection of audio-related tools and utilities.（照抄，不翻译）
+> A collection of audio-related tools and utilities.
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 技术音频工具 |
+| 中文名 | 音频工具集 |
 | 分类 | Audio |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ✅ 有（蓝图资产、材质模板） |
@@ -16,38 +16,84 @@
 
 ## 用途
 
-TechAudioTools 插件为 Unreal Engine 的 MetaSound 系统提供了一套基于 MVVM（Model-View-ViewModel）模式的编辑器工具链。其核心功能是创建和管理 MetaSound 编辑器的 ViewModel（视图模型），这些 ViewModel 充当了 MetaSound 资产数据与 UMG（UI 框架）控件之间的桥梁。它解决了在自定义编辑器或 UMG 界面中同步显示和编辑 MetaSound 资产元数据（如显示名称、描述、作者、输入/输出参数等）的复杂性问题，使得开发者能够轻松构建与 MetaSound 编辑器行为同步的自定义 UI。
+TechAudioTools 是一个为 MetaSound 编辑器提供 MVVM（Model-View-ViewModel）架构支持的工具集。该插件的核心目的是将 MetaSound 资产的编辑操作与 UMG（Unreal Motion Graphics）UI 控件进行双向绑定，使得 MetaSound 编辑器中的属性变更能够实时反映到 UI 界面上。
+
+具体来说，它解决了以下问题：
+- **MetaSound 属性的编辑器绑定**：通过 ViewModel 模式，将 MetaSound 的元数据（名称、描述、作者、关键词等）暴露为可绑定的属性
+- **输入/输出端口的独立管理**：为每个输入和输出端口提供单独的 ViewModel，支持自定义显示名、描述、排序顺序等
+- **MVVM 架构支持**：利用 UE5 的 ModelViewViewModel 插件实现数据绑定，简化 MetaSound 编辑器的 UI 开发
+
+该插件依赖 ModelViewViewModel 插件，表明它是为 MetaSound 编辑器的现代化 UI 重构而创建的基础设施。
 
 ## 使用场景
 
-- 你需要创建一个自定义的 UMG 面板来批量编辑多个 MetaSound 资产的元数据（如作者、关键词、分类）。
-- 你正在开发一个工具，需要在视口中实时预览和修改 MetaSound 节点的输入参数，并希望这些修改能实时反映到 MetaSound 编辑器和实际音频输出中。
-- 你需要为 MetaSound 的输入和输出引脚构建一个高级的、可排序、可折叠的列表界面，用于展示和编辑其详细属性。
+- 你在开发 MetaSound 编辑器的自定义 UI 面板 → 使用 MetaSoundEditorViewModel 绑定属性
+- 你需要在 UMG Widget 中显示和编辑 MetaSound 的元数据 → 使用 ViewModel 的 FieldNotify 属性
+- 你正在为 MetaSound 编辑器构建基于 MVVM 架构的新界面 → 使用该插件提供的 ViewModel 类
+- 你需要获取 MetaSound 数据类型的引脚颜色 → 使用 GetMetaSoundDataTypePinColor 函数
 
 ## 蓝图用法
 
-插件主要暴露了 `UMetaSoundEditorViewModel` 及其相关的输入/输出 ViewModel 类供蓝图使用，它们继承自 `UMVVMViewModelBase`，支持 UE5 的 MVVM 框架。
+该插件的蓝图 API 主要面向编辑器扩展开发，提供了 ViewModel 属性的读写访问。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Initialize` | 使用一个 MetaSound 构建器（Builder）初始化 ViewModel，建立数据绑定。 | `UMetaSoundEditorViewModel` |
-| `Reset` | 重置 ViewModel，清除所有数据和监听器。 | `UMetaSoundEditorViewModel` |
-| `SetMetaSoundDisplayName` | 设置当前 MetaSound 资产的显示名称。 | `UMetaSoundEditorViewModel` |
-| `SetAuthor` | 设置当前 MetaSound 资产的作者。 | `UMetaSoundEditorViewModel` |
-| `SetKeywords` | 设置当前 MetaSound 资产的关键词数组。 | `UMetaSoundEditorViewModel` |
-| `SetInputDisplayName` | 通过输入名称设置特定输入的显示名称。 | `UMetaSoundEditorViewModel` |
-| `SetOutputSortOrderIndex` | 通过输出名称设置特定输出的排序索引。 | `UMetaSoundEditorViewModel` |
-| `GetMetaSoundDataTypePinColor` | 获取指定 MetaSound 数据类型对应的引脚颜色。 | `UMetaSoundEditorViewModelConversionFunctions` |
+| `Get MetaSound Data Type Pin Color` | 获取指定数据类型的引脚颜色 | `UMetaSoundEditorViewModelConversionFunctions` |
+| `SetMetaSoundDisplayName` | 设置 MetaSound 的显示名称 | `UMetaSoundEditorViewModel` |
+| `SetMetaSoundDescription` | 设置 MetaSound 的描述 | `UMetaSoundEditorViewModel` |
+| `SetAuthor` | 设置 MetaSound 的作者 | `UMetaSoundEditorViewModel` |
+| `SetKeywords` | 设置 MetaSound 的关键词列表 | `UMetaSoundEditorViewModel` |
+| `SetCategoryHierarchy` | 设置 MetaSound 的分类层级 | `UMetaSoundEditorViewModel` |
+| `SetIsDeprecated` | 设置 MetaSound 为已废弃状态 | `UMetaSoundEditorViewModel` |
+| `SetInputDisplayName` | 设置指定输入的显示名称 | `UMetaSoundEditorViewModel` |
+| `SetInputDescription` | 设置指定输入的描述 | `UMetaSoundEditorViewModel` |
+| `SetInputSortOrderIndex` | 设置指定输入的排序索引 | `UMetaSoundEditorViewModel` |
+| `SetInputIsAdvancedDisplay` | 设置指定输入是否为高级显示 | `UMetaSoundEditorViewModel` |
+| `SetOutputDisplayName` | 设置指定输出的显示名称 | `UMetaSoundEditorViewModel` |
+| `SetOutputDescription` | 设置指定输出的描述 | `UMetaSoundEditorViewModel` |
+| `SetOutputSortOrderIndex` | 设置指定输出的排序索引 | `UMetaSoundEditorViewModel` |
+| `SetOutputIsAdvancedDisplay` | 设置指定输出是否为高级显示 | `UMetaSoundEditorViewModel` |
+
+### 可绑定属性（FieldNotify）
+
+**MetaSound 元数据属性**（`UMetaSoundEditorViewModel`）：
+- `DisplayName` - MetaSound 显示名称
+- `Description` - MetaSound 描述
+- `Author` - 作者
+- `Keywords` - 关键词数组
+- `CategoryHierarchy` - 分类层级数组
+- `bIsDeprecated` - 是否已废弃
+
+**输入属性**（`UMetaSoundInputEditorViewModel`）：
+- `InputDisplayName` - 输入显示名称
+- `InputDescription` - 输入描述
+- `SortOrderIndex` - 排序索引
+- `bIsAdvancedDisplay` - 是否高级显示
+
+**输出属性**（`UMetaSoundOutputEditorViewModel`）：
+- `OutputDisplayName` - 输出显示名称
+- `OutputDescription` - 输出描述
+- `SortOrderIndex` - 排序索引
+- `bIsAdvancedDisplay` - 是否高级显示
 
 ### 使用示例（蓝图描述）
 
-1.  创建一个 `UMetaSoundEditorViewModel` 的实例（例如，在你的 UMG Widget 的成员变量中）。
-2.  在 Widget 初始化时，获取要编辑的 MetaSound 资产的 `MetaSoundBuilderBase` 对象，然后调用 `Initialize` 节点绑定到该 ViewModel。
-3.  在 UMG 的文本框（TextBox）上，使用 **Property Binding** 或 **ViewModel Binding** 功能，将其文本属性绑定到 ViewModel 的 `DisplayName`、`Author`、`Keywords` 等属性上。
-4.  当用户在 UI 中修改文本框内容时，ViewModel 的对应属性会自动更新，并通过内部的 `BuilderListener` 将更改同步回 MetaSound 编辑器和资产。
-5.  使用 `GetMetaSoundDataTypePinColor` 节点，根据节点引脚的类型名称，获取正确的颜色来绘制 UI。
+1. **创建 ViewModel 并绑定到 MetaSound**：
+   - 创建 `MetaSoundEditorViewModel` 实例
+   - 调用 `InitializeMetaSound` 传入目标 MetaSound 资产
+   - ViewModel 会自动创建 `MetaSoundEditorBuilderListener` 监听资产变更
+
+2. **在 UMG Widget 中绑定属性**：
+   - 将 ViewModel 设置为 Widget 的数据源
+   - 在 Widget 的属性绑定中选择 ViewModel 的 `DisplayName`、`Description` 等属性
+   - 使用 FieldNotify 机制实现实时更新
+
+3. **编辑 MetaSound 输入属性**：
+   - 获取输入的 ViewModel 实例（通过 `CreateInputViewModel` 自动创建）
+   - 调用 `SetInputDisplayName`、`SetInputDescription` 等函数修改属性
+   - 变更会自动同步到 MetaSound 资产
 
 ## C++ 用法
 
@@ -55,97 +101,132 @@ TechAudioTools 插件为 Unreal Engine 的 MetaSound 系统提供了一套基于
 
 ```cpp
 #include "ViewModels/MetaSoundEditorViewModel.h"
-#include "ViewModels/MetaSoundEditorViewModelConversionFunctions.h" // 如需使用工具函数
+#include "ViewModels/MetaSoundEditorViewModelConversionFunctions.h"
 ```
 
 ### 基本用法
 
-创建并初始化一个 MetaSound 编辑器 ViewModel，用于驱动 UI。
-
 ```cpp
-// 来源文件: 概括自 Public/ViewModels/MetaSoundEditorViewModel.h
-// 在你的 UI 管理器或 Widget 类中
-UPROPERTY()
-TObjectPtr<UMetaSoundEditorViewModel> MetaSoundEditorViewModel;
+// 来源: MetaSoundEditorViewModel.h
 
-// 初始化过程
-void UMyMetaSoundEditorPanel::InitializeWithMetaSoundBuilder(UMetaSoundBuilderBase* InBuilder)
-{
-    if (!MetaSoundEditorViewModel)
-    {
-        MetaSoundEditorViewModel = NewObject<UMetaSoundEditorViewModel>(this);
-    }
-    // 初始化 ViewModel 并绑定监听器，此后 ViewModel 的属性会同步资产变化
-    MetaSoundEditorViewModel->Initialize(InBuilder);
-    // 现在可以绑定到 UI，或读取 MetaSoundEditorViewModel->GetDisplayName() 等
-}
+// 创建 MetaSound Editor ViewModel
+UMetaSoundEditorViewModel* EditorViewModel = NewObject<UMetaSoundEditorViewModel>();
+
+// 初始化 ViewModel，绑定到 MetaSound 资产
+EditorViewModel->InitializeMetaSound(MetaSoundAsset);
+
+// 设置 MetaSound 元数据
+EditorViewModel->SetMetaSoundDisplayName(FText::FromString(TEXT("My Ambient Sound")));
+EditorViewModel->SetMetaSoundDescription(FText::FromString(TEXT("An ambient sound effect")));
+EditorViewModel->SetAuthor(TEXT("Audio Team"));
+EditorViewModel->SetKeywords({FText::FromString(TEXT("ambient")), FText::FromString(TEXT("environment"))});
+
+// 获取输入端口并修改其属性
+EditorViewModel->SetInputDisplayName(FName("Volume"), FText::FromString(TEXT("Volume Control")));
+EditorViewModel->SetInputDescription(FName("Volume"), FText::FromString(TEXT("Controls the output volume")));
+EditorViewModel->SetInputSortOrderIndex(FName("Volume"), 0);
+EditorViewModel->SetInputIsAdvancedDisplay(FName("Volume"), false);
+
+// 修改输出端口属性
+EditorViewModel->SetOutputDisplayName(FName("AudioOut"), FText::FromString(TEXT("Audio Output")));
+EditorViewModel->SetOutputSortOrderIndex(FName("AudioOut"), 0);
 ```
 
 ### 进阶用法
 
-监听 ViewModel 属性的变化，或直接设置特定输入/输出的属性。
-
 ```cpp
-// 来源文件: 概括自 Public/ViewModels/MetaSoundEditorViewModel.h
-// 1. 通过 ViewModel 修改 MetaSound 的元数据
-MetaSoundEditorViewModel->SetAuthor(TEXT("Epic Games Audio Team"));
-MetaSoundEditorViewModel->SetKeywords({ FText::FromString(TEXT("Ambient")), FText::FromString(TEXT("Forest")) });
+// 来源: MetaSoundEditorViewModel.h + MetaSoundEditorViewModelConversionFunctions.h
 
-// 2. 修改特定输入的显示信息
-MetaSoundEditorViewModel->SetInputDisplayName(FName("Volume"), FText::FromString(TEXT("主音量")));
-MetaSoundEditorViewModel->SetInputIsAdvancedDisplay(FName("Volume"), true); // 设为高级显示
+// 获取 MetaSound 数据类型的引脚颜色
+FLinearColor PinColor = UMetaSoundEditorViewModelConversionFunctions::GetMetaSoundDataTypePinColor(FName("Audio"));
+FLinearColor FloatColor = UMetaSoundEditorViewModelConversionFunctions::GetMetaSoundDataTypePinColor(FName("Float"));
+FLinearColor BoolColor = UMetaSoundEditorViewModelConversionFunctions::GetMetaSoundDataTypePinColor(FName("Bool"));
 
-// 3. 修改特定输出的排序索引
-MetaSoundEditorViewModel->SetOutputSortOrderIndex(FName("OutMono"), 0);
+// 监听 ViewModel 属性变更（需要在 UMG Widget 或其他绑定类中实现）
+// ViewModel 使用 FieldNotify 机制，可以通过 UE_MVVM_SET_PROPERTY_VALUE 宏触发通知
+// 变更会自动通过 MetaSoundEditorBuilderListener 同步到资产
 
-// 4. 监听单个输入属性的变化（通常通过数据绑定自动处理，但也可手动绑定委托）
-// 注意：更常见的做法是使用 FieldNotify 和 MVVM 框架自动绑定。
+// 重置 ViewModel 状态
+EditorViewModel->Reset();
+
+// 标记 MetaSound 为已废弃
+EditorViewModel->SetIsDeprecated(true);
+
+// 设置分类层级
+EditorViewModel->SetCategoryHierarchy({
+    FText::FromString(TEXT("Audio")),
+    FText::FromString(TEXT("Ambient")),
+    FText::FromString(TEXT("Environment"))
+});
 ```
 
 ## Demo 示例
 
-一个最小化的示例，展示如何创建一个自定义的编辑器面板 ViewModel。
-
 ```cpp
-// MyMetaSoundEditorViewModel.h
+// MetaSoundEditorPanel.h
 #pragma once
+
+#include "CoreMinimal.h"
 #include "ViewModels/MetaSoundEditorViewModel.h"
-#include "MyMetaSoundEditorViewModel.generated.h"
+#include "MetaSoundEditorPanel.generated.h"
 
 UCLASS()
-class UMyMetaSoundEditorViewModel : public UMetaSoundEditorViewModel
+class UMetaSoundEditorPanel : public UObject
 {
     GENERATED_BODY()
+
 public:
-    // 自定义初始化逻辑，例如为 UI 添加额外的派生属性
-    void InitializeForCustomPanel(UMetaSoundBuilderBase* InBuilder);
+    // 初始化面板并绑定 MetaSound
+    UFUNCTION(BlueprintCallable, Category = "MetaSound Editor")
+    void InitializePanel(UMetaSoundViewModel* InViewModel);
+
+    // 更新显示名称
+    UFUNCTION(BlueprintCallable, Category = "MetaSound Editor")
+    void UpdateDisplayName(const FText& NewDisplayName);
+
+    // 获取当前 ViewModel
+    UFUNCTION(BlueprintCallable, Category = "MetaSound Editor")
+    UMetaSoundEditorViewModel* GetViewModel() const { return EditorViewModel; }
+
+private:
+    UPROPERTY()
+    TObjectPtr<UMetaSoundEditorViewModel> EditorViewModel;
 };
+```
 
-// MyMetaSoundEditorViewModel.cpp
-#include "MyMetaSoundEditorViewModel.h"
-#include "MetaSoundBuilderBase.h"
+```cpp
+// MetaSoundEditorPanel.cpp
+#include "MetaSoundEditorPanel.h"
 
-void UMyMetaSoundEditorViewModel::InitializeForCustomPanel(UMetaSoundBuilderBase* InBuilder)
+void UMetaSoundEditorPanel::InitializePanel(UMetaSoundViewModel* InViewModel)
 {
-    // 先调用父类的初始化，建立与 MetaSound 资产和编辑器的连接
-    Initialize(InBuilder);
-    
-    // 此时，ViewModel 已经同步了资产的 DisplayName, Author, Inputs, Outputs 等。
-    // 你可以在蓝图中绑定这个 ViewModel 的属性到 UMG 控件。
-    // 也可以在 C++ 中进一步处理数据。
-    UE_LOG(LogTemp, Log, TEXT("Editing MetaSound: %s"), *GetDisplayName().ToString());
+    if (UMetaSoundEditorViewModel* ViewModel = Cast<UMetaSoundEditorViewModel>(InViewModel))
+    {
+        EditorViewModel = ViewModel;
+        
+        // 设置默认值
+        EditorViewModel->SetMetaSoundDisplayName(FText::FromString(TEXT("New MetaSound")));
+        EditorViewModel->SetMetaSoundDescription(FText::FromString(TEXT("")));
+    }
+}
+
+void UMetaSoundEditorPanel::UpdateDisplayName(const FText& NewDisplayName)
+{
+    if (EditorViewModel)
+    {
+        EditorViewModel->SetMetaSoundDisplayName(NewDisplayName);
+    }
 }
 ```
 
 ## 模块依赖
 
-从 `Build.cs` 文件分析，以下为本插件特有的依赖：
-
 | 模块 | 用途 |
 |---|---|
-| `MetaSound` | 核心 MetaSound 框架，提供资产类型、构建器和文档接口。 |
-| `ModelViewViewModel` | UE5 的 MVVM 框架，`UMVVMViewModelBase` 的基类在此模块中定义。 |
-| `MetasoundFrontend` | MetaSound 前端数据模型，用于访问输入、输出引脚的详细类型信息。 |
+| `Metasound` | MetaSound 核心模块，提供 MetaSound 资产和前端接口 |
+| `ModelViewViewModel` | UE5 MVVM 框架，提供属性绑定和通知机制 |
+| `MetaSoundEditor` | MetaSound 编辑器模块，提供编辑器特定功能 |
+| `UMG` | Unreal Motion Graphics，用于 UI Widget 绑定 |
 
 ## 维护状态
 
@@ -153,20 +234,32 @@ void UMyMetaSoundEditorViewModel::InitializeForCustomPanel(UMetaSoundBuilderBase
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-16 | `cb44584a` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 整合 MetaSound 引脚类型注册和相关编辑器行为。 |
-| 2026-04-15 | `2010cdbb` | [Backout] - CL52717658 - CIS Compile Error | 回滚了导致编译错误的更改。 |
-| 2026-04-14 | `d9dda16b` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 整合 MetaSound 引脚类型注册和相关编辑器行为（首次尝试）。 |
-| 2026-04-09 | `77ec5174` | [TechAudioTools] Added support for transactions in MetaSound Literal Viewmodels | 为 MetaSound 字面量 ViewModel 添加了事务（Undo/Redo）支持。 |
-| 2026-03-16 | `e8ed118a` | DocumentConfiguration Rename to MetaSound(Document)Template | 将 `DocumentConfiguration` 重命名为 `MetaSoundTemplate`。 |
+| 2026-04-16 | `cb44584a` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 整合引脚类型注册和相关编辑器行为 |
+| 2026-04-15 | `2010cdbb` | [Backout] - CL52717658 - CIS Compile Error | 回退编译错误修复 |
+| 2026-04-14 | `d9dda16b` | MetaSound: Consolidate pin type registration and associated pin-related MetaSound Editor behavior in | 整合引脚类型注册和相关编辑器行为 |
+| 2026-04-09 | `77ec5174` | [TechAudioTools] Added support for transactions in MetaSound Literal Viewmodels | 添加 MetaSound 字面量 ViewModel 的事务支持 |
+| 2026-03-16 | `e8ed118a` | DocumentConfiguration Rename to MetaSound(Document)Template | 重命名文档配置为 MetaSound 模板 |
 
 ### 维护评价
 
-TechAudioTools 插件创建于 2025 年 4 月，是一个相对年轻的实验性插件。从 Git 历史看，它在 2026 年 3 月至 4 月期间有过数次实质性更新，主要集中在 MetaSound 引脚系统和编辑器行为的整合与优化上，并修复了编译问题，表明它正处于**活跃开发**阶段。由于其 `IsBetaVersion` 和 `IsExperimentalVersion` 均为 true，且 `EnabledByDefault` 为 false，属于需要手动启用的实验性功能。其 API 可能会在未来版本中发生变化。
+**活跃维护中** 🟢
 
-**推荐**：如果你正在开发依赖 MetaSound 编辑器自定义 UI 的高级工具或插件，可以尝试使用，但需注意其实验性状态和潜在的 API 变更。对于核心生产项目，建议等待其进入正式发布阶段。
+该插件创建于 2025 年 4 月，虽然历史较短，但维护非常活跃：
+- 最近一个月内有多次实质性更新
+- 2026 年 4 月密集更新，主要围绕引脚类型注册和编辑器行为整合
+- 2026 年 4 月添加了事务支持，表明功能在持续完善
+- 2026 年 3 月进行了命名重构，说明架构在优化中
+
+**注意事项**：
+- 该插件标记为实验性（`IsExperimentalVersion=true`）和 Beta 版本（`IsBetaVersion=true`）
+- 默认未启用（`Installed=false`），需要手动启用
+- API 可能在未来版本中发生变化
+- 建议在生产环境中谨慎使用，适合早期采用者和内部开发
+
+**推荐使用**：适合正在开发 MetaSound 编辑器扩展的团队，特别是需要 MVVM 架构支持的场景。不建议在生产环境中使用，但可以用于原型开发和内部工具。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/TechAudioTools)
-- [官方文档]() (无)
-- [测试用例]() (此插件的测试用例可能位于引擎级测试目录中，未在本插件目录内发现)
+- [ModelViewViewModel 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/ModelViewViewModel)
+- [MetaSound 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/Metasound)

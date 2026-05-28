@@ -1,14 +1,14 @@
 # USD Importer
 
-> Adds support for importing the USD file format into Unreal Engine
+> Adds support for importing the USD file format into Unreal Engine（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
 | 中文名 | USD 导入器 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（USD Schema 资产、材质模板等） |
-| 模块 | `GeometryCacheUSD` (Runtime), `USDClassesEditor` (Runtime), `USDExporter` (Runtime), `USDSchemas` (Runtime), `USDStage` (Runtime), `USDStageEditor` (Runtime), `USDStageEditorViewModels` (Runtime), `USDStageImporter` (Runtime), `USDTests` (Runtime) |
+| 包含内容 | ✅ 有（USD资产） |
+| 模块 | 多个模块（见详解） |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-11-19 |
 | 年龄标签 | 👴 老古董（约 8 年） |
@@ -16,436 +16,243 @@
 
 ## 用途
 
-USD Importer 为 Unreal Engine 提供了完整的 [USD（Universal Scene Description）](https://openusd.org) 支持，解决了影视和动画行业标准资产格式与 UE 之间的桥接问题。
+**USD Importer** 插件不仅仅是导入工具，更是 Unreal Engine 与 Pixar 的 Universal Scene Description (USD) 生态系统深度集成的**运行时**和**编辑器**核心组件。其主要解决以下问题：
 
-该插件的核心功能包括：
-
-- **USD Stage 加载与管理**：通过 `AUsdStageActor` 将 USD 文件作为舞台（Stage）加载到 UE 关卡中，自动将 USD Prim 树转换为 UE 的 Actor/Component 层级
-- **资产自动生成**：将 USD 中的 Mesh、材质、骨骼动画等自动转换为 UE 原生资产（`UStaticMesh`、`UMaterial`、`UAnimSequence` 等）
-- **双向同步**：通过 USD Notice 监听机制实现 USD Stage 变更到 UE 的实时同步，支持 Undo/Redo
-- **Sequencer 集成**：自动将 USD 动画数据转换为 `ULevelSequence`，并支持通过 Dynamic Binding 与 Sequencer 联动
-- **USD 导出**：`USDExporter` 模块支持将 UE 资产反向导出为 USD 格式
-
-该插件默认未启用且标记为 Beta，说明它仍在积极开发中。它尤其适用于需要在影视管线（如 VFX）与 UE 实时渲染之间进行资产交换的场景。
+1.  **USD 资产导入与序列化**：将 USD 文件（`.usd`, `.usda`, `.usdc`）解析并转换为 UE 的原生资产（Static Mesh, Skeletal Mesh, Material, Animation 等）。
+2.  **运行时 USD 阶段管理**：通过 `AUsdStageActor` 在游戏世界中打开、加载、显示和交互式操作 USD 阶段，实现动态资产加载和场景合成。
+3.  **双向数据同步与序列化动画**：将 USD 阶段的动画数据转换为 UE 的 Level Sequence，支持在 Sequencer 中编辑并可能同步回 USD。
+4.  **编辑器内可视化与编辑**：为 USD 阶段提供专业的编辑器界面（USD Stage Editor），用于浏览 prim 层级、检查属性、控制导入设置和实时预览。
+5.  **资产缓存与优化**：通过智能缓存机制（`UUsdAssetCache3`）避免重复生成相同资产，并支持 Nanite、材质合并等优化。
 
 ## 使用场景
 
-- 你在做影视虚拟制片项目，需要从 Houdini/Maya 等 DCC 工具导入 USD 场景 → 将 USD 文件拖入关卡或通过 `AUsdStageActor` 加载
-- 你需要在 Sequencer 中控制 USD 资产的动画和可见性 → 自动生成的 LevelSequence 会包含所有动画轨道
-- 你需要精确控制 USD 加载行为（如按 Kind 折叠、合并材质槽、Nanite 阈值等） → 通过 `AUsdStageActor` 的配置属性调整
-- 你希望在 USD 和 UE 之间进行双向资产交换 → 使用 USDExporter 模块导出
-- 你需要在 USD Stage Editor 中交互式地浏览和编辑 USD Prim 层级 → 启用 `USDStageEditor` 模块
-
-## 子模块概览
-
-本插件包含 9 个运行时模块，按功能可分为以下几组：
-
-| 模块 | 职责 |
-|---|---|
-| **USDSchemas** | USD Schema 到 UE 类型的翻译框架 |
-| **USDStage** | 核心 Stage Actor、Prim 映射、动画集成 |
-| **USDStageImporter** | USD 文件导入管线 |
-| **USDStageEditor** | USD Stage 编辑器面板（UI） |
-| **USDStageEditorViewModels** | 编辑器面板的 ViewModel 层 |
-| **USDClassesEditor** | 编辑器辅助类 |
-| **USDExporter** | UE 到 USD 的导出功能 |
-| **GeometryCacheUSD** | USD GeometryCache 支持 |
-| **USDTests** | 自动化测试 |
+-   **影视与虚拟制片**：将影视流程中的 USD 场景资产（模型、材质、灯光、动画）无损导入 UE 用于实时渲染和虚拟拍摄。
+-   **跨DCC工具协作**：从 Maya, Houdini, Blender 等支持 USD 的 DCC 软件导出场景，在 UE 中进行最终合成和交互。
+-   **动态资产流送**：在游戏或实时应用中，根据运行时需求动态加载 USD 资产的特定部分或 LOD。
+-   **大规模场景合成**：使用 `AUsdStageActor` 组合多个 USD 文件，构建复杂的游戏或可视化场景。
+-   **程序化内容生成**：通过 C++ 或蓝图动态创建和操控 USD 阶段，实现程序化场景生成。
 
 ## 蓝图用法
 
-以下 BlueprintCallable 函数来自 `AUsdStageActor`，按功能分组。
+蓝图交互主要通过 `AUsdStageActor` 实现。以下按功能分组列出核心节点。
 
 ### 核心节点
 
-#### Stage 管理
-
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SetRootLayer` | 设置 USD 文件路径并打开 Stage | `AUsdStageActor` |
-| `SetStageState` | 控制 Stage 状态（关闭/打开/打开并加载） | `AUsdStageActor` |
-| `NewStage` | 创建一个全新的内存 Stage | `AUsdStageActor` |
-| `SetIsolatedRootLayer` | 进入/退出隔离模式，只显示指定子层 | `AUsdStageActor` |
-| `GetIsolatedRootLayer` | 获取当前隔离层标识 | `AUsdStageActor` |
-
-#### 加载与网格设置
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `SetInitialLoadSet` | 设置初始加载集合（LoadAll / LoadNone 等） | `AUsdStageActor` |
-| `SetInterpolationType` | 设置动画插值类型 | `AUsdStageActor` |
-| `SetPurposesToLoad` | 按 Purpose 过滤加载哪些 Prim | `AUsdStageActor` |
-| `SetUsePrimKindsForCollapsing` | 是否按 Kind 自动折叠子树 | `AUsdStageActor` |
-| `SetKindsToCollapse` | 指定哪些 Kind 需要折叠 | `AUsdStageActor` |
-| `SetMergeIdenticalMaterialSlots` | 折叠时是否合并相同材质槽 | `AUsdStageActor` |
-| `SetShareAssetsForIdenticalPrims` | 相同 Prim 是否共享生成的资产 | `AUsdStageActor` |
-| `SetNaniteTriangleThreshold` | 超过此三角形数的 Mesh 自动启用 Nanite | `AUsdStageActor` |
-| `SetSubdivisionLevel` | 设置细分级别（0 = 不细分） | `AUsdStageActor` |
-| `SetFallbackCollisionType` | 无物理 Schema 的 Mesh 的默认碰撞类型 | `AUsdStageActor` |
-| `SetGeometryCacheImport` | GeometryCache 导入选项 | `AUsdStageActor` |
-
-#### 材质设置
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `SetRenderContext` | 设置材质解析使用的渲染上下文 | `AUsdStageActor` |
-| `SetMaterialPurpose` | 设置材质绑定解析的 Purpose | `AUsdStageActor` |
-
-#### 动画设置
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `SetRootMotionHandling` | 根骨骼运动处理策略 | `AUsdStageActor` |
-| `GetTime` | 获取当前 USD 时间码 | `AUsdStageActor` |
-| `SetTime` | 设置 USD 时间码（驱动动画） | `AUsdStageActor` |
-| `GetLevelSequence` | 获取自动生成的 LevelSequence | `AUsdStageActor` |
-
-#### 元数据设置
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `SetCollectMetadata` | 是否收集 USD Prim 元数据 | `AUsdStageActor` |
-| `SetCollectFromEntireSubtrees` | 是否从整个子树收集元数据 | `AUsdStageActor` |
-| `SetCollectOnComponents` | 是否将元数据附加到组件上 | `AUsdStageActor` |
-| `SetBlockedPrefixFilters` | 元数据前缀过滤器 | `AUsdStageActor` |
-| `SetInvertFilters` | 是否反转过滤器 | `AUsdStageActor` |
-
-#### 查询
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `GetGeneratedComponent` | 根据 Prim 路径获取生成的组件 | `AUsdStageActor` |
-| `GetGeneratedAssets` | 根据 Prim 路径获取生成的资产列表 | `AUsdStageActor` |
-| `GetSourcePrimPath` | 根据 UObject 反查源 Prim 路径 | `AUsdStageActor` |
-| `SetUsdAssetCache` | 设置资产缓存对象 | `AUsdStageActor` |
-
-#### Sequencer 动态绑定
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `ResolveWithStageActor` | 解析 Sequencer 动态绑定到 USD Stage Actor 生成的 Actor/Component | `UUsdDynamicBindingResolverLibrary` |
+| `Set Root Layer` | 设置要打开的 USD 文件路径，是启动所有操作的第一步。 | `AUsdStageActor` |
+| `Set Stage State` | 控制 USD 阶段的生命周期（关闭、打开、打开并加载资产）。 | `AUsdStageActor` |
+| `Get Generated Component` | 根据 USD Prim 路径获取其在 UE 中生成的对应场景组件（如 StaticMeshComponent）。 | `AUsdStageActor` |
+| `Get Generated Assets` | 根据 USD Prim 路径获取其生成的所有资产（如 UStaticMesh, UMaterialInterface）。 | `AUsdStageActor` |
+| `Get Source Prim Path` | 反向查询：给定一个生成的 UE 对象，返回其对应的 USD Prim 路径。 | `AUsdStageActor` |
+| `Set Time` / `Get Time` | 设置或获取 USD 阶段的当前评估时间，用于预览动画。 | `AUsdStageActor` |
+| `Get Level Sequence` | 获取为当前 USD 阶段生成的主 Level Sequence 资产，可在 Sequencer 中打开编辑。 | `AUsdStageActor` |
+| `Set Purposes To Load` | 按位掩码设置要加载的 Prim 的用途（如 Default, Proxy, Guide, Render）。 | `AUsdStageActor` |
+| `Set Kinds To Collapse` | 按位掩码设置要折叠的 Prim 类型（如 Model, Group），以优化导入结构。 | `AUsdStageActor` |
+| `Set Nanite Triangle Threshold` | 设置自动启用 Nanite 的三角形数量阈值。 | `AUsdStageActor` |
 
 ### 使用示例（蓝图描述）
 
-**加载 USD 文件并配置选项：**
+1.  **基本导入与加载**：
+    - 在关卡中放置一个 `AUsdStageActor`。
+    - 在其 `Details` 面板中，设置 `Root Layer` 属性为你的 USD 文件路径。
+    - 将 `Stage State` 从 `Closed` 改为 `Opened And Loaded`。此时，USD 文件中的资产将被转换并加载到关卡中。
 
-1. 在关卡中放置一个 `AUsdStageActor`
-2. 在细节面板中设置 `RootLayer` 为 `.usd`/`.usda`/`.usdc` 文件路径
-3. 设置 `StageState` 为 `OpenedAndLoaded` 触发加载
-4. 调整 `InitialLoadSet`（通常为 `LoadAll`）
-5. 如需按 Kind 折叠，启用 `bUsePrimKindsForCollapsing` 并设置 `KindsToCollapse` 位掩码
-6. 设置 `NaniteTriangleThreshold` 为合适的值以优化大型网格性能
+2.  **动态查询生成的资产**：
+    - 在蓝图中，使用 `Get Actor Of Class` 节点找到 `AUsdStageActor` 实例。
+    - 调用 `Get Generated Assets` 节点，`Prim Path` 输入类似 `"/root/MyMesh"` 的字符串。
+    - 返回的数组包含生成的 `UStaticMesh` 等对象，可对其进行操作（如应用新材质）。
 
-**通过蓝图动态加载：**
-
-1. 创建 `AUsdStageActor` 的 Spawn Actor 节点
-2. 连接 `SetRootLayer` 节点，传入文件路径字符串
-3. 连接 `SetStageState` 节点，设为 `OpenedAndLoaded`
-4. 使用 `GetGeneratedComponent` 查询特定 Prim（如 `"/root/my_mesh"`）生成的组件
-5. 使用 `GetGeneratedAssets` 获取该 Prim 生成的 `UStaticMesh` 等资产引用
-
-**通过 Sequencer Dynamic Binding 绑定 USD 动画：**
-
-1. 在 Sequencer 中对绑定使用 `ResolveWithStageActor` 节点
-2. 指定 `StageActorIDNameFilter` 或 `RootLayerFilter` 定位到特定 Stage Actor
-3. 设置 `PrimPath` 为目标 Prim 的完整路径（如 `"/root/character"`）
-4. 返回的 UObject 将是该 Prim 对应的 Actor 或 Component
+3.  **控制动画播放**：
+    - 通过 `Set Time` 节点，根据游戏逻辑（如角色位置）动态改变 USD 阶段的时间，以预览动画或变形效果。
+    - 使用 `Get Level Sequence` 获取序列后，可以将其添加到 `Level Sequence Actor` 中以获得更复杂的 Sequencer 控制。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-// USDStage 模块
-#include "USDStageActor.h"
-#include "USDStageModule.h"
-
-// LevelSequence 集成
-#include "USDLevelSequenceHelper.h"
-
-// Prim 映射
-#include "USDPrimTwin.h"
-
-// Sequencer 动态绑定
-#include "USDDynamicBindingResolverLibrary.h"
+#include "USDStageActor.h"          // 核心舞台Actor
+#include "USDStageModule.h"         // 模块接口
+#include "USDLevelSequenceHelper.h" // 序列辅助类
+#include "USDPrimTwin.h"            // Prim与组件的映射关系
 ```
 
 ### 基本用法
 
-```cpp
-// 获取或创建 USD Stage Actor
-// 来源: Public/USDStageModule.h
-IUsdStageModule& StageModule = FModuleManager::Get().LoadModuleChecked<IUsdStageModule>("USDStage");
-AUsdStageActor& StageActor = StageModule.GetUsdStageActor(GetWorld());
-
-// 设置 USD 文件路径并打开 Stage
-StageActor.SetRootLayer(TEXT("/Game/USD/MyScene.usd"));
-
-// 配置加载选项
-StageActor.SetInitialLoadSet(EUsdInitialLoadSet::LoadAll);
-StageActor.SetInterpolationType(EUsdInterpolationType::Linear);
-StageActor.SetPurposesToLoad(static_cast<int32>(EUsdPurpose::Default) | static_cast<int32>(EUsdPurpose::Proxy));
-
-// 设置 Nanite 阈值 — 超过 10000 三角形的 Mesh 启用 Nanite
-StageActor.SetNaniteTriangleThreshold(10000);
-
-// 打开并加载 Stage
-StageActor.SetStageState(EUsdStageState::OpenedAndLoaded);
-```
-
-### 查询生成的组件和资产
+来自 `USDStage` 模块的头文件，展示了如何访问和配置 `AUsdStageActor`。
 
 ```cpp
-// 来源: Public/USDStageActor.h
+// USDStageActor.h 中的核心用法示例
+// 假设在某个Actor或函数中已经获取了 AUsdStageActor* StageActor 指针
 
-// 根据 Prim 路径查询生成的组件
-USceneComponent* MeshComponent = StageActor.GetGeneratedComponent(TEXT("/root/scene/my_mesh"));
-if (MeshComponent)
+// 1. 设置根层并打开阶段
+FString UsdFilePath = TEXT("/Game/Scenes/MyScene.usd");
+StageActor->SetRootLayer(UsdFilePath);
+
+// 2. 配置导入选项 (可以在蓝图中设置，也可在C++中动态设置)
+StageActor->SetStageState(EUsdStageState::OpenedAndLoaded);
+StageActor->SetPurposesToLoad(static_cast<int32>(EUsdPurpose::Default) | static_cast<int32>(EUsdPurpose::Render));
+StageActor->SetNaniteTriangleThreshold(10000);
+StageActor->SetKindsToCollapse(static_cast<int32>(EUsdDefaultKind::Model));
+
+// 3. 查询生成的组件和资产
+FString PrimPath = TEXT("/root/Characters/hero");
+USceneComponent* GeneratedComp = StageActor->GetGeneratedComponent(PrimPath);
+if (GeneratedComp)
 {
-    // 组件的生命周期由 StageActor 管理，可能在关闭 Stage 时被销毁
-    MeshComponent->SetVisibility(false);
+    // 对组件进行操作
 }
 
-// 根据 Prim 路径查询生成的资产（可能是多个，如 SkeletalMesh + Skeleton）
-TArray<UObject*> Assets = StageActor.GetGeneratedAssets(TEXT("/root/scene/my_mesh"));
-for (UObject* Asset : Assets)
+TArray<UObject*> GeneratedAssets = StageActor->GetGeneratedAssets(PrimPath);
+for (UObject* Asset : GeneratedAssets)
 {
-    UE_LOG(LogTemp, Log, TEXT("Generated asset: %s"), *Asset->GetName());
+    if (UStaticMesh* Mesh = Cast<UStaticMesh>(Asset))
+    {
+        // 操作网格体资产
+    }
 }
 
-// 反向查询：从 UObject 获取源 Prim 路径
-FString PrimPath = StageActor.GetSourcePrimPath(MeshComponent);
-// 返回 "/root/scene/my_mesh"
+// 4. 控制动画
+StageActor->SetTime(1.5f); // 设置到1.5秒
+ULevelSequence* Seq = StageActor->GetLevelSequence();
 ```
 
-### 动画时间控制
+### 进阶用法
+
+结合 `USDLevelSequenceHelper` 和 `USDPrimTwin` 进行更底层的控制。
 
 ```cpp
-// 来源: Public/USDStageActor.h
+// USDLevelSequenceHelper.h 和 USDPrimTwin.h 中的高级概念
+// 通常用于自定义导入或扩展插件功能
 
-// 获取 LevelSequence
-ULevelSequence* Sequence = StageActor.GetLevelSequence();
-
-// 设置时间码来驱动动画
-StageActor.SetTime(24.0f);  // 跳转到第 24 帧
-float CurrentTime = StageActor.GetTime();
-```
-
-### 监听 Stage 变更事件
-
-```cpp
-// 来源: Public/USDStageActor.h 中的事件声明
-
-// 监听 Stage 打开/关闭
-StageActor.OnStageLoaded.AddLambda([]()
+// FUsdLevelSequenceHelper 管理着USD动画到LevelSequence的转换
+// 在 AUsdStageActor 内部使用，通常不需要直接创建，但可以响应其事件
+// 例如，监听骨骼动画烘焙事件：
+FUsdLevelSequenceHelper& SeqHelper = StageActor->GetLevelSequenceHelper(); // 假设有访问器
+SeqHelper.GetOnSkelAnimationBaked().AddLambda([](const FString& SkeletonPrimPath)
 {
-    UE_LOG(LogTemp, Log, TEXT("USD Stage loaded"));
+    UE_LOG(LogTemp, Log, TEXT("骨骼动画已烘焙: %s"), *SkeletonPrimPath);
 });
 
-StageActor.OnStageUnloaded.AddLambda([]()
+// UUsdPrimTwin 代表了USD Prim到UE组件/资产的“双胞胎”映射
+// 可以通过它遍历阶段Actor生成的组件树
+UUsdPrimTwin* RootTwin = StageActor->GetRootPrimTwin(); // 假设有访问器
+if (RootTwin)
 {
-    UE_LOG(LogTemp, Log, TEXT("USD Stage unloaded"));
-});
-
-// 监听 Prim 变更
-StageActor.OnPrimChanged.AddLambda([](const FString& PrimPath, bool bResync)
-{
-    UE_LOG(LogTemp, Log, TEXT("Prim changed: %s (resync: %s)"), *PrimPath, bResync ? TEXT("true") : TEXT("false"));
-});
-
-// 监听时间变化（用于 Sequencer 集成）
-StageActor.OnTimeChanged.AddLambda([]()
-{
-    // 动画时间更新回调
-});
-
-// 静态事件 — 监听任意 Stage Actor 加载完成
-AUsdStageActor::FOnActorLoaded& OnLoaded = AUsdStageActor::OnActorLoaded;
-OnLoaded.AddLambda([](AUsdStageActor* LoadedActor)
-{
-    UE_LOG(LogTemp, Log, TEXT("Stage Actor loaded: %s"), *LoadedActor->GetName());
-});
-```
-
-### C++ 进阶用法
-
-```cpp
-// 隔离模式：只显示某个子层
-// 来源: Public/USDStageActor.h
-StageActor.SetIsolatedRootLayer(TEXT("/path/to/sublayer.usda"));
-FString CurrentIsolated = StageActor.GetIsolatedRootLayer();
-// 传入空字符串退出隔离模式
-StageActor.SetIsolatedRootLayer(TEXT(""));
-
-// 获取底层 USD Stage（需要 UnrealUSDWrapper）
-// 来源: Public/USDStageActor.h
-UE::FUsdStage& Stage = StageActor.GetOrOpenUsdStage();
-UE::FUsdStage& BaseStage = StageActor.GetBaseUsdStage();
-
-// 获取边界框缓存
-TSharedPtr<UE::FUsdGeomBBoxCache> BBoxCache = StageActor.GetBBoxCache();
-
-// 控制 USD Notice 监听（写入 Stage 时暂停监听避免循环）
-StageActor.StopListeningToUsdNotices();
-// ... 执行写入操作 ...
-StageActor.ResumeListeningToUsdNotices();
-
-// 控制 LevelSequence 监控（修改 Sequencer 时暂停回写 USD）
-StageActor.StopMonitoringLevelSequence();
-// ... 执行 Sequencer 操作 ...
-StageActor.ResumeMonitoringLevelSequence();
+    RootTwin->Iterate([](UUsdPrimTwin& Twin)
+    {
+        USceneComponent* Comp = Twin.GetSceneComponent();
+        if (Comp)
+        {
+            // 找到与USD Prim对应的UE组件
+            // Twin.PrimPath 包含USD路径
+        }
+    }, true); // true 表示递归遍历
+}
 ```
 
 ## Demo 示例
 
-以下示例展示如何通过 C++ 创建一个自定义的 USD 加载管理器：
+一个最小化的 C++ 示例，展示如何创建一个 `AUsdStageActor` 并在 BeginPlay 时加载一个 USD 文件。
 
+**USDStageActorDemo.h**
 ```cpp
-// MyUSDSceneManager.h
+// Fill out your copyright description in the Description page of your plugin.
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "MyUSDSceneManager.generated.h"
+#include "USDStageActorDemo.generated.h"
 
 class AUsdStageActor;
 
-UCLASS(BlueprintType, Blueprintable)
-class YOURPROJECT_API AMyUSDSceneManager : public AActor
+UCLASS()
+class YOURPROJECT_API AUSDStageActorDemo : public AActor
 {
-    GENERATED_BODY()
-
-public:
-    AMyUSDSceneManager();
-
-    UPROPERTY(EditAnywhere, Category = "USD")
-    FString USDFilePath;
-
-    UPROPERTY(EditAnywhere, Category = "USD", meta = (ClampMin = "0"))
-    int32 NaniteTriangleThreshold = 10000;
-
-    UPROPERTY(EditAnywhere, Category = "USD")
-    bool bAutoLoadOnBeginPlay = true;
-
-    UFUNCTION(BlueprintCallable, Category = "USD")
-    void LoadUSDStage();
-
-    UFUNCTION(BlueprintCallable, Category = "USD")
-    void QueryPrimAssets(const FString& PrimPath, TArray<UObject*>& OutAssets);
+	GENERATED_BODY()
+	
+public:	
+	AUSDStageActorDemo();
 
 protected:
-    virtual void BeginPlay() override;
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void BeginPlay() override;
+
+public:	
+	virtual void Tick(float DeltaTime) override;
 
 private:
-    UPROPERTY()
-    TObjectPtr<AUsdStageActor> ManagedStageActor;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "USD", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<AUsdStageActor> USDStageActor;
 
-    FDelegateHandle OnStageLoadedHandle;
+	UPROPERTY(EditAnywhere, Category = "USD")
+	FFilePath USDFileToLoad;
 };
 ```
 
+**USDStageActorDemo.cpp**
 ```cpp
-// MyUSDSceneManager.cpp
-#include "MyUSDSceneManager.h"
+#include "USDStageActorDemo.h"
 #include "USDStageActor.h"
-#include "USDStageModule.h"
+#include "Engine/World.h"
 
-AMyUSDSceneManager::AMyUSDSceneManager()
+AUSDStageActorDemo::AUSDStageActorDemo()
 {
-    PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	// 创建默认的USDStageActor子组件
+	USDStageActor = CreateDefaultSubobject<AUsdStageActor>(TEXT("USDStageActor"));
 }
 
-void AMyUSDSceneManager::BeginPlay()
+void AUSDStageActorDemo::BeginPlay()
 {
-    Super::BeginPlay();
+	Super::BeginPlay();
 
-    if (bAutoLoadOnBeginPlay && !USDFilePath.IsEmpty())
-    {
-        LoadUSDStage();
-    }
+	if (USDStageActor && !USDFileToLoad.FilePath.IsEmpty())
+	{
+		// 设置USD文件路径
+		USDStageActor->SetRootLayer(USDFileToLoad.FilePath);
+		// 设置阶段状态为“打开并加载”，触发资产生成
+		USDStageActor->SetStageState(EUsdStageState::OpenedAndLoaded);
+		
+		// 可选：等待加载完成
+		// FPlatformProcess::Sleep(1.0f);
+		
+		// 查询第一个加载的Prim的组件（示例路径，需根据实际USD文件调整）
+		USceneComponent* ExampleComp = USDStageActor->GetGeneratedComponent(TEXT("/root"));
+		if (ExampleComp)
+		{
+			UE_LOG(LogTemp, Log, TEXT("USD Stage loaded. Root component found: %s"), *ExampleComp->GetName());
+		}
+	}
 }
 
-void AMyUSDSceneManager::LoadUSDStage()
+void AUSDStageActorDemo::Tick(float DeltaTime)
 {
-    if (USDFilePath.IsEmpty())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("AMyUSDSceneManager: USDFilePath is empty"));
-        return;
-    }
+	Super::Tick(DeltaTime);
 
-    // 获取 USDStage 模块
-    IUsdStageModule* StageModule = FModuleManager::Get().GetModulePtr<IUsdStageModule>("USDStage");
-    if (!StageModule)
-    {
-        UE_LOG(LogTemp, Error, TEXT("AMyUSDSceneManager: USDStage module not loaded"));
-        return;
-    }
-
-    // 获取或创建 Stage Actor
-    ManagedStageActor = &StageModule->GetUsdStageActor(GetWorld());
-
-    // 配置加载选项
-    ManagedStageActor->SetNaniteTriangleThreshold(NaniteTriangleThreshold);
-    ManagedStageActor->SetUsePrimKindsForCollapsing(true);
-    ManagedStageActor->SetMergeIdenticalMaterialSlots(true);
-
-    // 监听加载完成
-    OnStageLoadedHandle = ManagedStageActor->OnStageLoaded.AddLambda([this]()
-    {
-        UE_LOG(LogTemp, Log, TEXT("USD Stage loaded successfully from: %s"), *USDFilePath);
-
-        // 获取自动生成的 LevelSequence
-        ULevelSequence* Sequence = ManagedStageActor->GetLevelSequence();
-        if (Sequence)
-        {
-            UE_LOG(LogTemp, Log, TEXT("Level sequence generated: %s"), *Sequence->GetName());
-        }
-    });
-
-    // 设置路径并加载
-    ManagedStageActor->SetRootLayer(USDFilePath);
-}
-
-void AMyUSDSceneManager::QueryPrimAssets(const FString& PrimPath, TArray<UObject*>& OutAssets)
-{
-    if (!ManagedStageActor)
-    {
-        return;
-    }
-
-    OutAssets = ManagedStageActor->GetGeneratedAssets(PrimPath);
-
-    // 也可以查询组件
-    USceneComponent* Comp = ManagedStageActor->GetGeneratedComponent(PrimPath);
-    if (Comp)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Prim %s -> Component: %s"), *PrimPath, *Comp->GetName());
-    }
-}
-
-void AMyUSDSceneManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    if (ManagedStageActor)
-    {
-        ManagedStageActor->OnStageLoaded.Remove(OnStageLoadedHandle);
-        ManagedStageActor = nullptr;
-    }
-
-    Super::EndPlay(EndPlayReason);
+	// 示例：动态改变USD阶段的时间以播放动画
+	if (USDStageActor)
+	{
+		float NewTime = USDStageActor->GetTime() + DeltaTime;
+		USDStageActor->SetTime(FMath::Fmod(NewTime, 10.0f)); // 假设动画总长为10秒，循环播放
+	}
 }
 ```
 
 ## 模块依赖
 
-> ⚠️ Build.cs 源文件未提供，以下依赖从头文件代码引用推断。
+从 `USDStage` 模块的 `Build.cs` 分析，以下是该插件（尤其是核心 Stage 功能）独特的依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `UnrealUSDWrapper` | USD 底层 C++ 绑定（PXR/USD 运行时） |
-| `LevelSequence` | LevelSequence 资产和轨道支持 |
-| `MovieScene` | Sequencer 序列框架（Dynamic Binding） |
-| `UniversalObjectLocator` | Sequencer 对象定位器框架 |
+| `UnrealUSDWrapper` | Epic 封装的底层 USD C++ 库 (pxr) 的接口层，是核心依赖。 |
+| `USDClasses` | 提供 USD 相关的 UObject 和数据结构定义（如 `UUsdAssetCache3`, `FUsdPrimLinkCache`）。 |
+| `USDSchemas` | 定义 USD Schema 到 UE 类型/资产的转换逻辑（例如，将 UsdGeomMesh 转换为 UStaticMesh）。 |
+| `SequencerCore`, `MovieScene`, `LevelSequence` | 用于处理 USD 动画到 UE Level Sequence 的转换和编辑。 |
+| `UniversalObjectLocator` | 提供 `FUsdPrimLocatorFragment` 等功能，用于在 Sequencer 等系统中定位 USD 生成的资产/组件。 |
+| `AssetRegistry` | 用于注册和管理动态生成的 USD 资产。 |
+
+**注意**：该插件还依赖标准的 UE 模块（如 Core, Engine, Slate 等），此处已省略。
 
 ## 维护状态
 
@@ -453,26 +260,21 @@ void AMyUSDSceneManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为浮点的编译警告 |
-| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | 新增支持分配不依赖蓝图的 Control Rig |
-| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD validation changes | 解决 UE 更新导致 LOD 验证变更时 AnimQuery 内部引用失效 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复 32/64 位格式说明符与参数不匹配问题 |
-| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | 支持烘焙曝光动画轨道的所有帧 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下双精度常量截断为浮点数产生的编译警告。 |
+| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | USD: 新增支持分配独立于蓝图的 Control Rig。 |
+| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va | USD: 解决 UE 26.03 更新导致 AnimQuery 内部引用在 LOD 变化时失效的问题。 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复格式说明符与参数位数不匹配（32位格式符用于64位参数等）的问题。 |
+| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | USD: 烘焙曝光动画轨道的所有帧。 |
 
 ### 维护评价
 
-- **状态**：🟢 活跃维护中
-- **创建时间**：2018 年（从 Experimental 目录迁移），约 8 年历史
-- **最近更新**：2026 年 5 月仍有功能更新和 bug 修复，更新频率较高（近一个月 5 次提交）
-- **Beta 标记**：仍标记为 Beta 版本（`IsBetaVersion: true`），默认未启用
-- **已知限制**：
-  - 需要手动在插件设置中启用（`EnabledByDefault: false`）
-  - 依赖 UnrealUSDWrapper 和外部 USD 运行时库
-  - 部分 API 已标记废弃（如 `UUsdAssetCache2` → `UUsdAssetCache3`）
-- **推荐度**：✅ 推荐使用。该插件是 Epic 官方维护的 USD 集成方案，持续更新中，适合作为影视虚拟制片和 DCC-UE 资产交换的基础方案。尽管仍标记 Beta，但已经具备完整的 Stage 管理、资产生成、动画集成和 Sequencer 支持。
+-   **年龄与状态**：插件创建于 2018 年，已有约 8 年历史，但仍处于 **Beta (实验性)** 状态。
+-   **活跃度**：**活跃维护中**。从近期提交记录看，在 2026 年 4-5 月间仍有持续的功能增强、兼容性修复和 Bug 修复。
+-   **重要性与推荐**：作为 UE 与影视级 USD 工作流集成的核心，该插件**强烈推荐**给所有需要涉及 USD 资产的项目使用。其 Beta 状态可能意味着 API 或行为在未来版本中仍可能发生变更，但 Epic 持续投入维护表明其是受支持的关键功能。
+-   **注意事项**：由于功能复杂且仍为 Beta，建议在项目初期进行充分测试，特别是涉及复杂的资产结构、动画和材质绑定时。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
-- [官方文档]()（未提供）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests) (位于插件内部的 USDTests 模块)
+-   [官方文档]：暂无链接（.uplugin 中 DocsURL 为空）
