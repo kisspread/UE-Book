@@ -200,7 +200,7 @@ void AVirtualHeightfieldMeshDemoActor::BeginPlay()
 |---|---|---|---|
 | 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移至 UE_LOGF。 |
 | 2026-03-05 | `1adb9f68` | New material translator work: | 新的材质转换器工作（相关改动）。 |
-| 2026-02-03 | `61433296` | Rename FViewMatrices members to follow the <Source>To<Target> pattern for transforms, to reduce ambi | 重命名 FViewMatrices 成员以遵循“源到目标”的变换模式，减少歧义。 |
+| 2026-02-03 | `61433296` | Rename FViewMatrices members to follow the &lt;Source&gt;To&lt;Target&gt; pattern for transforms, to reduce ambi | 重命名 FViewMatrices 成员以遵循"源到目标"的变换模式，减少歧义。 |
 | 2026-01-07 | `57ff2f55` | Deprecate legacy GPU profiler related macros. | 废弃旧的 GPU 性能分析器相关宏。 |
 | 2025-08-29 | `32884de4` | Changing more uses of RHICreateTexture to RHICmdList.CreateTexture. | 将更多 RHICreateTexture 的用法改为 RHICmdList.CreateTexture。 |
 
