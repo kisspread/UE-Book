@@ -57,18 +57,20 @@ def generate_doc(harness: str, context: str, branch: str = "") -> tuple[str, flo
 
 
 def _sanitize(doc: str) -> str:
-    """Strip LLM output tags that leak through."""
-    tags = ["<function", "</function", "<tool_call", "</tool_call"]
+    """Strip LLM output tags that leak through (function calls, thinking, XML)."""
+    tags = ["<function", "</function", "<tool_call", "</tool_call",
+            "</thinking", "</think", "<thinking", "<think"]
     if not any(t in doc for t in tags):
         return doc
     lines = doc.split("\n")
     clean = []
     skip = False
     for line in lines:
-        if "<function" in line or "<tool_call" in line:
+        if any(t in line for t in ["<function", "<tool_call", "<thinking", "<think"]):
             skip = True
             continue
-        if skip and ("</invoke" in line or "</function" in line):
+        if skip and any(t in line for t in ["</invoke", "</function", "</tool_call",
+                                              "</thinking", "</think"]):
             skip = False
             continue
         if not skip:

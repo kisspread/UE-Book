@@ -106,9 +106,14 @@ jobs:
         run: |
           if [ -f v2/last_run.json ]; then
             SUMMARY=$(python3 -c "
-          import json
-          d = json.load(open('v2/last_run.json'))
-          # Prefer this_round (per-round), fall back to results (merged) for backward compat
+          import json, sys
+          try:
+              d = json.load(open('v2/last_run.json'))
+          except (json.JSONDecodeError, ValueError) as e:
+              # last_run.json corrupted (most likely git conflict markers)
+              print(f'⚠️  last_run.json parse error: {e}')
+              sys.exit(0)
+          # Prefer this_round (per-round), fall back to results (backward compat)
           this_round = d.get('this_round', d.get('results', []))
           success = sum(1 for r in this_round if r.get('success') and not r.get('skipped'))
           failed = sum(1 for r in this_round if not r.get('success') and not r.get('skipped'))
