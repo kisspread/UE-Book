@@ -7,7 +7,7 @@
 | 中文名 | USD 导入器 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产） |
+| 包含内容 | ✅ 有（编辑器面板、蓝图函数库、测试模块） |
 | 模块 | `GeometryCacheUSD` (Runtime), `USDClassesEditor` (Runtime), `USDExporter` (Runtime), `USDSchemas` (Runtime), `USDStage` (Runtime), `USDStageEditor` (Runtime), `USDStageEditorViewModels` (Runtime), `USDStageImporter` (Runtime), `USDTests` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-11-19 |
@@ -16,245 +16,215 @@
 
 ## 用途
 
-USD Importer 是 Epic Games 为 Unreal Engine 提供的 **Pixar USD（Universal Scene Description）** 全流程支持插件。它不仅仅是简单的文件导入工具，而是一个完整的 USD 工作流集成方案，涵盖：
+USD Importer 插件为 Unreal Engine 提供完整的 USD（Universal Scene Description）工作流支持。它不仅是一个简单的文件导入器，更是一个完整的 USD 舞台编辑和管理工具集。该插件解决的核心问题是：在 Unreal Engine 中打开、查看、编辑、导出 USD 舞台文件（.usda, .usdc, .usdz 等），并实现与 DCC 工具（如 Maya、Houdini）的 USD 资产无缝交互。
 
-- **USD 文件导入**：将 `.usd`、`.usda`、`.usdc` 格式文件导入为 UE 资产（网格体、材质、动画等）
-- **USD Stage 编辑器**：提供可视化的 USD Stage 浏览与编辑界面，类似 DCC 软件中的 USD 功能
-- **USD 导出**：将 UE 场景或资产导出为 USD 格式，实现双向数据交换
-- **USD Schema 支持**：通过 `USDSchemas` 模块支持自定义 USD Schema 的解析
-- **GeometryCache USD**：支持将 USD 的几何缓存（如 Alembic 式动画网格）导入为 UE 的 GeometryCache
-
-该插件通过 `AUsdStageActor` 将 USD Stage 桥接到 UE 的关卡系统，支持 Variant Set 切换、Payload 加载控制、层级管理等高级 USD 功能。
-
-**注意**：该插件默认未启用（`EnabledByDefault: false`），需要在编辑器的 Plugins 面板中手动开启。
+主要功能包括：
+1. **USD 舞台编辑器**：提供专用的编辑器窗口，以树形结构查看和编辑 USD 舞台的层级（Layer）、图元（Prim）和属性（Property）
+2. **舞台演员管理**：通过 `AUsdStageActor` 在场景中实例化 USD 舞台，实现运行时加载和交互
+3. **完整的导入/导出管线**：支持从 USD 赞助创建 Unreal 资产，或将 Unreal 场景导出为 USD 格式
+4. **高级编辑功能**：支持变体（Variants）选择、引用（References）和载荷（Payloads）管理、图元编辑等
+5. **蓝图可脚本化**：提供完整的蓝图函数库，实现 USD 操作的脚本化自动化
 
 ## 使用场景
 
-- 你从 Maya/Houdini/Blender 等 DCC 工具导出了 USD 文件，需要导入到 UE 中 → 用 USD Importer
-- 你需要在 UE 中浏览和编辑复杂的 USD 层级结构（Sublayer、Reference、Payload）→ 用 USD Stage Editor
-- 你需要将 UE 场景导出为 USD 格式，与上游资产管线对接 → 用 USD Exporter
-- 你需要在运行时或编辑器中切换 USD Variant Set（如不同的角色外观变体）→ 用 USD Stage Actor 的 Variant 面板
-- 你需要将 USD 的几何缓存（骨骼动画网格序列）导入为 GeometryCache → 用 GeometryCacheUSD
+- **游戏资产管线**：使用 USD 作为统一资产交换格式，在 Unreal、Maya、Houdini 之间同步场景数据
+- **虚拟制片**：在虚拟制片工作流中加载和编辑 USD 舞台，支持实时场景更新
+- **建筑可视化**：导入从 Revit、SketchUp 等工具导出的 USD 建筑模型
+- **技术美术工具开发**：通过蓝图脚本自动化批量 USD 操作，如批量导入、属性修改、舞台烘焙等
+- **自定义内容创建**：在 Unreal 内直接创建和编辑 USD 舞台，无需切换到外部工具
 
 ## 蓝图用法
 
-> 以下 API 来自 `UUsdStageEditorBlueprintLibrary`，属于 `USDStageEditor` 模块。通过蓝图脚本可完全控制 USD Stage Editor 的 UI 和操作。
+USD Stage Editor 模块提供 `UUsdStageEditorBlueprintLibrary` 类，包含丰富的蓝图节点用于与 USD 舞台编辑器交互。
 
 ### 核心节点
 
-#### 编辑器窗口控制
-
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `OpenStageEditor` | 打开 USD Stage Editor 窗口，若已打开则聚焦 | `UUsdStageEditorBlueprintLibrary` |
+| `OpenStageEditor` | 打开或聚焦 USD Stage Editor 窗口 | `UUsdStageEditorBlueprintLibrary` |
 | `CloseStageEditor` | 关闭 USD Stage Editor 窗口 | `UUsdStageEditorBlueprintLibrary` |
-| `IsStageEditorOpened` | 检查 Stage Editor 窗口是否已打开 | `UUsdStageEditorBlueprintLibrary` |
-
-#### Stage Actor 绑定
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `GetAttachedStageActor` | 获取当前绑定到编辑器的 AUsdStageActor | `UUsdStageEditorBlueprintLibrary` |
-| `SetAttachedStageActor` | 设置绑定的 Stage Actor（传 None 可解除绑定） | `UUsdStageEditorBlueprintLibrary` |
-
-#### 选择查询与设置
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `GetSelectedLayerIdentifiers` | 获取当前选中的 Layer 标识符列表 | `UUsdStageEditorBlueprintLibrary` |
-| `SetSelectedLayerIdentifiers` | 设置 Layer 选择 | `UUsdStageEditorBlueprintLibrary` |
-| `GetSelectedPrimPaths` | 获取当前选中的 Prim 路径列表 | `UUsdStageEditorBlueprintLibrary` |
-| `SetSelectedPrimPaths` | 设置 Prim 选择 | `UUsdStageEditorBlueprintLibrary` |
-| `GetSelectedPropertyNames` | 获取当前选中的属性名称列表 | `UUsdStageEditorBlueprintLibrary` |
-| `SetSelectedPropertyNames` | 设置属性选择 | `UUsdStageEditorBlueprintLibrary` |
-| `GetSelectedPropertyMetadataNames` | 获取当前选中的属性元数据名称列表 | `UUsdStageEditorBlueprintLibrary` |
-| `SetSelectedPropertyMetadataNames` | 设置属性元数据选择 | `UUsdStageEditorBlueprintLibrary` |
-
-#### 菜单操作
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `FileNew` | 创建新的内存 Layer 并打开 Stage | `UUsdStageEditorBlueprintLibrary` |
-| `FileOpen` | 从磁盘打开 USD 文件（空字符串则弹出文件选择对话框） | `UUsdStageEditorBlueprintLibrary` |
-| `FileSave` | 保存当前 Stage 到磁盘 | `UUsdStageEditorBlueprintLibrary` |
-| `FileExportAllLayers` | 导出所有 Layer 到新位置 | `UUsdStageEditorBlueprintLibrary` |
-| `FileExportFlattenedStage` | 导出为单一扁平化 Stage | `UUsdStageEditorBlueprintLibrary` |
-| `FileExportFlattenedLayerStack` | 导出为单一扁平化 Layer Stack | `UUsdStageEditorBlueprintLibrary` |
-| `FileReload` | 重新加载所有 Layer | `UUsdStageEditorBlueprintLibrary` |
-| `FileReset` | 重置 Stage 状态（静音层、编辑目标等） | `UUsdStageEditorBlueprintLibrary` |
-| `FileClose` | 关闭当前 Stage | `UUsdStageEditorBlueprintLibrary` |
-| `ActionsImport` | 将当前 Stage 导入为持久化 UE 资产 | `UUsdStageEditorBlueprintLibrary` |
-| `ExportSelectedLayers` | 导出选中的 Layer | `UUsdStageEditorBlueprintLibrary` |
+| `IsStageEditorOpened` | 检查编辑器窗口是否打开 | `UUsdStageEditorBlueprintLibrary` |
+| `GetAttachedStageActor` | 获取当前附加的舞台演员 | `UUsdStageEditorBlueprintLibrary` |
+| `SetAttachedStageActor` | 设置当前附加的舞台演员 | `UUsdStageEditorBlueprintLibrary` |
+| `GetSelectedLayerIdentifiers` | 获取选中的图层标识符列表 | `UUsdStageEditorBlueprintLibrary` |
+| `SetSelectedLayerIdentifiers` | 设置选中的图层标识符列表 | `UUsdStageEditorBlueprintLibrary` |
+| `GetSelectedPrimPaths` | 获取选中的图元路径列表 | `UUsdStageEditorBlueprintLibrary` |
+| `SetSelectedPrimPaths` | 设置选中的图元路径列表 | `UUsdStageEditorBlueprintLibrary` |
+| `FileOpen` | 从磁盘打开 USD 舞台 | `UUsdStageEditorBlueprintLibrary` |
+| `FileSave` | 保存当前 USD 舞台 | `UUsdStageEditorBlueprintLibrary` |
+| `ActionsImport` | 将当前舞台导入为持久化 UE 资产 | `UUsdStageEditorBlueprintLibrary` |
 
 ### 使用示例（蓝图描述）
 
-**示例 1：通过蓝图自动化 USD 导入流程**
+1. **自动化 USD 导入流程**：
+   - 使用 `OpenStageEditor` 打开编辑器
+   - 调用 `FileOpen` 加载指定的 USD 文件路径
+   - 调用 `SetSelectedLayerIdentifiers` 选择要导入的层
+   - 调用 `ActionsImport` 执行导入操作
+   - 使用 `GetAttachedStageActor` 获取生成的舞台演员引用
 
-1. 使用 `OpenStageEditor` 节点确保编辑器窗口打开
-2. 调用 `FileOpen`，传入 USD 文件路径（如 `"C:/Assets/scene.usda"`）
-3. 调用 `SetAttachedStageActor` 绑定场景中的 AUsdStageActor
-4. 调用 `ActionsImport`，传入目标 Content 文件夹（如 `"/Game/USDImports"`）和导入选项对象
+2. **批量处理 USD 属性**：
+   - 调用 `GetSelectedPrimPaths` 获取所有选中的图元
+   - 循环遍历图元路径，对每个图元调用蓝图操作
+   - 调用 `SetSelectedPropertyNames` 选择要修改的属性
+   - 通过舞台演员接口修改属性值
 
-**示例 2：脚本化选择操作**
-
-1. 调用 `SetSelectedPrimPaths` 传入数组 `["/Root/Mesh1", "/Root/Mesh2"]` 选中特定 Prim
-2. 调用 `GetSelectedPropertyNames` 获取选中 Prim 的属性列表用于后续处理
+3. **舞台状态管理**：
+   - 使用 `FileExportAllLayers` 导出所有图层到指定目录
+   - 调用 `FileExportFlattenedStage` 生成扁平化的舞台文件
+   - 使用 `FileReload` 重新加载舞台以刷新更改
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "USDStageEditorBlueprintLibrary.h"
 #include "USDStageEditorModule.h"
 ```
 
 ### 基本用法
 
-通过模块接口直接调用 USD Stage Editor 功能（来源：`USDStageEditorModule.h`）：
+从公共 API 接口 `IUsdStageEditorModule` 进行交互。
 
 ```cpp
-// 获取 USD Stage Editor 模块接口
-IUsdStageEditorModule& StageEditorModule = FModuleManager::LoadModuleChecked<IUsdStageEditorModule>("USDStageEditor");
-
-// 打开编辑器窗口
-if (StageEditorModule.OpenStageEditor())
+// 获取 USD Stage Editor 模块实例
+if (IUsdStageEditorModule* StageEditorModule = FModuleManager::GetModulePtr<IUsdStageEditorModule>("USDStageEditor"))
 {
-    // 绑定一个 Stage Actor
-    AUsdStageActor* MyStageActor = /* 获取或 Spawn */;
-    StageEditorModule.SetAttachedStageActor(MyStageActor);
+    // 打开编辑器窗口
+    StageEditorModule->OpenStageEditor();
     
-    // 从磁盘打开 USD 文件
-    StageEditorModule.FileOpen(TEXT("C:/Assets/MyScene.usda"));
+    // 检查编辑器状态
+    bool bIsOpened = StageEditorModule->IsStageEditorOpened();
     
-    // 导入为 UE 资产
-    UUsdStageImportOptions* Options = NewObject<UUsdStageImportOptions>();
-    StageEditorModule.ActionsImport(TEXT("/Game/Imports"), Options);
+    // 获取当前选中的图元
+    TArray<UE::FUsdPrim> SelectedPrims = StageEditorModule->GetSelectedPrims();
+    
+    // 设置附加的舞台演员
+    if (AUsdStageActor* StageActor = FindStageActor())
+    {
+        StageEditorModule->SetAttachedStageActor(StageActor);
+    }
 }
 ```
 
 ### 进阶用法
 
-查询和设置编辑器中的选择状态：
+组合使用编辑器操作和舞台管理：
 
 ```cpp
-IUsdStageEditorModule& StageEditorModule = FModuleManager::LoadModuleChecked<IUsdStageEditorModule>("USDStageEditor");
-
-// 获取当前选中的 Prim
-TArray<UE::FUsdPrim> SelectedPrims = StageEditorModule.GetSelectedPrims();
-
-// 获取当前选中的 Layer
-TArray<UE::FSdfLayer> SelectedLayers = StageEditorModule.GetSelectedLayers();
-
-// 设置 Prim 选择（基于路径）
-TArray<FString> PrimPaths = { TEXT("/Root/Prim1"), TEXT("/Root/Prim2") };
-StageEditorModule.SetSelectedPropertyNames(PrimPaths);
-
-// 文件操作序列：新建 → 编辑 → 保存
-StageEditorModule.FileNew();
-// ... 进行编辑操作 ...
-StageEditorModule.FileSave(TEXT("C:/Output/NewStage.usda"));
-
-// 导出扁平化 Stage
-StageEditorModule.FileExportFlattenedStage(TEXT("C:/Export/flattened.usda"));
+// 使用模块接口执行完整的工作流
+if (IUsdStageEditorModule* StageEditorModule = FModuleManager::GetModulePtr<IUsdStageEditorModule>("USDStageEditor"))
+{
+    // 1. 打开 USD 文件
+    StageEditorModule->FileOpen(TEXT("C:/Projects/Scene.usda"));
+    
+    // 2. 等待编辑器就绪（在实际使用中可能需要延迟或回调）
+    
+    // 3. 获取选中的图层
+    TArray<UE::FSdfLayer> SelectedLayers = StageEditorModule->GetSelectedLayers();
+    
+    // 4. 设置编辑目标层
+    if (SelectedLayers.Num() > 0)
+    {
+        // 通过舞台演员接口设置编辑目标
+        if (AUsdStageActor* StageActor = StageEditorModule->GetAttachedStageActor())
+        {
+            StageActor->SetEditTarget(SelectedLayers[0]);
+        }
+    }
+    
+    // 5. 导出扁平化舞台
+    StageEditorModule->FileExportFlattenedStage(TEXT("C:/Exports/Flattened.usda"));
+    
+    // 6. 关闭编辑器
+    StageEditorModule->CloseStageEditor();
+}
 ```
 
 ## Demo 示例
 
-以下是一个最小示例，演示如何通过 C++ 代码启动 USD Stage Editor 并打开文件：
-
-### UsdStageEditorDemo.h
+### 最小可行示例（编辑器工具按钮）
 
 ```cpp
+// USDStageEditorTool.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "UsdStageEditorDemo.generated.h"
-
-class AUsdStageActor;
-
-UCLASS()
-class AUsdStageEditorDemo : public AActor
-{
-    GENERATED_BODY()
-
-public:
-    AUsdStageEditorDemo();
-
-    UFUNCTION(BlueprintCallable, CallInEditor, Category = "USD Demo")
-    void OpenAndImportUsdFile(const FString& UsdFilePath, const FString& OutputFolder);
-
-    UPROPERTY(EditAnywhere, Category = "USD Demo")
-    FString DefaultUsdFilePath;
-
-    UPROPERTY(EditAnywhere, Category = "USD Demo")
-    FString DefaultOutputFolder = TEXT("/Game/USDImports");
-};
-```
-
-### UsdStageEditorDemo.cpp
-
-```cpp
-#include "UsdStageEditorDemo.h"
+#include "Toolkits/AssetEditorManager.h"
 #include "USDStageEditorModule.h"
 
-AUsdStageEditorDemo::AUsdStageEditorDemo()
+class UUSDStageEditorTool : public UObject
 {
-    PrimaryActorTick.bCanEverTick = false;
-}
-
-void AUsdStageEditorDemo::OpenAndImportUsdFile(const FString& UsdFilePath, const FString& OutputFolder)
-{
-    IUsdStageEditorModule* StageEditorModule = FModuleManager::GetModulePtr<IUsdStageEditorModule>("USDStageEditor");
-    if (!StageEditorModule)
+    GENERATED_BODY()
+    
+public:
+    UFUNCTION(BlueprintCallable, Category = "USD Tools")
+    static void OpenUSDFileAndImport(const FString& UsdFilePath, const FString& ImportPath)
     {
-        UE_LOG(LogTemp, Error, TEXT("USDStageEditor module is not loaded. Please enable the USDImporter plugin."));
-        return;
+        if (IUsdStageEditorModule* StageEditorModule = 
+            FModuleManager::GetModulePtr<IUsdStageEditorModule>("USDStageEditor"))
+        {
+            // 打开编辑器
+            StageEditorModule->OpenStageEditor();
+            
+            // 加载 USD 文件
+            StageEditorModule->FileOpen(UsdFilePath);
+            
+            // 等待一段时间让编辑器加载（简化示例）
+            FPlatformProcess::Sleep(0.5f);
+            
+            // 执行导入
+            StageEditorModule->ActionsImport(ImportPath, nullptr);
+            
+            UE_LOG(LogTemp, Log, TEXT("USD file imported to: %s"), *ImportPath);
+        }
     }
-
-    // 确保编辑器窗口打开
-    if (!StageEditorModule->IsStageEditorOpened())
+    
+    UFUNCTION(BlueprintCallable, Category = "USD Tools")
+    static void ExportSelectedPrimToNewFile(const FString& OutputPath)
     {
-        StageEditorModule->OpenStageEditor();
+        if (IUsdStageEditorModule* StageEditorModule = 
+            FModuleManager::GetModulePtr<IUsdStageEditorModule>("USDStageEditor"))
+        {
+            // 获取当前选中的图元
+            TArray<FString> SelectedPrims = StageEditorModule->GetSelectedPrimPaths();
+            
+            if (SelectedPrims.Num() > 0)
+            {
+                // 只导出选中的图元（通过修改编辑器状态）
+                // 注意：实际实现需要更复杂的逻辑
+                StageEditorModule->FileExportFlattenedStage(OutputPath);
+                
+                UE_LOG(LogTemp, Log, TEXT("Exported %d prims to: %s"), 
+                       SelectedPrims.Num(), *OutputPath);
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("No prims selected for export"));
+            }
+        }
     }
-
-    // 打开 USD 文件
-    const FString& PathToOpen = UsdFilePath.IsEmpty() ? DefaultUsdFilePath : UsdFilePath;
-    StageEditorModule->FileOpen(PathToOpen);
-
-    // 执行导入
-    const FString& Folder = OutputFolder.IsEmpty() ? DefaultOutputFolder : OutputFolder;
-    StageEditorModule->ActionsImport(Folder, nullptr);
-}
+};
 ```
 
 ## 模块依赖
 
-USDImporter 包含 9 个模块，以下是各模块的用途概览：
+从模块分析来看，USDStageEditor 模块依赖以下核心组件：
 
 | 模块 | 用途 |
 |---|---|
-| `USDSchemas` | USD Schema 定义与解析，提供 USD 类型到 UE 类型的映射基础 |
-| `USDStage` | USD Stage 管理核心，包含 `AUsdStageActor` 及 Stage 运行时逻辑 |
-| `USDStageImporter` | USD 文件的实际导入逻辑（资产转换、材质创建等） |
-| `USDStageEditor` | USD Stage 编辑器 UI，提供可视化浏览和编辑功能 |
-| `USDStageEditorViewModels` | 编辑器 UI 的 ViewModel 层（MVVM 架构） |
-| `USDClassesEditor` | 编辑器相关 USD 类定义 |
-| `USDExporter` | 将 UE 场景/资产导出为 USD 格式 |
-| `GeometryCacheUSD` | USD 几何缓存导入支持（动画网格序列） |
-| `USDTests` | USD 功能的自动化测试 |
+| `USDStage` | USD 舞台核心逻辑和数据结构 |
+| `USDSchemas` | USD Schema 类型系统支持 |
+| `USDClassesEditor` | USD 相关的编辑器类定义 |
+| `USDStageEditorViewModels` | 编辑器 UI 的数据模型层 |
+| `Slate` / `SlateCore` | UI 框架基础 |
+| `PropertyEditor` | 属性编辑器集成 |
 
-使用 USDStageEditor 模块的特殊依赖：
-
-| 模块 | 用途 |
-|---|---|
-| `USDStage` | 提供 `AUsdStageActor`、Stage 管理和 USD Core 封装 |
-| `USDStageEditorViewModels` | 编辑器面板的 ViewModel 数据绑定 |
-| `LevelEditor` | 关卡编辑器集成（Viewport 选择同步等） |
-| `SceneOutliner` | Actor 选择器面板（Stage Actor Picker 使用） |
-| `ToolMenus` | 菜单注册与扩展系统 |
-| `USDExporter` | 导出功能支持 |
+**特殊依赖说明**：
+- `USDStage` 模块提供核心的 USD 舞台管理功能，是编辑器操作的基础
+- `USDSchemas` 处理 USD 的 Schema 类型系统，用于识别和操作不同类型的 USD 图元
+- 编辑器特定的模块（`USDClassesEditor`, `USDStageEditorViewModels`）处理 UI 层的逻辑
+- Slate 框架是 Unreal 编辑器 UI 的基础，提供树形视图、面板等组件
 
 ## 维护状态
 
@@ -262,25 +232,27 @@ USDImporter 包含 9 个模块，以下是各模块的用途概览：
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 常量截断为 float 的编译警告 |
-| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | 新增支持独立于蓝图的 Control Rig 赋值 |
-| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va... | 修复 USD 26.03 更新导致 LOD 变化时 AnimQuery 内部引用失效的问题 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复 32/64 位格式化说明符不匹配问题 |
-| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | 支持烘焙曝光动画轨道的所有帧 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量到单精度的截断警告 |
+| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | 支持分配独立于蓝图的 Control Rigs |
+| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD varies. | 解决 26.03 版本更新导致 LOD 变化时 AnimQuery 内部引用失效的问题 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复 32 位格式说明符在 64 位参数时的适配问题 |
+| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | 烘焙所有曝光动画轨道的帧 |
 
 ### 维护评价
 
-**🟢 活跃维护中**
+**积极维护**：USD Importer 插件虽然创建于 2018 年（约 7 年前），但仍保持活跃开发。最近 6 个月内有多次实质性功能更新和 bug 修复，特别是对动画系统、Control Rig 集成和浮点精度问题的改进。
 
-- **创建时间**：2018 年 11 月，已持续维护约 7 年
-- **更新频率**：近一个月内有 5 次更新，更新非常频繁
-- **更新内容**：涵盖功能新增（Control Rig 集成、动画轨道烘焙）、USD SDK 版本兼容修复、编译警告修复等，说明该插件仍在持续迭代和适配新版 USD SDK
-- **状态标志**：`IsBetaVersion=true`、`EnabledByDefault=false`，表明 Epic 仍将此标记为实验性功能
-- **注意事项**：虽然标记为 Beta，但该插件已被大量项目实际使用（尤其在虚拟制片和影视管线中），且 Epic 持续投入开发资源
+**实验性状态**：插件标记为实验性（`IsBetaVersion: true`），且默认未启用（`EnabledByDefault: false`），这意味着它可能包含不完整的 API 或存在已知限制。在生产环境中使用前需要进行充分测试。
 
-**推荐使用**：✅ 推荐。对于需要 USD 管线集成的项目，这是官方且唯一的选择。尽管标记为 Beta，其功能完整度和维护质量均很高。
+**推荐使用**：尽管处于实验性状态，但考虑到 Epic Games 持续维护和更新，该插件是 UE5 中处理 USD 文件的官方解决方案。对于需要 USD 工作流的项目，特别是在游戏开发、虚拟制片和影视制作领域，推荐使用此插件。建议密切关注更新日志，及时获取新功能和稳定性改进。
+
+**注意事项**：
+1. 需要手动启用插件（在 Plugins 窗口中勾选）
+2. 可能需要 USD SDK 依赖（`USE_USD_SDK` 宏定义）
+3. 部分功能可能随引擎版本变化而调整
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
-- [官方文档](https://docs.unrealengine.com/en-US/working-with-content/usd-in-unreal/)（USD In Unreal 官方文档）
+- [官方文档](https://docs.unrealengine.com)（UE5 USD 文档，链接待确认）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests)

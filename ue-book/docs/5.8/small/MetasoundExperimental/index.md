@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaSound 实验性功能 |
+| 中文名 | 实验性元音效 |
 | 分类 | Audio |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（实验性功能节点） |
+| 包含内容 | ✅ 有 |
 | 模块 | `AudioExperimentalRuntime` (Runtime), `MetasoundExperimentalRuntime` (Runtime), `MetasoundExperimentalEngineRuntime` (Runtime), `MetasoundExperimentalEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-04-22 |
@@ -16,28 +16,57 @@
 
 ## 用途
 
-此插件是 MetaSound 系统的实验性功能扩展库，用于在新功能正式发布到主插件 `Metasound` 前进行开发和测试。它包含了正在积极开发的前沿音频节点和功能，如通道无关类型 (Channel Agnostic Types, CAT) 相关操作，旨在为 MetaSound 图表提供更强大、更灵活的底层音频处理能力。
+此插件是 MetaSound 音频系统的**功能试验场**。它用于开发和集成新的、尚未准备好用于正式发布版本的 MetaSound 节点和功能。具体来说，它提供了：
+1.  **实验性运行时节点**：在 `MetasoundExperimentalRuntime` 模块中包含新的音频处理节点（如滤波器、乘法器）。
+2.  **引擎集成功能**：`MetasoundExperimentalEngineRuntime` 模块提供了将实验性功能与 UE 引擎核心（如音频波形数据）集成的代码。
+3.  **编辑器工具**：`MetasoundExperimentalEditor` 模块为这些实验性功能提供编辑器支持（如专门的节点类别）。
+4.  **基础音频扩展**：`AudioExperimentalRuntime` 模块可能包含更底层的实验性音频处理原语。
+
+开发者可以通过启用此插件，提前体验、测试并反馈尚未在标准 MetaSound 插件中提供的新功能。
 
 ## 使用场景
 
-- 你是音频程序员或技术音效设计师，需要提前体验并测试 MetaSound 即将推出的新节点和功能。
-- 你的项目需要使用实验性的通道无关音频处理功能（如 CAT 波形、滤波器、运算节点）来构建复杂的音频逻辑。
-- 你在为 MetaSound 引擎本身开发新特性，需要在此沙盒环境中进行原型设计和迭代。
+-   你是 MetaSound 的高级用户或开发者，希望**提前使用**新的音频处理节点（如通道无关类型 CAT 系列节点）。
+-   你正在为项目开发定制的音频效果或合成器，并希望**利用最新的、未经验证的 MetaSound 底层功能**。
+-   你参与 MetaSound 插件的开发或反馈，需要**测试正在开发中的新特性**。
+-   你正在研究 UE 音频管线的内部实现，需要查看**实验性的引擎集成代码**。
 
-## 模块列表
+## 模块用法
 
-| 模块 | 类型 | 说明 |
+本插件包含四个模块，其用途概述如下，详细 API 请参考各子模块文档。
+
+### 核心模块概述
+
+| 模块 | 类型 | 主要用途 |
 |---|---|---|
-| `AudioExperimentalRuntime` | Runtime | 提供底层的、与 MetaSound 引擎解耦的实验性音频运行时功能和数据类型。 |
-| `MetasoundExperimentalRuntime` | Runtime | 包含核心的、实验性的 MetaSound 节点、图表元素和运行时逻辑。 |
-| `MetasoundExperimentalEngineRuntime` | Runtime | 负责将实验性 MetaSound 功能与引擎更深层次的系统（如声音波形数据）进行集成。 |
-| `MetasoundExperimentalEditor` | Editor | 提供在编辑器中使用实验性 MetaSound 功能所需的工具和界面扩展。 |
+| `AudioExperimentalRuntime` | Runtime | 提供底层的、实验性的音频运行时工具和类型。 |
+| `MetasoundExperimentalRuntime` | Runtime | **核心模块**，包含所有实验性 MetaSound 节点（如 CAT 类型的节点）的实现。 |
+| `MetasoundExperimentalEngineRuntime` | Runtime | 处理实验性 MetaSound 功能与引擎其他系统（如波形数据）的集成。 |
+| `MetasoundExperimentalEditor` | Editor | 为实验性节点和功能提供编辑器支持，如节点注册、外观和行为。 |
 
-## 相关链接
+## Demo 示例
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetasoundExperimental)
-- [官方文档]() (暂无)
-- [测试用例]() (暂无)
+作为实验性插件，其功能通常作为现有 MetaSound 节点图的补充。一个典型的“使用示例”是**在 MetaSound 编辑器中，从“实验性”类别中拖出新节点**（例如 CAT Multiply, CAT Ladder Filter）并连接它们，以构建新的音频处理链路。
+
+**在蓝图中使用（概念描述）**：
+1.  确保 `MetasoundExperimental` 插件已在项目中启用。
+2.  打开或创建一个 MetaSound 资产。
+3.  在节点图编辑器中，搜索你感兴趣的实验性节点（如“Multiply (CAT)”）。
+4.  将该节点添加到图表中，并将其输入/输出与其他 MetaSound 节点连接。
+
+*注意：由于这是实验性 API，具体的节点名称和功能可能会随着开发快速变化。*
+
+## 模块依赖
+
+插件本身的 `.uplugin` 文件声明了对 `Metasound` 插件的依赖。
+
+从各模块的 `Build.cs` 文件看，它们主要依赖 `CoreUObject`。
+
+| 模块 | 用途 |
+|---|---|
+| `Metasound` | **核心依赖**。本插件是 MetaSound 的扩展，必须先启用 MetaSound 插件。 |
+
+*注意：使用者无需在自己的 `Build.cs` 中直接依赖本插件的模块，只需启用插件即可在 MetaSound 资产中使用其提供的节点。*
 
 ## 维护状态
 
@@ -45,12 +74,20 @@
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `e4fa3490` | Adds the experimental MetaSound Channel Agnostic Types (CAT) Wave | 添加实验性MetaSound通道无关类型(CAT)波形节点 |
-| 2026-05-13 | `f91eb8fe` | Resolved merge conflict with FSoundWaveData api deprecation fixup. | 解决了与FSoundWaveData API废弃相关的合并冲突 |
-| 2026-05-12 | `ca21145e` | [CAT] Multiply node | 添加了CAT乘法节点 |
-| 2026-05-12 | `2940bc45` | [CAT] Ladder Filter node | 添加了CAT阶梯滤波器节点 |
-| 2026-04-17 | `f1f7082c` | Unshelved from pending changelist '52759261': | 从挂起的更改列表中恢复提交 |
+| 2026-05-13 | `e4fa3490` | Adds the experimental MetaSound Channel Agnostic Types (CAT) Wave | 新增实验性 CAT（通道无关类型）波形节点 |
+| 2026-05-13 | `f91eb8fe` | Resolved merge conflict with FSoundWaveData api deprecation fixup. | 解决了与 `FSoundWaveData` API 废弃修复相关的合并冲突 |
+| 2026-05-12 | `ca21145e` | [CAT] Multiply node | 新增 CAT 乘法节点 |
+| 2026-05-12 | `2940bc45` | [CAT] Ladder Filter node | 新增 CAT 梯形滤波器节点 |
+| 2026-04-17 | `f1f7082c` | Unshelved from pending changelist '52759261': | 从待处理变更列表中取消搁置（合并代码） |
 
 ### 维护评价
 
-此插件处于**活跃开发**状态。创建时间虽短（约1年），但从近期提交记录看，更新非常频繁，内容集中在添加全新的实验性功能（CAT系列节点）。作为实验性插件，其功能和API可能随时变动，不推荐用于需要稳定性的生产项目。适用于希望提前探索 MetaSound 新功能的开发者和贡献者。
+-   **状态**：**活跃开发中**。
+-   **分析**：该插件创建于 2025 年 4 月，非常年轻。从 git 历史看，在 **2026 年 5 月** 仍有密集的功能性提交，专注于 **CAT (Channel Agnostic Types)** 相关的新节点开发，表明它正在被积极用于原型新特性。
+-   **建议**：由于 `IsExperimentalVersion: true` 且默认不启用，此插件 **不适合用于生产环境**。其 API 和功能不稳定，可能随时发生破坏性更改。它非常适合希望参与 MetaSound 未来功能探索、测试和反馈的开发者或技术艺术家。对于生产项目，应等待功能合并至主 `Metasound` 插件后再使用。
+
+## 相关链接
+
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetasoundExperimental)
+-   [官方文档]( ) *(无)*
+-   [测试用例]( ) *(无特定测试目录)*

@@ -4,7 +4,7 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 提交工具覆盖 |
+| 中文名 | 提交工具编辑器 |
 | 分类 | Editor |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
@@ -16,120 +16,181 @@
 
 ## 用途
 
-此插件为 Unreal Engine 编辑器提供了一种覆盖默认源代码控制（Source Control）提交流程的机制。它的核心功能是拦截编辑器内置的“提交”（Submit）操作，并将其重定向到一个用户或团队自定义的外部“提交工具”（Submit Tool）程序。这解决了需要强制使用统一提交流程、集成外部提交管理系统，或在提交前执行自定义验证脚本的团队的需求。通过此插件，可以确保所有编辑器提交都经过标准化的工具处理。
+SubmitToolEditor 用于**覆盖编辑器内置的源代码控制提交行为**，将默认的源码管理提交操作替换为调用外部自定义提交工具（Submit Tool）。
+
+默认情况下，UE 编辑器使用内置的源码管理集成（如 Perforce、Git 等）来提交变更。此插件允许你在提交流程中插入一个外部程序，实现自定义的提交校验、标签管理和工作流控制。具体功能包括：
+
+- **拦截提交操作**：通过注册代理（Delegate）拦截编辑器的提交流程，替换为外部工具调用
+- **Perforce 深度集成**：识别 Perforce 提供者，自动提取端口、用户、客户端及工作区路径作为外部工具参数
+- **变更列表管理**：支持创建和编辑变更列表描述（Changelist Description）
+- **数据验证集成**：在调用外部提交工具前执行数据验证，并将验证结果以参数或标签形式传递给外部工具
+- **正则触发器**：基于验证消息的正则匹配，自动添加变更列表标签或附加命令行参数
 
 ## 使用场景
 
-- 你的团队维护着一个自定义的提交工具，用于执行代码审查、关联任务追踪、或运行自动化检查。
-- 你需要强制所有开发者在提交前运行一个特定的本地验证脚本。
-- 你想将 UE 编辑器的提交功能与 Perforce 以外的版本控制系统或提交管理系统（如 Gerrit， GitLab MR）集成。
-- 你希望在提交描述（Changelist Description）中自动添加或修改特定标签，以标记验证状态。
+- 你的团队使用自定义提交工具（如内部代码审查系统）替代标准的源码管理提交 → 用 SubmitToolEditor 将编辑器提交按钮指向你的工具
+- 你需要在每次提交前强制执行数据验证（如资产命名规范、蓝图校验）→ 启用 `bEnforceDataValidation` 配置
+- 你想根据验证结果自动给变更列表添加标签（如 `#needs-review`、`#auto-validated`）→ 配置 `ChangelistTagTriggers`
+- 你需要在不同验证场景下向外部工具传递不同参数 → 配置 `OptionalArgumentTriggers`
 
 ## 蓝图用法
 
-此插件的功能主要通过编辑器设置（Project Settings）进行配置，而非通过蓝图节点直接调用。其主要可配置项如下：
-
-### 核心设置（通过编辑器设置面板访问）
-
-| 设置项 | 说明 | 类型 |
-|---|---|---|
-| `Submit Tool Path` | 指向外部提交工具可执行文件的完整路径。 | `FString` |
-| `Submit Tool Arguments` | 调用提交工具时传递的命令行参数字符串。 | `FString` |
-| `bSubmitToolEnabled` | 全局开关，是否启用外部提交工具覆盖。 | `bool` |
-| `bForceSubmitTool` | 是否强制使用外部工具，即使用户可能想使用默认提交。 | `bool` |
-| `bEnforceDataValidation` | 是否在调用提交工具前强制执行编辑器数据验证。 | `bool` |
-| `Changelist Tag Triggers` | 数组，定义基于验证消息正则表达式向变更列表描述添加标签的规则。 | `TArray<FSubmitToolChangelistTagTrigger>` |
-| `Optional Argument Triggers` | 数组，定义基于验证消息正则表达式向提交工具命令行追加参数的规则。 | `TArray<FSubmitToolArgumentTrigger>` |
-
-**配置路径**：编辑器 -> 项目设置 -> 游戏 -> Submit Tool Settings
+此插件不暴露任何蓝图 API。所有功能通过 C++ 模块注册和编辑器设置面板（Project Settings → Submit Tool Settings）控制。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "SubmitToolEditor.h"
-#include "SubmitToolEditorSettings.h"
+#include "SubmitToolEditor/Private/SubmitToolEditor.h"
 ```
 
 ### 基本用法
 
-1.  **获取设置实例**：要读取或修改提交工具的设置，需要获取 `USubmitToolEditorSettings` 的实例。
-    ```cpp
-    // 获取 Submit Tool 的设置对象
-    const USubmitToolEditorSettings* Settings = GetDefault<USubmitToolEditorSettings>();
-    if (Settings)
-    {
-        UE_LOG(LogSubmitToolEditor, Log, TEXT("Submit Tool Path: %s"), *Settings->SubmitToolPath);
-        UE_LOG(LogSubmitToolEditor, Log, TEXT("Submit Tool Enabled: %s"), Settings->bSubmitToolEnabled ? TEXT("true") : TEXT("false"));
-    }
-    ```
-    *来源: 推断自 `USubmitToolEditorSettings` 的定义。*
+获取模块实例并注册提交覆盖委托：
 
-2.  **访问模块功能**：`FSubmitToolEditorModule` 提供了静态获取方法，但其主要公共接口是生命周期管理。
-    ```cpp
-    // 确保 SubmitToolEditor 模块已加载并获取其实例
-    FSubmitToolEditorModule& SubmitToolModule = FSubmitToolEditorModule::Get();
-    ```
-    *来源: `FSubmitToolEditorModule::Get()` 方法。*
+```cpp
+// 获取模块实例
+FSubmitToolEditorModule& SubmitToolModule = FSubmitToolEditorModule::Get();
+
+// 从设置对象注册提交覆盖委托
+const USubmitToolEditorSettings* Settings = GetDefault<USubmitToolEditorSettings>();
+SubmitToolModule.RegisterSubmitOverrideDelegate(Settings);
+
+// 取消注册
+SubmitToolModule.UnregisterSubmitOverrideDelegate();
+```
 
 ### 进阶用法
 
-插件的核心逻辑在模块的私有方法中，如 `RegisterSubmitOverrideDelegate` 和 `InvokeSubmitTool`。这些方法在插件启动时自动注册到编辑器的源代码控制模块，拦截提交事件。开发者通常不需要直接调用这些方法，而是通过配置 `USubmitToolEditorSettings` 来控制其行为。`ChangelistTagTriggers` 和 `OptionalArgumentTriggers` 允许进行复杂的动态参数配置。
+插件内部通过回调链实现提交覆盖。核心流程如下：
 
-## Demo 示例
-
-这是一个配置并获取提交工具设置的最小示例。
-
-**MyClass.h**
 ```cpp
-// MyClass.h
-#pragma once
-#include "CoreMinimal.h"
+// 1. 检查是否可以使用提交工具覆盖（由编辑器源码管理模块回调）
+FSubmitOverrideReply FSubmitToolEditorModule::OnCanSubmitToolOverrideCallback(
+    const SSubmitOverrideParameters& InParameters, FText* ErrorMessageOut);
 
-class FMySubmitToolConfig
+// 2. 执行提交工具覆盖（由编辑器源码管理模块回调）
+FSubmitOverrideReply FSubmitToolEditorModule::OnSubmitToolOverrideCallback(
+    const SSubmitOverrideParameters& InParameters);
+
+// 3. 实际调用外部提交工具（三个重载）
+// 重载1: 带文件列表
+FSubmitOverrideReply InvokeSubmitTool(
+    ISourceControlProvider& InProvider,
+    const FString& InPath,        // 外部工具路径
+    const FString& InArgs,        // 命令行参数
+    const FString& InDescription, // 变更列表描述
+    const TArray<FString>& InFiles);
+
+// 重载2: 带标识符（已存在的变更列表）
+FSubmitOverrideReply InvokeSubmitTool(
+    ISourceControlProvider& InProvider,
+    const FString& InPath,
+    const FString& InArgs,
+    const FString& InDescription,
+    const FString& InIdentifier);  // 变更列表标识符
+
+// 重载3: 仅标识符
+FSubmitOverrideReply InvokeSubmitTool(
+    ISourceControlProvider& InProvider,
+    const FString& InPath,
+    const FString& InArgs,
+    const FString& InIdentifier);
+```
+
+## 编辑器设置
+
+插件通过 `USubmitToolEditorSettings`（`UDeveloperSettings` 子类）提供配置项，位于 **Project Settings → Submit Tool Settings**：
+
+| 设置项 | 类型 | 说明 |
+|---|---|---|
+| `SubmitToolPath` | `FString` | 外部提交工具的可执行文件路径 |
+| `SubmitToolArguments` | `FString` | 传递给外部工具的命令行参数模板 |
+| `bSubmitToolEnabled` | `bool` | 是否启用提交工具覆盖 |
+| `bForceSubmitTool` | `bool` | 是否强制使用提交工具（默认 true） |
+| `bEnforceDataValidation` | `bool` | 是否在提交前执行数据验证 |
+| `ChangelistTagTriggers` | `TArray<FSubmitToolChangelistTagTrigger>` | 基于验证消息正则匹配自动添加变更列表标签 |
+| `OptionalArgumentTriggers` | `TArray<FSubmitToolArgumentTrigger>` | 基于验证消息正则匹配自动附加命令行参数 |
+
+### 正则触发器结构
+
+```cpp
+// 变更列表标签触发器
+struct FSubmitToolChangelistTagTrigger
 {
-public:
-    void CheckAndPrintSubmitToolConfig();
+    FString RegExMessage;   // 匹配验证消息的正则表达式
+    FString SubmitToolTag;  // 匹配成功时添加的标签
+};
+
+// 参数触发器
+struct FSubmitToolArgumentTrigger
+{
+    FString RegExMessage;       // 匹配验证消息的正则表达式
+    FString SubmitToolArgument; // 匹配成功时附加的命令行参数
 };
 ```
 
-**MyClass.cpp**
+## Demo 示例
+
+### 最小使用示例
+
+以下展示如何在自定义编辑器模块中集成 SubmitToolEditor：
+
 ```cpp
-// MyClass.cpp
-#include "MyClass.h"
-#include "SubmitToolEditorSettings.h"
+// MyEditorModule.h
+#pragma once
+
 #include "Modules/ModuleManager.h"
 
-void FMySubmitToolConfig::CheckAndPrintSubmitToolConfig()
+class FMyEditorModule : public IModuleInterface
 {
-    // 确保模块被加载（虽然设置系统独立，但调用模块API前通常需要）
-    FModuleManager::Get().LoadModuleChecked<FSubmitToolEditorModule>("SubmitToolEditor");
+public:
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
+};
+```
 
-    // 获取设置默认对象
-    const USubmitToolEditorSettings* Settings = GetDefault<USubmitToolEditorSettings>();
-    if (Settings)
+```cpp
+// MyEditorModule.cpp
+#include "MyEditorModule.h"
+#include "SubmitToolEditor/Private/SubmitToolEditor.h"
+#include "SubmitToolEditor/Private/SubmitToolEditorSettings.h"
+
+void FMyEditorModule::StartupModule()
+{
+    // 确保 SubmitToolEditor 模块已加载
+    if (FModuleManager::Get().IsModuleLoaded("SubmitToolEditor"))
     {
-        UE_LOG(LogTemp, Log, TEXT("--- Submit Tool Configuration ---"));
-        UE_LOG(LogTemp, Log, TEXT("Enabled: %s"), Settings->bSubmitToolEnabled ? TEXT("Yes") : TEXT("No"));
-        UE_LOG(LogTemp, Log, TEXT("Tool Path: %s"), *Settings->SubmitToolPath);
-        UE_LOG(LogTemp, Log, TEXT("Force Submit: %s"), Settings->bForceSubmitTool ? TEXT("Yes") : TEXT("No"));
-        UE_LOG(LogTemp, Log, TEXT("Enforce Validation: %s"), Settings->bEnforceDataValidation ? TEXT("Yes") : TEXT("No"));
-        UE_LOG(LogTemp, Log, TEXT("Number of Tag Triggers: %d"), Settings->ChangelistTagTriggers.Num());
+        FSubmitToolEditorModule& SubmitModule = FSubmitToolEditorModule::Get();
+        const USubmitToolEditorSettings* Settings = GetDefault<USubmitToolEditorSettings>();
+
+        if (Settings && Settings->bSubmitToolEnabled)
+        {
+            SubmitModule.RegisterSubmitOverrideDelegate(Settings);
+        }
     }
 }
+
+void FMyEditorModule::ShutdownModule()
+{
+    if (FModuleManager::Get().IsModuleLoaded("SubmitToolEditor"))
+    {
+        FSubmitToolEditorModule::Get().UnregisterSubmitOverrideDelegate();
+    }
+}
+
+IMPLEMENT_MODULE(FMyEditorModule, MyEditor)
 ```
 
 ## 模块依赖
 
-根据插件类型（Editor）和功能（集成源代码控制、启动外部进程）推断，你的模块可能需要依赖：
-
 | 模块 | 用途 |
 |---|---|
-| `SourceControl` | 与 Unreal 的源代码控制系统交互，注册提交覆盖代理 |
-| `ToolMenus` | （推测）如果涉及菜单集成 |
+| `SourceControl` | 源码管理接口，提供 `ISourceControlProvider` 等核心类型 |
+| `DeveloperSettings` | 设置基类 `UDeveloperSettings`（常见依赖，略） |
 
-*注意：由于未提供 `Build.cs` 文件内容，此列表为基于代码功能的推断。实际使用时，请以项目 `Build.cs` 中声明的依赖为准。*
+无特殊依赖（仅标准 Core/Engine/Slate 等及 SourceControl 模块）。
 
 ## 维护状态
 
@@ -137,20 +198,25 @@ void FMySubmitToolConfig::CheckAndPrintSubmitToolConfig()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移至 UE_LOGF，可能是为了支持更灵活的日志过滤。 |
-| 2025-11-25 | `c0ee383c` | Fix new changelist created in editor not running data validation before invoking submit tool | 修复了在编辑器中创建新变更列表时，未在调用提交工具前运行数据验证的问题。 |
-| 2025-11-11 | `64968397` | Add validation message parsing to SubmitToolEditor. | 为 SubmitToolEditor 添加了验证消息解析功能，用于驱动动态标签和参数。 |
-| 2025-11-03 | `a757ea03` | Modify ISourceControlModule submit validation delegates. | 修改了源代码控制模块的提交验证委托，可能是为了适配新的覆盖机制。 |
-| 2025-07-10 | `9803c443` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. (Applie | 向具有对应 .gen.cpp 文件的源文件添加了 UE_INLINE_GENERATED_CPP_BY_NAME 宏。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移到新格式 UE_LOGF |
+| 2025-11-25 | `c0ee383c` | Fix new changelist created in editor not running data validation before invoking submit tool | 修复编辑器新建变更列表时未先执行数据验证的 bug |
+| 2025-11-11 | `64968397` | Add validation message parsing to SubmitToolEditor. | 新增验证消息解析功能，支持正则触发器 |
+| 2025-11-03 | `a757ea03` | Modify ISourceControlModule submit validation delegates. | 修改源码管理模块的提交验证代理接口 |
+| 2025-07-10 | `9803c443` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. | 添加内联生成宏优化编译 |
 
 ### 维护评价
 
-该插件创建于 **2025年初**，是一个相对较新的功能。从提交历史看，**直到2026年4月仍有维护性更新**，表明它处于**活跃维护**状态。插件标记为 `IsExperimentalVersion` 且 `EnabledByDefault=false`，说明 Epic 认为其仍处于实验阶段，不建议在核心生产流程中强制使用，但可供有能力的团队尝试和集成。
+SubmitToolEditor 创建于 2025 年 1 月，是一个相对较新的实验性插件。从提交记录来看：
 
-**结论**：这是一个**积极维护中**的实验性插件。适合有自定义提交流程集成需求的团队探索使用，但应注意其“实验性”标签可能意味着API或行为在未来版本中可能发生变化。由于功能相对聚焦（覆盖提交行为），没有已知的重大限制。
+- **活跃维护**：最近 6 个月内有多次实质性功能更新（验证消息解析、数据验证修复、代理接口修改）
+- **持续改进**：功能在逐步完善，从最初的简单提交覆盖扩展到支持验证集成和正则触发器
+- **实验性标记**：`IsExperimentalVersion=true` 且 `EnabledByDefault=false`，表明 Epic 仍在评估此功能的稳定性
+- **无已知废弃标记**：没有 deprecated 相关的提交记录
+
+**推荐使用**：如果你的团队需要自定义提交工作流，可以尝试启用此插件。但需注意其**实验性状态**，API 和行为可能在未来版本中发生变化。建议在正式项目中使用前进行充分测试。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/SubmitToolEditor)
-- 官方文档：无
-- 测试用例：在提供的插件目录中未发现明显的测试文件。
+- [设置文件](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Experimental/SubmitToolEditor/Source/SubmitToolEditor/Private/SubmitToolEditorSettings.h)
+- [模块主文件](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Experimental/SubmitToolEditor/Source/SubmitToolEditor/Private/SubmitToolEditor.h)

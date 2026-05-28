@@ -1,10 +1,10 @@
 # Variant Manager Content
 
-> Data classes and assets for the Variant Manager plugin
+> Data classes and assets for the Variant Manager plugin（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 变体管理数据 |
+| 中文名 | 变体管理器数据 |
 | 分类 | Editor |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
@@ -16,79 +16,41 @@
 
 ## 用途
 
-VariantManagerContent 为 **Variant Manager（变体管理器）** 提供底层数据类和运行时支持。它不是一个独立的编辑器工具，而是 Variant Manager 编辑器插件所依赖的数据层。
-
-这个插件解决的核心问题是：**如何在运行时高效地切换场景中大量对象的属性状态**。它建立了一套完整的数据模型来存储"变体"——即一组对象属性的快照，可以在运行时一键切换。
-
-**典型应用场景**：建筑可视化中，客户想在同一个场景里切换不同的地板材质、家具布局、灯光方案。Variant Manager 让你预先录制这些状态变体，运行时通过一行蓝图代码即可切换整套配置。
+本插件为 **Variant Manager** 编辑器插件提供了底层的**数据类**和**资产管理**框架。它本身不是直接操作的编辑器界面，而是存储和管理“变体”数据的核心。Variant Manager 允许设计师和可视化专家创建、组织和快速切换同一场景或产品的不同配置状态，例如汽车的不同内饰方案、建筑的不同灯光场景、或产品展示中的不同组件组合。这些配置状态（变体）被序列化为资产（`ULevelVariantSets`），并可在运行时通过蓝图或 C++ 控制加载和切换。
 
 ## 使用场景
 
-- **建筑/产品可视化（AEC / Product Viz）**：需要在运行时切换产品的颜色、材质、配件组合
-- **Datasmith 工作流**：从 CAD/BIM 软件导入的模型需要展示多种配置方案
-- **交互式演示**：在 VR/实时演示中让客户自己选择不同的设计方案
-- **场景快速切装**：同一场景需要展示多种状态（如不同时间段的灯光氛围）
-- **ASwitchActor 特殊用途**：快速切换子 Actor 的可见性，一次只显示一个选项
+- **产品配置器**：在汽车销售、家具展示等应用中，用户通过点击按钮切换材质、颜色、部件等组合。
+- **建筑可视化（ArchViz）**：一键切换白天/夜晚场景、不同家具布局、或不同的装修风格。
+- **虚拟样机/设计评审**：在设计评审中，快速展示产品的不同设计方案或视角。
+- **交互式演示**：在路演或展览中，通过预定义的变体序列引导观众体验产品的不同功能。
 
 ## 蓝图用法
 
-本插件提供大量 `BlueprintCallable` 和 `BlueprintPure` 函数，核心 API 按数据层级组织。
+蓝图功能主要集中在 `ALevelVariantSetsActor`、`ULevelVariantSets`、`UVariantSet` 和 `UVariant` 类上。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SwitchOnVariantByName` | 通过名称切换到指定变体 | `ALevelVariantSetsActor` |
-| `SwitchOnVariantByIndex` | 通过索引切换到指定变体 | `ALevelVariantSetsActor` |
-| `GetLevelVariantSets` | 获取关联的 LevelVariantSets 资产 | `ALevelVariantSetsActor` |
-| `SetLevelVariantSets` | 设置关联的 LevelVariantSets 资产 | `ALevelVariantSetsActor` |
-| `GetNumVariantSets` | 获取变体集数量 | `ULevelVariantSets` |
-| `GetVariantSet` | 按索引获取变体集 | `ULevelVariantSets` |
-| `GetVariantSetByName` | 按名称获取变体集 | `ULevelVariantSets` |
-| `SwitchOn` | 应用当前变体（激活所有绑定的属性和函数） | `UVariant` |
-| `IsActive` | 检查变体当前是否处于激活状态 | `UVariant` |
-| `GetNumActors` | 获取变体绑定的 Actor 数量 | `UVariant` |
-| `GetActor` | 获取变体绑定的第 N 个 Actor | `UVariant` |
-| `SetDisplayText` | 设置变体的显示名称 | `UVariant` |
-| `GetDisplayText` | 获取变体的显示名称 | `UVariant` |
-| `AddDependency` | 添加变体依赖 | `UVariant` |
-| `GetNumDependencies` | 获取依赖数量 | `UVariant` |
-| `GetOptions` | 获取 SwitchActor 的所有子选项 | `ASwitchActor` |
-| `SelectOption` | 选择 SwitchActor 的某个选项 | `ASwitchActor` |
-| `GetSelectedOption` | 获取 SwitchActor 当前选中的选项索引 | `ASwitchActor` |
-| `GetPropertyTooltip` | 获取属性的提示文本 | `UPropertyValue` |
-| `GetFullDisplayString` | 获取属性的完整显示字符串 | `UPropertyValue` |
-| `HasRecordedData` | 检查属性是否已录制数据 | `UPropertyValue` |
-| `SetThumbnailFromTexture` | 从纹理设置缩略图 | `UVariant` / `UVariantSet` |
-| `SetThumbnailFromFile` | 从文件路径设置缩略图 | `UVariant` / `UVariantSet` |
-| `SetThumbnailFromCamera` | 从指定相机位置渲染缩略图 | `UVariant` / `UVariantSet` |
-| `SetThumbnailFromEditorViewport` | 从当前编辑器视口设置缩略图 | `UVariant` / `UVariantSet` |
+| `SwitchOnVariantByName` | 通过变体集和变体名称激活特定的变体配置。 | `ALevelVariantSetsActor` |
+| `SwitchOnVariantByIndex` | 通过索引激活变体。 | `ALevelVariantSetsActor` |
+| `GetLevelVariantSets` | 获取或加载关联的 Level Variant Sets 资产。 | `ALevelVariantSetsActor` |
+| `GetVariantSetByName` | 根据名称获取变体集。 | `ULevelVariantSets` |
+| `GetVariant` | 根据索引获取变体集中的特定变体。 | `UVariantSet` |
+| `SwitchOn` | 激活此变体，将其关联对象的所有捕获属性设置为记录值。 | `UVariant` |
+| `IsActive` | 检查此变体是否处于激活状态（所有属性值与记录值一致）。 | `UVariant` |
+| `SetThumbnailFromEditorViewport` | 从当前编辑器视口设置变体的缩略图。 | `UVariant` |
 
 ### 使用示例（蓝图描述）
 
-**运行时切换变体**：
-
-1. 在场景中放置 `ALevelVariantSetsActor`（通常是 Variant Manager 编辑器自动生成的）
-2. 蓝图中获取该 Actor 引用
-3. 调用 `SwitchOnVariantByName`，传入变体集名称（如 "FloorMaterial"）和变体名称（如 "Marble"）
-4. 场景中所有绑定的 Actor 的属性会自动切换到录制的状态
-
-**程序化创建变体数据**：
-
-1. 创建 `ULevelVariantSets` 资产
-2. 使用 `AddVariantSets` 添加变体集
-3. 在变体集上 `AddVariants` 添加变体
-4. 对变体调用 `AddBindings` 添加对象绑定
-5. 在绑定上 `AddCapturedProperties` 添加属性捕获
-6. 调用 `RecordDataFromResolvedObject` 录制当前状态
-7. 之后通过 `SwitchOn` 恢复到录制的状态
-
-**ASwitchActor 用法**：
-
-1. 在场景中放置 `ASwitchActor`
-2. 将多个 Actor（如不同款式的椅子）拖入其子层级
-3. 通过 `SelectOption(2)` 切换显示第三个子 Actor，其他自动隐藏
-4. 该操作可被 Variant Manager 捕获为属性变体
+1.  **在场景中放置 Actor**：从内容浏览器将 `LevelVariantSets` 资产拖入场景，或手动放置一个 `ALevelVariantSetsActor` 并指定资产。
+2.  **获取并激活变体**：
+    - 使用 `Get Level Variant Sets` 节点获取资产引用。
+    - 连接到 `Get Variant Set by Name` 或 `Get Variant Set` 节点，通过名称或索引获取一个 `UVariantSet`。
+    - 连接到 `Get Variant` 节点，通过索引获取一个 `UVariant`。
+    - 最后调用 `Switch On` 节点激活该变体。
+3.  **直接通过 Actor 激活**：更简单的方式是直接在 `ALevelVariantSetsActor` 上调用 `Switch On Variant by Name`，传入变体集和变体的名称字符串。
 
 ## C++ 用法
 
@@ -100,183 +62,125 @@ VariantManagerContent 为 **Variant Manager（变体管理器）** 提供底层�
 #include "Variant.h"
 #include "VariantObjectBinding.h"
 #include "PropertyValue.h"
-#include "SwitchActor.h"
-#include "LevelVariantSetsActor.h"
 ```
 
 ### 基本用法
 
-以下是通过 C++ 代码操作变体系统的基本示例，展示了数据模型的层级关系：
+**创建和配置 LevelVariantSets 资产**
+此示例展示了如何通过 C++ 动态构建一个变体资产。注意：在实际项目中，这些资产通常通过 Variant Manager 编辑器创建和序列化。
+（来源：概念推断，编辑器交互代码通常在 `VariantManagerContentEditor` 模块）
 
 ```cpp
-// 场景中已放置的 LevelVariantSetsActor
-ALevelVariantSetsActor* Actor = GetLevelVariantSetsActor();
-ULevelVariantSets* LevelVariantSets = Actor->GetLevelVariantSets(true);
+// 假设我们已经有了一个运行时世界上下文
+UWorld* World = GetWorld();
 
-// 获取变体集
-UVariantSet* VarSet = LevelVariantSets->GetVariantSet(0);
-FText VarSetName = VarSet->GetDisplayText();
+// 创建一个新的 LevelVariantSets 资产 (通常在编辑器模块中完成)
+ULevelVariantSets* LevelVariantSets = NewObject<ULevelVariantSets>(GetTransientPackage(), FName("MyLVS"));
 
-// 获取变体
-UVariant* Variant = VarSet->GetVariant(0);
-FText VariantName = Variant->GetDisplayText();
+// 创建并添加一个变体集
+UVariantSet* CarInteriorVariantSet = NewObject<UVariantSet>(LevelVariantSets);
+CarInteriorVariantSet->SetDisplayText(FText::FromString(TEXT("内饰方案")));
+LevelVariantSets->AddVariantSets({CarInteriorVariantSet});
 
-// 检查变体是否激活
-bool bActive = Variant->IsActive();
+// 在变体集中创建一个变体
+UVariant* LeatherVariant = NewObject<UVariant>(CarInteriorVariantSet);
+LeatherVariant->SetDisplayText(FText::FromString(TEXT("皮革内饰")));
+CarInteriorVariantSet->AddVariants({LeatherVariant});
 
-// 切换变体
-Variant->SwitchOn();
+// 为变体捕获属性（在编辑器中通过GUI完成，C++中需要手动解析属性路径并构建FCapturedPropSegment数组，较为复杂）
+// 此处省略具体的属性捕获过程，通常涉及 UPropertyValue::Init
+```
 
-// 获取变体绑定的 Actor
-int32 NumActors = Variant->GetNumActors();
-AActor* BoundActor = Variant->GetActor(0);
+**运行时激活变体**
+一旦资产准备就绪并放置在场景中（通过 `ALevelVariantSetsActor`），可以在运行时切换。
+（来源：`ALevelVariantSetsActor::SwitchOnVariantByName` 实现）
+
+```cpp
+// 获取场景中的 LevelVariantSetsActor
+ALevelVariantSetsActor* LVSActor = /* ... */;
+if (LVSActor)
+{
+    // 通过名称激活变体
+    LVSActor->SwitchOnVariantByName(TEXT("内饰方案"), TEXT("皮革内饰"));
+}
 ```
 
 ### 进阶用法
 
-以下示例展示了如何遍历变体绑定的属性数据，以及如何使用 ASwitchActor：
+**监听变体切换事件**
+你可以绑定到变体切换事件来执行自定义逻辑。
+（来源：`UVariant` 和 `ASwitchActor` 中定义的委托）
 
 ```cpp
-// 遍历变体的所有绑定和属性
-UVariant* Variant = GetSomeVariant();
-for (UVariantObjectBinding* Binding : Variant->GetBindings())
+// 假设我们有一个指向特定变体的指针
+UVariant* MyVariant = /* ... */;
+
+// 绑定到属性应用后的事件 (通常在 VariantManager 模块中定义)
+MyVariant->GetOnPropertyApplied().AddLambda([](UPropertyValue* PropertyValue)
 {
-    UObject* BoundObject = Binding->GetObject();
-    UE_LOG(LogTemp, Log, TEXT("Binding to: %s"), *Binding->GetDisplayText().ToString());
+    UE_LOG(LogTemp, Log, TEXT("Property '%s' was applied"), *PropertyValue->GetFullDisplayString());
+});
 
-    // 遍历捕获的属性
-    for (UPropertyValue* PropValue : Binding->GetCapturedProperties())
-    {
-        if (PropValue->HasRecordedData())
-        {
-            FText Tooltip = PropValue->GetPropertyTooltip();
-            const FString& DisplayStr = PropValue->GetFullDisplayString();
-            EPropertyValueCategory Category = PropValue->GetPropCategory();
-        }
-    }
-
-    // 执行绑定对象上的函数调用
-    Binding->ExecuteAllTargetFunctions();
-}
-
-// 变体依赖：获取依赖该变体的其他变体
-ULevelVariantSets* LVS = GetLevelVariantSets();
-TArray<UVariant*> Dependents = Variant->GetDependents(LVS, true /*bOnlyEnabledDependencies*/);
-
-// ASwitchActor 用法
-ASwitchActor* Switch = GetSwitchActor();
-TArray<AActor*> Options = Switch->GetOptions();
-int32 CurrentSelection = Switch->GetSelectedOption();
-Switch->SelectOption(1); // 切换到第二个选项
-
-// 监听切换事件
-Switch->GetOnSwitchDelegate().AddLambda([](int32 NewOption) {
-    UE_LOG(LogTemp, Log, TEXT("SwitchActor selected option: %d"), NewOption);
+// 对于 SwitchActor，还可以监听切换事件
+ASwitchActor* SwitchActor = /* ... */;
+SwitchActor->GetOnSwitchDelegate().AddLambda([](int32 NewSelectedOption)
+{
+    UE_LOG(LogTemp, Log, TEXT("Switch Actor selected option index: %d"), NewSelectedOption);
 });
 ```
 
 ## Demo 示例
 
-一个完整的最小示例，展示如何通过 C++ 代码与 Variant Manager 数据层交互：
+一个最小的 C++ 示例，展示如何在 BeginPlay 时通过已有的 Actor 切换变体。
 
+**MyGameMode.h**
 ```cpp
-// MyVariantManagerHelper.h
 #pragma once
+#include "GameFramework/GameModeBase.h"
+#include "MyGameMode.generated.h"
 
-#include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "LevelVariantSetsActor.h"
-#include "LevelVariantSets.h"
-#include "VariantSet.h"
-#include "Variant.h"
-#include "VariantObjectBinding.h"
-#include "PropertyValue.h"
-#include "SwitchActor.h"
+class ALevelVariantSetsActor;
 
-#include "MyVariantManagerHelper.generated.h"
-
-UCLASS(BlueprintType)
-class MYPROJECT_API UMyVariantManagerHelper : public UObject
+UCLASS()
+class AMyGameMode : public AGameModeBase
 {
     GENERATED_BODY()
 
 public:
-    // 根据名称切换变体
-    UFUNCTION(BlueprintCallable, Category = "VariantManager|Helper")
-    static bool SwitchVariantByName(ALevelVariantSetsActor* Actor,
-                                     const FString& VariantSetName,
-                                     const FString& VariantName);
+    virtual void BeginPlay() override;
 
-    // 列出所有可用的变体集和变体
-    UFUNCTION(BlueprintCallable, Category = "VariantManager|Helper")
-    static TArray<FString> ListAllVariants(ALevelVariantSetsActor* Actor);
+    UPROPERTY(EditAnywhere, Category="Demo")
+    ALevelVariantSetsActor* TargetLVSActor;
 
-    // 检查变体是否为当前激活状态
-    UFUNCTION(BlueprintCallable, Category = "VariantManager|Helper")
-    static bool IsVariantActive(ALevelVariantSetsActor* Actor,
-                                 const FString& VariantSetName,
-                                 const FString& VariantName);
+    UPROPERTY(EditAnywhere, Category="Demo")
+    FString VariantSetName = TEXT("DefaultSet");
+
+    UPROPERTY(EditAnywhere, Category="Demo")
+    FString VariantName = TEXT("VariantA");
 };
 ```
 
+**MyGameMode.cpp**
 ```cpp
-// MyVariantManagerHelper.cpp
-#include "MyVariantManagerHelper.h"
+#include "MyGameMode.h"
+#include "LevelVariantSetsActor.h"
 
-bool UMyVariantManagerHelper::SwitchVariantByName(ALevelVariantSetsActor* Actor,
-                                                    const FString& VariantSetName,
-                                                    const FString& VariantName)
+void AMyGameMode::BeginPlay()
 {
-    if (!Actor)
+    Super::BeginPlay();
+
+    if (TargetLVSActor)
     {
-        return false;
-    }
-    return Actor->SwitchOnVariantByName(VariantSetName, VariantName);
-}
-
-TArray<FString> UMyVariantManagerHelper::ListAllVariants(ALevelVariantSetsActor* Actor)
-{
-    TArray<FString> Results;
-    if (!Actor) return Results;
-
-    ULevelVariantSets* LVS = Actor->GetLevelVariantSets(true);
-    if (!LVS) return Results;
-
-    for (int32 i = 0; i < LVS->GetNumVariantSets(); ++i)
-    {
-        UVariantSet* VarSet = LVS->GetVariantSet(i);
-        if (!VarSet) continue;
-
-        FString SetName = VarSet->GetDisplayText().ToString();
-        for (int32 j = 0; j < VarSet->GetNumVariants(); ++j)
+        bool bSuccess = TargetLVSActor->SwitchOnVariantByName(VariantSetName, VariantName);
+        if (bSuccess)
         {
-            UVariant* Var = VarSet->GetVariant(j);
-            if (Var)
-            {
-                Results.Add(FString::Printf(TEXT("%s / %s"),
-                    *SetName, *Var->GetDisplayText().ToString()));
-            }
+            UE_LOG(LogTemp, Log, TEXT("Successfully switched to variant '%s' in set '%s'"), *VariantName, *VariantSetName);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Failed to switch variant. VariantSet '%s' or Variant '%s' not found."), *VariantSetName, *VariantName);
         }
     }
-    return Results;
-}
-
-bool UMyVariantManagerHelper::IsVariantActive(ALevelVariantSetsActor* Actor,
-                                               const FString& VariantSetName,
-                                               const FString& VariantName)
-{
-    if (!Actor) return false;
-
-    ULevelVariantSets* LVS = Actor->GetLevelVariantSets(true);
-    if (!LVS) return false;
-
-    UVariantSet* VarSet = LVS->GetVariantSetByName(VariantSetName);
-    if (!VarSet) return false;
-
-    UVariant* Var = VarSet->GetVariantByName(VariantName);
-    if (!Var) return false;
-
-    return Var->IsActive();
 }
 ```
 
@@ -284,11 +188,8 @@ bool UMyVariantManagerHelper::IsVariantActive(ALevelVariantSetsActor* Actor,
 
 | 模块 | 用途 |
 |---|---|
-| `RenderCore` | 纹理生成相关（缩略图创建） |
-| `RenderCore` | 纹理创建 |
-| `LevelSequence` | 可能用于与 Sequencer 集成 |
-
-无其他特殊依赖（仅标准 Core/Engine/Slate 等常见模块）。实际上该插件的核心运行时模块依赖非常轻量，主要依赖引擎的基础模块。
+| `VariantManager` | 核心的 Variant Manager 编辑器模块，提供交互式 UI 和资产创建逻辑。 |
+| `LevelSequence` | 用于处理变体切换时可能涉及的动画序列（如摄像机动画）。 |
 
 ## 维护状态
 
@@ -296,25 +197,20 @@ bool UMyVariantManagerHelper::IsVariantActive(ALevelVariantSetsActor* Actor,
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-12 | `0a77223b` | Fixed crash in LevelVariantSet.cpp | 修复 LevelVariantSet 的崩溃问题 |
-| 2026-04-16 | `0b4d09a4` | [ContentBrowser] New Add Menu Data Menu | 内容浏览器新增添加菜单数据 |
-| 2026-04-14 | `50042443` | TLazyObjectPtr Deprecation: | 迁移废弃的 TLazyObjectPtr 到新 API |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移至新格式 UE_LOGF |
-| 2026-03-20 | `c5bb9adf` | [AutoViz] Minor updates to Variant Manager | 变体管理器的小幅更新 |
+| 2026-05-12 | `0a77223b` | Fixed crash in LevelVariantSet.cpp | 修复了 LevelVariantSet.cpp 中的一个崩溃问题。 |
+| 2026-04-16 | `0b4d09a4` | [ContentBrowser] New Add Menu Data Menu | 内容浏览器新增数据菜单，可能影响资产创建流程。 |
+| 2026-04-14 | `50042443` | TLazyObjectPtr Deprecation: | 处理了 TLazyObjectPtr 的弃用警告，更新了相关序列化代码。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移到 UE_LOGF，统一日志格式。 |
+| 2026-03-20 | `c5bb9adf` | [AutoViz] Minor updates to Variant Manager | 对变体管理器进行了小规模更新，推测为自动化可视化功能适配。 |
 
 ### 维护评价
 
-- **创建时间**：2018 年，至今约 8 年，属于企业级长期支持功能
-- **最近更新频率**：2026 年有多次实质性更新（修复崩溃、API 迁移），说明仍在活跃维护
-- **维护状态**：**活跃维护中** — 近期有 bug 修复和 API 现代化工作
-- **Beta 标记**：`IsBetaVersion=true` 仍处于实验阶段，API 可能变化
-- **已知限制**：
-  - 仍标记为 Beta，部分 API 可能不稳定
-  - 旧版使用 `TLazyObjectPtr`，正在迁移到 `FSoftObjectPath`，读取旧资产时需注意兼容性
-  - 缩略图相关功能仅在编辑器环境完整可用（`SetThumbnailFromEditorViewport` 标记了 `CallInEditor`）
-- **推荐使用**：✅ 推荐用于建筑/产品可视化场景。这是 Epic 官方的 Enterprise 变体管理方案，虽然标记 Beta 但已持续维护 8 年，可靠性较高。如果你需要在运行时切换复杂场景配置，这是官方唯一方案。
+- **活跃维护**：虽然插件创建于 2018 年，但截至 2026 年 5 月仍有实质性更新（包括崩溃修复和功能适配），表明它仍被 Epic Games 用于内部的企业级项目（如 AutoViz），并持续维护。
+- **实验性状态**：`.uplugin` 标记为 `IsBetaVersion: true`，这意味着其 API 可能仍会发生变化，不建议在需要高度稳定性的生产项目中直接依赖其内部实现细节。
+- **推荐使用**：对于需要复杂产品配置、建筑可视化或交互式演示的项目，**推荐使用** Variant Manager 系统。它提供了成熟的蓝图接口，足以应对大多数运行时切换场景。但需要注意其“实验性”标签，并关注官方更新日志。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/VariantManagerContent)
 - [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/Datasmith/)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/VariantManagerContent/Tests) （注意：测试用例可能位于 Editor 模块或独立测试目录）

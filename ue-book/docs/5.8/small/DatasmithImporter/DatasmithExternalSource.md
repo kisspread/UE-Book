@@ -1,190 +1,181 @@
-# Datasmith Importer
+# Datasmith External Source
 
-> Importer for Datasmith files.（照抄，不翻译）
+> Importer for Datasmith files.
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 数据智能导入 |
+| 中文名 | Datasmith 外部数据源 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
-| 模块 | `DatasmithExternalSource` (Runtime), `DatasmithImporter` (Runtime), `DatasmithNativeTranslator` (Runtime), `DatasmithTranslator` (Runtime), `DirectLinkExtension` (Runtime), `DirectLinkExtensionEditor` (Runtime), `DirectLinkTest` (Runtime), `ExternalSource` (Runtime) |
+| 模块 | `DatasmithExternalSource` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2019-10-04 |
-| 年龄标签 | 👴 老古董（约 5 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter) | |
+| 年龄标签 | 👴 老古董（约 7 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter/Source/DatasmithExternalSource) | |
 
 ## 用途
 
-DatasmithImporter 插件的核心并非简单的文件导入器，而是一个用于从各种外部数据源（如 CAD、BIM 软件）获取并管理 Datasmith 场景的框架。它主要解决以下问题：
-1.  **实时同步**：通过 DirectLink 技术，允许 Unreal Engine 实时接收来自支持该协议的桌面软件（如 Revit, SketchUp）的设计变更，无需手动重新导入。
-2.  **统一数据源管理**：将本地文件（如 .udatasmith 文件）和通过 DirectLink 连接的远程数据源抽象为统一的 `FExternalSource` 对象，为上层导入和同步逻辑提供一致的接口。
-3.  **作为导入系统的后端**：它为 Unreal Editor 的标准导入/重导入流程提供了一个特定的“翻译器”（Translator），使其能够理解并处理来自这些外部数据源的 Datasmith 格式数据。
+`DatasmithExternalSource` 模块是 Datasmith 插件的基础设施之一，其核心功能是**管理和提供对外部数据源的统一访问接口**。它解决了如何从不同来源（如本地 `.udatasmith` 文件或通过 DirectLink 协议的实时流）获取 Datasmith 场景数据的问题。
+
+通过定义 `FExternalSource` 基类和一系列具体的实现（如 `FDatasmithFileExternalSource` 和 `FDatasmithDirectLinkExternalSource`），本模块实现了：
+1.  **统一抽象**：为上层应用（如 `DatasmithImporter` 模块）提供一致的接口来获取 `IDatasmithScene`，而无需关心数据是来自文件还是网络流。
+2.  **实时连接**：通过集成 DirectLink，支持从 CAD/BIM 软件实时接收场景更新，避免了传统的文件导出-导入中间步骤。
+3.  **URI 解析**：通过 `IUriResolver` 接口，支持使用 `directlink://` 或 `file://` 等 URI 方案来定位数据源。
+
+简单来说，它是 Datasmith 生态系统的“数据连接层”，让 UE 能够灵活地接入来自各种设计软件的三维数据。
 
 ## 使用场景
 
-- 你正在使用 Autodesk Revit、SketchUp、3ds Max 等软件进行建筑设计或工业建模 → 通过 DirectLink 实现模型在 UE 中的实时预览和更新。
-- 你有一系列由 Datasmith Exporter 导出的 `.udatasmith` 文件，需要将其作为资产批量导入到 UE 项目中。
-- 你需要开发一个自定义的连接器，将非标准或内部设计工具的三维数据以 Datasmith 格式引入 Unreal Engine。
+*   **实时设计评审**：建筑师或设计师在 SketchUp、Revit 或 3ds Max 中修改模型时，通过 DirectLink 协议，UE 中的可视化场景可以实时同步更新，无需手动导出和重新导入文件。
+*   **自动化数据流水线**：在需要自动化处理 Datasmith 数据的程序或工具中，通过代码直接解析 `file://` 或 `directlink://` URI，自动加载和获取场景数据。
+*   **扩展数据源**：开发者可以继承 `FExternalSource` 类，创建自定义的数据源解析器，例如从特定的数据库或网络服务中加载 Datasmith 格式的场景。
 
 ## 蓝图用法
 
-当前分析的 `DatasmithExternalSource` 模块主要处理底层数据源连接与场景加载，其核心类（如 `FDatasmithFileExternalSource`、`FDatasmithDirectLinkExternalSource`）均为 C++ 类，未在提供的头文件中发现 `UFUNCTION(BlueprintCallable)` 标记的蓝图 API。此模块的功能通常在 C++ 层或被更高层的 `DatasmithImporter` 模块封装调用。
+本模块（`DatasmithExternalSource`）主要提供底层运行时支持，其公开的蓝图可调用 API 较少，更多是为 `DatasmithImporter` 等上层模块提供服务。在蓝图中使用 Datasmith 功能，通常是通过 `DatasmithImporter` 模块提供的节点（如“导入 Datasmith 场景”）来完成，这些节点内部会调用本模块的数据源管理功能。
+
+因此，**直接使用本模块的蓝图节点进行高级定制的场景较少**。其价值主要体现在 C++ 层面的扩展和底层架构中。
 
 ## C++ 用法
+
+本模块的主要用法体现在对已有框架的扩展和底层接口的调用。
 
 ### 头文件引入
 
 ```cpp
-#include "DatasmithExternalSourceModule.h"
+#include "DatasmithExternalSourceModule.h" // 模块访问
+#include "IExternalSource.h" // 数据源基类接口（来自 ExternalSource 模块）
 ```
 
-### 基本用法
-
-该模块的核心是提供 `FExternalSource` 的具体实现。作为使用者，你可能需要根据需求继承或实例化这些类。
-
-**示例：创建一个自定义的文件外部数据源（概念）**
+### 基本用法：获取模块状态
 
 ```cpp
-// 假设你需要支持一种新的文件格式作为 Datasmith 源。
-// 你可以参考 FDatasmithFileExternalSource 的设计模式。
 #include "DatasmithExternalSourceModule.h"
-#include "ExternalSource.h" // 来自 ExternalSource 模块
 
-class FMyCustomFileSource : public UE::DatasmithImporter::FDatasmithFileExternalSource
+// 检查 DatasmithExternalSource 模块是否已加载并可用
+if (FDatasmithExternalSourceModule::IsAvailable())
+{
+    // 模块已加载，可以安全地访问其功能
+    UE_LOG(LogTemp, Log, TEXT("DatasmithExternalSource module is available."));
+}
+```
+*代码基于模块管理类 `FDatasmithExternalSourceModule` 的典型用法。*
+
+### 进阶用法：创建自定义数据源
+
+通过继承 `FExternalSource` 并注册 URI 解析器，可以创建自定义数据源。
+
+```cpp
+// MyCustomExternalSource.h
+#pragma once
+
+#include "IExternalSource.h"
+
+class FMyCustomExternalSource : public FExternalSource
 {
 public:
-    explicit FMyCustomFileSource(const FSourceUri& InSourceUri)
-        : FDatasmithFileExternalSource(InSourceUri)
+    explicit FMyCustomExternalSource(const FSourceUri& InSourceUri)
+        : FExternalSource(InSourceUri)
     {}
 
-    // 重写加载逻辑以处理你的自定义格式
-    virtual TSharedPtr<IDatasmithScene> LoadImpl() override
-    {
-        // 在此处解析你的文件格式，并转换为 IDatasmithScene
-        TSharedPtr<IDatasmithScene> MyScene = /* ... 你的解析逻辑 ... */;
-        return MyScene;
-    }
+    // 实现数据源的核心接口
+    virtual FString GetSourceName() const override;
+    virtual bool IsAvailable() const override;
+    // ... 其他 FExternalSource 虚函数实现
 
-    // 可以重写其他方法，如 GetSourceName, GetCapabilities 等
+    // 通常还需要实现获取具体数据的方法
+    // virtual TSharedPtr<IDatasmithScene> LoadScene() = 0;
 };
 ```
-*来源：文件 `Private/DatasmithFileExternalSource.h` 展示了 `FDatasmithFileExternalSource` 的接口，`LoadImpl` 是加载文件内容的关键虚函数。*
-
-### 进阶用法
-
-结合 DirectLink 实现实时数据源接收。
 
 ```cpp
-#include "DatasmithExternalSourceModule.h"
-#include "DatasmithDirectLinkExternalSource.h"
+// MyUriResolver.h
+#pragma once
 
-// FDatasmithDirectLinkExternalSource 通过 DirectLink 协议接收场景。
-// 通常不需要直接继承，而是通过 URI 解析器创建实例。
-// 使用示例：当编辑器解析一个 directlink:// 开头的 URI 时，FDatasmithFileUriResolver 会创建此类的实例。
+#include "IUriResolver.h"
 
-// 你可以创建自己的 URI 解析器来扩展支持的协议。
-#include "DatasmithFileUriResolver.h" // 参考现有解析器
-
-class FMyCustomUriResolver : public UE::DatasmithImporter::IUriResolver
+class FMyUriResolver : public IUriResolver
 {
 public:
     virtual bool CanResolveUri(const FSourceUri& URI) const override
     {
-        // 判断是否能处理该 URI，例如 myapp:// 协议
-        return URI.GetScheme() == TEXT("myapp");
+        // 识别自定义的 URI 方案
+        return URI.GetScheme() == TEXT(“mycustom”);
     }
 
     virtual TSharedPtr<FExternalSource> GetOrCreateExternalSource(const FSourceUri& URI) const override
     {
-        // 根据 URI 创建对应的外部数据源对象
-        return MakeShared<FMyCustomFileSource>(URI);
+        return MakeShared<FMyCustomExternalSource>(URI);
     }
-
-    virtual FName GetScheme() const override { return TEXT("myapp"); }
+    // ... 其他接口实现
 };
-
-// 在模块启动时注册你的解析器
-void FMyGameModule::StartupModule()
-{
-    if (UE::DatasmithImporter::FDatasmithExternalSourceModule::IsAvailable())
-    {
-        // 假设有注册机制（需查阅更完整的模块文档）
-        // MyResolver 注册...
-    }
-}
 ```
-*来源：`Private/DatasmithFileUriResolver.h` 展示了 URI 解析器的接口，`FDatasmithDirectLinkExternalSource.h` 展示了 DirectLink 数据源的实现。*
+
+在 `StartupModule()` 中，将自定义解析器注册到模块的 URI 解析器列表中。
+*思路基于 `FDatasmithFileUriResolver` 的实现模式。*
 
 ## Demo 示例
 
-以下是一个最小化的自定义 Datasmith 文件数据源的示例。
+以下是一个最小化的自定义 `FExternalSource` 实现，用于从内存字符串（模拟）中加载 Datasmith 场景。
 
-**MyCustomDatasmithSource.h**
 ```cpp
+// SimpleMemoryExternalSource.h
 #pragma once
 
-#include "DatasmithFileExternalSource.h"
+#include "IExternalSource.h"
 
-// 自定义数据源：用于处理扩展名为“.myformat”的文件，并将其转换为 Datasmith 场景。
-class FMyCustomDatasmithSource : public UE::DatasmithImporter::FDatasmithFileExternalSource
+class IDatasmithScene;
+
+class FSimpleMemoryExternalSource : public FExternalSource
 {
 public:
-    explicit FMyCustomDatasmithSource(const FSourceUri& InSourceUri)
-        : FDatasmithFileExternalSource(InSourceUri)
+    explicit FSimpleMemoryExternalSource(const FSourceUri& InSourceUri, const FString& InSceneJson)
+        : FExternalSource(InSourceUri)
+        , SceneJson(InSceneJson)
     {}
 
-    // 核心：实现你自己的加载逻辑
-    virtual TSharedPtr<IDatasmithScene> LoadImpl() override;
+    virtual ~FSimpleMemoryExternalSource() = default;
 
-    // 可选：提供更友好的名称
-    virtual FString GetSourceName() const override { return TEXT("MyCustomSource"); }
+    virtual FString GetSourceName() const override { return TEXT(“MemorySource”); }
+    virtual bool IsAvailable() const override { return true; } // 内存数据总是可用
+    virtual FMD5Hash GetSourceHash() const override
+    {
+        // 简单地对内容字符串计算哈希
+        return FMD5Hash::HashString(*SceneJson);
+    }
 
-    // 可选：声明此源的能力
-    virtual FExternalSourceCapabilities GetCapabilities() const override;
+    // 此示例中，我们将加载操作设计为同步的，实际应异步
+    virtual TSharedPtr<IDatasmithScene> GetDatasmithScene() const override
+    {
+        // 注意：实际场景应使用 Datasmith 的解析器从 SceneJson 构建 IDatasmithScene
+        // 此处仅为示意，返回空指针。
+        return nullptr;
+    }
+
+protected:
+    // 通常由 GetDatasmithScene 或异步加载函数内部调用
+    TSharedPtr<IDatasmithScene> LoadImpl()
+    {
+        // 调用 Datasmith 的 JSON/数据解析器
+        // FDatasmithSceneUtils::CreateSceneFromJson(SceneJson);
+        return nullptr; // 示例返回
+    }
+
+private:
+    FString SceneJson;
 };
-```
-
-**MyCustomDatasmithSource.cpp**
-```cpp
-#include "MyCustomDatasmithSource.h"
-#include "IDatasmithSceneElements.h" // Datasmith SDK 头文件
-
-TSharedPtr<IDatasmithScene> FMyCustomDatasmithSource::LoadImpl()
-{
-    // 1. 从 FilePath (继承自 FDatasmithFileExternalSource) 获取文件路径
-    const FString& FileToLoad = GetSourceUri().GetPath();
-
-    // 2. 实现你的文件解析逻辑（此处为伪代码）
-    TSharedPtr<IDatasmithScene> NewScene = /* 例如：FDatasmithSceneFactory::CreateScene(TEXT("MyScene")) */;
-
-    // 3. 解析文件并将内容填充到 NewScene 中
-    // ... 读取文件，创建 MeshActor, Material 等 Datasmith 元素并添加到场景 ...
-
-    // 4. 返回构建好的场景
-    return NewScene;
-}
-
-FExternalSourceCapabilities FMyCustomDatasmithSource::GetCapabilities() const
-{
-    FExternalSourceCapabilities Caps;
-    Caps.bSupportsLiveUpdate = false; // 此自定义格式不支持实时更新
-    return Caps;
-}
 ```
 
 ## 模块依赖
 
-此插件模块依赖链较复杂，且与其他 Datasmith 模块高度耦合。使用者在使用 `DatasmithExternalSource` 功能时，通常通过 `DatasmithImporter` 模块进行访问。
-
 | 模块 | 用途 |
 |---|---|
-| `DatasmithSDK` | 核心 Datasmith 数据结构和场景接口 |
-| `DirectLink` | DirectLink 协议实现，用于实时同步 |
-| `ExternalSource` | 外部数据源的抽象基类和接口 |
-| `DatasmithTranslator` | Datasmith 格式解析和场景翻译接口 |
+| `DatasmithCore` | 提供 `IDatasmithScene` 等核心数据接口 |
+| `DirectLink` | 实现 DirectLink 网络协议，用于实时数据接收 |
+| `ExternalSource` | 提供 `FExternalSource`、`IUriResolver` 等基类接口 |
 
-*注意：实际项目中可能需要根据具体功能添加其他依赖，如 `DatasmithImporter` 模块本身。*
+**省略常见依赖**：仅列出该插件独特依赖。
 
 ## 维护状态
 
@@ -192,21 +183,20 @@ FExternalSourceCapabilities FMyCustomDatasmithSource::GetCapabilities() const
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下，双精度常量截断为浮点数时产生的编译警告。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将旧的 `UE_LOG` 宏迁移到新的 `UE_LOGF` 宏。 |
-| 2026-04-02 | `50a24ff6` | Deprecated GetObjects*/ForEachObjectWithOuter functions that take bool bIncludeNestedObjects. Introd... | 弃用了接受 `bIncludeNestedObjects` 参数的 `GetObjects*` 和 `ForEachObjectWithOuter` 函数。 |
-| 2026-03-06 | `7b69892a` | clean up code changing texture properties with wrapping in PreEditChange/PostEditChange as required. | 清理了在 `PreEditChange`/`PostEditChange` 中修改纹理属性的代码，确保正确包装。 |
-| 2026-03-05 | `1adb9f68` | New material translator work: ... | 新的材质翻译器相关工作。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下，双精度常量截断为浮点数导致的编译警告。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移为 UE_LOGF，可能是日志格式或分类的标准化。 |
+| 2026-04-02 | `50a24ff6` | Deprecated GetObjects*/ForEachObjectWithOuter functions that take bool bIncludeNestedObjects. Introd | 废弃了带 `bIncludeNestedObjects` 参数的 `GetObjects`/`ForEachObjectWithOuter` 函数。 |
+| 2026-03-06 | `7b69892a` | clean up code changing texture properties with wrapping in PreEditChange/PostEditChange as required. | 清理了在 `PreEditChange`/`PostEditChange` 中修改纹理属性的代码，使其符合规范。 |
+| 2026-03-05 | `1adb9f68` | New material translator work: | 开展了新材质翻译器的相关工作。 |
 
 ### 维护评价
 
-- **活跃维护**：从提交记录看，该插件在过去 3 个月内有持续的代码提交，内容涉及代码清理、警告修复、新功能开发和 API 更新。
-- **企业级支持**：作为 `Engine/Plugins/Enterprise/` 下的插件，它属于 Epic Games 官方支持的企业级功能，有长期维护的保障。
-- **持续演进**：最近的提交表明其正在适配引擎的新日志系统、清理旧 API 依赖并开发新的材质处理功能。
-- **推荐使用**：对于需要与 CAD/BIM 软件进行数据交互的项目，该插件是官方推荐且维护良好的解决方案。它并非实验性功能，但需要手动在项目中启用。
+*   **活跃维护**：最近一次更新在 2026 年 5 月，且近半年内有多次提交，涉及代码清理、API 更新和功能工作，表明该模块仍在被积极维护。
+*   **状态稳定**：虽然插件本身创建于约 7 年前，但作为企业版 Datasmith 工具链的关键基础设施，其稳定性和持续维护至关重要。从提交历史看，团队在持续优化和适配 UE 的更新。
+*   **推荐使用**：**是**。对于需要接入 Datasmith 数据流（特别是实时数据）的项目或工具开发，本模块是必不可少的底层组件。它提供了稳定、可扩展的数据源抽象层。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter)
-- [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/Datasmith/)
-- [测试用例] (可能位于 `Engine/Tests/DatasmithImporter/` 或插件内部，需根据具体版本确认)
+- [源码 (DatasmithExternalSource 模块)](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter/Source/DatasmithExternalSource)
+- [Datasmith 整体源码 (插件根目录)](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter)
+- [官方文档 (Datasmith 概览)](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/Datasmith/)

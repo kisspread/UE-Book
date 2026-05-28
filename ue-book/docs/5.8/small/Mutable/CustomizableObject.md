@@ -4,143 +4,63 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 可定制对象系统 |
+| 中文名 | 可变物体 |
 | 分类 | CustomizableObjects |
-| 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
-| 模块 | `MutableRuntime` (Runtime), `CustomizableObject` (Runtime), `CustomizableObjectEditor` (Runtime), `MutableTools` (Runtime), `MutableValidation` (Runtime) |
+| 默认启用 | ✅ 是 |
+| 包含内容 | ✅ 有（源码和蓝图资产） |
+| 模块 | `CustomizableObject` (Runtime), `CustomizableObjectEditor` (Runtime), `MutableRuntime` (Runtime), `MutableTools` (Runtime), `MutableValidation` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-09-05 |
-| 年龄标签 | 🆕（约 1 年） |
+| 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable) | |
 
 ## 用途
 
-Mutable 是 UE5 的**运行时角色/物体定制系统**。它解决的核心问题是：**如何让玩家在游戏运行时实时修改角色外观（骨骼网格体、材质、纹理、变形等），同时保持高性能**。
+Mutable 插件是一个强大的运行时可自定义对象系统。它允许设计师和开发者在 Unreal Editor 中通过可视化的节点图编辑器（`CustomizableObject`）定义一个对象的所有可变部分（如网格、材质、纹理、骨骼、物理资源等），并将其编译成一个高效的“模型”。在游戏运行时，系统可以根据玩家的选择或游戏逻辑（如装备、发型、肤色等参数），动态地“实例化”并生成最终的 Skeletal Mesh、材质和纹理，实现高性能的实时换装与自定义，避免了传统预烘焙所有组合带来的巨大内存和磁盘开销。
 
-具体来说，Mutable 允许你：
-
-1. **在编辑器中以节点图方式定义可定制对象**（Customizable Object, CO），声明哪些部分可以被修改
-2. **在运行时创建实例**（Customizable Object Instance, COI），通过参数值驱动外观变化
-3. **异步生成最终的 SkeletalMesh、材质和纹理**，支持 LOD 流式加载
-4. **将定制结果烘焙为静态资产**，用于离线场景
-
-与简单的材质参数切换不同，Mutable 能在运行时**合并、裁剪、重组多个网格体和纹理**，生成全新的几何体。例如将头部、躯干、手臂的多个网格体合并为一个完整的角色模型，同时处理 UV 重映射、骨骼合并、布料模拟、物理资产合并等。
+**核心解决的问题**：在大型游戏（尤其是 MMO、RPG、装扮类游戏）中，如何高效、灵活地实现海量的角色/物品外观自定义组合，同时控制内存和性能开销。
 
 ## 使用场景
 
-- **角色定制系统**：玩家在大厅/捏脸界面选择发型、服装、配饰 → Mutable 在运行时合并网格体并生成最终模型
-- **多人游戏中的角色展示**：需要在不同玩家身上展示不同外观组合 → 异步更新避免帧率卡顿
-- **皮肤系统**：出售不同外观包（服装、武器皮肤）→ 通过参数切换材质/纹理
-- **LOD 流式管理**：远距离角色使用低精度网格，靠近时逐步加载高精度 LOD
-- **烘焙导出**：将运行时定制结果保存为静态资产，用于过场动画或截图
+- **RPG/MMO 角色创建系统**：允许玩家在角色创建界面选择发型、脸型、肤色、装备等，并实时预览最终效果。
+- **游戏内装备/外观系统**：实现装备的实时换装，包括网格替换、材质叠加（如血迹、污渍）、UV 投影（纹身、贴花）。
+- **虚拟试衣间/形象定制应用**：为用户提供高度自由的虚拟形象定制。
+- **程序化生成内容**：通过组合不同的基础资产，在运行时生成大量外观各异的 NPC 或物品。
 
 ## 蓝图用法
 
-Mutable 的蓝图 API 分为四层：**可定制对象定义**、**实例参数控制**、**渲染组件**、**系统管理**。
+Mutable 提供了丰富的蓝图接口，主要围绕 `UCustomizableObject`（可自定义对象模板）和 `UCustomizableObjectInstance`（可自定义对象实例）展开。
 
-### 核心节点 — 可定制对象（UCustomizableObject）
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `CreateInstance` | 创建一个新的实例，参数使用默认值 | `UCustomizableObject` |
-| `GetParameterCount` | 获取运行时可编辑的参数总数 | `UCustomizableObject` |
-| `GetParameterTypeByName` | 获取指定参数的类型（Bool/Int/Float/Color 等） | `UCustomizableObject` |
-| `GetParameterName` | 按索引获取参数名称 | `UCustomizableObject` |
-| `GetEnumParameterNumValues` | 获取 Int 枚举参数的可选值数量 | `UCustomizableObject` |
-| `GetEnumParameterValue` | 获取 Int 枚举参数的指定值名称 | `UCustomizableObject` |
-| `GetFloatParameterDefaultValue` | 获取 Float 参数的默认值 | `UCustomizableObject` |
-| `GetBoolParameterDefaultValue` | 获取 Bool 参数的默认值 | `UCustomizableObject` |
-| `GetColorParameterDefaultValue` | 获取 Color 参数的默认值 | `UCustomizableObject` |
-| `GetComponentCount` | 获取组件数量 | `UCustomizableObject` |
-| `GetComponentName` | 获取指定组件的名称 | `UCustomizableObject` |
-| `GetStateCount` | 获取对象状态数量 | `UCustomizableObject` |
-| `GetStateName` | 获取状态名称 | `UCustomizableObject` |
-| `GetStateParameterCount` | 获取某状态下可运行时编辑的参数数量 | `UCustomizableObject` |
-| `IsCompiled` | 检查 CO 是否已编译 | `UCustomizableObject` |
-| `IsLoading` | 检查 CO 是否仍在加载中 | `UCustomizableObject` |
-
-### 核心节点 — 实例参数（UCustomizableObjectInstance）
+### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SetIntParameterSelectedOption` | 设置 Int 参数的选中选项 | `UCustomizableObjectInstance` |
-| `SetFloatParameterSelectedOption` | 设置 Float 参数值 | `UCustomizableObjectInstance` |
-| `SetBoolParameterSelectedOption` | 设置 Bool 参数值 | `UCustomizableObjectInstance` |
-| `SetColorParameterSelectedOption` | 设置 Color 参数值 | `UCustomizableObjectInstance` |
-| `SetTextureParameterSelectedOption` | 设置 Texture 参数值 | `UCustomizableObjectInstance` |
-| `SetSkeletalMeshParameterSelectedOption` | 设置 SkeletalMesh 参数值 | `UCustomizableObjectInstance` |
-| `SetMaterialParameterSelectedOption` | 设置 Material 参数值 | `UCustomizableObjectInstance` |
-| `SetTransformParameterSelectedOption` | 设置 Transform 参数值 | `UCustomizableObjectInstance` |
-| `SetProjectorPosition` | 设置投影器位置 | `UCustomizableObjectInstance` |
-| `SetProjectorDirection` | 设置投影器方向 | `UCustomizableObjectInstance` |
-| `SetProjectorScale` | 设置投影器缩放 | `UCustomizableObjectInstance` |
-| `SetProjectorAngle` | 设置投影器角度（圆柱投影） | `UCustomizableObjectInstance` |
-| `GetFloatParameterSelectedOption` | 获取 Float 参数当前值 | `UCustomizableObjectInstance` |
-| `GetBoolParameterSelectedOption` | 获取 Bool 参数当前值 | `UCustomizableObjectInstance` |
-| `UpdateSkeletalMeshAsync` | 异步更新实例的骨骼网格体 | `UCustomizableObjectInstance` |
-| `SetState` | 设置实例当前状态 | `UCustomizableObjectInstance` |
-| `SetReplacePhysicsAssets` | 启用/禁用物理资产替换 | `UCustomizableObjectInstance` |
-| `SetKeepOwnershipOfGeneratedResources` | 设置是否保持生成资源的所有权 | `UCustomizableObjectInstance` |
-| `GetComponentNames` | 获取实例生成的组件名称列表 | `UCustomizableObjectInstance` |
-| `GetAnimBP` | 获取指定组件和槽位的动画蓝图 | `UCustomizableObjectInstance` |
-| `MultilayerProjectorCreateLayer` | 创建多层投影器层 | `UCustomizableObjectInstance` |
-| `MultilayerProjectorRemoveLayerAt` | 移除多层投影器层 | `UCustomizableObjectInstance` |
-| `MultilayerProjectorUpdateLayer` | 更新多层投影器层 | `UCustomizableObjectInstance` |
-| `MultilayerProjectorGetLayer` | 获取多层投影器层数据 | `UCustomizableObjectInstance` |
-
-### 核心节点 — 渲染组件
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `SetCustomizableObjectInstance` | 设置组件使用的实例 | `UCustomizableSkeletalComponent` |
-| `GetCustomizableObjectInstance` | 获取组件使用的实例 | `UCustomizableSkeletalComponent` |
-| `SetComponentName` | 设置组件名称（对应 CO 中的组件名） | `UCustomizableSkeletalComponent` |
-| `GetComponentName` | 获取组件名称 | `UCustomizableSkeletalComponent` |
-| `UpdateSkeletalMeshAsync` | 异步更新骨骼网格体 | `UCustomizableSkeletalComponent` |
-| `UpdateSkeletalMeshAsyncResult` | 异步更新并注册完成回调 | `UCustomizableSkeletalComponent` |
-| `SetSkipSetReferenceSkeletalMesh` | 是否跳过设置参考网格体 | `UCustomizableSkeletalComponent` |
-| `SetSkipSetSkeletalMeshOnAttach` | 是否跳过附加时设置网格体 | `UCustomizableSkeletalComponent` |
-| `GetSkeletalMeshComponent` | 按名称获取骨骼网格体组件 | `ACustomizableSkeletalMeshActor` |
-| `GetCustomizableObjectInstance` | 获取 Actor 的实例 | `ACustomizableSkeletalMeshActor` |
-
-### 核心节点 — 系统管理
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `GetInstance` | 获取 Mutable 系统单例 | `UCustomizableObjectSystem` |
-| `GetNumInstances` | 获取已构建的实例数 | `UCustomizableObjectSystem` |
-| `GetNumPendingInstances` | 获取等待更新的实例数 | `UCustomizableObjectSystem` |
-| `GetTextureMemoryUsed` | 获取 Mutable 生成纹理占用的 GPU 内存 | `UCustomizableObjectSystem` |
-| `GetAverageBuildTime` | 获取平均构建时间（ms） | `UCustomizableObjectSystem` |
-| `IsUpdating` | 检查指定实例是否正在更新 | `UCustomizableObjectSystem` |
-| `SetWorkingMemory` | 设置工作内存限制（KB） | `UCustomizableObjectSystem` |
-| `SetGenerateInstancesWithinRange` | 启用基于距离的实例生成 | `UCustomizableObjectSystem` |
-| `SetInstanceGenerationRange` | 设置实例生成距离范围 | `UCustomizableObjectSystem` |
-| `AddViewCenter` | 添加视图中心 Actor | `UCustomizableObjectSystem` |
-| `RemoveViewCenter` | 移除视图中心 Actor | `UCustomizableObjectSystem` |
-| `IsUpdateResultValid` | 判断更新结果是否有效（成功或有警告） | `UCustomizableObjectSystem` |
+| `Create Instance` | 基于一个 `UCustomizableObject` 资产创建一个新的运行时实例。 | `UCustomizableObject` |
+| `Set Int Parameter Selected Option` | 设置一个整数（枚举）参数的当前选中值。 | `UCustomizableObjectInstance` |
+| `Set Bool Parameter Selected Option` | 设置一个布尔参数的当前值。 | `UCustomizableObjectInstance` |
+| `Set Float Parameter Selected Option` | 设置一个浮点参数的当前值。 | `UCustomizableObjectInstance` |
+| `Set Vector Parameter Selected Option` | 设置一个向量/颜色参数的当前值。 | `UCustomizableObjectInstance` |
+| `Set Projector Parameter Selected Option` | 设置一个投影器参数（用于 UV 投影）的当前值。 | `UCustomizableObjectInstance` |
+| `Update Skeletal Mesh Async` | 异步触发实例的更新，根据当前参数值生成新的 Skeletal Mesh 和相关资源。 | `UCustomizableObjectInstance` |
+| `Multilayer Projector Add Layer` | 向多层投影器参数添加一个新的图层。 | `UCustomizableObjectInstance` |
+| `Multilayer Projector Update Layer` | 更新多层投影器参数中指定图层的数据（位置、旋转、缩放、图像、透明度）。 | `UCustomizableObjectInstance` |
+| `Set Keep Ownership Of Generated Resources` | 设置实例是否保留对生成资源（如 Skeletal Mesh）的所有权，影响资源的重用和回收策略。 | `UCustomizableObjectInstance` |
+| `Bake` | 将实例当前状态的资源烘焙为持久化资产。 | `UCustomizableObjectInstance` |
 
 ### 使用示例（蓝图描述）
 
-**基本角色定制流程**：
+1.  **创建并更新一个实例**：
+    *   从一个 `UCustomizableObject` 资产节点拖出引脚，调用 `Create Instance` 节点，得到一个 `UCustomizableObjectInstance` 对象。
+    *   调用 `Set Int Parameter Selected Option`，指定参数名称（如 `“HairStyle”`）和要选中的值（如 `“Mohawk”`）。
+    *   调用 `Update Skeletal Mesh Async`。系统将在后台根据新参数值生成网格。
+    *   监听实例的 `UpdatedDelegate`。当更新成功后，实例的各个组件（通过 `GetComponentNames` 获取）对应的 Skeletal Mesh 就会被更新。
 
-1. **设置阶段**（BeginPlay）：
-   - 从资产获取 `CustomizableObject` 引用
-   - 调用 `CreateInstance` 创建 `UCustomizableObjectInstance`
-   - 获取场景中的 `CustomizableSkeletalComponent`，调用 `SetCustomizableObjectInstance` 绑定实例
-
-2. **修改参数**：
-   - 根据 UI 选择调用 `SetIntParameterSelectedOption`（如发型=2）
-   - 调用 `SetFloatParameterSelectedOption`（如肤色=0.7）
-   - 调用 `SetBoolParameterSelectedOption`（如是否佩戴帽子=true）
-
-3. **触发更新**：
-   - 调用 `CustomizableSkeletalComponent` 的 `UpdateSkeletalMeshAsyncResult` 并绑定回调
-   - 在回调中检查 `UpdateResult` 是否为 `Success`
-
-4. **监听事件**：
-   - 绑定 `UCustomizableObjectInstance` 的 `UpdatedDelegate` 在更新完成时收到通知
+2.  **使用多层投影器添加纹身**：
+    *   获取一个具有多层投影器参数（如 `“BodyDecals”`）的实例。
+    *   调用 `Multilayer Projector Add Layer` 添加一个图层。
+    *   构造一个 `FMultilayerProjectorLayer` 结构体，设置其 `Position`、`Direction`、`Scale`、`Image`（纹身纹理资产引用）和 `Opacity`。
+    *   调用 `Multilayer Projector Update Layer` 将该图层数据写入实例。
+    *   调用 `Update Skeletal Mesh Async` 使投影生效。
 
 ## C++ 用法
 
@@ -150,312 +70,189 @@ Mutable 的蓝图 API 分为四层：**可定制对象定义**、**实例参数�
 #include "MuCO/CustomizableObject.h"
 #include "MuCO/CustomizableObjectInstance.h"
 #include "MuCO/CustomizableObjectSystem.h"
-#include "MuCO/CustomizableSkeletalComponent.h"
-#include "MuCO/CustomizableSkeletalMeshActor.h"
-#include "MuCO/CustomizableObjectInstanceUsage.h"
-#include "MuCO/CustomizableObjectExtension.h"
 ```
 
 ### 基本用法
 
-**创建实例并设置参数**（来源：`Public/MuCO/CustomizableObject.h` + `Public/MuCO/CustomizableObjectInstance.h`）：
+以下代码演示了如何创建一个可自定义对象实例并设置其参数。
 
 ```cpp
-// 假设已经有一个编译好的 UCustomizableObject* MyCO
-// 创建实例
-UCustomizableObjectInstance* Instance = MyCO->CreateInstance();
+// 假设我们有一个名为 MyCustomizableObject 的 UCustomizableObject* 资产（通常通过 UPROPERTY 持有或加载）
 
-// 设置整数参数（枚举类型，如发型选择）
-Instance->SetIntParameterSelectedOption(TEXT("HairStyle"), TEXT("Mohawk"));
-
-// 设置浮点参数
-Instance->SetFloatParameterSelectedOption(TEXT("SkinTone"), 0.75f);
-
-// 设置布尔参数
-Instance->SetBoolParameterSelectedOption(TEXT("WearHat"), true);
-
-// 设置颜色参数
-Instance->SetColorParameterSelectedOption(TEXT("ShirtColor"), FLinearColor::Red);
-
-// 设置投影器参数
-Instance->SetProjectorPosition(TEXT("Tattoo"), FVector(100, 0, 50));
-Instance->SetProjectorDirection(TEXT("Tattoo"), FVector(0, 0, -1));
-Instance->SetProjectorScale(TEXT("Tattoo"), FVector(10, 10, 10));
-
-// 设置状态
-Instance->SetState(0);  // 或 SetCurrentState(TEXT("Combat"));
-```
-
-**异步更新实例**（来源：`Public/MuCO/CustomizableObjectInstance.h`）：
-
-```cpp
-// 异步更新并监听结果
-Instance->UpdateSkeletalMeshAsync();
-
-// 或使用回调版本
-FInstanceUpdateDelegate Callback;
-Callback.BindDynamic(this, &UMyClass::OnInstanceUpdated);
-Instance->UpdateSkeletalMeshAsyncResult(Callback);
-
-// 回调函数
-void UMyClass::OnInstanceUpdated(const FUpdateContext& Result)
+// 1. 确保 Mutable 系统已初始化 (通常在游戏启动时由插件自动完成)
+UCustomizableObjectSystem* MutableSystem = UCustomizableObjectSystem::GetInstance();
+if (MutableSystem && MutableSystem->IsActive())
 {
-    if (Result.UpdateResult == EUpdateResult::Success)
+    // 2. 创建一个实例
+    UCustomizableObjectInstance* NewInstance = MyCustomizableObject->CreateInstance();
+    
+    // 3. 设置一些参数
+    NewInstance->SetIntParameterSelectedOption(TEXT("SkinColor"), TEXT("Pale"));
+    NewInstance->SetBoolParameterSelectedOption(TEXT("HasGlasses"), true);
+    
+    // 4. 设置更新回调（可选，用于异步通知）
+    FInstanceUpdateNativeDelegate OnUpdateFinished;
+    OnUpdateFinished.BindLambda([NewInstance](const FUpdateContext& Context)
     {
-        UE_LOG(LogTemp, Log, TEXT("实例更新成功"));
-    }
-    else if (Result.UpdateResult == EUpdateResult::Error)
-    {
-        UE_LOG(LogTemp, Error, TEXT("实例更新失败"));
-    }
+        if (Context.UpdateResult == EUpdateResult::Success)
+        {
+            // 更新成功，此时可以获取生成的 SkeletalMesh
+            UE_LOG(LogTemp, Log, TEXT("Customizable Object Instance updated successfully."));
+        }
+    });
+    NewInstance->UpdatedNativeDelegate.Add(OnUpdateFinished);
+    
+    // 5. 触发异步更新
+    NewInstance->UpdateSkeletalMeshAsync();
 }
 ```
 
-**绑定事件**（来源：`Public/MuCO/CustomizableObjectInstance.h`）：
-
-```cpp
-// 监听实例更新完成（动态多播委托）
-Instance->UpdatedDelegate.AddDynamic(this, &UMyClass::OnInstanceUpdatedDynamic);
-
-// 监听实例更新完成（原生多播委托，性能更好）
-Instance->UpdatedNativeDelegate.AddUObject(this, &UMyClass::OnInstanceUpdatedNative);
-
-// 监听骨骼网格体设置前事件
-Instance->PreSetSkeletalMeshNativeDelegate.AddUObject(this, &UMyClass::OnPreSetSkeletalMesh);
-```
+**来源文件**: `Public/MuCO/CustomizableObject.h`, `Public/MuCO/CustomizableObjectInstance.h`
 
 ### 进阶用法
 
-**使用 CustomizableSkeletalComponent 完整流程**（来源：`Public/MuCO/CustomizableSkeletalComponent.h`）：
+使用 `ICustomizableObjectModule` 进行扩展注册，以及使用 `FCustomizableObjectInstanceDescriptor` 进行实例状态的序列化与反序列化。
 
 ```cpp
-// 在 Actor 中
-UCustomizableSkeletalComponent* SkelComp = FindComponentByClass<UCustomizableSkeletalComponent>();
-if (SkelComp)
+// 引入扩展接口
+#include "MuCO/ICustomizableObjectModule.h"
+#include "MuCO/CustomizableObjectInstanceDescriptor.h"
+
+// 注册一个自定义的扩展
+class UMyCustomExtension : public UCustomizableObjectExtension
 {
-    // 绑定实例
-    SkelComp->SetCustomizableObjectInstance(MyInstance);
-    
-    // 设置组件名（对应 CO 编辑器中定义的组件名）
-    SkelComp->SetComponentName(FName("Body"));
-    
-    // 异步更新
-    SkelComp->UpdateSkeletalMeshAsync();
-    
-    // 或带回调的异步更新
-    FInstanceUpdateDelegate Callback;
-    Callback.BindDynamic(this, &AMyCharacter::OnMeshUpdated);
-    SkelComp->UpdateSkeletalMeshAsyncResult(Callback, false, true /* bForceHighPriority */);
+    // ... 实现 GetPinTypes, OnSkeletalMeshCreated 等虚函数
+};
+
+// 在模块启动时注册
+void FMyGameModule::StartupModule()
+{
+    if (ICustomizableObjectModule::IsAvailable())
+    {
+        ICustomizableObjectModule& MutableModule = ICustomizableObjectModule::Get();
+        UMyCustomExtension* MyExtension = NewObject<UMyCustomExtension>();
+        MutableModule.RegisterExtension(MyExtension);
+    }
+}
+
+// 序列化实例描述符（用于存档、网络同步等）
+void SaveInstanceState(UCustomizableObjectInstance* Instance, FArchive& Ar)
+{
+    FCustomizableObjectInstanceDescriptor Descriptor;
+    // 从实例拷贝当前参数状态到描述符
+    // Descriptor.CopyFrom(Instance); // 需要具体实现，此处为示意
+    Descriptor.SaveDescriptor(Ar, false);
+}
+
+// 反序列化实例描述符
+void LoadInstanceState(UCustomizableObjectInstance* Instance, FArchive& Ar)
+{
+    FCustomizableObjectInstanceDescriptor Descriptor;
+    Descriptor.LoadDescriptor(Ar);
+    // 将描述符中的参数状态应用到实例
+    // Descriptor.ApplyTo(Instance); // 需要具体实现，此处为示意
+    Instance->UpdateSkeletalMeshAsync();
 }
 ```
 
-**多层投影器**（来源：`Public/MuCO/MultilayerProjector.h` + `Public/MuCO/CustomizableObjectInstance.h`）：
-
-```cpp
-// 创建多层投影器层（用于纹理投影，如贴花系统）
-FName ProjectorParamName = TEXT("Decals");
-Instance->MultilayerProjectorCreateLayer(ProjectorParamName, 0);
-
-// 设置层数据
-FMultilayerProjectorLayer Layer;
-Layer.Position = FVector(100, 50, 30);
-Layer.Direction = FVector(0, 0, -1);
-Layer.Up = FVector(0, 1, 0);
-Layer.Scale = FVector(10, 10, 100);
-Layer.Angle = 0.0f;
-Layer.Image = TEXT("DecalTextureAssetPath");
-Layer.Opacity = 1.0f;
-Instance->MultilayerProjectorUpdateLayer(ProjectorParamName, 0, Layer);
-```
-
-**系统级配置**（来源：`Public/MuCO/CustomizableObjectSystem.h`）：
-
-```cpp
-UCustomizableObjectSystem* System = UCustomizableObjectSystem::GetInstance();
-
-// 设置工作内存限制（降低内存压力，但可能增加更新次数）
-System->SetWorkingMemory(256 * 1024); // 256 MB
-
-// 启用基于距离的生成
-System->SetGenerateInstancesWithinRange(true);
-System->SetInstanceGenerationRange(5000.0f); // 5000 单位范围
-
-// 添加视图中心（通常绑定到玩家 Pawn）
-System->AddViewCenter(GetWorld()->GetFirstPlayerController()->GetPawn());
-
-// 查询状态
-int32 NumInstances = System->GetNumInstances();
-int32 NumPending = System->GetNumPendingInstances();
-int64 TextureMem = System->GetTextureMemoryUsed();
-```
-
-**烘焙实例**（仅编辑器，来源：`Public/MuCO/CustomizableObjectInstance.h`）：
-
-```cpp
-#if WITH_EDITOR
-FBakingConfiguration BakeConfig;
-BakeConfig.OutputPath = TEXT("/Game/BakedCharacters");
-BakeConfig.OutputFilesBaseName = TEXT("MyCharacter");
-BakeConfig.bExportAllResourcesOnBake = true;
-BakeConfig.bGenerateConstantMaterialInstancesOnBake = true;
-
-// 注册回调
-BakeConfig.OnBakeOperationCompletedCallback.BindDynamic(
-    this, &UMyClass::OnBakeCompleted);
-
-// 执行烘焙
-Instance->Bake(BakeConfig);
-
-// 回调
-void UMyClass::OnBakeCompleted(const FCustomizableObjectInstanceBakeOutput& Output)
-{
-    if (Output.bWasBakeSuccessful)
-    {
-        for (const FBakedResourceData& Data : Output.SavedPackages)
-        {
-            UE_LOG(LogTemp, Log, TEXT("烘焙保存: %s (%s)"), 
-                *Data.AssetPath, *Data.Prefix);
-        }
-    }
-}
-#endif
-```
-
-**编译 CustomizableObject**（来源：`Internal/MuCO/ICustomizableObjectEditorModule.h` + `Public/MuCO/CustomizableObject.h`）：
-
-```cpp
-FCompileParams Params;
-Params.bAsync = true;
-Params.bSkipIfCompiled = true;
-Params.bSkipIfNotOutOfDate = true;
-
-// 使用回调
-Params.CallbackNative.BindLambda([](const FCompileCallbackParams& Result)
-{
-    if (Result.bRequestFailed)
-    {
-        UE_LOG(LogTemp, Error, TEXT("编译失败"));
-    }
-    else if (Result.bCompiled)
-    {
-        UE_LOG(LogTemp, Log, TEXT("编译成功"));
-    }
-});
-
-// 获取编辑器模块并编译
-ICustomizableObjectEditorModule& EditorModule = ICustomizableObjectEditorModule::GetChecked();
-EditorModule.CompileCustomizableObject(MyCO, &Params, false, false);
-```
+**来源文件**: `Public/MuCO/ICustomizableObjectModule.h`, `Public/MuCO/CustomizableObjectInstanceDescriptor.h`, `Public/MuCO/CustomizableObjectExtension.h`
 
 ## Demo 示例
 
-**最小角色定制 Actor**：
+一个最小化的 C++ 示例，展示如何创建一个实例并更新它。
 
+**MyCustomizableActor.h**
 ```cpp
-// MyCharacter.h
 #pragma once
 
-#include "GameFramework/Character.h"
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
 #include "MuCO/CustomizableObjectInstance.h"
-#include "MyCharacter.generated.h"
-
-class UCustomizableSkeletalComponent;
+#include "MyCustomizableActor.generated.h"
 
 UCLASS()
-class AMyCharacter : public ACharacter
+class AMyCustomizableActor : public AActor
 {
     GENERATED_BODY()
 
 public:
-    AMyCharacter();
+    AMyCustomizableActor();
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Customization")
-    TObjectPtr<UCustomizableObject> CustomizableObjectAsset;
+    virtual void BeginPlay() override;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Customization")
-    TObjectPtr<UCustomizableObjectInstance> CustomizableInstance;
+    UPROPERTY(EditAnywhere, Category = "Customization")
+    UCustomizableObject* CustomizableObjectAsset;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Customization")
-    TObjectPtr<UCustomizableSkeletalComponent> CustomizableComponent;
+    UPROPERTY()
+    UCustomizableObjectInstance* CurrentInstance;
 
-    UFUNCTION(BlueprintCallable, Category = "Customization")
-    void ApplyCustomization();
+    void ApplyNewHairStyle(const FString& NewHairStyle);
 
 private:
     UFUNCTION()
-    void OnMeshUpdated(const FUpdateContext& Result);
+    void OnInstanceUpdated(UCustomizableObjectInstance* Instance);
 };
 ```
 
+**MyCustomizableActor.cpp**
 ```cpp
-// MyCharacter.cpp
-#include "MyCharacter.h"
-#include "MuCO/CustomizableSkeletalComponent.h"
+#include "MyCustomizableActor.h"
 #include "MuCO/CustomizableObject.h"
-#include "MuCO/CustomizableObjectSystem.h"
 
-AMyCharacter::AMyCharacter()
+AMyCustomizableActor::AMyCustomizableActor()
 {
-    CustomizableComponent = CreateDefaultSubobject<UCustomizableSkeletalComponent>(
-        TEXT("CustomizableComponent"));
-    CustomizableComponent->SetupAttachment(GetMesh());
+    PrimaryActorTick.bCanEverTick = false;
 }
 
-void AMyCharacter::ApplyCustomization()
+void AMyCustomizableActor::BeginPlay()
 {
-    if (!CustomizableObjectAsset || !CustomizableObjectAsset->IsCompiled())
+    Super::BeginPlay();
+
+    if (CustomizableObjectAsset && !CurrentInstance)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Customizable Object 未就绪"));
-        return;
+        // 创建实例
+        CurrentInstance = CustomizableObjectAsset->CreateInstance();
+        
+        // 绑定更新完成委托
+        CurrentInstance->UpdatedNativeDelegate.AddDynamic(this, &AMyCustomizableActor::OnInstanceUpdated);
+        
+        // 设置默认参数并更新
+        CurrentInstance->SetIntParameterSelectedOption(TEXT("HairStyle"), TEXT("Default"));
+        CurrentInstance->UpdateSkeletalMeshAsync();
     }
-
-    // 创建实例
-    CustomizableInstance = CustomizableObjectAsset->CreateInstance();
-
-    // 设置默认参数
-    CustomizableInstance->SetIntParameterSelectedOption(TEXT("HairStyle"), TEXT("Short"));
-    CustomizableInstance->SetFloatParameterSelectedOption(TEXT("SkinTone"), 0.5f);
-
-    // 绑定到组件
-    CustomizableComponent->SetCustomizableObjectInstance(CustomizableInstance);
-    CustomizableComponent->SetComponentName(FName("Character"));
-
-    // 注册回调并触发异步更新
-    FInstanceUpdateDelegate Delegate;
-    Delegate.BindDynamic(this, &AMyCharacter::OnMeshUpdated);
-    CustomizableComponent->UpdateSkeletalMeshAsyncResult(Delegate);
 }
 
-void AMyCharacter::OnMeshUpdated(const FUpdateContext& Result)
+void AMyCustomizableActor::ApplyNewHairStyle(const FString& NewHairStyle)
 {
-    if (UCustomizableObjectSystem::IsUpdateResultValid(Result.UpdateResult))
+    if (CurrentInstance)
     {
-        UE_LOG(LogTemp, Log, TEXT("角色网格体更新完成"));
+        CurrentInstance->SetIntParameterSelectedOption(TEXT("HairStyle"), NewHairStyle);
+        CurrentInstance->UpdateSkeletalMeshAsync();
     }
-    else
+}
+
+void AMyCustomizableActor::OnInstanceUpdated(UCustomizableObjectInstance* Instance)
+{
+    if (Instance == CurrentInstance)
     {
-        UE_LOG(LogTemp, Error, TEXT("角色网格体更新失败: %d"), 
-            static_cast<int32>(Result.UpdateResult));
+        // 更新成功，此处可以获取并设置新的 SkeletalMesh 到组件上
+        // 例如：SkeletalMeshComponent->SetSkeletalMesh(Instance->GetComponentSkeletalMesh(TEXT("Body")));
+        UE_LOG(LogTemp, Log, TEXT("Character customization updated."));
     }
 }
 ```
 
 ## 模块依赖
 
-该插件包含 5 个模块，以下是**独特依赖**（不含 Core/Engine/Slate 等常见依赖）：
+要使用 Mutable 插件的功能，你的项目模块通常需要依赖以下核心模块：
 
 | 模块 | 用途 |
 |---|---|
-| `DerivedDataCache` | Mutable 编译数据的派生数据缓存（DDC） |
-| `MessageLog` | 编译过程中的消息日志输出 |
-| `MutableRuntime` | Mutable 核心运行时库（网格体/纹理生成引擎） |
-| `MutableTools` | Mutable 编辑器编译工具 |
-| `RenderCore` | 渲染数据操作（LOD/顶点缓冲区） |
-| `SkeletalMeshDescription` | 骨骼网格体数据描述与转换 |
-| `ClothingSystemRuntimeCommon` | 布料模拟数据处理 |
-| `PhysicsCore` | 物理资产合并 |
-
-**使用者最少需要依赖**：`CustomizableObject`（Runtime 模块）。
+| `CustomizableObject` | **必需**。包含可自定义对象（`UCustomizableObject`）、实例（`UCustomizableObjectInstance`）和系统（`UCustomizableObjectSystem`）的核心运行时类和蓝图接口。 |
+| `MutableRuntime` | **必需**。Mutable 核心运行时库，负责底层的网格、纹理生成和内存管理。 |
+| `MutableTools` | **必需**。用于编译可自定义对象图和生成模型数据。在编辑器中和烘焙时使用。 |
+| `CustomizableObjectEditor` | **仅编辑器**。提供节点图编辑器、编译 UI 和调试工具。 |
+| `MutableValidation` | **可选**。提供额外的数据验证功能，用于在编辑器中检查可自定义对象的设置。 |
 
 ## 维护状态
 
@@ -463,25 +260,21 @@ void AMyCharacter::OnMeshUpdated(const FUpdateContext& Result)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `70229bdc` | [Mutable] Fix duplicated Skeletal Mesh geometry if there is multiple SKM with the same name. | 修复同名多个骨骼网格体导致的几何体重复问题 |
-| 2026-05-26 | `2b0ca8bd` | [mutable] Fixed "Clip mesh with UV Mask" op not loading the appropriate mask mip. | 修复 UV 遮罩裁剪网格操作未加载正确 mipmap 级别 |
-| 2026-05-26 | `06ea27d3` | [Mutable] Fix texture parameters using the wrong method to compute the LODBias. An incorrect LODBias | 修复纹理参数计算 LODBias 的方法错误 |
-| 2026-05-26 | `e9c39661` | [Mutable] Allow more clothing asset types by using the ClothingAssetBase interface. | 通过使用 ClothingAssetBase 接口支持更多布料资产类型 |
-| 2026-05-25 | `c8ce9ff7` | [Mutable] Fix possible data race when comparing PassthroughObjects. | 修复比较 PassthroughObjects 时可能出现的数据竞争 |
+| 2026-05-26 | `70229bdc` | [Mutable] Fix duplicated Skeletal Mesh geometry if there is multiple SKM with the same name. | 修复了当存在多个同名骨骼网格体时，网格体几何数据被重复的问题。 |
+| 2026-05-26 | `2b0ca8bd` | [mutable] Fixed "Clip mesh with UV Mask" op not loading the appropriate mask mip. | 修复了“使用 UV 蒙版裁剪网格”操作未加载正确蒙版 Mip 的问题。 |
+| 2026-05-26 | `06ea27d3` | [Mutable] Fix texture parameters using the wrong method to compute the LODBias. An incorrect LODBias | 修复了纹理参数使用错误方法计算 LOD 偏移的问题。 |
+| 2026-05-26 | `e9c39661` | [Mutable] Allow more clothing asset types by using the ClothingAssetBase interface. | 通过使用 ClothingAssetBase 接口，允许支持更多类型的布料资产。 |
+| 2026-05-25 | `c8ce9ff7` | [Mutable] Fix possible data race when comparing PassthroughObjects. | 修复了在比较 PassthroughObjects 时可能出现的数据竞争问题。 |
 
 ### 维护评价
 
-- **状态**：**活跃维护中**。该插件在 2024 年 9 月从 Experimental 迁移至 Beta 状态，近期（2025-2026 年）持续有高质量的 bug 修复和功能改进
-- **更新频率**：密集，几乎每日都有提交，涉及网格体、纹理、布料、物理等多个子系统
-- **代码规模**：超大插件（1206 个源文件），架构成熟，有完善的测试覆盖
-- **版本号**：1.8.0，表明经过长期迭代
-- **已知限制**：
-  - 仍为 Beta 状态（`IsBetaVersion=true`），可能有 API 变更
-  - 编译 CO 需要一定时间，且内存占用较高
-  - 大型 CO 的编译结果体积可能较大
-- **推荐使用**：✅ **强烈推荐**。如果你的项目需要运行时角色/物体定制系统，这是 UE5 官方提供的最成熟方案。虽然是 Beta，但已被多个 AAA 项目在生产中使用。需注意该插件默认未启用，需在 Plugins 面板中手动激活。
+- **活跃维护**：插件自 2024 年 9 月从实验状态移至测试版以来，近期（2026年5月）仍有多次实质性 Bug 修复和功能改进更新，表明项目处于**积极维护**中。
+- **稳定性**：从近期提交信息看，修复集中在具体的渲染、数据和并发问题上，说明插件在持续进行稳定性和正确性优化。
+- **状态**：当前版本为 `1.8.0`，标记为 Beta 版（`⚠️ 是`）。这意味着 API 和功能可能在后续版本中发生改变，但核心架构已相对稳定。
+- **推荐使用**：对于需要在 Unreal Engine 5.8 中实现复杂、高性能运行时自定义对象的项目，**强烈推荐使用**此插件。它解决了传统自定义系统面临的组合爆炸和性能瓶颈问题，是 Epic Games 官方维护的成熟解决方案。使用者应注意其 Beta 状态，并关注版本更新日志。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable)
-- [官方文档](https://docs.unrealengine.com/en-US/InteractiveExperiences/CustomizableObjectsAndTextures/index.html)
+- 官方文档（在 `.uplugin` 中未提供）
+- 测试用例（在提供的文件列表中未明确标识，通常位于插件或引擎测试目录下）

@@ -4,163 +4,129 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | USD 导入器 |
+| 中文名 | USD导入器 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（USD资产缓存、场景管理蓝图资产等） |
-| 模块 | `USDSchemas` (Runtime), `USDStage` (Runtime), `USDStageImporter` (Runtime), `USDExporter` (Runtime), `USDClassesEditor` (Runtime), `USDStageEditor` (Runtime), `USDStageEditorViewModels` (Runtime), `GeometryCacheUSD` (Runtime), `USDTests` (Runtime) |
+| 包含内容 | ✅ 有（USD资产定义、编辑器工具） |
+| 模块 | `USDSchemas` (Runtime), `USDClassesEditor` (Runtime), `USDExporter` (Runtime), `USDStage` (Runtime), `USDStageEditor` (Runtime), `USDStageEditorViewModels` (Runtime), `USDStageImporter` (Runtime), `GeometryCacheUSD` (Runtime), `USDTests` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-11-19 |
-| 年龄标签 | 👴 老古董（约 7 年） |
+| 年龄标签 | 👴 老古董（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter) | |
 
 ## 用途
 
-本插件为 Unreal Engine 提供了完整的 USD (Universal Scene Description) 工作流支持。其核心功能是将 USD 文件（如 `.usd`、`.usda`、`.usdc`）导入到引擎中，转换为 Unreal 的资产和场景表示。除了基础的静态网格、骨骼网格和材质导入外，它还包含一个完整的“USD Stage”概念，允许用户在编辑器内可视化地管理、预览和编辑 USD 场景图，并支持将 Unreal 内容导出回 USD 格式。该插件旨在解决复杂资产管线中，Unreal Engine 与 Maya、Houdini、Nuke 等使用 USD 的 DCC 工具之间的数据交换与协同问题。
+此插件为虚幻引擎提供了完整的 USD (Universal Scene Description) 文件格式支持。它不仅仅是一个简单的文件导入器，而是一个包含数据模型（Schemas）、资产缓存、编辑器集成（Stage编辑器和资产查看器）、导出功能以及专用的几何缓存支持的综合性工具链。其主要目标是支持复杂资产、场景层级和动画序列的导入与管理，特别是用于影视级制作（VFX）和高级游戏开发工作流。该插件在2018年从实验性目录移至正式导入器目录，标志着其向稳定工具的转变。
 
 ## 使用场景
 
-- 你的美术团队使用 Maya 或 Houdini 创建了复杂的 USD 场景，需要将其完整地导入到 Unreal 中进行关卡设计或实时渲染预览。
-- 你需要在一个 Unreal 项目中同时管理多个 USD 文件（代表不同的资产或场景变体），并进行交互式的图层、变体和有效载荷切换。
-- 你希望将 Unreal 中创建的资产或场景布局（例如用于虚拟制片）导出为 USD 格式，供其他管线环节使用。
-- 你需要将 USD 动画曲线（如骨骼动画、变形目标）导入并用于驱动 Unreal 中的 Skeletal Mesh 或 Geometry Cache。
+- **游戏资产导入**：你需要从DCC工具（如Maya, Blender）中导入包含复杂材质、骨骼动画和场景层级的USD资产。
+- **高级动画工作流**：你使用USD来交换包含动画曲线、时间采样等复杂数据的动画序列。
+- **场景组织与管理**：你需要处理由USD阶段（Stage）定义的、由多个资产组合而成的复杂场景布局。
+- **资产管线集成**：你需要在一个集中的资产缓存（USD Asset Cache）中管理导入的USD资产及其派生资源（如网格体、材质），以便跟踪和更新。
+- **双向工作流**：你不仅需要从USD导入资产到虚幻引擎，还需要将虚幻引擎中的资产或场景导出为USD格式。
 
 ## 蓝图用法
 
-USDImporter 插件的主要功能是通过编辑器 UI（如 USD Stage 面板）和资产导入/导出流程来操作。其 `USDClassesEditor` 和 `USDStageEditor` 等模块提供的核心类主要为编辑器扩展服务，未暴露通用的 `BlueprintCallable` 函数供游戏运行时蓝图使用。交互主要在编辑器内完成。
+`USDClassesEditor` 模块提供了编辑器扩展功能，其公开的蓝图可调用API较少。主要的蓝图交互节点可能分布在其他模块（如 `USDStageImporter`）中，用于控制USD文件的导入流程和参数。基于提供的源码，当前模块主要提供资产定义和编辑器工具。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| *无相关蓝图节点* | 本插件模块主要提供编辑器工具和资产类型，不直接提供运行时蓝图函数。 | - |
+| （本模块无直接公开的BlueprintCallable函数） | `USDClassesEditor` 主要提供编辑器后台支持，如资产定义、缓存资产编辑器 | N/A |
 
 ### 使用示例（蓝图描述）
 
-在蓝图中通常不直接与 USD 文件交互。正确的使用流程是在编辑器中：
-1.  通过 `File -> Import` 或 Content Browser 右键菜单导入 USD 文件。
-2.  使用 `USD Stage` 编辑器面板（`Window -> USD Stage`）来管理导入的 USD 阶段。
-3.  在 `USD Stage` 面板中调整图层、变体、有效载荷，并通过“Stage Actor”在场景中预览。
-4.  导出时，通过 Content Browser 右键菜单或工具栏中的“USD Exporter”工具进行操作。
+蓝图用户主要通过资产浏览器（Content Browser）的右键菜单或拖拽操作来使用USD资产。例如，你可以创建一个 `UsdAssetCache3` 资产，然后将其指定给USD导入流程，以便集中管理导入过程中生成的所有资源。具体的USD导入设置蓝图节点通常由 `USDStageImporter` 模块提供。
 
 ## C++ 用法
+
+该模块主要为USD资产在编辑器中的表示和编辑提供支持。
 
 ### 头文件引入
 
 ```cpp
-#include "USDClassesEditorModule.h"
-#include "USDAssetCacheAssetEditorToolkit.h"
+// 若需要操作USD资产缓存
+#include "USDAssetCache3.h"
+// 若需要自定义资产定义或编辑器工具
 #include "AssetDefinition_USDAssetCache.h"
-#include "USDAssetCacheFactory.h"
+#include "USDAssetCacheAssetEditorToolkit.h"
 ```
 
 ### 基本用法
 
-`USDClassesEditor` 模块主要为 `UUsdAssetCache3` 资产提供编辑器集成。你可以通过自定义资产定义来控制其在编辑器中的显示和行为。
+创建和编辑 `USDAssetCache3` 资产的编辑器工具由该模块提供。在编辑器中，双击一个 `UsdAssetCache3` 资产会打开其专用的编辑器窗口。
 
-**来源文件**: `Source/USDClassesEditor/Private/AssetDefinition_USDAssetCache.h`
+（来源：`USDAssetCacheAssetEditorToolkit.h`）
+
 ```cpp
-// 自定义 USD 资产缓存资产的显示名称、颜色和分类
-UCLASS()
-class UAssetDefinition_UsdAssetCache : public UAssetDefinitionDefault
-{
-    GENERATED_BODY()
-public:
-    virtual FText GetAssetDisplayName() const override;
-    virtual FLinearColor GetAssetColor() const override;
-    virtual TSoftClassPtr<UObject> GetAssetClass() const override;
-    virtual bool CanImport() const override;
-    virtual TConstArrayView<FAssetCategoryPath> GetAssetCategories() const override;
-};
+// 打开一个 USD 资产缓存的编辑器窗口
+UUsdAssetCache3* MyAssetCache = /* 获取或创建你的 USDAssetCache3 实例 */;
+FUsdAssetCacheAssetEditorToolkit* Editor = new FUsdAssetCacheAssetEditorToolkit();
+Editor->Initialize(EToolkitMode::Standalone, TSharedPtr<IToolkitHost>(), MyAssetCache);
 ```
 
 ### 进阶用法
 
-你可以为 `UUsdAssetCache3` 创建一个自定义的资产编辑器（Toolkit），当用户双击该资产时弹出一个带属性面板的编辑器窗口。
+该模块还定义了 `UAssetDefinition_UsdAssetCache` 类，用于在虚幻编辑器的资产系统中注册 `UsdAssetCache3` 类型。这控制了资产在内容浏览器中的显示名称、颜色、图标以及导入能力。
 
-**来源文件**: `Source/USDClassesEditor/Private/USDAssetCacheAssetEditorToolkit.h`
+（来源：`AssetDefinition_USDAssetCache.h`）
+
 ```cpp
-// 自定义 USD 资产缓存的编辑器窗口
-class FUsdAssetCacheAssetEditorToolkit : public FAssetEditorToolkit, public FGCObject
-{
-public:
-    void Initialize(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, UUsdAssetCache3* InAssetCache);
-
-    // ... 重写 FAssetEditorToolkit 的函数以定义窗口名称、标签页等
-    virtual void RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager) override;
-    // ...
-private:
-    TSharedRef<SDockTab> SpawnTab(const FSpawnTabArgs& Args);
-    TObjectPtr<UUsdAssetCache3> AssetCache;
-    TSharedPtr<class IDetailsView> AssetCacheEditorWidget;
-};
+// 资产定义决定了 UsdAssetCache3 在内容浏览器中的外观和行为。
+// 开发者通常不需要直接操作它，但理解其存在有助于了解资产系统如何集成USD缓存。
 ```
 
 ## Demo 示例
 
-以下是一个最小化的示例，展示如何创建并注册一个用于 `UUsdAssetCache3` 的自定义资产编辑器。
+一个可运行的示例需要设置完整的USD导入上下文，较为复杂。以下为使用 `USDClassesEditor` 模块功能的简化示例，展示如何关联资产缓存。
 
-**USDAssetCacheEditorApp.h**
 ```cpp
+// MyUSDActor.h
 #pragma once
-#include "CoreMinimal.h"
-#include "UObject/StrongObjectPtr.h"
+#include "GameFramework/Actor.h"
+#include "MyUSDActor.generated.h"
 
 class UUsdAssetCache3;
-class FUsdAssetCacheAssetEditorToolkit;
 
-class FUSDAssetCacheEditorApp
+UCLASS()
+class AMyUSDActor : public AActor
 {
+    GENERATED_BODY()
 public:
-    /** 打开一个已有的 USD 资产缓存进行编辑 */
-    static void OpenEditor(UUsdAssetCache3* AssetToEdit);
-    
-    /** 创建一个新的 USD 资产缓存并打开编辑器 */
-    static void CreateAndOpenEditor();
+    AMyUSDActor();
 
-private:
-    static TSharedPtr<FUsdAssetCacheAssetEditorToolkit> EditorToolkit;
+    // 在编辑器中，你可以将一个 USDAssetCache3 资产拖拽到这个属性上
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "USD")
+    TObjectPtr<UUsdAssetCache3> AssociatedAssetCache;
+
+    // 其他Actor逻辑...
 };
 ```
 
-**USDAssetCacheEditorApp.cpp**
 ```cpp
-#include "USDAssetCacheEditorApp.h"
-#include "USDAssetCacheAssetEditorToolkit.h"
-#include "USDAssetCache3.h" // 假设存在此类
+// MyUSDActor.cpp
+#include "MyUSDActor.h"
+#include "USDAssetCache3.h" // 来自 USDStage 或相关Runtime模块
 
-TSharedPtr<FUsdAssetCacheAssetEditorToolkit> FUSDAssetCacheEditorApp::EditorToolkit = nullptr;
-
-void FUSDAssetCacheEditorApp::OpenEditor(UUsdAssetCache3* AssetToEdit)
+AMyUSDActor::AMyUSDActor()
 {
-    if (!AssetToEdit)
-    {
-        return;
-    }
-
-    if (!EditorToolkit.IsValid())
-    {
-        EditorToolkit = MakeShared<FUsdAssetCacheAssetEditorToolkit>();
-    }
-    // 初始化并打开编辑器
-    EditorToolkit->Initialize(EToolkitMode::Standalone, TSharedPtr<IToolkitHost>(), AssetToEdit);
-}
-
-void FUSDAssetCacheEditorApp::CreateAndOpenEditor()
-{
-    // 通过工厂创建新资产，然后打开编辑器
-    UUsdAssetCacheFactory* Factory = NewObject<UUsdAssetCacheFactory>();
-    UObject* NewAsset = Factory->FactoryCreateNew(UUsdAssetCache3::StaticClass(), GetTransientPackage(), NAME_None, RF_Transient, nullptr, GWarn);
-    if (UUsdAssetCache3* NewCache = Cast<UUsdAssetCache3>(NewAsset))
-    {
-        OpenEditor(NewCache);
-    }
+    AssociatedAssetCache = nullptr;
 }
 ```
 
 ## 模块依赖
 
-`USDClassesEditor` 模块是 USDImporter 插件内部的编辑器支持模块，其对外部模块的依赖已在插件的构建系统中处理。对于使用此插件的项目或模块，无需额外依赖 `USDClassesEditor`。要使用整个插件的功能，通常只需在 `.uproject` 文件或目标 `.Build.cs` 中启用 `USDImporter` 插件即可。本模块具体依赖（通常为插件内部模块）需查阅其 `USDClassesEditor.Build.cs` 文件。
+| 模块 | 用途 |
+|---|---|
+| `USDSchemas` | 提供USD核心数据类型和模式的运行时表示 |
+| `USDStage` | 管理USD阶段（Stage）和prim（元素）的运行时表示 |
+| `USDStageImporter` | 实现USD文件导入虚幻引擎的核心逻辑 |
+| `USDExporter` | 实现将虚幻引擎资产/场景导出为USD的功能 |
+| `GeometryCacheUSD` | 提供USD几何缓存的支持 |
+| `PropertyEditor` | 用于在细节面板中自定义属性编辑界面 |
+| `Slate`, `SlateCore` | 用于构建自定义编辑器UI（如资产缓存编辑器） |
 
 ## 维护状态
 
@@ -168,19 +134,18 @@ void FUSDAssetCacheEditorApp::CreateAndOpenEditor()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下，双精度常量被截断为浮点数而产生的编译警告。 |
-| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | USD: 新增支持分配独立于蓝图的 Control Rig（控制绑定）。 |
-| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD varies. | USD: 修复了 SDK 更新到 26.03 后，当LOD变化时导致 AnimQuery 内部引用失效的问题。 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修正了格式化字符串中，32位与64位参数说明符不匹配的问题。 |
-| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | USD: 现在烘焙所有曝光动画轨迹的帧。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下双精度常量截断为浮点数的警告。 |
+| 2026-04-29 | `bc4a1bd2` | USD: Add support for assigning BP-independent control rigs. | USD：新增支持分配独立于蓝图的控制绑定。 |
+| 2026-04-28 | `4fb59a1d` | USD: Work around update to 26.03 causing AnimQuery internal references to be invalidated when LOD va | USD：解决升级到26.03版本导致LOD切换时AnimQuery内部引用失效的问题。 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复了32位格式说明符与64位参数不匹配的问题。 |
+| 2026-04-09 | `fb7af182` | USD: Bake all frames of exposure animation tracks. | USD：烘焙曝光动画轨道的所有帧。 |
 
 ### 维护评价
 
-该插件自2018年创建以来持续活跃维护。从近期提交历史看（最新提交在2026年5月），开发团队仍在积极添加新功能（如支持独立 Control Rig）和修复问题（SDK兼容性、编译警告）。提交信息专业且具体，表明维护质量较高。尽管`.uplugin`中标记为 `IsBetaVersion=true`，但考虑到其成熟度和持续的活跃开发，可以认为它是一个**稳定且活跃维护**的实验性/测试版插件。
-
-**推荐使用**：对于任何需要在 Unreal Engine 项目中集成 USD 工作流（特别是来自 Maya、Houdini 等DCC工具）的团队，强烈推荐启用此插件。虽然标记为实验性，但其功能完整且有持续支持。
+**活跃维护**。该插件创建于2018年，历史较长。但从最近的提交记录（截至2026年5月）来看，维护非常活跃，更新频繁。最近的改动不仅包含编译修复，更重要的是**持续添加新功能**（如新的控制绑定支持）和**解决复杂的技术问题**（如LOD切换时的引用失效、动画烘焙）。这表明该插件是Epic重点维护的核心工具链之一，处于持续开发和改进中。对于需要处理复杂USD资产的项目，**强烈推荐使用**，但需注意其 `IsBetaVersion: true` 和 `EnabledByDefault: false` 的状态，意味着需要手动启用且可能存在一些不稳定因素。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Importers/USDImporter/Source/USDTests)
+- 官方文档 (DocsURL字段为空，请参考引擎内置文档或搜索相关教程)
+- 测试用例 (位于 `Source/USDTests/` 目录下)

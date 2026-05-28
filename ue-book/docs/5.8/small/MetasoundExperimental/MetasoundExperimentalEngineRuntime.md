@@ -1,13 +1,13 @@
 # Metasounds Experimental
 
-> Metasound developmental plugin, for new features before they are ready for prime time（照抄，不翻译）
+> Metasound developmental plugin, for new features before they are ready for prime time
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 音频元声音实验 |
+| 中文名 | 实验性声音插件 |
 | 分类 | Audio |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
+| 包含内容 | ✅ 有（蓝图资产，节点定义） |
 | 模块 | `AudioExperimentalRuntime` (Runtime), `MetasoundExperimentalRuntime` (Runtime), `MetasoundExperimentalEngineRuntime` (Runtime), `MetasoundExperimentalEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-04-22 |
@@ -16,191 +16,247 @@
 
 ## 用途
 
-本插件是 Unreal Engine Metasound 音频系统的实验性扩展。其主要用途是在将新功能（如 CAT（Channel Agnostic Types，通道无关类型）系统）集成到主插件之前，提供一个稳定、可独立迭代的开发和测试环境。从源码分析可见，它实现了一个线程安全的音频代理数据视图 (`TCatProxyView`)，以及基于此构建的声音波形容器 (`UCatSoundWaveContainer`) 和一系列实验性 Metasound 节点（如波形播放器、颗粒化器）。这些功能旨在提供更灵活、更高级的音频合成与处理能力，特别是与 CAT 相关的多通道音频处理。
+MetasoundExperimental 是 UE5 MetaSounds 音频框架的**实验性功能孵化器**。它存在的意义在于，在核心 MetaSound 插件 (`Metasound`) 稳定并达到生产就绪状态之前，为开发者提供一个安全的空间来试验和集成尚未完全成熟的新音频功能与节点。
+
+**它解决的问题是：**
+1.  **功能隔离：** 将未完全验证的新特性与核心、稳定的 MetaSound 运行时分离，避免实验性代码影响项目稳定性。
+2.  **快速迭代：** 允许 Epic 的音频团队快速迭代新想法（如新的音频处理节点、新的数据类型），而无需等待完整的发布周期。
+3.  **早期访问：** 为高级开发者提供对前沿音频工具的早期访问权限，以便在功能正式集成前提供反馈。
+
+从源码分析来看，该插件主要包含：
+*   **新的音频数据代理系统** (`TCatProxyView`)，用于在游戏线程和音频线程之间安全、高效地传递复杂数据（如音频波形容器）。
+*   **新的 MetaSound 节点**，例如“CAT Wave Player”（通道无关波形播放器）和“Granulator”（粒子合成器），这些节点实现了新的音频处理逻辑。
+*   **支持这些新节点和数据类型的基础设施**，包括自定义配置结构体、蓝图资产类型和编辑器扩展。
 
 ## 使用场景
 
-- 你是音频技术美术或程序员，需要为下一代游戏开发更强大、更灵活的音频合成与回放系统。
-- 你想提前尝试或评估 Unreal Engine 未来可能引入的 Metasound 新功能，例如 CAT 系统。
-- 你需要处理复杂的音频资产（如包含多个音效波形的容器），并希望以线程安全的方式将其与 Metasound 图形连接。
-- 你正在开发需要自定义颗粒合成、高级淡入淡出或复杂映射函数的音频效果。
+*   你是一名音频程序员或技术美术，想要尝试使用**新的、实验性的 MetaSound 节点**（如粒子合成）来构建复杂音效，但这些节点尚未并入核心插件。
+*   你需要在游戏线程与音频线程之间**安全地传递结构化音频资产数据**（例如一个包含多个音频波形及其权重的容器），并希望有一个无锁的、基于原子操作的高效解决方案。
+*   你正在开发一个需要**通道无关（Channel Agnostic）音频处理**的功能，并希望使用为此专门设计的“CAT”节点和数据类型。
+*   你愿意接受**实验性 API 可能发生变化**的风险，以换取对最新音频技术的早期使用权。
 
 ## 蓝图用法
 
-本插件提供的核心蓝图功能围绕其新增的数据类型和节点配置。
+此插件主要提供可配置的 **MetaSound 节点**和**资产类型**，而非大量供蓝图直接调用的函数。其用法主要体现在 MetaSound 图表的编辑器中。
 
 ### 核心资产与节点
 
-| 节点/资产 | 说明 | 所在类/枚举 |
+| 资产/节点 | 说明 | 所在类/结构体 |
 |---|---|---|
-| `Audio Sound Wave Container` | 蓝图资产，用于打包和管理一组 SoundWave 资产及其权重，支持随机或顺序播放。 | `UCatSoundWaveContainer` |
-| `CAT Wave Player` 配置 | Metasound 节点配置，用于控制波形播放器的格式、回放模式等。 | `FMetasoundCatWavePlayerNodeConfiguration` |
-| `Granulator` 配置 | Metasound 节点配置，用于控制颗粒化合成器的输出通道格式和包络类型。 | `FMetaSoundGranulatorNodeConfiguration` |
-| `Fade` 节点配置 | Metasound 节点配置，用于控制淡入淡出效果的输出类型（浮点数或音频缓冲区）。 | `FMetaSoundFadeNodeConfiguration` |
-| `Mapping Function` 节点配置 | Metasound 节点配置，用于通过可编辑的曲线将输入值映射到输出值。 | `FMetaSoundMappingFunctionNodeConfiguration` |
+| `Audio Sound Wave Container` | 蓝图资产，用于定义和管理一个音频波形列表（支持标准顺序播放和加权随机播放模式）。 | `UCatSoundWaveContainer` |
+| `CAT Wave Player` | MetaSound 节点。一个高级波形播放器，支持多声部、多种输出格式和播放模式。 | 节点配置由 `FMetasoundCatWavePlayerNodeConfiguration` 驱动 |
+| `Granulator` | MetaSound 节点。实现粒子合成，可以将音频切割成微小的“粒子”并重新组合，创造独特的音效。 | 节点配置由 `FMetaSoundGranulatorNodeConfiguration` 驱动 |
+| `Mapping Function` | MetaSound 节点。使用可配置的浮点曲线将输入值映射到输出值。 | 节点配置由 `FMetaSoundMappingFunctionNodeConfiguration` 驱动 |
+| `Fade` | MetaSound 节点。生成淡入/淡出曲线，输出可以是浮点值或直接应用于音频缓冲区。 | 节点配置由 `FMetaSoundFadeNodeConfiguration` 驱动 |
 
-### 使用示例（蓝图描述）
+### 使用示例（蓝图/MetaSound 编辑器描述）
 
-1.  **创建声音波形容器**:
-    *   在内容浏览器右键 -> `Audio` -> `Audio Sound Wave Container`。
-    *   打开资产，设置 `Type` 为 `Standard` 或 `Random`。
-    *   在 `Entries` 数组中添加多个 `USoundWave` 条目，并为每项设置 `Weight`。
-    *   此资产可作为输入连接到 Metasound 中的 `CAT Wave Player` 节点的 `Sound Wave Container` 引脚。
-
-2.  **配置 CAT Wave Player 节点**:
-    *   在 Metasound 编辑器中，添加一个 `CAT Wave Player` 节点。
-    *   在节点细节面板中，配置 `MaxVoices`、`Format`（如 `SourceAuto` 或 `Custom`）、`PlaybackType` 和 `PlaybackMode`。
-    *   当选择 `Custom` 格式时，需要指定具体的 `CustomFormat`（例如 `Cat:Stereo2Dot0`）。
+1.  **创建音频资产容器：**
+    *   在内容浏览器中，右键 → 音频 → `Audio Sound Wave Container` 创建资产。
+    *   打开资产，设置 `Type` 为 `Standard`（顺序播放）或 `Random`（加权随机播放）。
+    *   在 `Entries` 数组中添加条目，每个条目指向一个 `USoundWave` 资产并设置其 `Weight`（用于随机模式）。
+2.  **在 MetaSound 中使用：**
+    *   在 MetaSound 图表编辑器中，右键添加一个 `CAT Wave Player` 节点。
+    *   在节点的细节面板中，可以配置 `MaxVoices`（最大同时发声数）、`Format`（输出格式，如自动、继承自源、或自定义）、`PlaybackType`（索引或顺序）和 `PlaybackMode`（标准或随机）。
+    *   将之前创建的 `Audio Sound Wave Container` 资产引用连接到该节点的输入。
+    *   添加触发、音高等控制信号来驱动播放。
+3.  **配置粒子合成：**
+    *   在 MetaSound 图表中添加 `Granulator` 节点。
+    *   在细节面板中选择 `OutputAudioTypeName`（输出音频格式，如立体声）和 `GranularEnvelope`（粒子包络形状，如汉宁窗、指数衰减等）。
+    *   连接一个音频缓冲区输入到节点，调整参数以获得所需效果。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
+// 核心代理视图系统
 #include "CatAudioProxyView.h"
-#include "CatSoundWaveContainer.h"
-#include "CatSoundWaveContainerAsset.h"
-// 以及其他需要的节点头文件，如 MetasoundCatWavePlayerNode.h
+
+// 声音波形容器及其代理
+#include "CATSoundWaveContainer.h"
+#include "CATSoundWaveContainerAsset.h"
+
+// 新的 MetaSound 节点（用于配置）
+#include "MetasoundCATWavePlayerNode.h"
 ```
 
-### 基本用法：使用 `TCatProxyView` 创建线程安全代理
+### 基本用法：TCatProxyView（代理视图）
 
-`TCatProxyView` 提供了一种在游戏线程创建/更新数据，并安全地从音频线程读取最新版本的机制。
+`TCatProxyView` 是此插件实现线程安全数据传输的核心。以下是一个自定义数据代理的最小用法，源自源码注释。
+
+**来源**: `Engine/Plugins/Experimental/MetasoundExperimental/Source/MetasoundExperimentalEngineRuntime/Public/CatAudioProxyView.h`
 
 ```cpp
-// （概念性示例，基于 CatAudioProxyView.h 中的注释）
-struct FMyAudioData
+// 1. 定义你的数据结构
+struct FMyAudioSettings
 {
-    float Frequency = 440.0f;
-    // ... 其他数据
+    float Volume = 1.0f;
+    int32 ChannelCount = 2;
+    // ... 其他需要跨线程传递的数据
 };
 
-// 1. 定义你的代理类
-class FMyProxy : public Audio::TCatProxyView<FMyProxy, FMyAudioData>
+// 2. 定义你的代理类，继承自 TCatProxyView
+class FMyAudioSettingsProxy : public Audio::TCatProxyView<FMyAudioSettingsProxy, FMyAudioSettings>
 {
 public:
-    // 必须使用此宏
-    IMPL_AUDIOPROXY_CLASS(FMyProxy);
+    // 必须使用此宏来实现必要的静态方法和静态断言
+    IMPL_AUDIOPROXY_CLASS(FMyAudioSettingsProxy);
 };
 
-// 2. 在游戏线程创建并发布初始数据
-TSharedRef<FMyProxy> MyProxy = FMyProxy::Create(FMyAudioData{440.0f});
+// 3. 使用代理（例如在 UObject 子类中）
+// 头文件
+UPROPERTY()
+TSharedPtr<FMyAudioSettingsProxy> SettingsProxy;
 
-// 3. 在游戏线程更新数据（结构性变化，如增减数组元素）
-MyProxy = MyProxy->New(FMyAudioData{880.0f}); // 发布新版本
-
-// 4. 在音频线程安全读取最新数据
-TSharedRef<const FMyProxy> LatestProxy = MyProxy->GetLatest();
-float CurrentFreq = LatestProxy->GetData().Frequency;
-
-// 注意：对于简单的标量更新（如修改 Frequency），可直接在 GetData() 引用上修改，无需调用 New()。
-```
-
-### 进阶用法：管理声音波形容器代理
-
-`UCatSoundWaveContainer` 和 `FCatSoundWaveContainerProxy` 是 `TCatProxyView` 在实际资产上的应用。
-
-```cpp
-#include "CatSoundWaveContainer.h"
-
-// 1. 获取或创建容器资产
-UCatSoundWaveContainer* MyContainer = NewObject<UCatSoundWaveContainer>();
-
-// 2. 设置容器类型和条目（通常在编辑器或蓝图中完成）
-MyContainer->Type = ECatSoundWaveContainerType::Random;
-FCatSoundWaveContainerEntry Entry;
-Entry.SoundWave = LoadObject<USoundWave>(nullptr, TEXT("/Game/Audio/MyWave"));
-Entry.Weight = 1.0f;
-MyContainer->Entries.Add(Entry);
-
-// 3. 从容器创建音频代理数据（用于连接到 Metasound）
-Audio::FProxyDataInitParams InitParams;
-TSharedPtr<Audio::IProxyData> ProxyData = MyContainer->CreateProxyData(InitParams);
-// 返回的 ProxyData 实际是 FCatSoundWaveContainerProxy，可安全转换
-TSharedPtr<FCatSoundWaveContainerProxy> WaveProxy = StaticCastSharedPtr<FCatSoundWaveContainerProxy>(ProxyData);
-
-// 4. 在 Metasound 节点操作符中使用代理数据包装器
-MetasoundCatExperimental::FSoundWaveContainerAsset ContainerAsset(ProxyData);
-// 在音频线程安全获取最新容器数据
-TSharedPtr<const FCatSoundWaveContainerProxy> LatestContainer = ContainerAsset.GetLatest();
-if (LatestContainer.IsValid())
+// 创建和发布初始数据
+void InitializeSettings()
 {
-    // 获取容器内的波形代理列表
-    TArray<FSoundWaveProxyPtr> Waves = LatestContainer->GetData().GetContainedWaveProxies();
-    // ... 使用波形进行播放
+    FMyAudioSettings InitialData;
+    InitialData.Volume = 0.8f;
+    SettingsProxy = FMyAudioSettingsProxy::Create(MoveTemp(InitialData));
+}
+
+// 更新数据（必须从单个线程，通常是游戏线程调用）
+void UpdateVolume(float NewVolume)
+{
+    if (SettingsProxy)
+    {
+        // 方法 A：对于简单标量更新，可以直接修改数据，无需创建新节点
+        // SettingsProxy->GetData().Volume = NewVolume;
+
+        // 方法 B：对于结构性变更（如改变数组大小），或者为了确保读取端获得一致性快照，使用 New()
+        FMyAudioSettings UpdatedData = SettingsProxy->GetData();
+        UpdatedData.Volume = NewVolume;
+        SettingsProxy = SettingsProxy->New(MoveTemp(UpdatedData));
+    }
+}
+
+// 在音频线程安全地读取数据
+void AudioThreadFunction()
+{
+    if (SettingsProxy)
+    {
+        // 获取最新的数据版本（遍历原子链表头部）
+        TSharedRef<const FMyAudioSettingsProxy> LatestProxy = SettingsProxy->GetLatest();
+        const FMyAudioSettings& CurrentData = LatestProxy->GetData();
+
+        // 使用 CurrentData.Volume, CurrentData.ChannelCount 等进行音频处理
+        ApplyVolume(CurrentData.Volume);
+    }
 }
 ```
 
+### 进阶用法：与 MetaSound 系统集成
+
+要将你的自定义代理数据暴露给 MetaSound 图表，你需要像插件中 `UCatSoundWaveContainer` 和 `FCatSoundWaveContainerProxy` 那样，实现 `IAudioProxyDataFactory` 接口并定义对应的数据引用类型。
+
+**简化概念流程**：
+1.  实现一个 `UObject` 子类，并实现 `IAudioProxyDataFactory::CreateProxyData` 接口。在此方法中创建你的代理实例。
+2.  定义一个类似于 `FCatSoundWaveContainerData` 的数据类，用于封装你的代理数据。
+3.  定义一个类似于 `FCatSoundWaveContainerProxy` 的代理类，继承自 `TCatProxyView`，并可能需要重写 `QueryInterface` 以支持多个接口。
+4.  使用 `DECLARE_METASOUND_DATA_REFERENCE_TYPES` 等宏将你的数据类型注册到 MetaSound 前端系统。
+5.  创建 MetaSound 节点操作符 (`Metasound::FOperator`)，在其中声明并读取你的数据引用 (`ReadRef`)。
+
 ## Demo 示例
 
-一个最小化示例，展示如何创建并使用 `UCatSoundWaveContainer`。
+一个演示 `TCatProxyView` 基本用法的最小 C++ 类。
 
-**MyAudioComponent.h**
+**PlayerSettingsProxy.h**
 ```cpp
 #pragma once
-#include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "CatSoundWaveContainer.h"
-#include "MyAudioComponent.generated.h"
 
-UCLASS(ClassGroup=(Audio), meta=(BlueprintSpawnableComponent))
-class YOURPROJECT_API UMyAudioComponent : public UActorComponent
+#include "CoreMinimal.h"
+#include "CATAudioProxyView.h" // 引入代理视图基类
+
+// 1. 数据结构：存储玩家音频设置
+struct FPlayerAudioSettings
+{
+    float MusicVolume = 0.7f;
+    float SFXVolume = 1.0f;
+    bool bEnableSurround = false;
+};
+
+// 2. 代理类
+class FPlayerAudioSettingsProxy : public Audio::TProxyData<FPlayerAudioSettingsProxy>
+{
+public:
+    // 使用宏实现必要的接口
+    IMPL_AUDIOPROXY_CLASS(FPlayerAudioSettingsProxy);
+
+    // 构造函数
+    using Audio::TProxyData<FPlayerAudioSettingsProxy>::TProxyData;
+
+    // 便捷的访问方法（可选）
+    float GetMusicVolume() const { return GetData().MusicVolume; }
+};
+```
+
+**MyAudioManager.h**
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "UObject/NoExportTypes.h"
+#include "PlayerSettingsProxy.h" // 包含我们的代理定义
+#include "MyAudioManager.generated.h"
+
+UCLASS()
+class MYPROJECT_API UMyAudioManager : public UObject
 {
     GENERATED_BODY()
 
 public:
-    UPROPERTY(EditAnywhere, Category = "Audio")
-    TObjectPtr<UCatSoundWaveContainer> WaveContainerAsset;
+    // 初始化设置
+    void Initialize();
 
+    // 从游戏线程更新设置
     UFUNCTION(BlueprintCallable, Category = "Audio")
-    void UpdateAndPlayContainer();
+    void SetMusicVolume(float NewVolume);
+
+    // 模拟在音频线程消费数据
+    void SimulateAudioThreadRead();
 
 private:
-    UPROPERTY()
-    TObjectPtr<UCatSoundWaveContainer> RuntimeContainer;
-    TSharedPtr<FCatSoundWaveContainerProxy> ContainerProxy;
+    // 持有代理的共享指针
+    TSharedPtr<FPlayerAudioSettingsProxy> SettingsProxy;
 };
 ```
 
-**MyAudioComponent.cpp**
+**MyAudioManager.cpp**
 ```cpp
-#include "MyAudioComponent.h"
-#include "Engine/Engine.h" // 用于 GEngine 输出
+#include "MyAudioManager.h"
 
-void UMyAudioComponent::UpdateAndPlayContainer()
+void UMyAudioManager::Initialize()
 {
-    if (!WaveContainerAsset)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("WaveContainerAsset is not set!"));
-        return;
-    }
+    // 创建初始代理数据
+    FPlayerAudioSettings InitialSettings;
+    SettingsProxy = FPlayerAudioSettingsProxy::Create(MoveTemp(InitialSettings));
+    UE_LOG(LogTemp, Log, TEXT("AudioManager Initialized. Music Volume: %f"), SettingsProxy->GetMusicVolume());
+}
 
-    // 1. 创建运行时容器（或在构造函数中创建）
-    if (!RuntimeContainer)
-    {
-        RuntimeContainer = NewObject<UCatSoundWaveContainer>(this);
-    }
+void UMyAudioManager::SetMusicVolume(float NewVolume)
+{
+    if (!SettingsProxy.IsValid()) return;
 
-    // 2. 复制资产设置到运行时容器
-    RuntimeContainer->Type = WaveContainerAsset->Type;
-    RuntimeContainer->Entries = WaveContainerAsset->Entries;
+    // 从当前版本获取数据，创建修改后的副本，并发布新版本
+    FPlayerAudioSettings UpdatedSettings = SettingsProxy->GetData();
+    UpdatedSettings.MusicVolume = FMath::Clamp(NewVolume, 0.0f, 1.0f);
+    SettingsProxy = SettingsProxy->New(MoveTemp(UpdatedSettings));
 
-    // 3. 手动触发代理重建（模拟属性变更或用于初始化）
-    RuntimeContainer->RebuildProxy();
+    UE_LOG(LogTemp, Log, TEXT("Music Volume Updated. New Version Created."));
+}
 
-    // 4. 获取生成的代理（通常在 `CreateProxyData` 之后自动存储）
-    // 注意：实际生产中，代理生命周期由 Metasound 图管理，此示例仅为演示数据流。
-    Audio::FProxyDataInitParams InitParams;
-    TSharedPtr<Audio::IProxyData> ProxyData = RuntimeContainer->CreateProxyData(InitParams);
-    ContainerProxy = StaticCastSharedPtr<FCatSoundWaveContainerProxy>(ProxyData);
+void UMyAudioManager::SimulateAudioThreadRead()
+{
+    if (!SettingsProxy.IsValid()) return;
 
-    if (ContainerProxy.IsValid())
-    {
-        TSharedRef<const FCatSoundWaveContainerProxy> Latest = ContainerProxy->GetLatest();
-        TArray<FSoundWaveProxyPtr> Waves = Latest->GetData().GetContainedWaveProxies();
-        UE_LOG(LogTemp, Log, TEXT("Container published with %d wave entries."), Waves.Num());
-        // 在此将 ContainerProxy 连接到实际的 Metasound 播放图中...
-    }
+    // 在音频线程（或模拟它的线程）安全地获取最新数据
+    TSharedRef<const FPlayerAudioSettingsProxy> LatestSettings = SettingsProxy->GetLatest();
+    const FPlayerAudioSettings& Data = LatestSettings->GetData();
+
+    UE_LOG(LogTemp, Log, TEXT("Audio Thread Read: Music=%.2f, SFX=%.2f, Surround=%s"),
+        Data.MusicVolume, Data.SFXVolume, Data.bEnableSurround ? TEXT("ON") : TEXT("OFF"));
 }
 ```
 
@@ -208,7 +264,9 @@ void UMyAudioComponent::UpdateAndPlayContainer()
 
 | 模块 | 用途 |
 |---|---|
-| 无特殊依赖（仅标准 Core/Engine/Slate 等） | `MetasoundExperimentalEngineRuntime` 及其兄弟模块的 Build.cs 主要依赖 `CoreUObject`，这是基础依赖。插件本身依赖 `Metasound` 插件。 |
+| `Metasound` | 基础 MetaSound 框架，提供节点、操作符、前端类型系统等。此插件是其扩展。 |
+
+**注意**：尽管各个 `.Build.cs` 文件仅声明依赖 `CoreUObject`，但作为 MetaSound 的实验性扩展，**运行此插件必须先启用并正确配置核心 `Metasound` 插件**。
 
 ## 维护状态
 
@@ -216,21 +274,24 @@ void UMyAudioComponent::UpdateAndPlayContainer()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `e4fa3490` | Adds the experimental MetaSound Channel Agnostic Types (CAT) Wave | 添加了实验性的元声音通道无关类型(CAT)波形功能。 |
-| 2026-05-13 | `f91eb8fe` | Resolved merge conflict with FSoundWaveData api deprecation fixup. | 解决了与 FSoundWaveData API 废弃相关的合并冲突。 |
-| 2026-05-12 | `ca21145e` | [CAT] Multiply node | 添加了 [CAT] 乘法节点。 |
-| 2026-05-12 | `2940bc45` | [CAT] Ladder Filter node | 添加了 [CAT] 梯形滤波器节点。 |
-| 2026-04-17 | `f1f7082c` | Unshelved from pending changelist '52759261': | 从待处理变更列表中取消搁置。 |
+| 2026-05-13 | `e4fa3490` | Adds the experimental MetaSound Channel Agnostic Types (CAT) Wave | 新增实验性通道无关（CAT）波形相关节点和数据类型。 |
+| 2026-05-12 | `ca21145e` | [CAT] Multiply node | 新增 CAT 乘法节点。 |
+| 2026-05-12 | `2940bc45` | [CAT] Ladder Filter node | 新增 CAT 梯形滤波器节点。 |
+| 2026-04-17 | `f1f7082c` | Unshelved from pending changelist '52759261': | 从待定的更改列表中恢复内容。 |
 
 ### 维护评价
 
-- **活跃维护**: 该插件处于非常活跃的开发状态。从 Git 历史看，最近（2026年5月）有密集的提交，主要围绕 **CAT（通道无关类型）** 功能的开发和集成，包括新的节点（乘法、滤波器）和波形系统。这表明 Epic 的音频团队正在积极地向此插件添加新功能。
-- **实验性质**: 插件本身标记为 `IsExperimentalVersion: true`，且 `EnabledByDefault: false`。这意味着其中的 API 和功能在未来的引擎版本中可能发生重大变更或被移除。它主要用于内部开发和测试新想法。
-- **潜在问题**: 由于是实验性代码，可能存在未完全优化、接口不稳定或文档缺失的情况。部分注释提到与其他模块（如 `MetasoundPolyphonyInternal`）存在功能重叠或需要整合。
-- **推荐使用**: **不推荐用于正式生产项目**。如果你是研究或学习引擎内部音频系统、或者愿意承担 API 变更的风险来尝试最前沿功能，可以启用此插件。对于生产项目，应等待功能成熟并合并到主 `Metasound` 插件中。
+*   **创建时间**：创建于 2025 年 4 月，是一个相对年轻的插件。
+*   **更新频率**：近期（2026 年 5 月）有密集的功能性更新，新增了多个 “CAT” 系列的实验性节点，表明该项目处于**活跃的开发状态**。
+*   **状态**：✅ **活跃维护中**。这是一个由 Epic 官方维护的实验性前沿功能开发库。
+*   **已知限制**：
+    1.  **实验性**：标记为实验性 (`IsExperimentalVersion=true`)，API 和功能可能在不预告的情况下发生破坏性变更。
+    2.  **默认未启用**：需要手动在项目设置中启用，表明其并非面向所有用户。
+    3.  **依赖核心插件**：其功能建立在核心 `Metasound` 插件之上。
+*   **推荐使用**：**仅推荐给希望探索 MetaSound 最新实验性功能、并能接受潜在 API 变更和不稳定风险的高级用户和技术美术/音频程序员**。不建议在追求稳定性的生产项目中作为核心依赖。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetasoundExperimental)
-- 官方文档：无
-- 测试用例：未在提供的路径中找到（可能位于 Engine/Tests/ 或其他位置，需进一步查找）
+- [官方文档]()（无）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetasoundExperimental/Tests) (如果存在)

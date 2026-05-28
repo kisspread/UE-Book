@@ -4,41 +4,29 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 结构体工具 |
+| 中文名 | 结构体工具集 |
 | 分类 | Gameplay |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `StructUtils` (Runtime), `StructUtilsEngine` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2021-04-20 |
-| 年龄标签 | 👴 老古董（约 4 年） |
+| 年龄标签 | 🆕（约 4 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/StructUtils) | |
 
 ## 用途
 
-StructUtils 插件提供了 `FInstancedStruct` 类型，旨在解决虚幻引擎中结构体在运行时多态性方面的限制。传统的 `USTRUCT` 是值类型，在存储到数组或容器时，其类型在声明时就已经确定，无法在运行时动态改变或存储不同但相关的结构体类型。`FInstancedStruct` 封装了结构体实例及其类型信息，允许在运行时安全地存储、复制和访问不同类型的结构体数据，实现了结构体层面的多态性。
+StructUtils 插件提供了一套用于在运行时安全、灵活地存储和操作任意 `UScriptStruct` 实例的工具。其核心是 `FInstancedStruct` 类型，它允许开发者在不丢失类型信息的前提下，以一种类似 `TArray<uint8>` 的方式存储任意结构体数据，但提供了类型安全的访问接口。这解决了需要在容器或变量中动态存储不同类型数据结构（例如从数据表或配置文件读取）的场景，避免了直接使用 `UObject*` 引用或原始数据指针的复杂性和风险。
 
 ## 使用场景
 
-- **运行时数据容器**：当你需要一个数组或映射表来存储多种不同类型的结构体数据（如不同的游戏事件数据、不同的伤害类型参数）时，可以使用 `TArray<FInstancedStruct>` 来替代多个独立的数组。
-- **可扩展的组件系统**：在实现类似“能力系统”或“状态效果”时，每个能力/状态可能有不同的参数结构体。使用 `FInstancedStruct` 可以统一管理这些参数，并根据实际存储的类型进行分派。
-- **序列化与网络复制**：`FInstancedStruct` 设计时考虑了序列化支持，可以用于需要保存或在网络上传输包含动态类型结构体数据的场景。
-- **插件与模块解耦**：当不同模块需要交换数据但又不希望彼此依赖具体的结构体定义时，可以通过 `FInstancedStruct` 作为接口进行传递。
+- 你需要在一个蓝图或C++变量中，根据条件存储不同的配置结构体（例如 `FWeaponData` 或 `FArmorData`）。
+- 你在构建一个数据驱动的系统，数据结构（如怪物属性、技能参数）可能在未来扩展或变化，需要一个统一的容器来承载。
+- 你需要将自定义的结构体数据进行序列化、复制（如网络复制），同时希望保持其底层类型的完整性。
 
 ## 蓝图用法
 
-### 核心节点
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `Make Literal` | 根据一个结构体值创建一个新的 `FInstancedStruct`。 | `FInstancedStruct` (蓝图库) |
-| `Break Struct` | 从 `FInstancedStruct` 中提取特定类型的结构体数据。需要提供目标结构体类型作为上下文。 | `FInstancedStruct` (蓝图库) |
-| `Get Script Struct` | 获取 `FInstancedStruct` 内部存储的结构体类型 (`UScriptStruct*`)。 | `FInstancedStruct` (蓝图库) |
-| `IsValid` | 检查 `FInstancedStruct` 是否包含有效的结构体实例。 | `FInstancedStruct` (蓝图库) |
-
-### 使用示例
-
-在蓝图中，你可以使用 `Make Literal` 节点将一个具体的结构体值（如 `Vector`、`HitResult` 或自定义结构体）封装到一个 `FInstancedStruct` 变量中。当需要读取数据时，将该变量连接到 `Break Struct` 节点，并在节点上指定你期望的结构体类型。如果 `FInstancedStruct` 内存储的类型与指定类型匹配，则成功提取数据；否则，输出默认值。
+本插件的核心功能主要面向 C++ 开发，未提供直接的蓝图节点。其 `FInstancedStruct` 类型主要用于 C++ 层面的数据封装。在蓝图中，通常通过引擎其他系统（如自定义蓝图函数库或资产管理器）间接使用其功能。
 
 ## C++ 用法
 
@@ -50,52 +38,166 @@ StructUtils 插件提供了 `FInstancedStruct` 类型，旨在解决虚幻引擎
 
 ### 基本用法
 
-以下示例展示如何创建、检查和访问 `FInstancedStruct`。假设存在一个自定义结构体 `FMyStruct`。
+以下示例展示了如何创建、设置和获取 `FInstancedStruct` 中的数据。
 
 ```cpp
-// 创建一个实例，并存储一个 FMyStruct 类型的值
-FMyStruct MyData;
-MyData.SomeValue = 42;
-FInstancedStruct InstancedStruct = FInstancedStruct::Make(MyData);
-
-// 检查其是否有效且包含期望的类型
-if (InstancedStruct.IsValid() && InstancedStruct.GetScriptStruct() == FMyStruct::StaticStruct())
+// 定义一个示例结构体
+USTRUCT(BlueprintType)
+struct FMyData
 {
-    // 安全地获取内部数据的引用（const）
-    const FMyStruct& RetrievedData = InstancedStruct.Get<FMyStruct>();
-    UE_LOG(LogTemp, Log, TEXT("Retrieved value: %d"), RetrievedData.SomeValue);
+    GENERATED_BODY()
 
-    // 或者获取可修改的引用（需要确保类型正确）
-    // FMyStruct& MutableData = InstancedStruct.GetMutable<FMyStruct>();
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Value = 0.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString Name;
+};
+
+// 使用 FInstancedStruct
+void Example()
+{
+    // 1. 创建一个空的 FInstancedStruct
+    FInstancedStruct InstancedStruct;
+
+    // 2. 使其初始化为指定的结构体类型（可选，通常在从数据源初始化时使用）
+    InstancedStruct.InitializeAs<FMyData>();
+
+    // 3. 获取结构体的可写引用并修改数据
+    if (FMyData* DataPtr = InstancedStruct.GetMutablePtr<FMyData>())
+    {
+        DataPtr->Value = 3.14f;
+        DataPtr->Name = TEXT("Test");
+    }
+
+    // 4. 获取结构体的只读引用以读取数据
+    if (const FMyData* DataConstPtr = InstancedStruct.GetPtr<FMyData>())
+    {
+        UE_LOG(LogTemp, Log, TEXT("Value: %f, Name: %s"), DataConstPtr->Value, *DataConstPtr->Name);
+    }
+
+    // 5. 检查类型
+    if (InstancedStruct.GetScriptStruct() == FMyData::StaticStruct())
+    {
+        // 是 FMyData 类型
+    }
 }
 ```
 
 ### 进阶用法
 
-`FInstancedStruct` 常用于容器中，以实现存储多种类型结构体的目的。
+`FInstancedStruct` 可以像普通值一样在容器（如 `TArray`）中使用，并且支持序列化。
 
 ```cpp
-TArray<FInstancedStruct> StructArray;
+// 存储多种类型的结构体在数组中
+TArray<FInstancedStruct> DataArray;
 
-// 向数组中添加不同类型的结构体
-StructArray.Add(FInstancedStruct::Make(FVector(1,2,3)));
-StructArray.Add(FInstancedStruct::Make(FHitResult()));
-StructArray.Add(FInstancedStruct::Make(FMyStruct{99}));
+// 添加不同类型的数据
+FInstancedStruct StructA;
+StructA.InitializeAs<FMyData>();
+// ... 填充 StructA
+DataArray.Add(StructA);
 
-// 遍历并检查类型
-for (const FInstancedStruct& Item : StructArray)
+FInstancedStruct StructB;
+StructB.InitializeAs<FAnotherData>(); // 假设存在另一个结构体
+// ... 填充 StructB
+DataArray.Add(StructB);
+
+// 遍历时，需要先判断类型
+for (const FInstancedStruct& Struct : DataArray)
 {
-    if (const UScriptStruct* StructType = Item.GetScriptStruct())
+    if (const FMyData* MyData = Struct.GetPtr<FMyData>())
     {
-        UE_LOG(LogTemp, Log, TEXT("Array item is of type: %s"), *StructType->GetName());
-        // 根据 StructType 进行特定类型的数据处理...
+        // 处理 FMyData
+    }
+    else if (const FAnotherData* AnotherData = Struct.GetPtr<FAnotherData>())
+    {
+        // 处理 FAnotherData
+    }
+}
+```
+
+## Demo 示例
+
+以下是一个最小化的自定义类，演示了 `FInstancedStruct` 的基本使用。
+
+```cpp
+// MyStructUtilsExample.h
+#pragma once
+
+#include "CoreMinimal.h"
+#include "InstancedStruct.h"
+#include "MyStructUtilsExample.generated.h"
+
+USTRUCT(BlueprintType)
+struct FSampleStruct
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    int32 IntegerValue = 0;
+
+    UPROPERTY()
+    FString StringValue;
+};
+
+UCLASS()
+class UMyStructUtilsExample : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    UFUNCTION(BlueprintCallable)
+    void CreateAndPopulateStruct();
+
+    UFUNCTION(BlueprintCallable)
+    void PrintStructData() const;
+
+private:
+    UPROPERTY()
+    FInstancedStruct StoredStruct;
+};
+```
+
+```cpp
+// MyStructUtilsExample.cpp
+#include "MyStructUtilsExample.h"
+
+void UMyStructUtilsExample::CreateAndPopulateStruct()
+{
+    // 将 StoredStruct 初始化为 FSampleStruct 类型
+    StoredStruct.InitializeAs<FSampleStruct>();
+
+    // 修改数据
+    if (FSampleStruct* SampleData = StoredStruct.GetMutablePtr<FSampleStruct>())
+    {
+        SampleData->IntegerValue = 42;
+        SampleData->StringValue = TEXT("Hello, StructUtils!");
+    }
+}
+
+void UMyStructUtilsExample::PrintStructData() const
+{
+    // 安全地读取数据
+    if (const FSampleStruct* SampleData = StoredStruct.GetPtr<FSampleStruct>())
+    {
+        UE_LOG(LogTemp, Log, TEXT("Integer: %d, String: %s"),
+            SampleData->IntegerValue, *SampleData->StringValue);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("StoredStruct does not contain FSampleStruct."));
     }
 }
 ```
 
 ## 模块依赖
 
-无特殊依赖（仅标准 Core/Engine 等）。
+本插件的模块没有特殊的外部依赖。
+
+| 模块 | 用途 |
+|---|---|
+| （无） | 无特殊依赖（仅标准 Core/Engine 等） |
 
 ## 维护状态
 
@@ -103,18 +205,21 @@ for (const FInstancedStruct& Item : StructArray)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2024-08-05 | `5bf7f335` | Iris - Move InstancedStructNetSerializer to IrisCore. | 将 `FInstancedStruct` 的网络序列化器移至 Iris 核心模块。 |
-| 2024-08-01 | `0e320e33` | Iris - Crash fix for removing InstancedStruct from a replicated array and adding the same struct typ | 修复在从复制数组中移除 `FInstancedStruct` 并添加相同类型结构体时导致的崩溃。 |
-| 2024-06-28 | `8083cf8c` | Iris - Adjust includes due to StructUtils moving. | 因 StructUtils 位置调整，更新相关头文件包含路径。 |
-| 2024-06-28 | `3680fd08` | Iris - Initial naive but working version of FInstancedStructNetSerializer to be able to replicate FI | 初始实现 `FInstancedStruct` 的网络序列化器，使其具备网络复制能力。 |
-| 2024-06-19 | `e6d36d75` | Remove references to deprecated plugin StructUtils (now part of CoreUObject) | 清理对已废弃的旧版 StructUtils 插件的引用（暗示核心功能已迁移）。 |
+| 2024-08-05 | `5bf7f335` | Iris - Move InstancedStructNetSerializer to IrisCore. | 将 InstancedStruct 的网络序列化器移至 IrisCore 模块。 |
+| 2024-08-01 | `0e320e33` | Iris - Crash fix for removing InstancedStruct from a replicated array and adding the same struct typ | 修复从复制数组中移除 InstancedStruct 后再添加相同结构体类型时的崩溃。 |
+| 2024-06-28 | `8083cf8c` | Iris - Adjust includes due to StructUtils moving. | 因 StructUtils 模块移动，调整相关头文件包含。 |
+| 2024-06-28 | `3680fd08` | Iris - Initial naive but working version of FInstancedStructNetSerializer to be able to replicate FI | 为 FInstancedStruct 添加了初步可用的网络序列化器（Iris 网络系统）。 |
+| 2024-06-19 | `e6d36d75` | Remove references to deprecated plugin StructUtils (now part of CoreUObject) | 移除对已废弃的独立 StructUtils 插件的引用，表明其功能已融入 CoreUObject。 |
 
 ### 维护评价
 
-StructUtils 仍处于 **实验性** 阶段（`IsExperimentalVersion=true`），但近期的提交记录（截至2024年8月）表明它仍在 **活跃维护** 中，特别是围绕其核心类型 `FInstancedStruct` 的 **网络序列化** 功能（与 Iris 复制系统集成）进行了重要的修复和优化。尽管创建于约4年前，且最新的commit显示其部分功能可能正在被整合到引擎核心（CoreUObject）或更稳定的模块中，但插件本身仍在更新和改进。对于需要 `FInstancedStruct` 功能的项目，它是一个可用且正在发展的解决方案。需要注意其“实验性”标签，意味着API在未来版本中可能发生变化。
+**维护评价：已整合，不推荐作为独立插件使用。**
+- **年龄**：插件创建于2021年，至今约4年。
+- **活跃度**：2024年仍有相关提交，但近期提交内容（如“移至CoreUObject”、“移至IrisCore”）强烈表明，`FInstancedStruct` 等核心功能已被整合进引擎更核心的模块（CoreUObject）或特定子系统（Iris网络）。此独立的 `Experimental` 插件可能仅作为遗留入口或特定版本的兼容层存在。
+- **已知限制**：`.uplugin` 明确标记为 `IsExperimentalVersion: true` 且 `EnabledByDefault: false`，需要手动启用。其 `DeprecatedEngineVersion: 5.5` 进一步暗示它可能在引擎后续版本中被彻底移除。
+- **推荐**：**不推荐**在新的、长期维护的项目中依赖此实验性插件。应优先检查并使用 `CoreUObject` 中官方提供的 `FInstancedStruct`（从 UE 5.4+ 开始）。如果必须使用，请注意其生命周期可能随引擎版本更新而终结。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/StructUtils)
-- [官方文档]() (暂无)
-- [测试用例]() (暂无)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/StructUtils/Tests) (推断路径)

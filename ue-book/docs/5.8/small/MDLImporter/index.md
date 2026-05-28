@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MDL 材质导入器 |
+| 中文名 | MDL材质导入器 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（材质函数资产、纹理资产） |
+| 包含内容 | ❌ 无 |
 | 模块 | `MDLImporter` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2019-10-04 |
@@ -16,55 +16,17 @@
 
 ## 用途
 
-MDL Importer 是一个编辑器插件，用于将 NVIDIA Material Definition Language (MDL) 材质文件导入为 Unreal Engine 的 `UMaterial` 资产。
-
-MDL 是一种由 NVIDIA 定义的行业标准材质描述语言，广泛用于光线追踪渲染器（如 Iray、V-Ray 等）中。该插件的核心功能包括：
-
-1. **解析 MDL 材质定义**：通过 NVIDIA MDL SDK 加载 `.mdl` 文件，解析材质模块中的材质定义和实例
-2. **材质蒸馏（Distillation）**：将 MDL 的复杂材质图（BSDF 树）蒸馏转换为 Unreal 的 PBR 材质属性（BaseColor、Metallic、Roughness、Normal 等）
-3. **程序纹理烘焙**：将 MDL 中的程序化纹理（程序化噪声、棋盘格等）烘焙为位图纹理资产
-4. **材质节点图生成**：将 MDL 的函数调用链转换为 Unreal 材质编辑器中的材质表达式节点图，尽可能保留可编辑性而非全部烘焙
-5. **材质函数生成**：自动创建所需的材质函数资产（如噪声函数、混合函数、坐标投影函数等）
-
-该插件解决了在 Unreal 中使用 MDL 材质生态的互操作性问题，使影视和建筑可视化领域的艺术家能够在 UE 中复用基于 MDL 的材质资产。
-
-**重要限制**：插件标记为 Beta 版本且默认不启用，表明它仍处于实验阶段。功能依赖 `USE_MDLSDK` 编译宏，需要 NVIDIA MDL SDK 才能正常工作。
+该插件用于将 NVIDIA MDL (Material Definition Language) 材质文件导入到 Unreal Engine 中。MDL 是一种用于定义材质属性的高级语言，广泛应用于电影、游戏和工业领域的材质交换。此插件能够解析 MDL 文件，将其转换为 UE 的材质资产，并处理相关的纹理烘焙和材质节点生成。它解决了在不同 DCC 工具间共享和复用复杂材质的需求，使艺术家能够使用标准化的材质定义语言在 UE 中实现高质量的渲染效果。
 
 ## 使用场景
 
-- 你在做一个建筑可视化项目，资产来自支持 MDL 的 DCC 工具（如 3ds Max + V-Ray）→ 用 MDLImporter 导入 `.mdl` 材质
-- 你在做一个影视级渲染项目，需要复用 Iray/MaterialX 生态中的 MDL 材质 → 用 MDLImporter 转换到 UE 材质
-- 你有一个 MDL 材质库（如 NVIDIA vMaterials），想在 UE 中使用 → 用 MDLImporter 批量导入
-- 你需要保留 MDL 材质的程序化纹理生成逻辑而非仅烘焙贴图 → 插件会尝试生成材质节点图
+- 当你从支持 MDL 的 DCC 软件（如 Maya、3ds Max）导出材质，并希望在 UE 中保持相同的材质外观时。
+- 当你需要使用 NVIDIA 提供的 MDL 材质库，将其集成到 UE 项目中。
+- 当你需要处理包含程序化纹理（如 Perlin 噪声）或复杂材质属性的 MDL 材质时。
 
 ## 蓝图用法
 
-本插件主要面向编辑器工作流，不暴露运行时蓝图节点。以下 `UCLASS` 属性可通过编辑器项目设置（Project Settings）访问：
-
-### 配置选项
-
-| 属性 | 类型 | 说明 | 范围 |
-|---|---|---|---|
-| `BakingResolution` | `uint32` | 程序纹理烘焙分辨率 | 128 ~ 16384 |
-| `BakingSamples` | `uint32` | 烘焙采样数（MSAA） | 1 ~ 16 |
-| `ResourcesDir` | `FDirectoryPath` | MDL 资源（纹理、光谱配置等）搜索路径 | — |
-| `ModulesDir` | `FDirectoryPath` | 额外 MDL 模块搜索路径 | — |
-| `MetersPerSceneUnit` | `float` | 场景单位与米的换算比 | 0.01 ~ 1000 |
-| `bForceBaking` | `bool` | 强制烘焙所有贴图（不使用材质节点） | — |
-
-配置路径：**Project Settings → Engine → MDL Importer**
-
-### 编辑器导入流程
-
-1. 在 Content Browser 中右键 → **Import**
-2. 选择 `.mdl` 文件
-3. 插件自动解析 MDL 模块中的所有材质定义
-4. 为每个材质创建 `UMaterial` 资产
-5. 烘焙程序纹理并创建 `UTexture2D` 资产
-
-### 重新导入
-
-导入后的材质支持重新导入（Reimport），会更新材质属性和烘焙纹理。
+此插件主要通过编辑器界面进行操作，没有提供直接的蓝图可调用节点。导入功能通过编辑器的“导入”按钮或右键菜单中的“导入”选项触发，选择 `.mdl` 文件即可。
 
 ## C++ 用法
 
@@ -72,251 +34,139 @@ MDL 是一种由 NVIDIA 定义的行业标准材质描述语言，广泛用于�
 
 ```cpp
 #include "MDLImporterModule.h"
-#include "MDLImporterOptions.h"
 #include "MDLMaterialImporter.h"
 ```
 
 ### 基本用法
 
-通过模块接口导入 MDL 材质：
+以下示例展示如何通过 C++ 代码导入 MDL 材质。首先获取 MDL 导入器模块实例，然后使用其 API 导入材质。
 
 ```cpp
-// 来源: Source/MDLImporter/Public/MDLMaterialImporter.h
-#include "MDLMaterialImporter.h"
-
-// 添加 MDL 搜索路径
-FScopedSearchPath SearchPath(TEXT("C:/MDL_Libraries/vMaterials"));
-
-// 设置导入选项
-UMDLImporterOptions* Options = NewObject<UMDLImporterOptions>();
-Options->BakingResolution = 2048;
-Options->BakingSamples = 4;
-Options->MetersPerSceneUnit = 1.0f;
-Options->bForceBaking = false;
-
-// 导入单个材质
-UPackage* ParentPackage = CreatePackage(nullptr, TEXT("/Game/Materials/ImportedMaterial"));
-UMaterialInterface* ImportedMaterial = FMdlMaterialImporter::ImportMaterialFromModule(
-    ParentPackage,
-    RF_Public | RF_Standalone,
-    TEXT("path/to/module"),           // MDL 模块名
-    TEXT("material_definition_name"), // 材质定义名
-    *Options
-);
+// 检查 MDL 导入器模块是否可用
+if (IMDLImporterModule::IsAvailable())
+{
+    // 获取模块实例
+    IMDLImporterModule& MDLModule = IMDLImporterModule::Get();
+    
+    // 创建文件导入器
+    TUniquePtr<IMdlFileImporter> FileImporter = MDLModule.CreateFileImporter();
+    
+    // 设置导入选项（例如烘焙分辨率）
+    UMDLImporterOptions* Options = GetMutableDefault<UMDLImporterOptions>();
+    Options->BakingResolution = 1024;
+    
+    // 导入 MDL 文件
+    FString FilePath = TEXT("/Path/To/Your/File.mdl");
+    if (FileImporter->ImportFile(FilePath, Options))
+    {
+        // 获取导入的材质
+        TArray<UMaterialInterface*> Materials = FileImporter->GetImportedMaterials();
+        // 处理材质...
+    }
+}
 ```
+*来源：基于 `MDLImporterModule.h` 和 `MDLMaterialImporter.h` 中的接口分析。*
 
 ### 进阶用法
 
-通过完整的导入管线批量导入：
+使用 `FMdlMaterialImporter` 直接导入特定的 MDL 材质定义。
 
 ```cpp
-// 来源: Source/MDLImporter/Private/MDLImporter.h
-#include "MDLImporterModule.h"
-
-// 获取导入器模块
-IMDLImporterModule& Module = IMDLImporterModule::Get();
-FMDLImporter& Importer = Module.GetMDLImporter();
-
-// 配置导入选项
+// 设置导入选项
 UMDLImporterOptions Options;
-Options.BakingResolution = 4096;
-Options.BakingSamples = 8;
-Options.ResourcesDir.Path = TEXT("C:/MDL_Resources");
-Options.ModulesDir.Path = TEXT("C:/MDL_Modules");
+Options.BakingResolution = 2048;
+Options.BakingSamples = 4;
 
-// 加载 MDL 模块中的材质
-Mdl::FMaterialCollection Materials;
-bool bSuccess = Importer.OpenFile(TEXT("C:/Materials/car_paint.mdl"), Options, Materials);
+// 指定 MDL 模块名和材质定义名
+FString MdlModuleName = TEXT("::nvidia::sdk_examples");
+FString MdlDefinitionName = TEXT("example_material");
 
-if (bSuccess)
+// 准备导入包
+UPackage* Package = CreatePackage(nullptr, TEXT("/Game/ImportedMaterials"));
+EObjectFlags Flags = RF_Public | RF_Standalone;
+
+// 导入材质
+UMaterialInterface* Material = FMdlMaterialImporter::ImportMaterialFromModule(
+    Package, 
+    Flags, 
+    MdlModuleName, 
+    MdlDefinitionName, 
+    Options
+);
+
+if (Material)
 {
-    // 获取材质列表信息
-    for (int32 i = 0; i < Materials.Count(); ++i)
-    {
-        const Mdl::FMaterial& Mat = Materials[i];
-        UE_LOG(LogTemp, Log, TEXT("Found material: %s (ID: %u)"), *Mat.Name, Mat.Id);
-    }
-
-    // 创建导入材质资产
-    UPackage* ParentPackage = CreatePackage(nullptr, TEXT("/Game/Materials/MDL"));
-    auto ProgressCallback = [](const FString& MsgName, int32 Index)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Importing %s (%d)"), *MsgName, Index);
-    };
-
-    Importer.ImportMaterials(ParentPackage, RF_Public | RF_Standalone, Materials, ProgressCallback);
-
-    // 获取创建的材质
-    const TArray<UMaterialInterface*>& CreatedMaterials = Importer.GetCreatedMaterials();
-    for (UMaterialInterface* Material : CreatedMaterials)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Created material asset: %s"), *Material->GetName());
-    }
-
-    // 检查日志消息
-    for (const auto& Msg : Importer.GetLogMessages())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("MDL Import: %s"), *Msg.Message);
-    }
+    // 材质导入成功
+    UE_LOG(LogTemp, Log, TEXT("Successfully imported MDL material: %s"), *Material->GetName());
 }
-
-// 清理
-Importer.CleanUp();
 ```
+*来源：基于 `MDLMaterialImporter.h` 中的静态方法分析。*
 
 ## Demo 示例
 
-一个完整的 MDL 材质导入工具类：
+以下是一个完整的、可编译的最小示例，展示如何在编辑器工具中使用 MDL 导入器。
 
+**MDLImporterExample.h**
 ```cpp
-// MDLImporterTool.h
 #pragma once
 
 #include "CoreMinimal.h"
 #include "MDLImporterModule.h"
-#include "MDLImporterOptions.h"
-#include "MDLMaterialImporter.h"
 
-class FMDLImporterTool
+class FMDLImporterExample
 {
 public:
-    /** 检查 MDL SDK 是否可用 */
-    static bool IsMDLAvailable()
-    {
-        return IMDLImporterModule::IsAvailable() && IMDLImporterModule::Get().IsLoaded();
-    }
-
-    /** 配置导入选项 */
-    static UMDLImporterOptions* CreateDefaultOptions()
-    {
-        UMDLImporterOptions* Options = NewObject<UMDLImporterOptions>();
-        Options->BakingResolution = 2048;
-        Options->BakingSamples = 4;
-        Options->MetersPerSceneUnit = 1.0f;
-        Options->bForceBaking = false;
-        return Options;
-    }
-
-    /** 导入单个 MDL 文件并返回创建的材质 */
-    static TArray<UMaterialInterface*> ImportMDLFile(
-        const FString& MDLFilePath,
-        const FString& OutputPath,
-        const UMDLImporterOptions* Options = nullptr)
-    {
-        TArray<UMaterialInterface*> Results;
-
-        if (!IsMDLAvailable())
-        {
-            UE_LOG(LogTemp, Error, TEXT("MDL SDK is not available. Ensure the MDLImporter plugin is enabled and MDL SDK is installed."));
-            return Results;
-        }
-
-        IMDLImporterModule& Module = IMDLImporterModule::Get();
-        FMDLImporter& Importer = Module.GetMDLImporter();
-
-        // 使用默认选项或自定义选项
-        UMDLImporterOptions* UseOptions = Options ? const_cast<UMDLImporterOptions*>(Options) : CreateDefaultOptions();
-
-        // 加载材质
-        Mdl::FMaterialCollection Materials;
-        if (!Importer.OpenFile(MDLFilePath, *UseOptions, Materials))
-        {
-            UE_LOG(LogTemp, Error, TEXT("Failed to open MDL file: %s"), *MDLFilePath);
-            return Results;
-        }
-
-        // 创建输出包
-        FString PackageName = FPaths::Combine(OutputPath, FPaths::GetBaseFilename(MDLFilePath));
-        UPackage* Package = CreatePackage(nullptr, *PackageName);
-
-        // 执行导入
-        if (Importer.ImportMaterials(Package, RF_Public | RF_Standalone, Materials))
-        {
-            Results = Importer.GetCreatedMaterials();
-            UE_LOG(LogTemp, Log, TEXT("Successfully imported %d materials from %s"),
-                Results.Num(), *MDLFilePath);
-        }
-
-        // 报告日志
-        for (const auto& Msg : Importer.GetLogMessages())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("MDL: %s"), *Msg.Message);
-        }
-
-        Importer.CleanUp();
-        return Results;
-    }
-
-    /** 使用作用域搜索路径导入材质 */
-    static UMaterialInterface* ImportSingleMaterial(
-        UPackage* ParentPackage,
-        const FString& SearchPath,
-        const FString& ModuleName,
-        const FString& MaterialName)
-    {
-        // FScopedSearchPath 在作用域结束时自动移除搜索路径
-        FMdlMaterialImporter::FScopedSearchPath ScopedPath(SearchPath);
-
-        UMDLImporterOptions* Options = CreateDefaultOptions();
-
-        return FMdlMaterialImporter::ImportMaterialFromModule(
-            ParentPackage,
-            RF_Public | RF_Standalone,
-            ModuleName,
-            MaterialName,
-            *Options
-        );
-    }
+    static void ImportMDLFile(const FString& FilePath);
 };
 ```
 
+**MDLImporterExample.cpp**
 ```cpp
-// MDLImporterTool.cpp - 使用示例
-#include "MDLImporterTool.h"
+#include "MDLImporterExample.h"
+#include "MDLMaterialImporter.h"
+#include "MDLImporterOptions.h"
 
-void ExampleUsage()
+void FMDLImporterExample::ImportMDLFile(const FString& FilePath)
 {
-    // 1. 导入整个 MDL 文件
-    TArray<UMaterialInterface*> Materials = FMDLImporterTool::ImportMDLFile(
-        TEXT("C:/Materials/car_paint.mdl"),
-        TEXT("/Game/Materials/CarPaint")
-    );
+    // 检查模块是否加载
+    if (!IMDLImporterModule::IsAvailable())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("MDL Importer module is not available."));
+        return;
+    }
 
-    // 2. 导入单个材质（使用搜索路径）
-    UPackage* Pkg = CreatePackage(nullptr, TEXT("/Game/Materials/WallPaint"));
-    UMaterialInterface* WallMat = FMDLImporterTool::ImportSingleMaterial(
-        Pkg,
-        TEXT("C:/MDL_Libraries/vMaterials"),
-        TEXT("wall_paint"),
-        TEXT("matte_wall")
-    );
-
-    // 3. 将文件路径转换为 MDL 模块名
-    FString ModuleName = UE::Mdl::Util::ConvertFilePathToModuleName(TEXT("C:/MDL/Libraries/wood.mdl"));
-    // 返回类似 "::Libraries::wood" 的模块名
+    // 获取模块实例
+    IMDLImporterModule& MDLModule = IMDLImporterModule::Get();
+    
+    // 设置导入选项
+    UMDLImporterOptions* Options = NewObject<UMDLImporterOptions>();
+    Options->BakingResolution = 512;
+    Options->BakingSamples = 2;
+    
+    // 创建导入器
+    TUniquePtr<IMdlFileImporter> Importer = MDLModule.CreateFileImporter();
+    
+    // 执行导入
+    FFeedbackContext Context;
+    if (Importer->ImportFile(FilePath, Options))
+    {
+        // 获取结果
+        TArray<UMaterialInterface*> ImportedMaterials = Importer->GetImportedMaterials();
+        UE_LOG(LogTemp, Log, TEXT("Imported %d materials from %s"), ImportedMaterials.Num(), *FilePath);
+        
+        // 清理
+        Importer.Reset();
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to import MDL file: %s"), *FilePath);
+    }
 }
 ```
 
 ## 模块依赖
 
-MDLImporter 模块的依赖关系（Source/MDLImporter/MDLImporter.Build.cs）：
-
-| 模块 | 用途 |
-|---|---|
-| 无特殊依赖（仅标准 Core/Engine/Slate 等） | 插件仅依赖 Unreal 标准模块和 NVIDIA MDL SDK（通过编译宏 `USE_MDLSDK` 控制） |
-
-**外部依赖**：
-- **NVIDIA MDL SDK**：通过 `USE_MDLSDK` 编译宏条件编译。当 SDK 不可用时，插件模块仍会加载但功能不可用（接口返回空值）
-- **MDL SDK 动态库**（`nv_freeimage` 等）：运行时通过 `DsoHandle` 加载
-
-**编译条件**：
-```cpp
-#ifdef USE_MDLSDK
-// 完整功能实现
-#else
-// 空壳实现，接口调用返回默认值
-#endif
-```
+无特殊依赖（仅标准 Core/Engine/Slate 等）。该插件在编译时通过宏 `USE_MDLSDK` 依赖 NVIDIA MDL SDK，但这不是 UE 模块依赖。
 
 ## 维护状态
 
@@ -324,28 +174,18 @@ MDLImporter 模块的依赖关系（Source/MDLImporter/MDLImporter.Build.cs）�
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 常量截断为 float 的编译警告 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复 32 位与 64 位格式说明符不匹配的跨平台问题 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏从 UE_LOG 迁移到 UE_LOGF |
-| 2026-03-05 | `1adb9f68` | New material translator work: | 新材质翻译器开发工作 |
-| 2025-10-07 | `96352708` | - Renaming Base<Plugin>.ini to Default<Plugin>.ini | 配置文件命名从 Base 改为 Default（UE5 命名规范迁移） |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下双精度常量截断为浮点数产生的警告。 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修正了当参数为64位时使用32位格式说明符的问题，反之亦然。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移到 UE_LOGF。 |
+| 2026-03-05 | `1adb9f68` | New material translator work: | 新的材质转换器工作： |
+| 2025-10-07 | `96352708` | - Renaming Base<Plugin>.ini to Default<Plugin>.ini | 重命名 Base<Plugin>.ini 为 Default<Plugin>.ini |
 
 ### 维护评价
 
-**维护状态：活跃维护中**
-
-- **创建时间**：2019 年 10 月，已存在约 6 年
-- **Beta 状态**：插件自创建以来一直标记为 `IsBetaVersion=true`，且 `EnabledByDefault=false`，说明 Epic 认为其尚未达到生产就绪状态
-- **近期活动**：2026 年有多次实质性更新（编译修复、新材质翻译器工作），表明仍在活跃开发
-- **已知限制**：
-  - 需要 NVIDIA MDL SDK 才能运行（`USE_MDLSDK` 编译标志）
-  - Beta 版本，API 和行为可能发生变化
-  - 程序纹理烘焙可能影响导入性能
-  - MDL 的部分高级功能（如散射、体积材质）支持有限
-- **推荐**：适合建筑可视化和影视预览项目试用，不建议在生产环境中作为核心材质管线依赖
+MDLImporter 插件自 2019 年创建以来一直存在，但维护频率较低。近期的更新主要集中在编译警告修复、日志迁移和格式规范调整等维护性工作，没有重大的功能更新。插件被标记为实验性（`IsBetaVersion: true`）且默认未启用，表明其稳定性可能未达到生产级别要求。尽管如此，最近的提交记录（截至 2026 年）显示它仍被偶尔维护，没有明确的废弃标记。对于需要 MDL 支持的特定项目，它仍然是一个可用的工具，但用户应预期可能存在的限制和未修复的问题。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/MDLImporter)
-- [NVIDIA MDL SDK 文档](https://developer.nvidia.com/mdl-sdk)
-- [MDL 语言规范](https://registry.khronos.org/MDL/specs/mdl_spec_1.7.html)
+- 官方文档（无）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/MDLImporter/Tests)

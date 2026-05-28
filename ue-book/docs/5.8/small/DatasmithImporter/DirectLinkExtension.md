@@ -1,369 +1,230 @@
-# Datasmith Importer
+# DirectLink Extension
 
-> Importer for Datasmith files.（照抄，不翻译）
+> Extension module for DirectLink, handling connection management, URI resolution, and automatic re-import.
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 数据桥接导入器 |
+| 中文名 | DirectLink 扩展 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
-| 模块 | `DatasmithExternalSource` (Runtime), `DatasmithImporter` (Runtime), `DatasmithNativeTranslator` (Runtime), `DatasmithTranslator` (Runtime), `DirectLinkExtension` (Runtime), `DirectLinkExtensionEditor` (Runtime), `DirectLinkTest` (Runtime), `ExternalSource` (Runtime) |
+| 模块 | `DirectLinkExtension` (Runtime), `DirectLinkExtensionEditor` (Runtime), `DirectLinkTest` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2019-10-04 |
-| 年龄标签 | 🏛️ 文物（约 7 年） |
+| 年龄标签 | 👴 老古董（约 5 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter) | |
 
 ## 用途
 
-DatasmithImporter 是 UE5 中用于从外部 DCC（数字内容创作）工具导入场景数据的企业级导入框架。它的核心价值在于提供了一套**无需中间文件格式**的实时数据同步机制——通过 DirectLink 协议，3ds Max、Revit、SketchUp、SolidWorks 等应用程序可以直接将场景变更推送到 Unreal Engine，省去了传统的导出/导入流程。
+`DirectLinkExtension` 插件并非独立的导入器，而是 `DatasmithImporter` 生态中负责 **管理与外部软件通过 DirectLink 协议进行实时通信** 的核心运行时模块。它解决了从 Blender、3ds Max、CAD 等设计软件到 Unreal Engine 之间的**实时、双向数据同步**问题。
 
-本插件不是单一的文件导入器，而是一个**模块化的数据桥接平台**：
-- **DirectLinkExtension**：DirectLink 通信层，管理端点连接、源发现、自动重连
-- **DatasmithTranslator / NativeTranslator**：将外部格式翻译为 UE 可识别的 `IDatasmithScene`
-- **DatasmithImporter**：将翻译后的场景转化为 UE 资产（StaticMesh、Material、Actor 等）
-- **ExternalSource**：抽象外部数据源，支持 URI 定位和懒加载
+DirectLink 是 Epic 开发的用于在应用程序间交换场景数据（如几何体、材质、光照）的协议。此插件的核心作用是：
+1.  **连接管理**：维护一个 `DirectLink::FEndpoint`，负责发现和连接其他应用程序发布的 DirectLink 数据源。
+2.  **外部源抽象**：将每个 DirectLink 数据源封装为 `FDirectLinkExternalSource` 对象，提供统一的接口来查询状态、获取数据哈希以及触发加载。
+3.  **自动重导入**：监听外部源的数据变化，并可以配置为自动重新导入关联的资产，实现“设计即预览”的实时工作流。
+4.  **URI 解析**：提供 `directlink://` 协议的 URI 解析能力，用于在系统内唯一标识一个 DirectLink 数据源。
 
-整个架构的设计理念是**解耦通信与翻译**——DirectLink 只负责数据传输，具体的格式解析由各 Translator 模块完成。
+简单来说，如果你的工作流需要在外部设计软件中修改模型或材质，并立即在 Unreal 中看到更新，那么此模块就是底层支撑的关键技术。
 
 ## 使用场景
 
-- 你正在做建筑可视化项目，使用 Revit / SketchUp 建模 → 通过 DirectLink 实时同步到 UE，无需反复导出 FBX
-- 你有一个大型工业 CAD 场景（SolidWorks / CATIA）→ 用 Datasmith 的原生翻译器导入 NURBS 和层级结构
-- 你需要一个资产在源应用修改后自动更新 → 开启 DirectLink 的 Auto-Reimport 功能
-- 你在做一个管线工具，需要程序化获取可用的 DirectLink 源 → 通过 URI 系统解析和定位源
+- 你在 Blender 或 3ds Max 中持续迭代一个产品模型，希望 Unreal 中的关卡或影片能实时反映模型的更改 → 启用此插件并配置资产的自动重导入。
+- 你是一名建筑可视化艺术家，使用 CAD 软件进行设计，需要将建筑模型实时同步到 Unreal 中进行光照和材质调整 → 此插件与 Datasmith Importer 协同工作，处理实时数据流。
+- 你正在开发一个工业设计审查流程，需要在多个 DCC 软件之间同步复杂的装配体 → 利用 DirectLink 的数据交换能力。
 
 ## 蓝图用法
 
-DirectLinkExtension 模块暴露了两个蓝图可调用函数，均位于 `Editor Scripting | DirectLink` 分类下。
+插件提供了一个蓝图函数库，用于在蓝图中查询 DirectLink 状态。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `GetAvailableDirectLinkSourcesUri` | 获取当前所有可用 DirectLink 源的 URI 列表 | `UDirectLinkExtensionBlueprintLibrary` |
-| `ParseDirectLinkSourceUri` | 将 DirectLink URI 字符串解析为计算机名、端点名、可执行文件名、源名 | `UDirectLinkExtensionBlueprintLibrary` |
+| `GetAvailableDirectLinkSourcesUri` | 获取所有当前可用的 DirectLink 数据源的 URI 列表。 | `UDirectLinkExtensionBlueprintLibrary` |
+| `ParseDirectLinkSourceUri` | 将一个 DirectLink URI 字符串解析为其组成部分（计算机名、端点名、可执行文件名、源名）。 | `UDirectLinkExtensionBlueprintLibrary` |
 
 ### 使用示例（蓝图描述）
 
-**获取并连接 DirectLink 源：**
-
-1. 添加 `Get Available Direct Link Sources Uri` 节点，输出为 `TArray<FString>`
-2. 用 `ForEachLoop` 遍历每个 URI 字符串
-3. 对每个 URI 调用 `Parse Direct Link Source Uri`，可获取：
-   - `Out Computer Name`：运行 DCC 应用的计算机名称
-   - `Out Endpoint Name`：DirectLink 端点名称
-   - `Out Executable Name`：DCC 应用程序名称（如 "3dsmax"、"revit"）
-   - `Out Source Name`：场景/数据源名称
-4. 根据解析结果过滤你关心的源（例如只处理来自特定计算机的源）
-
-**URI 格式示例：**
-
-```
-directlink://ComputerName/EndpointName/ExecutableName/SourceName?SourceId=GUID
-```
+1.  **查询可用源**：调用 `GetAvailableDirectLinkSourcesUri` 节点，返回一个字符串数组，其中每个元素都是一个类似 `directlink://ComputerName/EndpointName/ExecutableName/SourceName?SourceId=...` 的 URI。
+2.  **解析 URI**：如果需要更细粒度的信息，将一个 URI 字符串传递给 `ParseDirectLinkSourceUri` 节点。输出引脚将分别提供解析后的各个部分。
+3.  结合 **数据表** 或 **枚举**，你可以构建一个简单的 UI，让用户从列表中选择要连接的外部源，并触发 Datasmith 场景的重新导入。
 
 ## C++ 用法
 
 ### 头文件引入
 
+使用 DirectLink 管理器：
 ```cpp
 #include "DirectLinkExtensionModule.h"
-#include "IDirectLinkManager.h"
+```
+使用 DirectLink 外部源：
+```cpp
 #include "DirectLinkExternalSource.h"
+```
+使用 URI 解析器：
+```cpp
 #include "DirectLinkUriResolver.h"
-#include "DirectLinkExtensionSettings.h"
 ```
 
-### 基本用法：获取 DirectLink 管理器并列出可用源
+### 基本用法
 
+获取 DirectLink 管理器并连接到外部源：
 ```cpp
-// 来源: Public/DirectLinkExtensionModule.h, Public/IDirectLinkManager.h
-
-#include "DirectLinkExtensionModule.h"
-
-// 检查 DirectLink 模块是否可用
+// 引自对 IDirectLinkManager 接口的典型使用模式
 if (IDirectLinkExtensionModule::IsAvailable())
 {
-    // 获取管理器单例
-    IDirectLinkManager& Manager = IDirectLinkExtensionModule::Get().GetManager();
+    // 获取全局管理器
+    IDirectLinkManager& DirectLinkManager = IDirectLinkExtensionModule::Get().GetManager();
 
-    // 获取所有已发现的 DirectLink 外部源
-    TArray<TSharedRef<FDirectLinkExternalSource>> Sources = Manager.GetExternalSourceList();
+    // 获取可用的外部源列表
+    TArray<TSharedRef<FDirectLinkExternalSource>> ExternalSources = DirectLinkManager.GetExternalSourceList();
 
-    for (const TSharedRef<FDirectLinkExternalSource>& Source : Sources)
+    for (const TSharedRef<FDirectLinkExternalSource>& Source : ExternalSources)
     {
-        UE_LOG(LogTemp, Log, TEXT("源名称: %s, 可用: %s, 同步状态: %s"),
-            *Source->GetSourceName(),
-            Source->IsAvailable() ? TEXT("是") : TEXT("否"),
-            Source->IsOutOfSync() ? TEXT("过期") : TEXT("同步"));
+        if (Source->IsAvailable())
+        {
+            UE_LOG(LogTemp, Log, TEXT("DirectLink Source Found: %s"), *Source->GetSourceName());
+
+            // 尝试打开数据流
+            if (Source->OpenStream())
+            {
+                // 流已打开，可以监听数据更新或手动触发加载
+                UE_LOG(LogTemp, Log, TEXT("Stream opened to: %s"), *Source->GetSourceName());
+            }
+        }
+    }
+
+    // 根据 URI 查找或创建特定的外部源
+    FSourceUri DesiredUri = /* ... */;
+    TSharedPtr<FDirectLinkExternalSource> SpecificSource = DirectLinkManager.GetOrCreateExternalSource(DesiredUri);
+    if (SpecificSource.IsValid())
+    {
+        // 配置自动重导入（需要 UObject 资产）
+        UObject* MyAsset = /* ... */;
+        if (DirectLinkManager.SetAssetAutoReimport(MyAsset, true))
+        {
+            UE_LOG(LogTemp, Log, TEXT("Enabled auto-reimport for asset: %s"), *MyAsset->GetName());
+        }
     }
 }
 ```
 
-### 基本用法：通过 URI 获取外部源
+### 进阶用法
 
+自定义 DirectLink 外部源处理器：
 ```cpp
-// 来源: Public/IDirectLinkManager.h, Public/DirectLinkUriResolver.h
-
-#include "DirectLinkExtensionModule.h"
-
-// 构造 DirectLink URI
-FSourceUri Uri;
-Uri.SetScheme(TEXT("directlink"));
-// ... 设置 URI 各组件
-
-// 通过 URI 获取外部源（自动创建或返回缓存）
-IDirectLinkManager& Manager = IDirectLinkExtensionModule::Get().GetManager();
-TSharedPtr<FDirectLinkExternalSource> ExternalSource = Manager.GetOrCreateExternalSource(Uri);
-
-if (ExternalSource.IsValid())
-{
-    // 打开 DirectLink 流连接
-    bool bSuccess = ExternalSource->OpenStream();
-    UE_LOG(LogTemp, Log, TEXT("流连接: %s"), bSuccess ? TEXT("成功") : TEXT("失败"));
-}
-```
-
-### 基本用法：启用资产自动重新导入
-
-```cpp
-// 来源: Public/IDirectLinkManager.h
-
-#include "DirectLinkExtensionModule.h"
-
-IDirectLinkManager& Manager = IDirectLinkExtensionModule::Get().GetManager();
-
-UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/ImportedMesh"));
-
-// 为资产启用自动重新导入
-// 当 DirectLink 源更新时，资产会自动重新导入
-if (Manager.SetAssetAutoReimport(Mesh, true))
-{
-    UE_LOG(LogTemp, Log, TEXT("已为 %s 启用自动重新导入"), *Mesh->GetName());
-}
-
-// 检查资产的自动重新导入状态
-bool bEnabled = Manager.IsAssetAutoReimportEnabled(Mesh);
-```
-
-### 进阶用法：自定义 ExternalSource 类型注册
-
-```cpp
-// 来源: Public/IDirectLinkManager.h
-
-#include "DirectLinkExtensionModule.h"
-#include "DirectLinkExternalSource.h"
-
-// 假设你有一个自定义的 DirectLink 外部源类型
-class FMyCustomExternalSource : public FDirectLinkExternalSource
+// 引自 FDirectLinkExternalSource 的派生和注册模式
+class FMyCustomDirectLinkSource : public FDirectLinkExternalSource
 {
 public:
-    explicit FMyCustomExternalSource(const FSourceUri& InSourceUri)
+    explicit FMyCustomDirectLinkSource(const FSourceUri& InSourceUri)
         : FDirectLinkExternalSource(InSourceUri)
     {}
 
-    virtual bool CanOpenNewConnection(
-        const DirectLink::IConnectionRequestHandler::FSourceInformation& Source) override
+    // 实现连接请求处理逻辑
+    virtual bool CanOpenNewConnection(const DirectLink::IConnectionRequestHandler::FSourceInformation& Source) override
     {
-        // 自定义连接判断逻辑
-        return true;
+        // 自定义逻辑：例如，只接受来自特定应用程序的连接
+        return Source.ExecutableName.Contains(TEXT("MySpecialApp"));
     }
 
 protected:
+    // 实现内部的场景接收器
     virtual TSharedPtr<DirectLink::ISceneReceiver> GetSceneReceiverInternal(
         const DirectLink::IConnectionRequestHandler::FSourceInformation& Source) override
     {
-        // 返回自定义的场景接收器
-        return nullptr;
+        // 返回你自定义的场景接收器，用于处理接收到的场景数据
+        return MakeShared<FMyCustomSceneReceiver>();
     }
 };
 
-// 注册自定义类型
-IDirectLinkManager& Manager = IDirectLinkExtensionModule::Get().GetManager();
-Manager.RegisterDirectLinkExternalSource<FMyCustomExternalSource>(FName("MyCustomSource"));
-```
-
-### 进阶用法：自定义 URI 解析器
-
-```cpp
-// 来源: Public/DirectLinkExtensionModule.h
-
-#include "DirectLinkExtensionModule.h"
-#include "DirectLinkUriResolver.h"
-
-// 注册自定义的 URI 解析器，覆盖默认行为
-TSharedRef<UE::DatasmithImporter::IUriResolver> MyResolver = 
-    MakeShared<FMyCustomUriResolver>();
-
-IDirectLinkExtensionModule::Get().OverwriteUriResolver(MyResolver);
-```
-
-### 进阶用法：使用 DirectLink 端点
-
-```cpp
-// 来源: Public/DirectLinkExtensionModule.h, Private/DirectLinkManager.h
-
-#include "DirectLinkExtensionModule.h"
-
-// 获取底层 DirectLink 端点，用于低级别操作
-DirectLink::FEndpoint& Endpoint = IDirectLinkExtensionModule::GetEndpoint();
-
-// 端点是 DirectLink 协议的核心：
-// - 维护与所有外部源的连接
-// - 接收状态变化通知（通过 IEndpointObserver）
-// - 管理源发现和连接协商
-```
-
-### 进阶用法：解析 DirectLink URI 组件
-
-```cpp
-// 来源: Public/DirectLinkUriResolver.h
-
-#include "DirectLinkUriResolver.h"
-
-FSourceUri Uri;
-// 假设 Uri 已经被正确设置
-
-TOptional<FDirectLinkSourceDescription> Description = 
-    FDirectLinkUriResolver::TryParseDirectLinkUri(Uri);
-
-if (Description.IsSet())
+// 在模块启动时注册自定义的外部源类型
+void FMyGameModule::StartupModule()
 {
-    UE_LOG(LogTemp, Log, TEXT("计算机: %s"), *Description->ComputerName);
-    UE_LOG(LogTemp, Log, TEXT("可执行文件: %s"), *Description->ExecutableName);
-    UE_LOG(LogTemp, Log, TEXT("端点名: %s"), *Description->EndpointName);
-    UE_LOG(LogTemp, Log, TEXT("源名称: %s"), *Description->SourceName);
-
-    if (Description->SourceId.IsSet())
+    if (IDirectLinkExtensionModule::IsAvailable())
     {
-        UE_LOG(LogTemp, Log, TEXT("源ID: %s"), *Description->SourceId->ToString());
+        IDirectLinkManager& Manager = IDirectLinkExtensionModule::Get().GetManager();
+        Manager.RegisterDirectLinkExternalSource<FMyCustomDirectLinkSource>(FName("MyCustomSource"));
     }
 }
 ```
 
 ## Demo 示例
 
-### 最小可运行示例：扫描并连接 DirectLink 源
+一个最小化的示例，展示如何在游戏模块中监听 DirectLink 外部源。
 
+**MyDirectLinkListener.h**
 ```cpp
-// MyDirectLinkDemo.h
 #pragma once
+#include "DirectLinkExternalSource.h"
 
-#include "CoreMinimal.h"
-
-class FMyDirectLinkDemo
+class FMyDirectLinkListener
 {
 public:
-    /** 扫描所有可用的 DirectLink 源并打印信息 */
-    static void ScanAvailableSources();
+    FMyDirectLinkListener();
+    ~FMyDirectLinkListener();
 
-    /** 连接到第一个可用的 DirectLink 源 */
-    static bool ConnectToFirstAvailableSource(UObject* AssetToAutoReimport = nullptr);
-
-    /** 断开所有连接 */
-    static void DisconnectAll();
+private:
+    void OnSnapshotUpdated(const TSharedRef<UE::DatasmithImporter::FDirectLinkExternalSource>& UpdatedSource);
+    TSharedPtr<UE::DatasmithImporter::FDirectLinkExternalSource> CurrentSource;
+    FDelegateHandle UpdateDelegateHandle;
 };
 ```
 
+**MyDirectLinkListener.cpp**
 ```cpp
-// MyDirectLinkDemo.cpp
-#include "MyDirectLinkDemo.h"
+#include "MyDirectLinkListener.h"
 #include "DirectLinkExtensionModule.h"
-#include "IDirectLinkManager.h"
-#include "DirectLinkExternalSource.h"
 
-void FMyDirectLinkDemo::ScanAvailableSources()
+FMyDirectLinkListener::FMyDirectLinkListener()
 {
-    if (!IDirectLinkExtensionModule::IsAvailable())
+    if (IDirectLinkExtensionModule::IsAvailable())
     {
-        UE_LOG(LogTemp, Warning, TEXT("DirectLinkExtension 模块未加载"));
-        return;
-    }
+        IDirectLinkManager& Manager = IDirectLinkExtensionModule::Get().GetManager();
+        TArray<TSharedRef<UE::DatasmithImporter::FDirectLinkExternalSource>> Sources = Manager.GetExternalSourceList();
 
-    IDirectLinkManager& Manager = IDirectLinkExtensionModule::Get().GetManager();
-    TArray<TSharedRef<FDirectLinkExternalSource>> Sources = Manager.GetExternalSourceList();
-
-    UE_LOG(LogTemp, Log, TEXT("=== 发现 %d 个 DirectLink 源 ==="), Sources.Num());
-
-    for (int32 i = 0; i < Sources.Num(); ++i)
-    {
-        const FDirectLinkExternalSource& Source = Sources[i].Get();
-        UE_LOG(LogTemp, Log, TEXT("[%d] 名称: %s | 可用: %s | 过期: %s | 哈希: %s"),
-            i,
-            *Source.GetSourceName(),
-            Source.IsAvailable() ? TEXT("✓") : TEXT("✗"),
-            Source.IsOutOfSync() ? TEXT("是") : TEXT("否"),
-            *LexToString(Source.GetSourceHash()));
-    }
-}
-
-bool FMyDirectLinkDemo::ConnectToFirstAvailableSource(UObject* AssetToAutoReimport)
-{
-    if (!IDirectLinkExtensionModule::IsAvailable())
-    {
-        return false;
-    }
-
-    IDirectLinkManager& Manager = IDirectLinkExtensionModule::Get().GetManager();
-    TArray<TSharedRef<FDirectLinkExternalSource>> Sources = Manager.GetExternalSourceList();
-
-    // 找到第一个可用源
-    for (const TSharedRef<FDirectLinkExternalSource>& Source : Sources)
-    {
-        if (Source->IsAvailable() && !Source->IsStreamOpen())
+        if (Sources.Num() > 0)
         {
-            if (Source->OpenStream())
+            CurrentSource = Sources[0];
+            if (CurrentSource->IsAvailable())
             {
-                UE_LOG(LogTemp, Log, TEXT("已连接到: %s"), *Source->GetSourceName());
-
-                // 可选：为指定资产启用自动重新导入
-                if (AssetToAutoReimport && Manager.SetAssetAutoReimport(AssetToAutoReimport, true))
-                {
-                    UE_LOG(LogTemp, Log, TEXT("已启用自动重新导入: %s"), *AssetToAutoReimport->GetName());
-                }
-
-                return true;
+                // 绑定数据更新委托
+                // 注意：实际委托绑定可能需要根据 FDirectLinkExternalSource 的具体实现来调整
+                UpdateDelegateHandle = /* ... */;
+                CurrentSource->OpenStream();
+                UE_LOG(LogTemp, Log, TEXT("Listener attached to DirectLink source: %s"), *CurrentSource->GetSourceName());
             }
         }
     }
-
-    UE_LOG(LogTemp, Warning, TEXT("没有可用的 DirectLink 源"));
-    return false;
 }
 
-void FMyDirectLinkDemo::DisconnectAll()
+FMyDirectLinkListener::~FMyDirectLinkListener()
 {
-    if (!IDirectLinkExtensionModule::IsAvailable())
+    if (CurrentSource.IsValid())
     {
-        return;
+        // 解绑委托
+        /* ... */
+        CurrentSource->CloseStream();
+        CurrentSource.Reset();
     }
+}
 
-    IDirectLinkManager& Manager = IDirectLinkExtensionModule::Get().GetManager();
-    TArray<TSharedRef<FDirectLinkExternalSource>> Sources = Manager.GetExternalSourceList();
-
-    for (const TSharedRef<FDirectLinkExternalSource>& Source : Sources)
-    {
-        if (Source->IsStreamOpen())
-        {
-            Source->CloseStream();
-            UE_LOG(LogTemp, Log, TEXT("已断开: %s"), *Source->GetSourceName());
-        }
-    }
+void FMyDirectLinkListener::OnSnapshotUpdated(const TSharedRef<UE::DatasmithImporter::FDirectLinkExternalSource>& UpdatedSource)
+{
+    UE_LOG(LogTemp, Log, TEXT("Received update from: %s. New Hash: %s"),
+        *UpdatedSource->GetSourceName(),
+        *UpdatedSource->GetSourceHash().ToString());
+    // 在此处处理场景更新，例如触发资产重新加载
 }
 ```
 
 ## 模块依赖
 
-Build.cs 未直接提供，以下依赖从头文件中的类型引用推断：
+此插件依赖于 DirectLink 核心库，这是它独特的依赖项。
 
 | 模块 | 用途 |
 |---|---|
-| `DirectLink` | Epic 的实时数据交换协议核心库，提供 FEndpoint、FSourceHandle、ISceneReceiver 等基础类型 |
-| `ExternalSource` | 外部数据源抽象层，提供 FExternalSource 基类、FSourceUri、IUriResolver 接口 |
-| `DatasmithCore` | Datasmith 核心类型定义，提供 IDatasmithScene 等场景表示接口 |
-
-> 注：该插件默认未启用（`EnabledByDefault: false`），需在 Edit → Plugins 中手动启用。
+| `DirectLink` | DirectLink 通信协议的核心库，提供端点（Endpoint）、场景交换（SceneExchange）等基础功能。 |
 
 ## 维护状态
 
@@ -371,33 +232,23 @@ Build.cs 未直接提供，以下依赖从头文件中的类型引用推断：
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 转 float 的截断警告 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏从 UE_LOG 迁移到 UE_LOGF |
-| 2026-04-02 | `50a24ff6` | Deprecated GetObjects*/ForEachObjectWithOuter functions that take bool bIncludeNestedObjects. Introd... | 废弃旧版对象遍历 API，引入新的替代方案 |
-| 2026-03-06 | `7b69892a` | clean up code changing texture properties with wrapping in PreEditChange/PostEditChange as required. | 清理纹理属性修改代码，规范使用编辑变更回调 |
-| 2026-03-05 | `1adb9f68` | New material translator work | 新材质翻译器开发工作 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为浮点数的编译器警告。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移部分日志宏到 UE_LOGF。 |
+| 2026-04-02 | `50a24ff6` | Deprecated GetObjects*/ForEachObjectWithOuter functions that take bool bIncludeNestedObjects. Introd | 废弃了带有 `bIncludeNestedObjects` 参数的 `GetObjects` 系列函数。 |
+| 2026-03-06 | `7b69892a` | clean up code changing texture properties with wrapping in PreEditChange/PostEditChange as required. | 清理纹理属性修改代码，确保符合编辑器事务（Transaction）规范。 |
+| 2026-03-05 | `1adb9f68` | New material translator work: | 新的材质转换器相关工作（提交信息不完整，可能为进行中的工作）。 |
 
 ### 维护评价
 
-DatasmithImporter 是 **Epic Games 官方维护的企业级插件**，自 2019 年创建以来持续活跃更新。从近期 git 记录看，它仍在进行**实质性功能开发**（新材质翻译器）和**代码质量维护**（API 迁移、警告修复），最近一次更新距今不到 1 个月。
+`DirectLinkExtension` 插件创建于 2019 年，是 Epic 企业套件（Enterprise）中 Datasmith 解决方案的重要组成部分。从 Git 历史来看，**最近一次有实质功能意义的更新是 2026 年 3 月的新材质转换器工作**，后续的提交主要是代码维护、编译器警告修复和引擎内部 API 的适配（如日志宏迁移、废弃函数替换）。
 
-**优势**：
-- Epic 官方维护，长期支持有保障
-- 活跃更新，与 UE 引擎版本同步迭代
-- 8 个模块的模块化架构，扩展性强
-- 支持数十种 DCC 格式的实时数据同步
-
-**注意事项**：
-- 插件默认未启用，需手动开启
-- DirectLink 功能需要外部应用（如 3ds Max）也安装了 Datasmith 插件才能建立连接
-- 作为企业版功能，文档和社区资源相对较少
-- 模块间依赖关系复杂，二次开发需要理解完整的 Translator → ExternalSource → Manager 管线
-
-**推荐**：如果你的项目涉及 CAD/BIM/AEC 工作流，这是一个**必备插件**。即使是纯游戏项目，在需要从专业建模软件导入复杂场景时也值得启用。
+**评价**：
+- **状态**：**维护中**。虽然近期没有显著的新功能提交，但代码仍在持续更新以适配新引擎版本。
+- **活跃度**：活跃度一般。作为成熟的企业级功能，其核心架构已稳定，更新集中在兼容性和维护性上。
+- **推荐度**：**推荐使用**。如果你的项目需要与支持 DirectLink 的 DCC 软件（如 3ds Max, Maya, Blender 的 Datasmith 插件）进行实时数据同步，那么此模块是必选项。它与 `DatasmithImporter` 深度集成，是官方支持的实时数据交换解决方案。
+- **注意事项**：该插件默认未启用（`EnabledByDefault=false`），需要在项目设置中手动启用。同时，它依赖于 `DirectLink` 底层库，该库可能在底层实现上有更复杂的依赖关系。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter)
 - [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/Datasmith/)
-- [DirectLinkExtension 模块源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter/Source/DirectLinkExtension)
-- [测试用例（DirectLinkTest 模块）](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter/Source/DirectLinkTest)

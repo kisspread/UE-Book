@@ -1,62 +1,50 @@
-# Datasmith Importer
+# Datasmith Native Translator
 
 > Importer for Datasmith files.
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 数据石导入器 |
+| 中文名 | Datasmith原生翻译器 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
-| 模块 | `DatasmithImporter` (Runtime), `DatasmithTranslator` (Runtime), `DatasmithNativeTranslator` (Runtime), `DatasmithExternalSource` (Runtime), `ExternalSource` (Runtime), `DirectLinkExtension` (Runtime), `DirectLinkExtensionEditor` (Runtime), `DirectLinkTest` (Runtime) |
+| 模块 | `DatasmithNativeTranslator` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2019-10-04 |
-| 年龄标签 | 👴 老古董（约 6 年） |
+| 年龄标签 | 👴 老古董（约 7 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter) | |
 
 ## 用途
 
-Datasmith 是 Epic Games 面向建筑、工程、制造（AEC/MFG）行业推出的数据交换方案。本插件负责将 `.udatasmith` 格式文件以及通过 DirectLink 实时同步的场景数据导入 Unreal Engine。
+DatasmithNativeTranslator 是 Datasmith 导入管线中的**核心翻译器模块**，负责将 `.udatasmith` 原生格式文件解析为 UE 可识别的资产数据。
 
-核心解决的问题是：**将 CAD/BIM/DCC 软件（如 3ds Max、Revit、SketchUp、CATIA 等）的复杂工程场景高效、高保真地转换为 UE 可用资产**，包括几何体、材质、光照、层次结构、动画序列等。相较于标准 FBX 导入，Datasmith 能保留更多工程级元数据和场景层次。
+**解决的问题**：Datasmith 支持从多种 CAD/BIM/3D 软件（如 Revit、SketchUp、3ds Max 等）导出的文件导入到 Unreal Engine。不同来源的文件格式各异，Datasmith 采用"翻译器（Translator）"架构——每种格式由独立的 Translator 实现负责解析。本模块是其中的**原生翻译器**，专门处理 Datasmith 自有的 `.udatasmith` 文件格式。
 
-当前文档聚焦的 `DatasmithNativeTranslator` 模块是 Datasmith 原生 `.udatasmith` 文件格式的解析器，负责读取 Datasmith 专有二进制格式并转换为引擎内部的 `IDatasmithScene` 表示。
+**架构位置**：
+```
+DatasmithImporter (主插件)
+├── DatasmithTranslator (翻译器接口层 - IDatasmithTranslator)
+├── DatasmithNativeTranslator ← 本模块（原生格式翻译器）
+├── DatasmithExternalSource
+└── DirectLinkExtension (实时链接)
+```
 
-**注意**：本插件默认未启用（`EnabledByDefault=false`），需要在编辑器插件设置中手动启用，或在项目 `.uproject` 中显式声明。
+本模块实现了 `IDatasmithTranslator` 接口，提供场景加载（`LoadScene`）、静态网格加载（`LoadStaticMesh`）、关卡序列加载（`LoadLevelSequence`）等核心功能。
 
 ## 使用场景
 
-- 你从 **3ds Max** 通过 Datasmith Exporter 导出了建筑可视化场景 → 用 Datasmith Importer 导入 UE
-- 你从 **Revit / SketchUp / CATIA / SolidWorks** 等 CAD/BIM 工具导出了工程模型 → 用 Datasmith Importer 保持材质和层次结构
-- 你需要通过 **DirectLink** 实时同步 DCC 工具中的场景变更 → 用 DirectLinkExtension 模块
-- 你需要从外部数据源（HTTP、文件系统等）加载 Datasmith 场景 → 用 ExternalSource 模块
+- 你从 Revit、3ds Max、SketchUp 等软件通过 Datasmith Exporter 插件导出了 `.udatasmith` 文件，需要导入到 UE 场景中 → 本模块自动参与导入流程
+- 你在做建筑可视化（ArchViz）项目，需要将 BIM 模型精确导入并保留层级、材质和元数据 → 使用 Datasmith 管线
+- 你需要通过 DirectLink 实现设计软件与 UE 之间的实时同步 → DirectLink 底层也依赖本翻译器进行数据转换
+- 你需要导入关卡序列动画（LevelSequence）→ `LoadLevelSequence` 支持
 
 ## 蓝图用法
 
-`DatasmithNativeTranslator` 模块本身不暴露 `BlueprintCallable` 函数——它是作为引擎内部翻译层运作的。蓝图层面的 Datasmith 导入操作通常通过编辑器菜单（`File > Import Into Level`）触发，或通过 `UDatasmithStaticMeshImportFactory` 等工厂类自动调度。
+本模块主要在引擎内部的 Datasmith 导入管线中工作，不直接暴露蓝图节点。Datasmith 导入操作通过以下方式触发：
 
-与蓝图交互的核心入口位于 `DatasmithImporter` 模块（非当前模块），此处仅列出翻译层的接口概念：
-
-### 核心接口
-
-| 接口方法 | 说明 | 所在类 |
-|---|---|---|
-| `Initialize` | 声明翻译器能力（支持的元素类型） | `FDatasmithNativeTranslator` |
-| `LoadScene` | 读取 `.udatasmith` 文件并填充 `IDatasmithScene` | `FDatasmithNativeTranslator` |
-| `LoadStaticMesh` | 按需加载特定网格体的几何数据 | `FDatasmithNativeTranslator` |
-| `LoadLevelSequence` | 加载关卡序列动画数据 | `FDatasmithNativeTranslator` |
-| `LoadCloth` | ⚠️ 已废弃（UE 5.5），布料导入不再支持 | `FDatasmithNativeTranslator` |
-
-### 使用示例
-
-Datasmith 的导入流程由引擎调度器自动管理，典型调用链为：
-
-1. 用户选择 `.udatasmith` 文件导入
-2. 引擎创建 `FDatasmithNativeTranslator` 实例
-3. 调用 `Initialize()` 获取能力描述
-4. 调用 `LoadScene()` 加载场景结构
-5. 对场景中的每个网格体元素按需调用 `LoadStaticMesh()`
-6. 对场景中的每个序列元素按需调用 `LoadLevelSequence()`
+- **编辑器菜单**：File → Import Into Level → 选择 `.udatasmith` 文件
+- **Datasmith Scene Actor**：在场景中放置 Datasmith Scene Actor，指定 `.udatasmith` 文件
+- **DirectLink**：通过 DirectLink 实时接收来自 CAD 软件的场景数据
 
 ## C++ 用法
 
@@ -64,151 +52,146 @@ Datasmith 的导入流程由引擎调度器自动管理，典型调用链为：
 
 ```cpp
 #include "DatasmithNativeTranslator.h"
-#include "DatasmithNativeTranslatorModule.h"
 ```
 
 ### 基本用法
 
-通过翻译器接口加载 Datasmith 原生文件场景：
+DatasmithNativeTranslator 是 `IDatasmithTranslator` 接口的实现类。一般不需要直接实例化，Datasmith 导入框架会自动发现并使用注册的翻译器。但如果你需要自定义导入流程或扩展翻译器功能，可以参考其接口：
 
 ```cpp
-// 包含必要的头文件
 #include "DatasmithNativeTranslator.h"
-#include "DatasmithSceneFactory.h"
-#include "IDatasmithSceneElements.h"
+#include "DatasmithTranslator.h"
 
-// 创建翻译器实例
-TSharedRef<FDatasmithNativeTranslator> Translator = MakeShared<FDatasmithNativeTranslator>();
+// 创建一个原生翻译器实例
+TSharedPtr<FDatasmithNativeTranslator> Translator = MakeShared<FDatasmithNativeTranslator>();
 
-// 声明能力
+// 获取翻译器能力描述
 FDatasmithTranslatorCapabilities Capabilities;
 Translator->Initialize(Capabilities);
 
-// 创建输出场景
-TSharedRef<IDatasmithScene> Scene = FDatasmithSceneFactory::CreateScene(TEXT("MyScene"));
-
-// 加载场景结构
-const FString FilePath = TEXT("/path/to/scene.udatasmith");
-bool bSuccess = Translator->LoadScene(Scene);
+// Capabilities 包含该翻译器支持的特性：
+// - 是否支持场景加载
+// - 是否支持网格加载
+// - 是否支持关卡序列等
 ```
 
-### 按需加载网格体
+### 进阶用法
+
+**加载完整场景**：
 
 ```cpp
-// 从已加载的场景中获取网格体元素
-TSharedPtr<IDatasmithMeshElement> MeshElement = /* 从 Scene 中遍历获取 */;
-
-if (MeshElement.IsValid())
-{
-    FDatasmithMeshElementPayload MeshPayload;
-    bool bLoaded = Translator->LoadStaticMesh(MeshElement.ToSharedRef(), MeshPayload);
-
-    if (bLoaded)
-    {
-        // MeshPayload 包含几何体数据，可用于创建 UStaticMesh
-    }
-}
-```
-
-### 文件路径解析
-
-`FDatasmithNativeTranslator` 提供两个静态工具方法用于解析资源路径：
-
-```cpp
-// 解析单个文件路径（在给定的资源搜索路径列表中查找）
-FString ResolvedPath = FDatasmithNativeTranslator::ResolveFilePath(
-    TEXT("Textures/wood_diffuse.png"),
-    { TEXT("/Game/Assets/Imported/"), TEXT("D:/Project/Assets/") }
-);
-
-// 批量解析场景中所有文件引用
-TArray<FString> ResourcePaths = { TEXT("/Game/Imported/") };
-FDatasmithNativeTranslator::ResolveSceneFilePaths(Scene, ResourcePaths);
-```
-
-## Demo 示例
-
-以下演示如何在编辑器工具中使用 `DatasmithNativeTranslator` 加载场景：
-
-```cpp
-// DatasmithLoaderExample.h
-#pragma once
-
-#include "CoreMinimal.h"
-
-class IDatasmithScene;
-
-class FDatasmithLoaderExample
-{
-public:
-    /** 加载指定的 .udatasmith 文件并返回场景 */
-    static TSharedPtr<IDatasmithScene> LoadDatasmithFile(const FString& FilePath);
-
-    /** 列出场景中的所有网格体元素 */
-    static void ListMeshElements(TSharedRef<IDatasmithScene> Scene);
-};
-```
-
-```cpp
-// DatasmithLoaderExample.cpp
-#include "DatasmithLoaderExample.h"
-
 #include "DatasmithNativeTranslator.h"
-#include "DatasmithNativeTranslatorModule.h"
 #include "DatasmithSceneFactory.h"
-#include "IDatasmithSceneElements.h"
 
-TSharedPtr<IDatasmithScene> FDatasmithLoaderExample::LoadDatasmithFile(const FString& FilePath)
+// 创建翻译器和目标场景
+TSharedPtr<FDatasmithNativeTranslator> Translator = MakeShared<FDatasmithNativeTranslator>();
+
+// 初始化翻译器
+FDatasmithTranslatorCapabilities Capabilities;
+Translator->Initialize(Capabilities);
+
+// 加载场景到 IDatasmithScene 对象
+TSharedRef<IDatasmithScene> Scene = FDatasmithSceneFactory::CreateScene(TEXT("MyScene"));
+bool bSuccess = Translator->LoadScene(Scene);
+
+if (bSuccess)
 {
-    // 检查翻译器模块是否可用
-    if (!FDatasmithNativeTranslatorModule::IsAvailable())
+    // 场景加载成功，遍历元素
+    for (int32 i = 0; i < Scene->GetMeshesCount(); ++i)
     {
-        UE_LOG(LogTemp, Error, TEXT("DatasmithNativeTranslator module is not loaded."));
-        return nullptr;
-    }
-
-    // 创建翻译器
-    TSharedRef<FDatasmithNativeTranslator> Translator = MakeShared<FDatasmithNativeTranslator>();
-
-    // 初始化并获取能力描述
-    FDatasmithTranslatorCapabilities Capabilities;
-    Translator->Initialize(Capabilities);
-
-    // 创建空场景并加载
-    TSharedRef<IDatasmithScene> Scene = FDatasmithSceneFactory::CreateScene(TEXT("ImportedScene"));
-    if (!Translator->LoadScene(Scene))
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to load Datasmith scene: %s"), *FilePath);
-        return nullptr;
-    }
-
-    UE_LOG(LogTemp, Log, TEXT("Successfully loaded scene with %d children."), Scene->GetChildrenCount());
-    return Scene;
-}
-
-void FDatasmithLoaderExample::ListMeshElements(TSharedRef<IDatasmithScene> Scene)
-{
-    for (int32 i = 0; i < Scene->GetChildrenCount(); ++i)
-    {
-        TSharedPtr<IDatasmithBaseElement> Child = Scene->GetChild(i);
-        if (Child.IsValid() && Child->IsA(EDatasmithElementType::StaticMesh))
+        TSharedPtr<IDatasmithMeshElement> MeshElement = Scene->GetMesh(i);
+        if (MeshElement.IsValid())
         {
-            TSharedRef<IDatasmithMeshElement> Mesh =
-                StaticCastSharedRef<IDatasmithMeshElement>(Child.ToSharedRef());
-
-            UE_LOG(LogTemp, Log, TEXT("Mesh: %s, Source: %s"),
-                *Mesh->GetName(), *Mesh->GetFile());
+            // 使用翻译器加载网格体数据
+            FDatasmithMeshElementPayload MeshPayload;
+            Translator->LoadStaticMesh(MeshElement.ToSharedRef(), MeshPayload);
+            
+            // MeshPayload 包含网格几何数据、材质槽等信息
+        }
+    }
+    
+    // 加载关卡序列
+    for (int32 i = 0; i < Scene->GetLevelSequencesCount(); ++i)
+    {
+        TSharedPtr<IDatasmithLevelSequenceElement> SeqElement = Scene->GetLevelSequence(i);
+        if (SeqElement.IsValid())
+        {
+            FDatasmithLevelSequencePayload SeqPayload;
+            Translator->LoadLevelSequence(SeqElement.ToSharedRef(), SeqPayload);
         }
     }
 }
 ```
 
+**文件路径解析**（翻译器内部使用的静态辅助方法）：
+
+```cpp
+// DatasmithNativeTranslator 提供了两个 protected 静态方法用于文件路径解析：
+// ResolveFilePath - 将相对路径解析为绝对路径，搜索 ResourcePaths 列表
+// ResolveSceneFilePaths - 遍历场景中所有元素，解析其引用的资源文件路径
+
+// 这些方法在加载场景时自动调用，确保贴图、网格等资源引用能正确解析
+FString ResolvedPath = FDatasmithNativeTranslator::ResolveFilePath(
+    TEXT("Textures/MyTexture.png"), 
+    ResourcePaths
+);
+```
+
+## Demo 示例
+
+一个自定义 Datasmith 翻译器的扩展示例：
+
+```cpp
+// MyCustomDatasmithTranslator.h
+#pragma once
+
+#include "DatasmithTranslator.h"
+
+class FMyCustomDatasmithTranslator : public IDatasmithTranslator
+{
+public:
+    virtual FName GetFName() const override { return TEXT("MyCustomTranslator"); }
+    
+    virtual void Initialize(FDatasmithTranslatorCapabilities& OutCapabilities) override
+    {
+        OutCapabilities.bSupportsScene = true;
+        OutCapabilities.bSupportsMeshes = true;
+    }
+    
+    virtual bool LoadScene(TSharedRef<IDatasmithScene> OutScene) override
+    {
+        // 实现自定义场景加载逻辑
+        // 例如从自定义格式解析场景层级、材质、网格等
+        return true;
+    }
+    
+    virtual bool LoadStaticMesh(
+        const TSharedRef<IDatasmithMeshElement> MeshElement,
+        FDatasmithMeshElementPayload& OutMeshPayload) override
+    {
+        // 实现自定义网格加载逻辑
+        // 填充 OutMeshPayload 中的顶点、索引、法线、UV 等数据
+        return true;
+    }
+    
+    virtual bool LoadLevelSequence(
+        const TSharedRef<IDatasmithLevelSequenceElement> LevelSequenceElement,
+        FDatasmithLevelSequencePayload& OutLevelSequencePayload) override
+    {
+        // 实现自定义关卡序列加载逻辑
+        return false; // 不支持时返回 false
+    }
+};
+```
+
 ## 模块依赖
+
+本模块属于大型插件 DatasmithImporter 的一个子模块，主要依赖同插件内的其他模块：
 
 | 模块 | 用途 |
 |---|---|
-| `DatasmithTranslator` | Datasmith 翻译器基础接口（`IDatasmithTranslator`） |
-| `DatasmithCore` | Datasmith 核心数据模型（`IDatasmithScene`、元素类型定义） |
+| `DatasmithTranslator` | 提供 `IDatasmithTranslator` 接口定义和 Datasmith 场景数据结构 |
+| `DatasmithCore` | Datasmith 核心数据模型（IDatasmithScene、IDatasmithMeshElement 等） |
 
 ## 维护状态
 
@@ -216,25 +199,24 @@ void FDatasmithLoaderExample::ListMeshElements(TSharedRef<IDatasmithScene> Scene
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 到 float 的截断警告 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移 UE_LOG 宏到新的 UE_LOGF 格式 |
-| 2026-04-02 | `50a24ff6` | Deprecated GetObjects*/ForEachObjectWithOuter functions that take bool bIncludeNestedObjects. Introd | 废弃旧版对象遍历 API，引入替代方案 |
-| 2026-03-06 | `7b69892a` | clean up code changing texture properties with wrapping in PreEditChange/PostEditChange as required. | 规范纹理属性修改，加入 PreEditChange/PostEditChange 包装 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 常量截断为 float 的编译警告 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 日志宏迁移到新的 UE_LOGF 宏 |
+| 2026-04-02 | `50a24ff6` | Deprecated GetObjects*/ForEachObjectWithOuter functions that take bool bIncludeNestedObjects. | 废弃带 bIncludeNestedObjects 参数的旧版对象遍历 API，适配引擎 API 变更 |
+| 2026-03-06 | `7b69892a` | clean up code changing texture properties with wrapping in PreEditChange/PostEditChange as required. | 清理纹理属性修改代码，按要求用 PreEditChange/PostEditChange 包裹 |
 | 2026-03-05 | `1adb9f68` | New material translator work: | 新材质翻译器开发工作 |
 
 ### 维护评价
 
-- **创建时间**：2019 年 10 月，随 UE4 Enterprise 分支从内部仓库迁移而来
-- **维护状态**：**活跃维护中** —— 2026 年仍有持续的功能更新和代码清理，尤其在材质翻译器方面有新功能开发
-- **活跃度**：每月至少 1-2 次有意义的提交，表明该模块仍处于积极开发状态
-- **特殊说明**：
-  - 插件默认未启用（`EnabledByDefault=false`），属于企业版功能，需要用户主动开启
-  - UE 5.5 起废弃了实验性布料（Cloth）导入功能
-  - 该插件与 Datasmith CAD 导入器（`Engine/Plugins/Enterprise/CadImporter`）配合使用，覆盖完整的 CAD/BIM 数据管线
-- **推荐使用**：✅ 强烈推荐 —— 对于建筑可视化、工业数字孪生、制造业产品可视化等场景，Datasmith 是 Epic 官方推荐的数据交换方案
+**活跃维护中** ✅
+
+- 自 2019 年创建以来持续维护，最近 3 个月内有多次更新
+- 更新内容以引擎 API 适配和代码质量改进为主，说明模块跟随引擎版本同步演进
+- 5.5 版本废弃了实验性的 Cloth 导入功能（`LoadCloth`），表明 Epic 在精简维护范围
+- 作为 Enterprise 功能线的重要组件，Datasmith 是 Epic 商业化战略的一部分，预计长期维护
+- `EnabledByDefault = false`，需手动启用，这与大多数 Enterprise 插件的策略一致
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter)
 - [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/Datasmith/)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter/Source/DirectLinkTest)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter/Tests)

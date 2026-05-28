@@ -1,28 +1,40 @@
 # Subsonic
 
-> Subsonic is a high-level audio authoring and playback system. This plugin is experimental and as such there is no guarantee of backward compatibility.
+> Subsonic is a high-level audio authoring and playback system. This plugin is experimental and as such is no guarantee of backward compatibility.
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 亚音速音频系统 |
+| 中文名 | 次声波音频系统 |
 | 分类 | Audio |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、音频数据等） |
+| 包含内容 | ✅ 有（音频内容资产） |
 | 模块 | `SubsonicCore` (Runtime), `SubsonicEditor` (Runtime), `SubsonicEngine` (Runtime), `SubsonicEngineTest` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2026-01-12 |
-| 年龄标签 | 🆕（约 1 年） |
+| 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic) | |
 
 ## 用途
 
-Subsonic 是一个实验性的、高级的音频编辑和播放系统。它通过定义“事件集合”（Event Collection）来以数据驱动的方式组织和触发复杂的音频逻辑。其核心解决的问题是，传统 UE 音频播放需要将播放、停止、参数设置等逻辑硬编码在游戏代码中，而 Subsonic 允许音频设计师在编辑器中通过可序列化的资产来编排音频行为序列，包括播放声音、修改音频组件属性、延迟执行等，从而将音频逻辑从游戏逻辑中解耦，提高迭代效率和协作便利性。
+Subsonic 是一套**基于事件驱动的高级音频创作与播放系统**。它解决了传统 UE 音频系统中以下痛点：
+
+1. **音频逻辑与蓝图/代码耦合过深**：传统方式需要手动管理 AudioComponent 的创建、播放、停止，逻辑分散在各处。Subsonic 引入了**事件集合（Event Collection）** 概念，将音频行为以数据驱动的方式组织在一起，通过 GameplayTag 触发。
+
+2. **音频状态管理复杂**：Subsonic 提供了基于命名的音源管理（Named AudioComponent / GeneratorSource），支持 Executor 作用域和全局作用域，自动管理音源的创建、查找和释放。
+
+3. **音频生成管线缺乏统一抽象**：Subsonic 将传统的 `UAudioComponent` 播放和底层 `GeneratorSource`（直接驱动音频渲染线程的波形/MetaSound 生成）统一到同一套事件系统中，并内置了 DSP 处理链（音量、音高偏移、高/低通滤波）。
+
+4. **游戏线程与音频渲染线程的安全通信**：通过 `FSubsonicRelay` 实现批量命令队列，确保参数更新在音频线程安全执行。
+
+简而言之：Subsonic 让你用**数据资产 + GameplayTag** 来定义和触发音频行为，而不是写大量蓝图节点或 C++ 代码来管理音频组件。
 
 ## 使用场景
 
-- **动态音频序列编排**：你需要实现一个复杂的过场动画音频序列，包含多个声音的按顺序播放、淡入淡出、以及根据游戏状态触发的不同音效分支，而不想在蓝图或 C++ 中编写大量流程控制代码。
-- **音频与逻辑解耦**：音频设计师希望独立于程序员，通过编辑器资产来调整音频的触发时机和行为组合。
-- **精确控制音频生命周期**：需要管理一组共享名称的音频资源（如环境音、音乐层），并能方便地通过标签（Tag）找到并执行预定义的播放、停止或参数调整操作。
+- 你在做一个需要复杂音效交互的游戏（如音效随游戏状态变化、多层混合、事件触发链式音效）→ 用 Subsonic 将音频逻辑数据化
+- 你需要在音频渲染线程直接生成/处理音频（低延迟、精确控制）→ 用 Subsonic 的 GeneratorSource 功能
+- 你想用 MetaSound 但需要更高级的控制（参数注入、DSP 后处理）→ Subsonic 的 FSubsonicGenerator 包装了 MetaSound 生成器
+- 你有大量音效需要按 GameplayTag 分类管理、按需触发 → 用 Subsonic 的 EventCollection 系统
+- 你需要管理多个音频源的生命周期（创建、复用、停止、淡出）→ Subsonic 自动处理
 
 ## 蓝图用法
 
@@ -30,162 +42,228 @@ Subsonic 是一个实验性的、高级的音频编辑和播放系统。它通�
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Create Executor` | 从一个事件集合创建执行器实例，用于触发集合内的音频事件。 | `USubsonicSubsystem` |
-| `Execute Event` | 在执行器上触发一个指定标签的音频事件。 | `USubsonicEventCollectionExecutor` |
+| `Create Executor` | 根据指定的事件集合创建一个执行器实例 | `USubsonicSubsystem` |
+| `Execute Event` | 通过 GameplayTag 触发事件集合中的指定事件 | `USubsonicEventCollectionExecutor` |
 
 ### 使用示例（蓝图描述）
 
-1.  **创建资产**：在内容浏览器中右键创建 “Subsonic” -> “Event Collection” 蓝图资产。在该资产的编辑器中，可以定义一组事件，每个事件可以包含多个按顺序执行的“动作”（Action），如 “Play Sound”、“Delay Event” 等。
-2.  **获取执行器**：在游戏蓝图中，使用 `Create Executor` 节点，传入一个事件集合资产和一个名称（用于标识），得到一个执行器对象。
-3.  **触发事件**：当需要播放音频时，调用执行器对象的 `Execute Event` 节点，并传入在事件集合中定义好的事件标签（例如 `Gameplay.Shoot.Fire`）。系统将根据事件集合中的定义，自动执行对应的音频播放、延迟等动作。
+**基本流程：**
+
+1. 创建一个 `USubsonicEventCollection` 资产（在编辑器中配置事件和动作）
+2. 通过 `USubsonicSubsystem` 的 `Create Executor` 节点，传入事件集合资产，获得一个执行器（Executor）对象
+3. 在需要触发音频的地方，调用执行器的 `Execute Event` 节点，传入对应的 GameplayTag
+4. `Execute Event` 节点有两个执行输出引脚：`Succeeded` 和 `Failed`（通过 `ExpandEnumAsExecs` 实现）
+
+**具体连接方式：**
+
+```
+[Event BeginPlay] → [SubsonicSubsystem: Create Executor]
+                      - WorldContextObject: Self
+                      - Name: "MyAudioExecutor"
+                      - Collection: (事件集合资产引用)
+                      → Executor
+
+[某些游戏事件] → [Executor: Execute Event]
+                   - EventTag: "Gameplay.Audio.Explosion"
+                   → Succeeded → (后续逻辑)
+                   → Failed → (降级处理)
+```
+
+事件集合内部可以配置多种事件动作（详见下方 C++ 部分），蓝图中通过编辑器 UI 配置数据，运行时只需触发对应的 GameplayTag。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-// 使用 Subsonic 核心和引擎功能
+// 核心子系统和执行器
 #include "SubsonicSubsystem.h"
 #include "SubsonicEventCollectionObjects.h"
+
+// GeneratorSource 播放功能
+#include "SubsonicGeneratorSourceSubscriber.h"
 ```
 
 ### 基本用法
 
-从测试逻辑和公开 API 推断的用法。一个事件集合代表一个可执行的音频逻辑单元。
+**创建执行器并触发事件：**
 
 ```cpp
-// 1. 获取 Subsonic 子系统
+// 来源: Public/SubsonicSubsystem.h, Public/SubsonicEventCollectionObjects.h
+
+#include "SubsonicSubsystem.h"
+#include "SubsonicEventCollectionObjects.h"
+
+// 获取 Subsonic 子系统（引擎级单例）
 USubsonicSubsystem* SubsonicSubsystem = GEngine->GetEngineSubsystem<USubsonicSubsystem>();
-if (!SubsonicSubsystem) return;
 
-// 2. 从资产或代码中获取一个事件集合对象
-const USubsonicEventCollection* MyCollection = ...; // 通常从资产加载或创建
+// 从事件集合创建执行器
+const USubsonicEventCollection* Collection = /* 你的事件集合资产 */;
+USubsonicEventCollectionExecutor* Executor = SubsonicSubsystem->CreateExecutorBP(
+    GetWorld(), FName("MyExecutor"), Collection);
 
-// 3. 为该集合创建一个执行器
-USubsonicEventCollectionExecutor* MyExecutor = SubsonicSubsystem->CreateExecutorBP(
-    GetWorld(), // WorldContextObject
-    FName("MyExecutor"), 
-    MyCollection
-);
-
-// 4. 通过执行器触发一个事件
+// 通过 GameplayTag 触发事件
 ESubsonicExecutionResult Result;
-MyExecutor->ExecuteEvent(FGameplayTag::RequestGameplayTag("Event.CoinPickup"), Result);
+Executor->ExecuteEvent(FGameplayTag::RequestGameplayTag(FName("Audio.Explosion")), Result);
 
-// 5. 使用完毕后，可以注销执行器以释放资源
-MyExecutor->Unregister();
+if (Result == ESubsonicExecutionResult::Succeeded)
+{
+    UE_LOG(LogTemp, Log, TEXT("事件执行成功"));
+}
+
+// 用完后注销执行器，释放关联资源
+Executor->Unregister();
 ```
 
 ### 进阶用法
 
-通过查看 `FSubsonicEventAction_AudioComponentModify` 等结构，可以了解如何在 C++ 中自定义或配置事件动作。这些结构体通常作为事件定义的数据部分，通过 `TInstancedStruct` 被包含在事件集合的定义中。
+**理解事件动作（Event Actions）：**
+
+事件集合中的每个事件包含一组按顺序执行的动作。基于源码分析，Subsonic 提供以下标准动作：
+
+**音频组件动作（AudioComponent 系列）：**
+
+| 功能 | 动作结构体 | 说明 |
+|---|---|---|
+| 播放声音 | `FSubsonicEventAction_AudioComponentPlay` | 按名称管理 AudioComponent，播放指定 USoundBase |
+| 停止声音 | `FSubsonicEventAction_AudioComponentStop` | 停止指定名称的音源 |
+| 修改组件 | `FSubsonicEventAction_AudioComponentModify` | 对 AudioComponent 应用一组修改器 |
+
+**音频组件修改器（Modifiers）：**
+
+修改器通过 `FSubsonicEventAction_AudioComponentModify` 的 `Modifiers` 数组配置，支持：
+
+| 修改器 | 说明 |
+|---|---|
+| `Play` | 设置开始时间偏移 |
+| `Stop` | 停止播放 |
+| `Set Sound` | 替换音源 |
+| `Set Attenuation` | 设置衰减资产 |
+| `Set Concurrency` | 设置并发策略 |
+| `Set Modulation Routing` | 设置调制路由（音量/音高等目标） |
+| `Execute On Finished` | 播放完成后触发父集合中的另一个事件 |
+
+**GeneratorSource 动作（低延迟、渲染线程级）：**
+
+| 功能 | 动作结构体 | 说明 |
+|---|---|---|
+| 播放波形 | `FSubsonicEventAction_GeneratorSourcePlay` | 直接在音频渲染线程播放 USoundWave，支持参数注入 |
+| 停止波形 | `FSubsonicEventAction_GeneratorSourceStop` | 停止指定名称的 GeneratorSource |
+
+**事件控制动作：**
+
+| 功能 | 动作结构体 | 说明 |
+|---|---|---|
+| 延迟事件 | `FSubsonicEventAction_DelayEvent` | 延迟指定秒数后触发另一个事件，支持取消/替换 |
+
+**作用域管理：**
 
 ```cpp
-// 假设我们正在构建一个事件集合的定义（通常由编辑器完成，代码仅作示例）
-Core::FSubsonicEventCollectionDefinition Definition;
+// 来源: SubsonicAction_AudioComponent.h 中的 ESubsonicExecutionScope 注释
 
-// 创建一个“播放声音”动作
-FSubsonicEventAction_AudioComponentPlay PlayAction;
-PlayAction.Name = FName("MainTheme");
-PlayAction.Sound = SomeSoundAsset;
-PlayAction.Scope = ESubsonicExecutionScope::Global;
+// 所有命名音源都支持 Scope 参数：
+// - ESubsonicExecutionScope::Executor  - 仅当前执行器实例可见
+// - ESubsonicExecutionScope::Global    - 全局池，任何执行器都可访问
 
-// 将动作添加到某个事件的序列中 (这里需要访问底层定义结构，非公开API典型用法)
-// Definition.AddActionToEvent("Music.Start", PlayAction);
+// 访问模式（AudioComponent 特有）：
+// - Add        - 创建新组件，释放已有组件（非一次性声音会先停止）
+// - FindOrAdd  - 查找已有组件，不存在则创建
+// - Find       - 仅查找，不存在则忽略
 ```
 
 ## Demo 示例
 
-一个最小的 C++ 示例，展示如何设置 Subsonic 系统的基本骨架。
+以下是一个最小的 C++ 示例，展示如何创建执行器并触发事件：
 
-### MySubsonicDemo.h
 ```cpp
-// MySubsonicDemo.h
+// MyAudioManager.h
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "GameplayTagContainer.h"
-#include "MySubsonicDemo.generated.h"
-
-class USubsonicEventCollection;
-class USubsonicEventCollectionExecutor;
-class USubsonicSubsystem;
+#include "SubsonicEventCollectionObjects.h"
+#include "MyAudioManager.generated.h"
 
 UCLASS()
-class MYPROJECT_API AMySubsonicDemo : public AActor
+class AMyAudioManager : public AActor
 {
     GENERATED_BODY()
 
 public:
-    AMySubsonicDemo();
-
-    UPROPERTY(EditAnywhere, Category = "Subsonic")
-    const USubsonicEventCollection* DemoCollection;
-
-    UFUNCTION(BlueprintCallable, Category = "Subsonic")
-    void TriggerAudioEvent(FGameplayTag EventTag);
-
-protected:
     virtual void BeginPlay() override;
+
+    // 事件集合资产（在编辑器中设置）
+    UPROPERTY(EditAnywhere, Category = "Audio")
+    TObjectPtr<const USubsonicEventCollection> AudioEventCollection;
+
+    // 触发音效
+    UFUNCTION(BlueprintCallable, Category = "Audio")
+    void TriggerSound(FGameplayTag EventTag);
 
 private:
     UPROPERTY()
-    USubsonicEventCollectionExecutor* Executor;
-    USubsonicSubsystem* SubsonicSubsystem;
+    TObjectPtr<USubsonicEventCollectionExecutor> Executor;
 };
 ```
 
-### MySubsonicDemo.cpp
 ```cpp
-// MySubsonicDemo.cpp
-#include "MySubsonicDemo.h"
+// MyAudioManager.cpp
+#include "MyAudioManager.h"
 #include "SubsonicSubsystem.h"
-#include "SubsonicEventCollectionObjects.h"
 
-AMySubsonicDemo::AMySubsonicDemo()
-{
-    PrimaryActorTick.bCanEverTick = false;
-}
-
-void AMySubsonicDemo::BeginPlay()
+void AMyAudioManager::BeginPlay()
 {
     Super::BeginPlay();
 
-    SubsonicSubsystem = GEngine->GetEngineSubsystem<USubsonicSubsystem>();
-    if (SubsonicSubsystem && DemoCollection)
+    if (!AudioEventCollection)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("未设置 AudioEventCollection"));
+        return;
+    }
+
+    // 从子系统创建执行器
+    USubsonicSubsystem* SubsonicSubsystem = GEngine->GetEngineSubsystem<USubsonicSubsystem>();
+    if (SubsonicSubsystem)
     {
         Executor = SubsonicSubsystem->CreateExecutorBP(
-            GetWorld(),
-            FName("DemoExecutor"),
-            DemoCollection
-        );
+            GetWorld(), FName("GameplayAudio"), AudioEventCollection);
     }
 }
 
-void AMySubsonicDemo::TriggerAudioEvent(FGameplayTag EventTag)
+void AMyAudioManager::TriggerSound(FGameplayTag EventTag)
 {
-    if (Executor)
+    if (!Executor)
     {
-        ESubsonicExecutionResult Result;
-        Executor->ExecuteEvent(EventTag, Result);
-        // 可以处理 Result 来确认事件是否成功执行
+        UE_LOG(LogTemp, Warning, TEXT("执行器未初始化"));
+        return;
+    }
+
+    ESubsonicExecutionResult Result;
+    Executor->ExecuteEvent(EventTag, Result);
+
+    if (Result == ESubsonicExecutionResult::Succeeded)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Subsonic 事件 '%s' 执行成功"), *EventTag.ToString());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Subsonic 事件 '%s' 未找到"), *EventTag.ToString());
     }
 }
 ```
 
 ## 模块依赖
 
-基于 `SubsonicEngine` 模块（当前分析的模块）和插件整体功能推断。
+基于 SubsonicEngine 的源码分析，以下是该插件独特依赖的模块：
 
 | 模块 | 用途 |
 |---|---|
-| `SubsonicCore` | Subsonic 插件的核心基础类型、接口和定义，是其他模块的依赖基础。 |
-| `MetasoundFrontend` / `Metasound` | 用于集成和驱动 MetaSound 音频图表生成器。 |
-| `AudioMixer` | 访问底层音频混音器设备（`FMixerDevice`），用于管理 GeneratorSource 和音频渲染线程通信。 |
-| `AudioPlatformSettings` | 获取音频设备配置和设置。 |
-| `GameplayTags` | 核心的事件标识和路由机制依赖。 |
-| `PropertyBag` / `PropertyPath` | 用于管理参数存储（`FSubsonicParameterStore`）和数据驱动。 |
+| `SubsonicCore` | Subsonic 核心抽象层（执行器、事件集合定义、Action 基类） |
+| `GameplayTags` | 用于事件标识和查找 |
+| `AudioMixer` | 底层音频混合器接口（GeneratorSource、MixerDevice） |
+| `SignalProcessing` | DSP 处理（双二阶滤波器 FBiquadFilter） |
+| `MetaSound` | MetaSound 生成器集成（可选，用于 MetaSound 路径） |
+| `MetasoundFrontend` | MetaSound 前端 API（图构建回调等） |
 
 ## 维护状态
 
@@ -193,21 +271,29 @@ void AMySubsonicDemo::TriggerAudioEvent(FGameplayTag EventTag)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `0ad6a1ff` | [Audio, CIS] Fixup bad merge: Revert wholesale Subsonic Subscriber stomp; apply minimal non-deprecat | 修复错误合并导致的覆盖问题，回退部分变更并应用最小修复。 |
-| 2026-05-13 | `f91eb8fe` | Resolved merge conflict with FSoundWaveData api deprecation fixup. | 解决与 FSoundWaveData API 弃用相关的合并冲突。 |
-| 2026-04-23 | `129c3dc2` | Fix/silence PVS warnings | 修复或静默 PVS 代码分析警告。 |
-| 2026-04-14 | `01c9ce5d` | [ContentBrowser] New Add Menu Audio Menu | （可能与内容浏览器菜单相关，非直接功能更新）。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将旧的 UE_LOG 宏迁移为新的 UE_LOGF 宏。 |
+| 2026-05-13 | `0ad6a1ff` | [Audio, CIS] Fixup bad merge: Revert wholesale Subsonic Subscriber stomp; apply minimal non-deprecat | 修复合并错误：回退 Subscriber 被覆盖的变更，应用最小非废弃修改 |
+| 2026-05-13 | `f91eb8fe` | Resolved merge conflict with FSoundWaveData api deprecation fixup. | 解决与 FSoundWaveData API 废弃相关的合并冲突 |
+| 2026-04-23 | `129c3dc2` | Fix/silence PVS warnings | 修复/消除 PVS 静态分析警告 |
+| 2026-04-14 | `01c9ce5d` | [ContentBrowser] New Add Menu Audio Menu | 内容浏览器新增音频菜单入口 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移为 UE_LOGF 新日志宏 |
 
 ### 维护评价
 
-- **状态**：**实验性**。作为实验性插件（`IsExperimentalVersion=true`），其 API 和功能可能在未来版本中发生重大变化。
-- **活跃度**：近期（2026年4-5月）有维护性更新，包括代码合并冲突修复、警告清理和 API 适配，表明仍在维护中。
-- **功能成熟度**：从源码看，系统架构（事件、动作、订阅者、生成器）完整，但作为实验性功能，其稳定性和文档可能不完善。
-- **建议**：**谨慎评估使用**。非常适合愿意承担实验性风险、追求高级音频工作流的项目。不推荐在需要长期稳定性的生产环境中作为核心音频解决方案。应密切关注 Epic 的更新日志和兼容性说明。
+**状态：活跃开发中**
+
+- **创建时间**：2026-01-12，距今约 4 个月，属于全新插件
+- **更新频率**：从 git 记录看，2026 年 4-5 月持续有更新，维护活跃
+- **开发阶段**：`IsExperimentalVersion=true`，`EnabledByDefault=false`，明确标注为实验性插件
+- **API 稳定性**：官方声明不保证向后兼容，API 可能在未来版本发生重大变化
+- **近期改动性质**：合并冲突修复、编译警告修复、菜单集成，属于功能完善阶段
+
+**⚠️ 注意事项：**
+- 此插件为**实验性**插件，API 不稳定，不建议用于正式生产项目
+- 创建时间极短，文档和社区资源几乎为零
+- 模块划分清晰（Core/Engine/Editor/Test），架构设计成熟，预计未来会稳定发布
+- 建议在原型开发阶段尝试，跟踪 Epic 的后续更新
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic)
-- 官方文档：无（.uplugin 中 `DocsURL` 为空）
-- 测试用例：[SubsonicEngineTest](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Subsonic/Source/SubsonicEngineTest)
+- 官方文档：无（实验性插件，暂无官方文档）

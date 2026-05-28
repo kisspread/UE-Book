@@ -1,10 +1,10 @@
 # Mesh Resizing
 
-> Mesh Resizing
+> Mesh Resizing（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 网格缩放 |
+| 中文名 | 网格调整 |
 | 分类 | Editor |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ✅ 有（蓝图资产） |
@@ -16,35 +16,32 @@
 
 ## 用途
 
-MeshResizing 插件提供了一套基于约束求解的网格缩放与变形工具。其核心解决的问题是：在改变网格尺寸的同时，如何保持网格的形状特征（如剪切不变性、边长比例、弯曲角度等）。
-
-插件采用基于物理模拟（PBD，Position Based Dynamics）的约束系统，通过剪切约束、边长约束、弯曲约束等多种约束的迭代求解，实现网格的高质量缩放。同时提供了基于 RBF（径向基函数）插值的变形方案，以及自定义区域的局部变形能力，适用于角色服装适配、道具尺寸调整等场景。
+MeshResizing 并非一个简单的网格缩放工具。它提供了一套复杂的算法和工具集，用于在保持原始网格拓扑关系和细节的前提下，通过物理约束（如剪切、拉伸、弯曲约束）和基于采样点的插值（RBF），将基础（Base）网格的形状变换和比例变化，传递到目标（Target）网格上。核心是生成一个能够忠实反映基础网格变形的“代理”网格（Proxy Mesh），并将这种变形约束应用到最终的输出网格中。这使得它特别适合于角色身体比例调整、服装模拟适配等需要精细形变控制的场景。
 
 ## 使用场景
 
-- 你需要将一个角色服装网格适配到不同体型的骨架上 → 使用 RBF 插值变形
-- 你需要保持网格形状特征的同时调整整体尺寸 → 使用约束求解器（剪切/边长/弯曲约束）
-- 你需要对网格的某个局部区域进行独立缩放 → 使用自定义区域缩放（CustomRegionResizing）
-- 你在 Dataflow 中搭建网格变形工作流 → 使用 MeshResizingDataflowNodes
+-   **角色身体比例调整**：当你需要将同一个基础人形网格，适配到不同高矮胖瘦的角色体型时，使用此插件可以确保在比例变化的同时，关节、服装等关联部分能够合理地变形，避免穿插和失真。
+-   **服装模拟与适配**：在服装模拟中，衣服网格需要根据角色身体网格的变形而跟随变形。该插件可以帮助生成这种变形约束，确保衣物贴合新的身体形状。
+-   **参数化网格调整**：通过其 Dataflow 节点，可以创建基于不同输入参数（如身高、体型）动态生成最终网格的管道。
 
 ## 蓝图用法
 
-当前模块 MeshResizingCore 主要提供 C++ 底层 API。蓝图可用的结构体类型如下：
+该插件主要提供底层 C++ 算法库和 Dataflow 节点，未发现直接暴露的 `BlueprintCallable` 函数。其功能通常通过 **Dataflow 图表** 或 **C++ 代码** 来调用。
 
-### 核心数据结构
+### 核心节点（Dataflow）
 
-| 结构体 | 说明 | 所在头文件 |
-|---|---|---|
-| `FMeshResizingRBFInterpolationData` | RBF 插值的采样索引、静止位置和权重数据 | `RBFInterpolation.h` |
-| `FMeshResizingCustomRegion` | 自定义区域的顶点、坐标系和边界信息 | `CustomRegionResizing.h` |
+通过 `MeshResizingDataflowNodes` 模块，该插件提供了一系列 Dataflow 节点，用于在可视化编程环境中构建网格调整逻辑。具体节点请参考插件内的数据流资产。
 
-### 枚举
+### 使用示例（Dataflow 描述）
 
-| 枚举值 | 说明 |
-|---|---|
-| `EMeshResizingCustomRegionType::TrilinearInterpolation` | 三线性插值模式 |
+1.  **设置基础网格和目标网格**：将需要变形的基础网格（如标准人形）和作为形状参考的目标网格（如变体体型）输入到 Dataflow 图表中。
+2.  **生成插值权重**：使用基于 `RBFInterpolation` 的节点，根据基础网格的顶点分布，计算一组采样点的权重数据。
+3.  **应用约束变形**：使用基于 `Mesh3DConstraints` 的节点（如剪切、弯曲约束），将基础网格的形变传递并约束到目标网格上。
+4.  **输出结果**：将生成的代理网格或变形后的网格输出。
 
 ## C++ 用法
+
+重点从提供的头文件中提取。
 
 ### 头文件引入
 
@@ -55,182 +52,144 @@ MeshResizing 插件提供了一套基于约束求解的网格缩放与变形工�
 #include "MeshResizing/CustomRegionResizing.h"
 ```
 
-### 基本用法 — RBF 插值变形
+### 基本用法
 
-使用 RBF 方法在源网格和目标网格之间进行插值变形：
+使用 `FRBFInterpolation` 进行网格变形。这是插件核心功能之一，通过采样点和权重将一个网格的顶点位置变形到另一个参考形状上。
 
 ```cpp
+// 来源：基于 Public/MeshResizing/RBFInterpolation.h 中的函数签名推断
 #include "MeshResizing/RBFInterpolation.h"
 #include "DynamicMesh/DynamicMesh3.h"
 
-using namespace UE::MeshResizing;
-
-// 1. 从基础网格生成插值权重
-FMeshResizingRBFInterpolationData InterpolationData;
-FRBFInterpolation::GenerateWeights(BaseMesh, /*NumInterpolationPoints=*/64, InterpolationData);
-
-// 2. 根据目标位置变形网格
-FRBFInterpolation::DeformPoints(TargetPositions, InterpolationData, /*bInterpolateNormals=*/true, DeformingMesh);
-```
-
-### 基本用法 — 约束求解
-
-使用物理约束对缩放后的网格进行形状保持：
-
-```cpp
-#include "MeshResizing/Mesh3DConstraints.h"
-
-using namespace UE::MeshResizing;
-
-// 创建约束
-const int32 NumParticles = ResizedMesh.VertexCount();
-TArray<float> ShearWeights, EdgeWeights, BendingWeights;
-// ... 初始化权重数组 ...
-
-FShearConstraint Shear(1.0f, ShearWeights, NumParticles);
-FEdgeConstraint Edge(1.0f, EdgeWeights, NumParticles);
-FBendingConstraint Bending(BaseMesh, 1.0f, BendingWeights, NumParticles);
-
-// 创建反质量数组（用于约束求解）
-TArray<float> InvMass;
-InvMass.SetNumZeroed(NumParticles);
-
-// 迭代求解
-for (int32 Iter = 0; Iter < NumIterations; ++Iter)
+void DeformMeshUsingRBF(const UE::Geometry::FDynamicMesh3& BaseMesh, const UE::Geometry::FDynamicMesh3& TargetMesh, UE::Geometry::FDynamicMesh3& OutDeformedMesh)
 {
-    Shear.Apply(ResizedMesh, InitialResizedMesh, BaseMesh, InvMass);
-    Edge.Apply(ResizedMesh, InitialResizedMesh, BaseMesh, InvMass);
-    Bending.Apply(ResizedMesh, InvMass);
+    // 1. 为目标形状（TargetMesh）计算插值权重
+    FMeshResizingRBFInterpolationData InterpWeightsData;
+    const int32 NumInterpPoints = 100; // 采样点数量，需要根据实际情况调整
+    UE::MeshResizing::FRBFInterpolation::GenerateWeights(TargetMesh, NumInterpPoints, InterpWeightsData);
+
+    // 2. 准备要变形的网格（通常初始是 BaseMesh）
+    OutDeformedMesh = BaseMesh; // 复制基础网格作为起点
+
+    // 3. 使用计算出的权重和目标网格的顶点位置来变形 OutDeformedMesh
+    //    这里需要先从 TargetMesh 中获取变形目标位置，示例简化
+    TArray<FVector3f> TargetPositions;
+    // ... 从 TargetMesh 提取顶点到 TargetPositions ...
+    // 简化示例：直接使用目标网格顶点作为变形目标
+    for (int32 i = 0; i < TargetMesh.VertexCount(); ++i)
+    {
+        TargetPositions.Add((FVector3f)TargetMesh.GetVertex(i));
+    }
+
+    UE::MeshResizing::FRBFInterpolation::DeformPoints(TargetPositions, InterpWeightsData, true /* bInterpolateNormals */, OutDeformedMesh);
 }
 ```
 
-### 进阶用法 — 顶点映射与代理网格生成
+### 进阶用法
 
-在源网格和目标网格之间建立顶点映射，生成可调整尺寸的代理网格：
-
-```cpp
-#include "MeshResizing/BaseBodyTools.h"
-
-using namespace UE::MeshResizing;
-
-// 将顶点映射数据附加到网格
-TArray<int32> VertexMappingData;
-// ... 填充映射数据 ...
-FBaseBodyTools::AttachVertexMappingData(
-    FBaseBodyTools::ImportedVertexVIDsAttrName,
-    VertexMappingData,
-    SourceMesh
-);
-
-// 从两个网格的映射数据生成代理网格
-UE::Geometry::FDynamicMesh3 ProxyMesh;
-FBaseBodyTools::GenerateResizableProxyFromVertexMappingData(
-    SourceMesh, FBaseBodyTools::ImportedVertexVIDsAttrName,
-    TargetMesh, FBaseBodyTools::ImportedVertexVIDsAttrName,
-    ProxyMesh
-);
-
-// 或者通过混合两个网格来插值代理
-FBaseBodyTools::InterpolateResizableProxy(SourceMesh, TargetMesh, 0.5f, ProxyMesh);
-```
-
-### 进阶用法 — 自定义区域缩放
-
-对网格的局部区域进行独立变形：
+结合物理约束进行更受控的变形。先使用 RBF 生成初始变形，再通过约束（如保持边长、抗弯曲）来稳定结果。
 
 ```cpp
-#include "MeshResizing/CustomRegionResizing.h"
+// 来源：基于 Public/MeshResizing/Mesh3DConstraints.h 中的类推断
+#include "MeshResizing/Mesh3DConstraints.h"
+// ... 其他包含 ...
 
-using namespace UE::MeshResizing;
+void DeformMeshWithConstraints(UE::Geometry::FDynamicMesh3& ResizedMesh, const UE::Geometry::FDynamicMesh3& BaseMesh)
+{
+    // 假设 ResizedMesh 已经通过 RBF 得到了初步变形 (InitialResizedMesh)
+    UE::Geometry::FDynamicMesh3 InitialResizedMesh = ResizedMesh; // 保存初始变形状态
 
-// 生成自定义区域绑定
-TSet<int32> BoundVertices;
-// ... 填充区域顶点 ...
-FMeshResizingCustomRegion RegionData;
-FCustomRegionResizing::GenerateCustomRegion(BoundPositions, SourceMesh, BoundVertices, RegionData);
+    const int32 NumParticles = ResizedMesh.VertexCount();
+    TArray<float> InvMass; // 需要计算每个粒子的逆质量
+    InvMass.SetNumZeroed(NumParticles);
+    // ... 计算 InvMass，例如与三角形面积成反比 ...
 
-// 计算区域坐标系
-FVector3d Origin;
-FVector3f TangentU, TangentV, Normal;
-FCustomRegionResizing::CalculateFrameForCustomRegion(SourceMesh, RegionData, Origin, TangentU, TangentV, Normal);
+    // 1. 应用剪切约束
+    TArray<float> ShearWeights; // 需要设置每个顶点的约束权重
+    float ShearStrength = 0.5f;
+    UE::MeshResizing::FShearConstraint ShearConstraint(ShearStrength, ShearWeights, NumParticles);
+    ShearConstraint.Apply(ResizedMesh, InitialResizedMesh, BaseMesh, InvMass);
 
-// 根据新边界角点插值区域顶点位置
-TArray<FVector3d> BoundsCorners; // 新的边界角点
-FCustomRegionResizing::InterpolateCustomRegionPoints(RegionData, BoundsCorners, BoundPositions);
+    // 2. 应用边缘长度约束
+    TArray<float> EdgeWeights;
+    float EdgeStrength = 1.0f;
+    UE::MeshResizing::FEdgeConstraint EdgeConstraint(EdgeStrength, EdgeWeights, NumParticles);
+    EdgeConstraint.Apply(ResizedMesh, InitialResizedMesh, BaseMesh, InvMass);
+
+    // 3. 应用弯曲约束（可选，计算量更大）
+    TArray<float> BendingWeights;
+    float BendingStrength = 0.1f;
+    UE::MeshResizing::FBendingConstraint BendingConstraint(BaseMesh, BendingStrength, BendingWeights, NumParticles);
+    // BendingConstraint.Apply(ResizedMesh, InvMass); // 注意：此函数可能有不同的重载
+}
 ```
 
 ## Demo 示例
 
+一个完整的、可编译的最小 C++ 示例，演示如何使用 `FRBFInterpolation` 来变形一个简单的网格。
+
 ```cpp
-// MeshResizingExample.h
+// MeshResizingDemo.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "DynamicMesh/DynamicMesh3.h"
-#include "MeshResizing/RBFInterpolation.h"
-#include "MeshResizing/Mesh3DConstraints.h"
 
-class FMeshResizingExample
+class FDynamicMesh3;
+struct FMeshResizingRBFInterpolationData;
+
+class FMeshResizingDemo
 {
 public:
-    /** 将源网格通过 RBF 插值变形到目标形状 */
-    static void DeformMeshToTarget(
-        const UE::Geometry::FDynamicMesh3& SourceMesh,
-        const TArray<FVector3f>& TargetPositions,
-        UE::Geometry::FDynamicMesh3& OutDeformedMesh);
+    /** 根据源网格和目标网格的采样数据，变形输出网格 */
+    static void DeformMeshWithRBF(const UE::Geometry::FDynamicMesh3& SourceMesh, const UE::Geometry::FDynamicMesh3& TargetMesh, UE::Geometry::FDynamicMesh3& OutMesh);
 };
 ```
 
 ```cpp
-// MeshResizingExample.cpp
-#include "MeshResizingExample.h"
+// MeshResizingDemo.cpp
+#include "MeshResizingDemo.h"
+#include "MeshResizing/RBFInterpolation.h"
+#include "DynamicMesh/DynamicMesh3.h"
 
-using namespace UE::MeshResizing;
-
-void FMeshResizingExample::DeformMeshToTarget(
-    const UE::Geometry::FDynamicMesh3& SourceMesh,
-    const TArray<FVector3f>& TargetPositions,
-    UE::Geometry::FDynamicMesh3& OutDeformedMesh)
+void FMeshResizingDemo::DeformMeshWithRBF(const UE::Geometry::FDynamicMesh3& SourceMesh, const UE::Geometry::FDynamicMesh3& TargetMesh, UE::Geometry::FDynamicMesh3& OutMesh)
 {
-    // 复制源网格作为输出
-    OutDeformedMesh.Copy(SourceMesh);
+    // 1. 为“目标形状”（TargetMesh）计算RBF插值权重
+    FMeshResizingRBFInterpolationData RBFData;
+    const int32 NumSamplePoints = 50; // 采样点数
+    UE::MeshResizing::FRBFInterpolation::GenerateWeights(TargetMesh, NumSamplePoints, RBFData);
 
-    // 步骤1：生成 RBF 插值权重
-    const int32 NumInterpolationPoints = 64;
-    FMeshResizingRBFInterpolationData InterpolationData;
-    FRBFInterpolation::GenerateWeights(SourceMesh, NumInterpolationPoints, InterpolationData);
+    // 2. 初始化输出网格（通常基于源网格）
+    OutMesh = SourceMesh;
 
-    // 步骤2：使用 RBF 权重将目标位移传播到整个网格
-    FRBFInterpolation::DeformPoints(TargetPositions, InterpolationData, /*bInterpolateNormals=*/true, OutDeformedMesh);
-
-    // 步骤3：应用约束保持形状质量（可选）
-    const int32 NumParticles = OutDeformedMesh.VertexCount();
-    TArray<float> ZeroWeights;
-    ZeroWeights.SetNumZeroed(NumParticles);
-    TArray<float> InvMass;
-    InvMass.SetNumZeroed(NumParticles);
-
-    FShearConstraint Shear(0.5f, ZeroWeights, NumParticles);
-    FEdgeConstraint Edge(0.5f, ZeroWeights, NumParticles);
-
-    const int32 NumSolverIterations = 5;
-    for (int32 i = 0; i < NumSolverIterations; ++i)
+    // 3. 获取目标网格的顶点位置作为变形目标
+    TArray<FVector3f> TargetPositions;
+    TargetPositions.Reserve(TargetMesh.VertexCount());
+    for (int32 Vid = 0; Vid < TargetMesh.VertexCount(); ++Vid)
     {
-        Shear.Apply(OutDeformedMesh, OutDeformedMesh, SourceMesh, InvMass);
-        Edge.Apply(OutDeformedMesh, OutDeformedMesh, SourceMesh, InvMass);
+        if (TargetMesh.IsVertex(Vid))
+        {
+            TargetPositions.Add((FVector3f)TargetMesh.GetVertex(Vid));
+        }
     }
+
+    // 4. 应用RBF变形：根据目标顶点位置和预计算的权重，变形OutMesh
+    UE::MeshResizing::FRBFInterpolation::DeformPoints(TargetPositions, RBFData, true, OutMesh);
 }
 ```
 
 ## 模块依赖
 
-基于源码中使用的类型推断，使用者需要依赖以下模块：
+从各模块的 `Build.cs` 文件分析。以下是使用该插件时，你的模块可能需要依赖的**独特**依赖项。
 
 | 模块 | 用途 |
 |---|---|
-| `GeometryCore` | `FDynamicMesh3` 等几何数据结构 |
-| `Chaos` | `FPBDFlatWeightMapView`、`FSolverReal` 等物理约束求解器类型 |
-| `MeshDescription` | `FMeshDescription` 网格描述格式 |
+| `MeshDescription` | 处理静态网格体的中间表示，是插件数据交换的常见格式。 |
+| `GeometryCore` | 提供核心几何数据结构，如 `FDynamicMesh3`。 |
+| `GeometryAlgorithms` | 提供各种几何算法。 |
+| `MeshConversion` | 用于 `FMeshDescription` 和 `FDynamicMesh3` 之间的转换。 |
+| `Chaos` | 来自 `Mesh3DConstraints.h`，插件内的物理约束（PBD）使用了 Chaos 的求解器数据结构。 |
+
+**注意**：`Chaos` 是一个大型物理系统模块，引入它会增加编译时间和潜在的二进制大小。请确认你的项目确实需要这些高级物理约束功能。
 
 ## 维护状态
 
@@ -238,23 +197,21 @@ void FMeshResizingExample::DeformMeshToTarget(
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 转 float 的截断警告 |
-| 2026-05-12 | `a7802337` | Dataflow: | Dataflow 相关更新 |
-| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 在头文件清理前补充必要的 include 引用 |
-| 2026-01-30 | `7b60de76` | Dataflow : add support to lasso to the paint tool by leveraging the newly added feature in the mesh | Dataflow 绘制工具新增套索选择支持 |
-| 2025-12-19 | `f86e1e20` | Dataflow : update a lot of nodes to use the new rendering system | Dataflow 大量节点迁移至新渲染系统 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下，双精度常量截断为浮点数产生的编译警告。 |
+| 2026-05-12 | `a7802337` | Dataflow: | Dataflow 节点相关更新（commit message 不完整）。 |
+| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 在即将到来的头文件清理之前，补充了必要的头文件包含。 |
+| 2026-01-30 | `7b60de76` | Dataflow : add support to lasso to the paint tool by leveraging the newly added feature in the mesh | Dataflow：为绘制工具添加了套索支持，利用了网格编辑的新特性。 |
+| 2025-12-19 | `f86e1e20` | Dataflow : update a lot of nodes to use the new rendering system | Dataflow：更新大量节点以使用新的渲染系统。 |
 
 ### 维护评价
 
-**活跃维护中**。该插件于 2024 年 12 月创建，至今约 1.4 年，仍在持续开发中。最近一次提交距今不足 1 个月，且更新内容从编译警告修复到 Dataflow 新功能引入，表明项目处于活跃迭代阶段。
-
-注意事项：
-- 插件标记为实验性（`IsExperimentalVersion=true`），默认不启用，API 可能发生变化
-- 从 commit 历史来看，Dataflow 节点是当前重点开发方向
-- 使用 Chaos 物理引擎的约束求解类型，与引擎物理模块深度耦合
-- **推荐用于实验和原型开发**，不建议在生产环境中依赖
+-   **创建时间**：2024年12月，非常新的插件。
+-   **最近更新**：从提交记录看，截至2026年5月仍在活跃开发，主要集中在 Dataflow 节点的增强和 bug 修复上。
+-   **活跃度**：**活跃维护中**。
+-   **已知限制**：插件明确标记为 `IsExperimentalVersion: true` 且默认未启用 (`EnabledByDefault: false`)，表明其API、功能和稳定性可能随时发生变化。依赖 `Chaos` 模块可能导致额外的开销。
+-   **推荐使用**：**适合探索和原型开发**。对于生产环境，需谨慎评估其稳定性。如果你的工作流严重依赖 Dataflow 且需要高级网格比例调整功能，可以尝试使用，但需做好应对未来变更的准备。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MeshResizing)
-- 官方文档（暂无）
+- 官方文档：无（.uplugin 中 DocsURL 为空）

@@ -11,127 +11,124 @@
 | 模块 | `VariantManager` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2019-10-04 |
-| 年龄标签 | 🏛️ 文物（约 7 年） |
+| 年龄标签 | 🆕（约 6 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/VariantManager) | |
 
 ## 用途
 
-Variant Manager 是一个用于管理场景中 Actor 多状态变体的系统。它解决的核心问题是：在建筑可视化、产品配置器等场景中，你需要让场景中的物体能够在多种预设配置之间快速切换（例如椅子颜色、桌子样式、灯光配置等）。
+Variant Manager 是一个用于管理场景 Actor 属性变体的编辑器插件，主要服务于**产品配置器**和**建筑可视化（ArchViz）**场景。
 
-该插件提供了一个层次化的数据结构：
-- **Level Variant Sets**（顶层容器资产）→ 包含多个 **Variant Set**（变体集，如"椅子颜色"）→ 每个 Variant Set 包含多个 **Variant**（变体，如"红色"、"蓝色"）
-- 每个 Variant 可以绑定多个 **Actor**，每个绑定可以捕获特定的 **Property**（属性，如变换、可见性、材质、自定义属性）
-- 切换 Variant 时，系统会将记录的属性值应用到绑定的 Actor 上
+核心思路是：将场景中 Actor 的各种属性（位置、旋转、材质、可见性、自定义属性等）捕获为"属性快照"，然后将这些快照组织成层级结构：`LevelVariantSets → VariantSet → Variant → Actor Binding → Property Capture`。用户可以通过切换 Variant 来快速切换场景中一组 Actor 的属性状态。
 
-该插件与 Datasmith 工作流紧密关联，是 Epic Games 企业级工具链的一部分，主要用于 Datasmith 导入的建筑/工业可视化项目的交互式配置。
+典型使用场景：一个产品展厅有多种颜色配置方案，每种方案对应一组灯光颜色、材质参数和物体位置的组合。Variant Manager 让你把这些配置方案管理起来，并在运行时通过蓝图或 Python 脚本切换。
 
-> ⚠️ **注意**：该插件默认未启用（`EnabledByDefault: false`），且仍处于 Beta 状态（`IsBetaVersion: true`）。
+**注意**：此插件默认禁用且标记为 Beta 版本，需要在项目设置中手动启用。它与 Datasmith 工作流紧密关联。
 
 ## 使用场景
 
-- 你在做一个建筑可视化项目（Arch-Viz），需要快速切换室内设计方案 → 用 Variant Manager 定义不同设计方案的变体集
-- 你在做一个产品配置器，让用户选择产品的颜色、材质等选项 → 用 Variant Manager 管理每个配置选项
-- 你从 Datasmith 导入了 CAD 模型，需要在不同组件配置之间切换 → 用 Variant Manager 组织和切换这些配置
-- 你需要在运行时通过蓝图或 Python 脚本切换场景配置 → 用 Variant Manager Blueprint Library 提供的 API
+- 你在做**建筑可视化**项目，需要管理同一场景的多种设计方案（家具布局、材质配色、灯光氛围）→ 用 Variant Manager 管理设计方案变体
+- 你在做**产品配置器**，用户可以在运行时切换产品颜色、材质、配件等 → 用 Variant Manager 捕获属性变体并运行时切换
+- 你需要用 **Python 脚本**批量创建和管理大量变体配置 → 用 VariantManagerBlueprintLibrary 提供的静态函数
+- 你需要记录和回放 Actor 属性的变化 → 用 Record/Apply 功能
 
 ## 蓝图用法
 
-Variant Manager 通过 `UVariantManagerBlueprintLibrary` 暴露了大量蓝图可调用函数。该库被标记为 `ScriptName="VariantManagerLibrary"`，同时支持蓝图节点和 Python 脚本调用。
+所有蓝图可用节点集中在 `UVariantManagerBlueprintLibrary` 中（通过 Python 脚本或蓝图调用）。
 
-> 首次使用前需要手动启用插件：编辑 → 插件 → 搜索 "Variant Manager" → 启用 → 重启编辑器。
+### 核心节点
 
-### 资产与 Actor 创建
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `CreateLevelVariantSetsAsset` | 在指定路径创建 LevelVariantSets 资产 | `UVariantManagerBlueprintLibrary` |
-| `CreateLevelVariantSetsActor` | 在当前场景创建 LevelVariantSetsActor 并关联资产 | `UVariantManagerBlueprintLibrary` |
-
-### 变体层级管理
+#### 资产与场景管理
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `AddVariantSet` | 向 LevelVariantSets 添加变体集 | `UVariantManagerBlueprintLibrary` |
-| `AddVariant` | 向 VariantSet 添加变体 | `UVariantManagerBlueprintLibrary` |
-| `RemoveVariantSet` | 从 LevelVariantSets 移除变体集 | `UVariantManagerBlueprintLibrary` |
-| `RemoveVariant` | 从 VariantSet 移除变体 | `UVariantManagerBlueprintLibrary` |
-| `RemoveVariantSetByName` | 按名称查找并移除变体集 | `UVariantManagerBlueprintLibrary` |
-| `RemoveVariantByName` | 按名称查找并移除变体 | `UVariantManagerBlueprintLibrary` |
+| `CreateLevelVariantSetsAsset` | 在指定内容路径创建新的 LevelVariantSets 资产 | `UVariantManagerBlueprintLibrary` |
+| `CreateLevelVariantSetsActor` | 在当前场景中创建 LevelVariantSetsActor 并关联资产 | `UVariantManagerBlueprintLibrary` |
+| `GetCapturableProperties` | 获取指定 Actor 或类可捕获的属性路径列表 | `UVariantManagerBlueprintLibrary` |
 
-### Actor 绑定与属性捕获
+#### VariantSet 操作
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `AddVariantSet` | 将 VariantSet 添加到 LevelVariantSets | `UVariantManagerBlueprintLibrary` |
+| `RemoveVariantSet` | 从 LevelVariantSets 中移除 VariantSet | `UVariantManagerBlueprintLibrary` |
+| `RemoveVariantSetByName` | 按名称移除 VariantSet | `UVariantManagerBlueprintLibrary` |
+
+#### Variant 操作
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `AddVariant` | 将 Variant 添加到 VariantSet | `UVariantManagerBlueprintLibrary` |
+| `RemoveVariant` | 从 VariantSet 中移除 Variant | `UVariantManagerBlueprintLibrary` |
+| `RemoveVariantByName` | 按名称移除 Variant | `UVariantManagerBlueprintLibrary` |
+
+#### Actor 绑定与属性捕获
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
 | `AddActorBinding` | 将 Actor 绑定到 Variant | `UVariantManagerBlueprintLibrary` |
-| `CaptureProperty` | 为绑定的 Actor 捕获指定路径的属性 | `UVariantManagerBlueprintLibrary` |
-| `GetCapturableProperties` | 获取 Actor 或类可捕获的所有属性路径 | `UVariantManagerBlueprintLibrary` |
+| `CaptureProperty` | 捕获指定 Actor 的指定属性到 Variant 中 | `UVariantManagerBlueprintLibrary` |
 | `GetCapturedProperties` | 获取 Variant 中某个 Actor 已捕获的属性列表 | `UVariantManagerBlueprintLibrary` |
-| `RemoveActorBinding` | 从 Variant 移除 Actor 绑定 | `UVariantManagerBlueprintLibrary` |
-| `RemoveCapturedProperty` | 移除捕获的属性 | `UVariantManagerBlueprintLibrary` |
+| `RemoveActorBinding` | 移除 Variant 中的 Actor 绑定 | `UVariantManagerBlueprintLibrary` |
+| `RemoveActorBindingByName` | 按 Actor 名称移除绑定 | `UVariantManagerBlueprintLibrary` |
+| `RemoveCapturedProperty` | 移除已捕获的属性 | `UVariantManagerBlueprintLibrary` |
+| `RemoveCapturedPropertyByName` | 按属性路径移除已捕获的属性 | `UVariantManagerBlueprintLibrary` |
 
-### 属性录制与应用
+#### 属性录制与应用
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Record` | 从 Actor 当前状态录制属性值 | `UVariantManagerBlueprintLibrary` |
-| `Apply` | 将录制的属性值应用到 Actor | `UVariantManagerBlueprintLibrary` |
-| `GetPropertyTypeString` | 获取属性值的 C++ 类型字符串 | `UVariantManagerBlueprintLibrary` |
+| `Record` | 将当前 Actor 的属性值录制到 PropertyVal | `UVariantManagerBlueprintLibrary` |
+| `Apply` | 将 PropertyVal 中录制的值应用到 Actor | `UVariantManagerBlueprintLibrary` |
+| `GetPropertyTypeString` | 获取属性的 C++ 类型字符串 | `UVariantManagerBlueprintLibrary` |
 
-### 类型化属性访问器（PropertyAccessors）
+#### 依赖管理
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `AddDependency` | 为 Variant 添加依赖关系 | `UVariantManagerBlueprintLibrary` |
+| `SetDependency` | 设置指定索引的依赖关系 | `UVariantManagerBlueprintLibrary` |
+| `DeleteDependency` | 删除指定索引的依赖关系 | `UVariantManagerBlueprintLibrary` |
+| `GetDependencies` | 获取 Variant 的所有依赖关系 | `UVariantManagerBlueprintLibrary` |
+
+#### 属性值访问器（PropertyAccessors）
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
 | `SetValueBool` / `GetValueBool` | 读写布尔属性 | `UVariantManagerBlueprintLibrary` |
-| `SetValueInt` / `GetValueInt` | 读写整数属性 | `UVariantManagerBlueprintLibrary` |
+| `SetValueInt` / `GetValueInt` | 读写整型属性 | `UVariantManagerBlueprintLibrary` |
 | `SetValueFloat` / `GetValueFloat` | 读写浮点属性 | `UVariantManagerBlueprintLibrary` |
 | `SetValueString` / `GetValueString` | 读写字符串属性 | `UVariantManagerBlueprintLibrary` |
 | `SetValueVector` / `GetValueVector` | 读写向量属性 | `UVariantManagerBlueprintLibrary` |
 | `SetValueRotator` / `GetValueRotator` | 读写旋转属性 | `UVariantManagerBlueprintLibrary` |
-| `SetValueColor` / `GetValueColor` | 读写颜色属性 | `UVariantManagerBlueprintLibrary` |
-| `SetValueLinearColor` / `GetValueLinearColor` | 读写线性颜色属性 | `UVariantManagerBlueprintLibrary` |
+| `SetValueColor` / `GetValueColor` | 读写 FColor 属性 | `UVariantManagerBlueprintLibrary` |
+| `SetValueLinearColor` / `GetValueLinearColor` | 读写 FLinearColor 属性 | `UVariantManagerBlueprintLibrary` |
 | `SetValueQuat` / `GetValueQuat` | 读写四元数属性 | `UVariantManagerBlueprintLibrary` |
 | `SetValueObject` / `GetValueObject` | 读写 UObject 属性 | `UVariantManagerBlueprintLibrary` |
-| `SetValueVector4` / `GetValueVector4` | 读写四维向量属性 | `UVariantManagerBlueprintLibrary` |
-| `SetValueVector2D` / `GetValueVector2D` | 读写二维向量属性 | `UVariantManagerBlueprintLibrary` |
-| `SetValueIntPoint` / `GetValueIntPoint` | 读写 IntPoint 属性 | `UVariantManagerBlueprintLibrary` |
 
-### 函数调用器（FunctionCallers）
+#### 函数调用器（FunctionCallers）
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
+| `GetOrCreateDirectorBlueprint` | 获取或创建 Variant 关联的 Director 蓝图 | `UVariantManagerBlueprintLibrary` |
+| `GetFunctionCallerNames` | 获取 Variant 中某个 Actor 的函数调用器名称列表 | `UVariantManagerBlueprintLibrary` |
+| `GetFunctionCallerArguments` | 获取函数调用器的参数映射 | `UVariantManagerBlueprintLibrary` |
 | `CreateFunctionCaller` | 创建函数调用器（指定签名类型） | `UVariantManagerBlueprintLibrary` |
 | `AddFunctionCaller` | 添加函数调用器 | `UVariantManagerBlueprintLibrary` |
-| `GetFunctionCallerNames` | 获取 Actor 的函数调用器名称列表 | `UVariantManagerBlueprintLibrary` |
-| `GetFunctionCallerArguments` | 获取函数调用器的参数 | `UVariantManagerBlueprintLibrary` |
 | `UpdateFunctionCallerArguments` | 更新函数调用器参数 | `UVariantManagerBlueprintLibrary` |
 | `RemoveFunctionCaller` | 移除函数调用器 | `UVariantManagerBlueprintLibrary` |
-| `GetOrCreateDirectorBlueprint` | 获取或创建 Director 蓝图 | `UVariantManagerBlueprintLibrary` |
-
-### 变体依赖管理
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `AddDependency` | 添加变体依赖 | `UVariantManagerBlueprintLibrary` |
-| `SetDependency` | 设置指定索引的依赖 | `UVariantManagerBlueprintLibrary` |
-| `DeleteDependency` | 删除指定索引的依赖 | `UVariantManagerBlueprintLibrary` |
-| `GetDependencies` | 获取所有依赖列表 | `UVariantManagerBlueprintLibrary` |
 
 ### 使用示例（蓝图描述）
 
-**创建完整的变体配置流程**：
+**场景：为场景中的 Actor 创建颜色变体**
 
-1. 调用 `CreateLevelVariantSetsAsset` 创建资产（AssetName="MyConfig"，AssetPath="/Game"）
+1. 调用 `CreateLevelVariantSetsAsset` 创建 LevelVariantSets 资产（如 `"/Game/MyLevelVariantSets"`）
 2. 调用 `CreateLevelVariantSetsActor` 在场景中放置对应的 Actor
-3. 创建 VariantSet：先用 `UVariantSet` 的 NewObject 创建，再调用 `AddVariantSet` 添加
-4. 创建 Variant：先用 `UVariant` 的 NewObject 创建，再调用 `AddVariant` 添加
+3. 调用 `CreateVariantSet`（内部方法）创建 VariantSet（如 "红色方案"）
+4. 调用 `AddVariant` 将 VariantSet 添加到 LevelVariantSets
 5. 调用 `AddActorBinding` 将目标 Actor 绑定到 Variant
-6. 调用 `CaptureProperty` 捕获特定属性（PropertyPath 如 "RelativeLocation" 或 "StaticMeshComponent.Material[0]"）
-7. 使用类型化访问器（如 `SetValueVector`）设置变体的属性值
-8. 在运行时通过 `Apply` 切换变体状态
-
-**运行时切换变体**：
-
-获取 LevelVariantSetsActor → 获取其 LevelVariantSets → 查找 VariantSet → 查找 Variant → 调用 `Apply`（UVariant 本身也有 `SwitchOn` 方法）
+6. 调用 `CaptureProperty` 捕获目标属性（如 `"/Game/MyActor.StaticMeshComponent:Material"`）
+7. 通过 `SetValueLinearColor` 设置捕获属性的值
+8. 运行时调用 `Apply` 应用变体
 
 ## C++ 用法
 
@@ -145,273 +142,91 @@ Variant Manager 通过 `UVariantManagerBlueprintLibrary` 暴露了大量蓝图�
 
 ### 基本用法
 
-通过模块接口创建和使用 Variant Manager：
+通过模块接口创建 Variant Manager 实例：
 
 ```cpp
-// 通过模块接口创建 VariantManager 实例
-// 来源: Source/VariantManager/Public/VariantManagerModule.h
-IVariantManagerModule& VariantManagerModule = IVariantManagerModule::Get();
-
-// 创建 LevelVariantSets 资产
-UVariantManagerBlueprintLibrary::CreateLevelVariantSetsAsset(
-    TEXT("MyLevelVariantSets"), TEXT("/Game"));
+// Source: Source/VariantManager/Public/VariantManagerModule.h
+#include "VariantManagerModule.h"
+#include "VariantManager.h"
 
 // 检查模块是否可用
 if (IVariantManagerModule::IsAvailable())
 {
-    // 模块已加载，可以安全使用
+    // 获取模块实例
+    IVariantManagerModule& Module = IVariantManagerModule::Get();
+    
+    // 为指定的 LevelVariantSets 创建 VariantManager 实例
+    TSharedRef<FVariantManager> VariantManager = Module.CreateVariantManager(LevelVariantSets);
+    
+    // 初始化后即可使用
+    VariantManager->InitVariantManager(LevelVariantSets);
 }
+```
+
+### 从蓝图库创建完整工作流
+
+```cpp
+// Source: Source/VariantManager/Public/VariantManagerBlueprintLibrary.h
+#include "VariantManagerBlueprintLibrary.h"
+
+// 1. 创建资产
+ULevelVariantSets* LevelVariantSets = UVariantManagerBlueprintLibrary::CreateLevelVariantSetsAsset(
+    TEXT("MyConfig"), TEXT("/Game"));
+
+// 2. 创建场景 Actor
+ALevelVariantSetsActor* Actor = UVariantManagerBlueprintLibrary::CreateLevelVariantSetsActor(LevelVariantSets);
+
+// 3. 创建 VariantSet 和 Variant（需通过 FVariantManager 内部 API）
+// UVariant* Variant = VariantManager->CreateVariant(VariantSet);
+
+// 4. 获取可捕获的属性
+TArray<FString> Properties = UVariantManagerBlueprintLibrary::GetCapturableProperties(SomeActor);
 ```
 
 ### 进阶用法
 
-使用 `FVariantManager` 进行属性捕获和管理：
+使用 FVariantManager 直接操作捕获属性和变体绑定：
 
 ```cpp
-// 获取 FVariantManager 实例
-// 来源: Source/VariantManager/Public/VariantManagerBlueprintLibrary.h
-FVariantManager& Manager = UVariantManagerBlueprintLibrary::GetVariantManager();
+// Source: Source/VariantManager/Public/VariantManager.h
 
-// 初始化（绑定到 LevelVariantSets 资产）
-Manager.InitVariantManager(MyLevelVariantSets);
+// 获取 VariantManager 实例
+FVariantManager& VManager = UVariantManagerBlueprintLibrary::GetVariantManager();
+VManager.InitVariantManager(LevelVariantSets);
 
-// 获取 Actor 可捕获的属性
+// 获取可捕获的属性列表
 TArray<TSharedPtr<FCapturableProperty>> CapturableProps;
-TArray<AActor*> Actors = { MyActor };
-Manager.GetCapturableProperties(Actors, CapturableProps);
+VManager.GetCapturableProperties({TargetActor}, CapturableProps);
 
-// 创建对象绑定并捕获属性
-TArray<AActor*> SelectedActors = { Actor1, Actor2 };
-TArray<UVariant*> Variants = { MyVariant };
-TArray<UVariantObjectBinding*> Bindings = Manager.CreateObjectBindingsAndCaptures(
-    SelectedActors, Variants);
+// 创建属性捕获（直接捕获 Transform）
+TArray<UPropertyValue*> TransformProps = VManager.CreateTransformPropertyCaptures(Bindings);
 
-// 录制属性值（将 Actor 当前状态保存到 Variant）
-TArray<UPropertyValue*> PropValues;
-for (UPropertyValue* Prop : MyBinding->GetPropertyValues())
-{
-    Manager.RecordProperty(Prop);
-}
+// 捕获可见性
+TArray<UPropertyValue*> VisibilityProps = VManager.CreateVisibilityPropertyCaptures(Bindings);
 
-// 应用属性值（将 Variant 的值应用到 Actor）
-for (UPropertyValue* Prop : MyBinding->GetPropertyValues())
-{
-    Manager.ApplyProperty(Prop);
-}
+// 捕获材质
+TArray<UPropertyValue*> MaterialProps = VManager.CreateMaterialPropertyCaptures(Bindings);
+
+// 创建对象绑定并自动捕获所有属性
+TArray<UVariantObjectBinding*> Bindings = VManager.CreateObjectBindingsAndCaptures(
+    {Actor1, Actor2}, {Variant1});
+
+// 录制和应用属性
+VManager.RecordProperty(SomePropertyValue);
+VManager.ApplyProperty(SomePropertyValue);
 
 // 调用 Director 函数
-Manager.CallDirectorFunction(MyFunctionName, TargetObjectBinding);
-```
-
-使用 Blueprint Library 进行类型化属性操作：
-
-```cpp
-// 来源: Source/VariantManager/Public/VariantManagerBlueprintLibrary.h
-
-// 获取 Actor 可捕获的属性列表
-TArray<FString> PropertyPaths = UVariantManagerBlueprintLibrary::GetCapturableProperties(MyActor);
-
-// 为 Variant 中的 Actor 捕获属性
-UPropertyValue* PropVal = UVariantManagerBlueprintLibrary::CaptureProperty(
-    MyVariant, MyActor, TEXT("RelativeLocation"));
-
-// 设置属性值
-UVariantManagerBlueprintLibrary::SetValueVector(PropVal, FVector(100, 200, 300));
-
-// 获取属性值
-FVector Location = UVariantManagerBlueprintLibrary::GetValueVector(PropVal);
-
-// 录制和应用
-UVariantManagerBlueprintLibrary::Record(PropVal);
-UVariantManagerBlueprintLibrary::Apply(PropVal);
-
-// 管理函数调用器
-UVariantManagerBlueprintLibrary::CreateFunctionCaller(
-    MyVariant, MyActor, TEXT("MyFunction"),
-    EVariantFunctionCallerSignature::OneParameter);
-
-// 管理依赖
-FVariantDependency Dep;
-// ... 配置依赖
-UVariantManagerBlueprintLibrary::AddDependency(MyVariant, Dep);
-```
-
-## Demo 示例
-
-以下是一个完整的最小示例，在运行时通过 C++ 代码创建变体配置并切换：
-
-```cpp
-// MyVariantManagerActor.h
-#pragma once
-
-#include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "MyVariantManagerActor.generated.h"
-
-class ULevelVariantSets;
-class UVariantSet;
-class UVariant;
-
-UCLASS()
-class AMyVariantManagerActor : public AActor
-{
-    GENERATED_BODY()
-
-public:
-    AMyVariantManagerActor();
-
-    virtual void BeginPlay() override;
-
-    /** 切换到指定索引的变体 */
-    UFUNCTION(BlueprintCallable)
-    void SwitchToVariant(int32 VariantSetIndex, int32 VariantIndex);
-
-    /** 用当前 Actor 状态录制所有变体的属性值 */
-    UFUNCTION(BlueprintCallable)
-    void RecordCurrentState();
-
-protected:
-    /** 配置目标 Actor（在编辑器中设置） */
-    UPROPERTY(EditAnywhere, Category = "Variant Config")
-    TArray<AActor*> TargetActors;
-
-private:
-    UPROPERTY()
-    TObjectPtr<ULevelVariantSets> LevelVariantSets;
-
-    UPROPERTY()
-    TObjectPtr<UVariantSet> VariantSet;
-
-    UPROPERTY()
-    TObjectPtr<UVariant> VariantA;
-
-    UPROPERTY()
-    TObjectPtr<UVariant> VariantB;
-
-    void SetupVariantConfiguration();
-};
-```
-
-```cpp
-// MyVariantManagerActor.cpp
-#include "MyVariantManagerActor.h"
-#include "VariantManagerModule.h"
-#include "VariantManagerBlueprintLibrary.h"
-#include "LevelVariantSets.h"
-#include "LevelVariantSetsActor.h"
-#include "Variant.h"
-#include "VariantSet.h"
-#include "PropertyValue.h"
-
-AMyVariantManagerActor::AMyVariantManagerActor()
-{
-    PrimaryActorTick.bCanEverTick = false;
-}
-
-void AMyVariantManagerActor::BeginPlay()
-{
-    Super::BeginPlay();
-
-    if (!IVariantManagerModule::IsAvailable())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("VariantManager module not available"));
-        return;
-    }
-
-    SetupVariantConfiguration();
-}
-
-void AMyVariantManagerActor::SetupVariantConfiguration()
-{
-    // 创建 LevelVariantSets 资产
-    LevelVariantSets = UVariantManagerBlueprintLibrary::CreateLevelVariantSetsAsset(
-        TEXT("MyVariantSets"), TEXT("/Game/VariantConfig"));
-
-    if (!LevelVariantSets)
-    {
-        return;
-    }
-
-    // 创建 VariantSet
-    VariantSet = UVariantManagerBlueprintLibrary::GetVariantManager()
-        .CreateVariantSet(LevelVariantSets);
-
-    if (!VariantSet)
-    {
-        return;
-    }
-
-    VariantSet->SetName(TEXT("ChairColor"));
-
-    // 创建两个 Variant
-    VariantA = UVariantManagerBlueprintLibrary::GetVariantManager()
-        .CreateVariant(VariantSet);
-    VariantA->SetName(TEXT("Red"));
-
-    VariantB = UVariantManagerBlueprintLibrary::GetVariantManager()
-        .CreateVariant(VariantSet);
-    VariantB->SetName(TEXT("Blue"));
-
-    // 为每个 Variant 绑定目标 Actor 并捕获属性
-    for (AActor* Actor : TargetActors)
-    {
-        if (!Actor) continue;
-
-        UVariantManagerBlueprintLibrary::AddActorBinding(VariantA, Actor);
-        UVariantManagerBlueprintLibrary::AddActorBinding(VariantB, Actor);
-
-        // 捕获可见性属性
-        UVariantManagerBlueprintLibrary::CaptureProperty(
-            VariantA, Actor, TEXT("StaticMeshComponent.bVisible"));
-        UVariantManagerBlueprintLibrary::CaptureProperty(
-            VariantB, Actor, TEXT("StaticMeshComponent.bVisible"));
-
-        // 捕获材质属性
-        UVariantManagerBlueprintLibrary::CaptureProperty(
-            VariantA, Actor, TEXT("StaticMeshComponent.OverrideMaterials"));
-        UVariantManagerBlueprintLibrary::CaptureProperty(
-            VariantB, Actor, TEXT("StaticMeshComponent.OverrideMaterials"));
-    }
-
-    // 录制 VariantA 的当前状态
-    RecordCurrentState();
-}
-
-void AMyVariantManagerActor::SwitchToVariant(int32 VariantSetIndex, int32 VariantIndex)
-{
-    if (!VariantSet) return;
-
-    TArray<UVariant*> Variants = VariantSet->GetVariants();
-    if (Variants.IsValidIndex(VariantIndex))
-    {
-        UVariantManagerBlueprintLibrary::GetVariantManager()
-            .SwitchOnVariant(Variants[VariantIndex]);
-    }
-}
-
-void AMyVariantManagerActor::RecordCurrentState()
-{
-    if (!VariantA) return;
-
-    TArray<AActor*> BoundActors;
-    for (auto& Binding : VariantA->GetObjectBindings())
-    {
-        if (Binding && Binding->GetObject().IsValid())
-        {
-            for (UPropertyValue* Prop : Binding->GetPropertyValues())
-            {
-                UVariantManagerBlueprintLibrary::Record(Prop);
-            }
-        }
-    }
-}
+VManager.CallDirectorFunction(FName("OnVariantSwitched"), TargetBinding);
 ```
 
 ## 模块依赖
 
-无特殊依赖（仅标准 Core/Engine/Slate 等）。
+| 模块 | 用途 |
+|---|---|
+| `DatasmithContent` | Datasmith 资产内容支持（LevelVariantSets 等） |
+| `LevelSequence` | 关键帧和属性动画序列支持 |
 
-该插件的 `VariantManager` 模块的 Build.cs 使用标准的 Unreal 模块依赖。其核心功能依赖于引擎内置的 Datasmith 相关类型（`ULevelVariantSets`、`UVariant`、`UVariantSet`、`UPropertyValue` 等），这些类型在引擎核心中定义。
+> 注：核心功能还依赖标准的 UnrealEd（编辑器 UI）、Slate（自定义面板）、PropertyEditor 等模块。
 
 ## 维护状态
 
@@ -420,21 +235,19 @@ void AMyVariantManagerActor::RecordCurrentState()
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
 | 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 常量截断为 float 的编译警告 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏到新的 UE_LOGF 格式 |
-| 2026-03-20 | `c5bb9adf` | [AutoViz] Minor updates to Variant Manager | 面向 AutoViz 的 Variant Manager 小幅更新 |
-| 2025-10-30 | `0990a715` | Ran UnrealCodeFixup on Fortnite to change all ~Type() {} to instead be ~Type() = default | 自动代码修复：析构函数改用 = default |
-| 2025-10-30 | `a0e12af6` | Ran UnrealCodeFixup on Engine to change all ~Type() {} to instead be ~Type() = default | 自动代码修复：引擎范围析构函数规范化 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移 UE_LOG 到 UE_LOGF 宏 |
+| 2026-03-20 | `c5bb9adf` | [AutoViz] Minor updates to Variant Manager | AutoViz 功能的 Variant Manager 小幅更新 |
+| 2025-10-30 | `0990a715` | Ran UnrealCodeFixup on Fortnite to change all ~Type() {} to instead be ~Type() = default | 将析构函数改为 = default |
+| 2025-10-30 | `a0e12af6` | Ran UnrealCodeFixup on Engine to change all ~Type() {} to instead be ~Type() = default | 将析构函数改为 = default |
 
 ### 维护评价
 
-- **创建时间**：2019 年 10 月，至今约 7 年
-- **维护状态**：**活跃维护中** — 截至 2026 年 5 月仍有功能性更新（AutoViz 相关更新表明仍在积极适配新的使用场景）
-- **Beta 状态**：`.uplugin` 中 `IsBetaVersion: true`，表明 Epic 仍将其视为实验性功能
-- **默认未启用**：`EnabledByDefault: false`，用户需手动启用
-- **已知限制**：Beta 阶段，API 可能在未来版本发生变化
-- **推荐使用**：✅ 推荐用于建筑可视化和产品配置场景。该插件是 Datasmith 工作流的重要组成部分，虽然标记为 Beta 但已有多年稳定使用历史，且仍在持续维护更新。
-
-> 注意：尽管该插件仍在活跃维护，但其 Beta 标记意味着 Epic 可能在未来版本中对其进行重大更改或重构。在生产环境中使用时需关注版本更新说明。
+- **创建时间**：2019 年 10 月，已有约 6 年历史
+- **维护状态**：持续维护中，近期有功能性更新（AutoViz 相关改动）
+- **Beta 状态**：插件至今仍标记为 `IsBetaVersion = true`，且默认禁用
+- **活跃度**：过去一年内有多次提交，但大多为代码风格和编译警告修复，实质性功能更新较少
+- **关联性**：与 Datasmith 和 AutoViz 工作流紧密关联，是 Epic Enterprise 产品线的一部分
+- **推荐**：如果你使用 Datasmith 导入建筑/工业模型并需要管理设计方案变体，推荐使用。但需注意它仍是 Beta 状态，API 可能变动。对于非 Datasmith 工作流，此插件仍可独立使用，但需要手动启用。
 
 ## 相关链接
 

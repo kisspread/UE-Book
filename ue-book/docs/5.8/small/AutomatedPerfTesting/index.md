@@ -7,56 +7,109 @@
 | 中文名 | 自动化性能测试 |
 | 分类 | Testing |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（项目设置、蓝图接口、测试场景资产） |
+| 包含内容 | ❌ 无 |
 | 模块 | `AutomatedPerfTesting` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-05-23 |
-| 年龄标签 | 👴 老古董（约 2 年） |
+| 年龄标签 | 🆕（约 2 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Performance/AutomatedPerfTesting) | |
 
 ## 用途
 
-此插件为 Unreal Engine 的 **Gauntlet 测试框架** 提供了一系列即开即用的“测试控制器”（Test Controllers），用于自动化执行各种性能基准测试。它解决的核心问题是：**将手动的、重复性的性能测试流程（如定点截图、材质评估、序列回放）自动化，从而能够轻松地集成到持续集成/持续交付 (CI/CD) 流水线中，进行定期的性能回归测试。** 它不仅仅是一个测试工具，更是一套可扩展的框架，允许开发者基于它快速构建和定制针对项目特定需求的性能测试场景。
+这个插件解决的是**自动化性能回归测试**的问题。
+
+在游戏开发中，团队需要持续监控帧率、内存、材质渲染开销等性能指标是否出现退化。手动测试效率低且难以重复。此插件基于 UE 的 Gauntlet 测试框架，提供了一系列可配置的测试控制器（Test Controller），支持以下自动化场景：
+
+- **静态相机测试**：自动加载关卡，遍历预设相机位置，逐个采集性能数据（FPS Chart、Insights Trace、CSV Profiler）
+- **材质性能测试**：自动加载材质列表，在固定场景中逐个渲染并采集 GPU 开销
+- **关卡序列测试**：自动播放 Sequencer 序列，按镜头切换采集性能数据
+- **回放测试**：自动播放录制的回放文件，在回放过程中采集性能数据
+- **ProfileGo 测试**：集成 ProfileGo 系统，支持基于场景（Scenario）的灵活脚本化测试
+
+所有测试支持自动截图、Insights Trace、CSV 导出、FPS Chart、视频录制等采集手段，并通过 Gauntlet 框架与 CI/CD 管线集成。
 
 ## 使用场景
 
-- **持续集成性能门禁**：你的团队希望在代码提交或构建后自动运行一套性能基准测试，确保关键场景的帧率、加载时间等指标不出现回退。使用此插件可以配置一个 Gauntlet 测试，在 CI 服务器上自动启动游戏，运行预设的静态相机测试或 ProfileGo 场景，并收集 CSV、Insights 数据或 FPS 图表。
-- **材质与着色器性能评估**：美术团队需要评估一系列新材质在特定硬件下的性能表现。可以使用 `AutomatedMaterialPerfTest` 控制器，批量加载预设的材质列表，在固定场景下对每个材质进行计时性能数据采集，并可选地截屏用于视觉比对。
-- **过场动画性能验证**：使用 `AutomatedSequencePerfTest` 控制器，可以自动加载关卡并播放预设的过场动画序列，精确测量序列播放期间的性能开销，特别是针对相机切换等关键点。
-- **自定义复杂性能场景**：使用 `AutomatedProfileGoTest` 控制器，可以利用 ProfileGo 框架编排复杂的测试剧本，例如将角色传送到多个指定位置、执行一系列控制台命令（如切换光照模式、生成特定物体）、等待资源流送完成等，实现高度可定制的长周期性能测试。
+- 你在 CI/CD 管线中需要自动化验证每个构建版本的帧率表现 → 使用 Gauntlet + 此插件的静态相机测试
+- 你需要批量测试项目中数十种材质的渲染性能 → 使用材质性能测试控制器
+- 你需要验证 Sequencer 过场动画播放时的性能 → 使用序列性能测试控制器
+- 你需要在固定脚本路径上反复采集性能数据用于回归对比 → 使用 ProfileGo 测试
+- 你需要通过回放文件重现真实游戏场景并采集性能 → 使用回放性能测试控制器
 
 ## 蓝图用法
 
-插件主要通过 C++ 提供测试控制器，但部分项目设置和接口可在蓝图中使用。
+### 核心节点
 
-### 核心节点与配置
+#### 测试生命周期接口（IAutomatedPerfTestInterface）
 
-| 节点/配置 | 说明 | 所在类/设置 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SetupTest` | 初始化测试环境，蓝图可实现事件 | `IAutomatedPerfTestInterface` |
-| `RunTest` | 执行主要测试逻辑，蓝图可实现事件 | `IAutomatedPerfTestInterface` |
-| `TeardownTest` | 清理测试环境，蓝图可实现事件 | `IAutomatedPerfTestInterface` |
-| `Exit` | 请求退出测试，蓝图可实现事件 | `IAutomatedPerfTestInterface` |
-| `GetTestID` | 获取当前测试的唯一标识符 | `UAutomatedPerfTestSubsystem` |
-| `GetReplayPathFromName` | 根据回放名称查找回放文件路径 | `UAutomatedReplayPerfTestProjectSettings` |
-| `GetComboFromTestName` | 根据组合名称查找地图/序列组合 | `UAutomatedSequencePerfTestProjectSettings` |
-| `GetMapFromAssetName` | 根据资产名称查找地图软引用 | `UAutomatedStaticCameraPerfTestProjectSettings` |
+| `SetupTest` | 测试初始化阶段，可蓝图实现 | `IAutomatedPerfTestInterface` |
+| `RunTest` | 执行测试逻辑 | `IAutomatedPerfTestInterface` |
+| `TeardownTest` | 测试清理阶段 | `IAutomatedPerfTestInterface` |
+| `Exit` | 退出测试 | `IAutomatedPerfTestInterface` |
+
+#### 游戏模式基类（蓝图可继承）
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `SetupTest` | 蓝图可实现的测试设置 | `AAutomatedPerfTestGameModeBase` |
+| `RunTest` | 蓝图可实现的测试运行 | `AAutomatedPerfTestGameModeBase` |
+| `TeardownTest` | 蓝图可实现的测试清理 | `AAutomatedPerfTestGameModeBase` |
+| `Exit` | 蓝图可实现的退出逻辑 | `AAutomatedPerfTestGameModeBase` |
+
+#### 基础控制器
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GetTestName` | 获取当前测试名称 | `UAutomatedPerfTestControllerBase` |
+| `GetTestID` | 获取当前测试唯一 ID | `UAutomatedPerfTestControllerBase` |
+| `GetPerfTestTypeID` | 获取性能测试类型标识（虚函数，子类重写） | `UAutomatedPerfTestControllerBase` |
+| `RequestsInsightsTrace` | 查询是否请求了 Insights Trace | `UAutomatedPerfTestControllerBase` |
+| `RequestsCSVProfiler` | 查询是否请求了 CSV Profiler | `UAutomatedPerfTestControllerBase` |
+| `RequestsFPSChart` | 查询是否请求了 FPS Chart | `UAutomatedPerfTestControllerBase` |
+| `RequestsVideoCapture` | 查询是否请求了视频录制 | `UAutomatedPerfTestControllerBase` |
+| `TakeScreenshot` | 拍摄截图并保存 | `UAutomatedPerfTestControllerBase` |
+| `ConsoleCommand` | 执行控制台命令 | `UAutomatedPerfTestControllerBase` |
+
+#### 配置查询节点
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GetMapFromAssetName` | 根据资产名获取关卡 SoftObjectPath | `UAutomatedStaticCameraPerfTestProjectSettings` |
+| `GetComboFromTestName` | 根据测试名获取关卡/序列组合 | `UAutomatedSequencePerfTestProjectSettings` |
+| `GetReplayPathFromName` | 根据回放名获取回放文件路径 | `UAutomatedReplayPerfTestProjectSettings` |
+
+#### ProfileGo 子系统
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GetStatusMessage` | 获取当前 ProfileGo 状态消息 | `UProfileGoSubsystem` |
+| `IsRunning` | 查询 ProfileGo 是否正在运行 | `UProfileGoSubsystem` |
+| `HasEncounteredError` | 查询是否遇到错误 | `UProfileGoSubsystem` |
 
 ### 使用示例（蓝图描述）
 
-**场景1：使用自定义 GameMode 实现接口**
-1. 创建一个继承自 `AAutomatedPerfTestGameModeBase` 的蓝图 GameMode。
-2. 在该蓝图 GameMode 中，重写 `Setup Test`、`Run Test` 等事件。在 `Run Test` 中，你可以放置自己的性能测试逻辑，例如生成物体、播放动画等。
-3. 将此 GameMode 设置为项目在运行自动化性能测试时使用的模式（通过命令行参数或项目设置）。
-4. 当通过 Gauntlet 框架启动测试时，你的蓝图逻辑将被自动调用。
+**自定义静态相机性能测试：**
 
-**场景2：配置静态相机测试**
-1. 打开“项目设置” > “Plugins” > “Automated Performance Testing | Static Camera”。
-2. 在 `Maps To Test` 数组中，添加你想要测试的地图资产。
-3. 配置 `Warm Up Time`（预热时间）、`Soak Time`（测试时长）、`Cooldown Time`（冷却时间）等参数。
-4. 启用 `Capture Screenshots` 可以在每个相机测试点后截取屏幕快照。
-5. 在需要测试的地图中放置 `AAutomatedPerfTestStaticCamera` 或普通 `ACameraActor`。对于前者，你可以设置其 `Collection Name` 以进行分组。
-6. 当通过 `AutomatedStaticCameraPerfTest` 控制器运行测试时，它会自动遍历所有配置的地图和相机位置。
+1. 创建一个蓝图类，父类选择 `UAutomatedStaticCameraPerfTestBase`
+2. 在项目设置 `Plugins > Static Cameras` 中配置 `MapsToTest`（要测试的关卡列表）、`WarmUpTime`、`SoakTime`、`CooldownTime`
+3. 在关卡中放置 `AAutomatedPerfTestStaticCamera` 类型的相机演员，插件会自动收集这些相机位置
+4. 通过 Gauntlet 框架启动测试，控制器会自动遍历每个相机位置，执行暖机→采集→冷却流程
+
+**自定义材质性能测试：**
+
+1. 在项目设置 `Plugins > Materials` 中配置 `MaterialsToTest`（要测试的材质列表）
+2. 设置 `MaterialPerformanceTestMap`（测试用关卡）和 `MaterialPlate`（材质展示网格体）
+3. 插件自动打开测试关卡，逐个加载材质并采集 GPU 性能数据
+
+**通过 GameMode 实现蓝图测试逻辑：**
+
+1. 创建蓝图游戏模式，父类选择 `AAutomatedPerfTestGameModeBase`
+2. 重写 `SetupTest`：放置测试用的 Actor、加载关卡内容
+3. 重写 `RunTest`：执行实际测试逻辑
+4. 重写 `TeardownTest`：清理资源
+5. 重写 `Exit`：退出游戏
 
 ## C++ 用法
 
@@ -64,133 +117,221 @@
 
 ```cpp
 #include "AutomatedPerfTestControllerBase.h"
-// 选择需要的特定测试控制器头文件
-#include "StaticCameraTests/AutomatedStaticCameraPerfTestBase.h"
+#include "AutomatedStaticCameraPerfTestBase.h"
 #include "AutomatedMaterialPerfTest.h"
-#include "ProfileGo/ProfileGoSubsystem.h"
+#include "AutomatedSequencePerfTest.h"
+#include "AutomatedProfileGoTest.h"
+#include "AutomatedReplayPerfTest.h"
+#include "ProfileGo.h"
+#include "ProfileGoSubsystem.h"
 ```
 
-### 基本用法：继承基类创建自定义测试控制器
+### 基本用法
 
-以下是一个简单的自定义静态相机测试控制器示例，它继承自 `UAutomatedStaticCameraPerfTestBase` 并重写了获取相机列表的方法。
-（来源：基于 `UAutomatedPlacedStaticCameraPerfTest` 和 `UAutomatedStaticCameraPerfTestBase` 的设计模式）
+**创建自定义性能测试控制器**（基于源码结构推断的标准模式）：
 
 ```cpp
-// MyCustomStaticCameraTest.h
+// MyPerfTestController.h
 #pragma once
-#include "StaticCameraTests/AutomatedStaticCameraPerfTestBase.h"
-#include "MyCustomStaticCameraTest.generated.h"
+
+#include "AutomatedPerfTestControllerBase.h"
+#include "MyPerfTestController.generated.h"
 
 UCLASS()
-class MYPROJECT_API UMyCustomStaticCameraTest : public UAutomatedStaticCameraPerfTestBase
+class UMyPerfTestController : public UAutomatedPerfTestControllerBase
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	virtual TArray<ACameraActor*> GetMapCameraActors() override;
+    virtual FString GetPerfTestTypeID() const override
+    {
+        return TEXT("MyCustomPerfTest");
+    }
+
+    virtual void GatherTestMetadata(TArray<TPair<FString, FString>>& OutMetadata) const override
+    {
+        Super::GatherTestMetadata(OutMetadata);
+        // 添加自定义元数据
+        OutMetadata.Add({TEXT("TestMap"), TEXT("MyTestMap")});
+    }
+
+    virtual void SetupTest() override
+    {
+        Super::SetupTest();
+        // 自定义初始化逻辑
+    }
+
+    virtual void RunTest() override
+    {
+        Super::RunTest();
+        // 执行测试
+        // ...
+        // 完成后调用 EndTestSuccess() 或 EndTestFailure()
+        EndTestSuccess();
+    }
 };
 ```
 
-```cpp
-// MyCustomStaticCameraTest.cpp
-#include "MyCustomStaticCameraTest.h"
+### 进阶用法
 
-TArray<ACameraActor*> UMyCustomStaticCameraTest::GetMapCameraActors()
+**集成 ProfileGo 场景化测试**（参考 `UAutomatedProfileGoTest` 和 `UProfileGoSubsystem` 的使用模式）：
+
+```cpp
+// 在自定义 GameMode 或测试控制器中启动 ProfileGo
+void AMyTestGameMode::RunTest()
 {
-	// 默认实现在基类中，这里可以覆盖为自定义逻辑
-	// 例如：只获取属于特定 Actor 标签的相机
-	TArray<ACameraActor*> AllCameras = Super::GetMapCameraActors();
-	
-	AllCameras.RemoveAll([](ACameraActor* Cam)
-	{
-		// 过滤逻辑
-		return !Cam->ActorHasTag(FName("PerfTestCam"));
-	});
-	
-	return AllCameras;
+    UWorld* World = GetWorld();
+    UProfileGoSubsystem* ProfileGoSubsystem = World->GetSubsystem<UProfileGoSubsystem>();
+    
+    if (ProfileGoSubsystem)
+    {
+        // 设置测试控制器引用
+        ProfileGoSubsystem->SetTestController(this);
+        
+        // 注册回调
+        ProfileGoSubsystem->OnPassEnded().AddUObject(this, &AMyTestGameMode::OnProfileGoPassEnded);
+        ProfileGoSubsystem->OnScenarioStarted().AddUObject(this, &AMyTestGameMode::OnScenarioStarted);
+        
+        // 启动 ProfileGo 测试（使用默认 UProfileGo 类，指定场景名）
+        ProfileGoSubsystem->Run<UProfileGo>(TEXT("MyScenario"), TEXT(""));
+    }
+}
+
+void AMyTestGameMode::OnScenarioStarted(const FString& ScenarioName)
+{
+    UE_LOG(LogAutomatedPerfTest, Log, TEXT("Scenario started: %s"), *ScenarioName);
+}
+
+void AMyTestGameMode::OnProfileGoPassEnded()
+{
+    EndTestSuccess();
 }
 ```
 
-### 进阶用法：使用 ProfileGo 子系统编排复杂场景
-
-ProfileGo 提供了一种高度可配置的方式来编排测试步骤。
+**配置自定义 ProfileGo 场景和命令**（参考 `UProfileGo` 的 JSON 加载能力）：
 
 ```cpp
-// 在某个测试控制器或游戏模式中
-#include "ProfileGo/ProfileGoSubsystem.h"
-
-void UMyTestController::RunProfileGoScenario()
+// 在项目设置或 JSON 文件中定义场景
+// 也可通过代码动态添加
+void AMyTestGameMode::ConfigureProfileGoScenarios()
 {
-	// 获取世界的 ProfileGo 子系统
-	if (UProfileGoSubsystem* ProfileGoSubsystem = GetWorld()->GetSubsystem<UProfileGoSubsystem>())
-	{
-		// 监听状态事件
-		ProfileGoSubsystem->OnPassEnded().AddUObject(this, &UMyTestController::OnProfileGoPassEnded);
-		
-		// 运行一个名为 “MyHeavyScenario” 的预定义场景
-		// 可以在项目设置 (UProfileGo) 或 JSON 文件中定义此场景
-		ProfileGoSubsystem->Run(TEXT("MyHeavyScenario"), TEXT("-arg1 value1"));
-	}
+    UProfileGoSubsystem* Sub = GetWorld()->GetSubsystem<UProfileGoSubsystem>();
+    
+    // 加载预定义的场景配置
+    Sub->LoadFromJSON(TEXT("Config/ProfileGo/MyScenarios.json"));
+    
+    // 或通过 CDO 直接操作
+    UProfileGo& ProfileGo = UProfileGo::GetCDO();
+    
+    FProfileGoScenarioAPT Scenario;
+    Scenario.Name = TEXT("MyScenario");
+    Scenario.Position = FVector(1000, 2000, 300);
+    Scenario.Orientation = FRotator(0, 90, 0);
+    Scenario.OnBegin = TEXT("stat fps; stat unit");
+    Scenario.OverrideCommands = TEXT("");
+    Scenario.OnEnd = TEXT("stat none");
+    
+    // 可以动态注册自定义命令处理器
+    // RegisterCommandDelegate / RegisterGeneratedScenarioDelegate
 }
+```
 
-void UMyTestController::OnProfileGoPassEnded()
+**使用 Insights Trace 和 CSV Profiler 采集数据**（参考 `UAutomatedPerfTestControllerBase` 的采集 API）：
+
+```cpp
+void UMyPerfTestController::RunTest()
 {
-	// ProfileGo 测试通过结束
-	EndTestSuccess();
+    // 手动控制采集流程
+    if (RequestsInsightsTrace())
+    {
+        TryStartInsightsTrace();
+    }
+    
+    if (RequestsCSVProfiler())
+    {
+        // 自定义文件名和目标目录
+        TryStartCSVProfiler(TEXT("MyPerfTest"), TEXT(""), 300); // 采集300帧
+    }
+    
+    if (RequestsFPSChart())
+    {
+        TryStartFPSChart();
+    }
+    
+    if (RequestsVideoCapture())
+    {
+        TryStartVideoCapture();
+    }
+    
+    // ... 执行测试 ...
+    
+    // 停止采集
+    TryStopInsightsTrace();
+    TryStopCSVProfiler();
+    TryStopFPSChart();
+    TryFinalizingVideoCapture();
 }
 ```
 
 ## Demo 示例
 
-一个最小的、可编译的自定义性能测试控制器，它在测试开始时打印一条消息。
+以下是一个完整的自定义静态相机性能测试控制器实现：
 
 ```cpp
-// SimplePerfTestController.h
+// CustomStaticCameraPerfTest.h
 #pragma once
-#include "AutomatedPerfTestControllerBase.h"
-#include "SimplePerfTestController.generated.h"
+
+#include "StaticCameraTests/AutomatedStaticCameraPerfTestBase.h"
+#include "CustomStaticCameraPerfTest.generated.h"
 
 UCLASS()
-class USimplePerfTestController : public UAutomatedPerfTestControllerBase
+class UCustomStaticCameraPerfTest : public UAutomatedStaticCameraPerfTestBase
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	virtual void SetupTest() override
-	{
-		Super::SetupTest();
-		UE_LOG(LogAutomatedPerfTest, Log, TEXT("SimplePerfTest: Setup complete. Starting test."));
-	}
+    virtual FString GetPerfTestTypeID() const override
+    {
+        return TEXT("CustomStaticCameraTest");
+    }
 
-	virtual void RunTest() override
-	{
-		// 这里是执行性能测试的主要逻辑。
-		// 例如：生成一些物体，等待一段时间测量性能。
-		UE_LOG(LogAutomatedPerfTest, Log, TEXT("SimplePerfTest: Running performance workload..."));
+    virtual void GatherTestMetadata(TArray<TPair<FString, FString>>& OutMetadata) const override
+    {
+        Super::GatherTestMetadata(OutMetadata);
+        // 添加关卡相关元数据
+        OutMetadata.Add({TEXT("TestType"), TEXT("StaticCamera")});
+    }
 
-		// 模拟工作负载
-		FPlatformProcess::Sleep(5.0f);
-
-		UE_LOG(LogAutomatedPerfTest, Log, TEXT("SimplePerfTest: Workload finished. Tearing down."));
-		// 工作完成后，调用基类的结束测试方法
-		EndTestSuccess();
-	}
+    // 可选：覆盖相机收集逻辑
+    virtual TArray<ACameraActor*> GetMapCameraActors() override
+    {
+        // 使用基类逻辑收集 AAutomatedPerfTestStaticCamera 和关卡中放置的相机
+        return Super::GetMapCameraActors();
+    }
 };
+```
+
+```cpp
+// CustomStaticCameraPerfTest.cpp
+#include "CustomStaticCameraPerfTest.h"
+
+// 基类已实现了完整的测试流程：
+// SetupTest() → 遍历地图列表
+// RunTest() → SetUpNextCamera() → [WarmUp] → MarkCameraStart() → [Soak] → 
+//              MarkCameraEnd() → EvaluateCamera() → [Cooldown] → ScreenshotCamera() → FinishCamera() → 下一个相机
+// 每个阶段的时间由项目设置中的 WarmUpTime/SoakTime/CooldownTime 控制
 ```
 
 ## 模块依赖
 
-从 `.uplugin` 文件的 `Plugins` 节和插件功能推断，使用此插件时，你的项目或模块需要依赖以下插件/模块：
+该插件依赖以下插件（在 `.uplugin` 中声明）：
 
-| 模块/插件 | 用途 |
+| 插件 | 用途 |
 |---|---|
-| `Gauntlet` | 核心依赖，提供 `UGauntletTestController` 基类和测试运行框架 |
-| `ProjectLauncher` | 用于支持在特定平台启动和运行测试 |
-| `Automation` | UE 自动化测试框架，用于报告和收集测试结果 |
-| `Insights` (Trace) | 用于控制 Unreal Insights 跟踪数据的采集 |
-| `CSVProfiler` | 用于控制 CSV 性能分析器的启动和停止 |
-| `MovieScene`, `LevelSequence` | 仅 `AutomatedSequencePerfTest` 需要，用于播放过场动画序列 |
-| `Replay` | 仅 `AutomatedReplayPerfTest` 需要，用于播放和分析游戏回放 |
+| `Gauntlet` | UE 自动化测试框架，提供 `UGauntletTestController` 基类和测试生命周期管理 |
+| `ProjectLauncher` | 项目启动器，用于通过命令行启动测试目标平台 |
+
+无特殊模块依赖（仅标准 Core/Engine/Slate 等）。
 
 ## 维护状态
 
@@ -198,21 +339,23 @@ public:
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为浮点数时产生的编译器警告。 |
-| 2026-04-28 | `808cb4e5` | Fixed scoped enums that are used in formatting functions that can cause garbage output | 修复了在格式化函数中使用作用域枚举可能导致垃圾输出的问题。 |
-| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修正了当参数为64位时，32位格式说明符应为64位，反之亦然的问题。 |
-| 2026-04-15 | `e1420e00` | Automation: Only set OutputPath if we're not setting an ArtifactsPath. This means that we can easily | 优化自动化流程：仅当未设置 ArtifactsPath 时才设置 OutputPath，便于管理输出路径。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志输出从 UE_LOG 迁移至 UE_LOGF 宏。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 到 float 截断的编译警告 |
+| 2026-04-28 | `808cb4e5` | Fixed scoped enums that are used in formatting functions that can cause garbage output | 修复格式化函数中作用域枚举导致的乱码输出 |
+| 2026-04-27 | `769566b4` | Fixed 32-bit format specifiers to be 64-bit when the arguments are 64-bit, and vice versa | 修复 32/64 位格式说明符与参数不匹配的问题 |
+| 2026-04-15 | `e1420e00` | Automation: Only set OutputPath if we're not setting an ArtifactsPath. This means that we can easily | 修复输出路径和 ArtifactsPath 的冲突逻辑 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移为 UE_LOGF 日志宏 |
 
 ### 维护评价
 
-该插件创建于 2024 年 5 月，从 2026 年 4 月到 5 月有多次更新，但主要集中在 **代码规范修复和编译器警告处理**（如格式说明符、枚举输出、浮点模式），而非新功能的添加或性能特性的增强。
+- **创建时间**：2024 年 5 月，是一个相对较新的插件
+- **实验性标记**：`.uplugin` 中 `IsExperimentalVersion=true`，仍处于实验阶段
+- **近期更新**：2026 年 4-5 月有密集的代码质量修复（编译警告、格式化问题、日志迁移），表明仍在活跃维护
+- **功能状态**：核心功能完整（静态相机、材质、序列、回放、ProfileGo 五种测试类型），但作为实验性功能可能仍有 API 变动
+- **CI/CD 集成**：通过 Gauntlet 框架天然支持 CI/CD 管线集成
 
-- **维护状态**：处于**维护性更新**阶段，修复已知代码问题，但没有活跃的功能开发迹象。
-- **实验性**：`.uplugin` 中 `IsExperimentalVersion=true`，表明 Epic 官方将其视为实验性功能，API 和行为在后续版本中可能发生变化。
-- **建议**：对于追求稳定性的生产项目，使用此插件需谨慎，并准备好在引擎版本升级时处理潜在的兼容性问题。对于内部测试、技术预研或工具链开发，它提供了一个非常强大且可扩展的自动化性能测试基础。**推荐在了解其实验性质的前提下使用。**
+**推荐使用**：适合需要自动化性能回归测试的团队，尤其是在 CI/CD 管线中集成性能验证的场景。由于是实验性插件，建议在正式生产环境中使用前充分测试，并关注 API 可能的变动。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Performance/AutomatedPerfTesting)
-- [官方文档]() （.uplugin 中 DocsURL 为空，暂无官方文档链接）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Performance/AutomatedPerfTesting/Tests)（如果有）

@@ -3391,14 +3391,16 @@
       "forced": true
     },
     "GameplayGraph": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/GameplayGraph/"
+      "doc_path": "docs/5.8/medium/GameplayGraph/",
+      "forced": true
     },
     "TargetingSystem": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/TargetingSystem/"
+      "doc_path": "docs/5.8/medium/TargetingSystem/",
+      "forced": true
     },
     "Gauntlet": {
       "generated_in": "5.7",

@@ -1,10 +1,10 @@
 # Chaos Insights
 
-> Plugin to gather insights into Chaos
+> Plugin to gather insights into Chaos（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 混沌物理洞察 |
+| 中文名 | Chaos 物理洞察 |
 | 分类 | Insights |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
@@ -16,41 +16,42 @@
 
 ## 用途
 
-本插件是 Unreal Insights 的专用扩展，旨在为基于 Chaos 物理系统的项目提供深度性能分析能力。其核心功能是可视化 Chaos 物理场景锁（Physics Scene Lock）的争用情况。在多线程环境下，游戏线程与物理工作线程对同一把读写锁的不当持有或等待会导致难以察觉的卡顿。启用本插件的追踪通道后，Insights 将清晰展示各线程何时在等待锁、持有锁的类型（读/写）以及锁的递归深度，从而帮助开发者精确定位由物理系统锁争用引发的性能瓶颈。
+此插件专为 **Unreal Insights** 程序扩展，用于深入分析 **Chaos 物理系统**的性能与行为。其核心功能是提供 **物理场景锁（Physics Scene Lock）性能分析器**。在多线程物理模拟中，线程对主物理场景锁的争用（Contention）可能导致游戏线程卡顿。此工具能可视化所有尝试获取该锁的线程，清晰展示读锁与写锁的等待情况，帮助开发者诊断和解决由锁竞争引起的性能瓶颈。
 
 ## 使用场景
 
-- 你的游戏或应用使用了 Chaos 物理系统，并且在某些复杂场景或高负载时出现不明原因的性能下降或卡顿。
-- 你需要一个可视化工具来诊断物理线程与游戏线程之间的同步问题，特别是针对物理场景锁的竞争。
+- 你开发的游戏包含大量物理交互（如布娃娃、刚体碰撞），在复杂场景下出现随机卡顿 → 使用此插件在 Unreal Insights 中启用 `ChaosLocks` 通道，分析锁等待情况。
+- 你怀疑物理查询或角色移动组件（Movement Component）的更新与物理模拟同步发生冲突，导致性能下降 → 使用此插件生成时序图，定位具体的锁争用线程和代码区域。
 
 ## 蓝图用法
 
-本插件为分析工具，其功能通过 Unreal Insights 界面启用和查看，不提供直接在游戏或编辑器蓝图中调用的节点。
+不适用。此插件为 **Unreal Insights 程序**扩展，其功能通过 Insights 的 Trace Channel 和 Timing View 展现，不提供游戏运行时的蓝图节点。
 
 ## C++ 用法
 
-本插件作为 Unreal Insights 的分析模块，无需在游戏逻辑代码中集成。其启用和使用主要通过 Unreal Insights 的命令行参数或界面配置完成。
+此插件的 API 主要面向 Unreal Insights 程序的内部扩展，而非游戏项目的直接 C++ 调用。其核心是注册自定义的 Trace Channel 和 Timing View 绘制逻辑。
+
+### 核心模块与使用
+
+1.  **启用 Trace Channel**：
+    在 Unreal Insights 启动参数或 UI 中启用 `ChaosLocks` 通道，即可开始捕获物理锁事件。
+2.  **查看分析结果**：
+    在 Unreal Insights 的 **Timing 视图**中，选择 `ChaosLocks` 通道，将显示各线程对物理场景锁的持有与等待时间线，区分读锁（Read）与写锁（Write）。
+
+## 模块列表
+
+| 模块 | 一句话说明 |
+|---|---|
+| `ChaosInsightsAnalysis` | 负责分析 Chaos 物理锁事件数据，提供查询和统计功能。 |
+| `ChaosInsightsUI` | 负责在 Unreal Insights 的 Timing 视图中绘制物理锁分析的时序图表。 |
 
 ## Demo 示例
 
-以下是一个启用 Chaos 物理锁洞察通道进行分析的最小示例：
-
-1.  在启动游戏或应用程序时，通过命令行参数启用 Insights 追踪并包含 `ChaosLocks` 通道：
-    ```bash
-    MyGame.exe -trace=ChaosLocks,Default
-    ```
-2.  打开 Unreal Insights 应用程序（`UnrealInsights.exe`）。
-3.  在 Timing 视图中，你将能看到 `ChaosLocks` 相关的时间轴，显示各线程的锁等待、读锁和写锁区域。
+无直接可运行的项目 Demo。功能演示依赖于 Unreal Insights 程序加载此插件后，对目标项目（如包含复杂物理场景的测试项目）进行 Trace 捕获与分析。
 
 ## 模块依赖
 
-| 模块 | 用途 |
-|---|---|
-| `ChaosSolverEngine` | Chaos 物理求解器引擎，用于接入物理模拟数据 |
-| `PhysicsCore` | 物理系统核心模块，提供基础物理类型和接口 |
-| `TraceInsights` | Unreal Insights 的基础追踪和分析框架 |
-| `TraceAnalysis` | 用于分析追踪数据的框架 |
-| `UnsavedOnlyTracker` | 编辑器中用于追踪未保存资产的工具模块 |
+无特殊依赖（仅标准 Insights 框架及 Chaos 物理模块）。
 
 ## 维护状态
 
@@ -58,17 +59,20 @@
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 宏迁移至 UE_LOGF 新宏 |
-| 2025-05-30 | `20572801` | Updated headers using UnrealCodeFixup to make sure dllstorage is on methods/staticvars instead of ty | 修正头文件中的 DLL 导出声明 |
-| 2025-04-30 | `e9656f2e` | [Insights] Chaos Insights: Fixed crash due to usage of a ITimingViewSession pointer after the Timing | 修复了因时序视图会话指针失效导致的崩溃 |
-| 2025-04-29 | `ee649d35` | Fix Unreal Insights Trace crashes after enabling and disabling the Timing Tab. | 修复了反复开关 Timing 标签页导致的崩溃 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 采用新版日志宏，保持代码规范一致。 |
+| 2025-05-30 | `20572801` | Updated headers using UnrealCodeFixup to make sure dllstorage is on methods/staticvars instead of ty... | 修正 DLL 导出声明，确保跨模块链接正确。 |
+| 2025-04-30 | `e9656f2e` | [Insights] Chaos Insights: Fixed crash due to usage of a ITimingViewSession pointer after the Timing... | 修复了一个在 Timing 视图会话结束后访问无效指针导致的崩溃。 |
+| 2025-04-29 | `ee649d35` | Fix Unreal Insights Trace crashes after enabling and disabling the Timing Tab. | 修复了反复启用/禁用 Timing 选项卡时可能导致的崩溃问题。 |
+| 2025-04-11 | `7565ac94` | Added ChaosInsights module for Chaos related extensions to insights and implemented a physics scene... | 初始提交，实现了物理场景锁性能分析器的核心功能。 |
 
 ### 维护评价
 
-该插件创建于 2025 年 4 月，时间不长。从提交历史看，初始版本上线后不久即有针对崩溃的修复和代码整理，表明处于积极开发和维护阶段。由于 `IsBetaVersion=true`，它仍被视为实验性功能，可能存在未发现的局限性。对于正在使用 Chaos 物理系统并遇到性能问题的项目，这是一个非常有价值的诊断工具，推荐在性能分析环节使用。
+- **状态**：**活跃维护**。
+- **分析**：插件创建于 2025 年 4 月，至今约 1 年。从 git 历史看，开发初期集中修复了多个稳定性问题（崩溃），近期有代码规范和工具链适配更新。最后实质性功能修复在 2025 年 4 月底，之后以维护性提交为主。考虑到其作为调试工具的性质，更新频率属正常。
+- **建议**：✅ **推荐使用**。该插件是分析 Chaos 物理系统多线程性能问题的专业工具，对于遇到相关卡顿问题的项目有重要价值。虽为实验性（`IsBetaVersion=true`），但已具备核心功能并经过稳定性修复。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosInsights)
-- [官方文档]() (暂无独立文档，请参考 Unreal Insights 相关资料)
-- [测试用例]() (暂未发现插件专属测试用例)
+- [官方文档](https://docs.unrealengine.com/)（暂无专属文档页，可查阅 Unreal Insights 及 Chaos 物理系统相关文档）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosInsights)（当前插件目录内无独立测试）

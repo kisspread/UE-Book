@@ -1,13 +1,13 @@
 # Mesh Resizing
 
-> Mesh Resizing（网格缩放）
+> Mesh Resizing
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 网格缩放 |
+| 中文名 | 网格缩放变形 |
 | 分类 | Editor |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（数据流节点） |
+| 包含内容 | ✅ 有（测试资源） |
 | 模块 | `MeshResizingCore` (Runtime), `MeshResizingEditorTools` (Runtime), `MeshResizingEngine` (Runtime), `MeshResizingDataflowNodes` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-12-09 |
@@ -16,158 +16,293 @@
 
 ## 用途
 
-MeshResizing 插件为 UE5 的 Dataflow 系统提供了一组实验性的节点，用于实现**形状保持的网格缩放与变形**。它解决的核心问题是：当一个网格（通常是骨骼网格体）的目标形状（Target Shape）与原始形状（Source Shape）不同时，如何在缩放或变形过程中保持其拓扑结构、UV 映射和纹理坐标的正确性。
+MeshResizing 是一个基于 **Dataflow** 数据流图系统的网格变形与缩放工具集。它的核心目标是：**将一个网格的拓扑结构（骨架/顶点连接关系）"包裹"到另一个网格的形状上**，并在此过程中保持形状特征和顶点对应关系。
 
-插件通过以下方式实现这一目标：
-1.  **网格转换与代理生成**：将骨骼网格体（Skeletal Mesh）转换为 Dataflow 可用的动态网格（Dynamic Mesh）或数据流网格（Dataflow Mesh），并为其生成可变形的“代理”网格。
-2.  **RBF 插值**：使用径向基函数（Radial Basis Function）在源形状和目标形状之间进行插值，从而实现平滑、形状保持的变形。
-3.  **网格包裹 (Mesh Wrap)**：通过定义地标点（Landmarks），将一个网格的拓扑“包裹”到另一个网格的形状上，这是实现高质量变形的关键。
-4.  **UV 与纹理处理**：提供节点来自动调整 UV 布局、对齐 UV，甚至基于新网格形状生成平铺纹理，确保纹理在新形状下依然正确映射。
+具体解决的问题包括：
 
-简单来说，这个插件让你可以在 Dataflow 图表中，用节点化的方式，将角色网格体从一种体型（如瘦）平滑、保真地变形为另一种体型（如胖），同时自动处理好所有相关的 UV 和材质问题。
+- **骨骼网格到动态网格的转换**：将 SkeletalMesh 转换为带导入顶点映射信息的 DataflowMesh/ DynamicMesh，为后续变形操作提供基础
+- **基于地标（Landmark）的网格包裹**：通过在源拓扑网格和目标形状网格上标记对应点，引导网格包裹算法将源网格的表面变形为目标形状
+- **RBF 径向基函数插值变形**：基于采样点计算 RBF 权重，实现源网格到目标网格的高效变形
+- **约束物理变形**：支持剪切约束、弯曲约束、边缘约束等物理模拟方式的网格变形
+- **代理网格生成与插值**：生成拓扑一致的源/目标代理网格对，并支持在两者之间进行混合插值
+- **UV 操作管线**：提供 UV 展开、UV 对齐、UV 变换等配套工具，确保变形后纹理仍然正确
+
+该插件主要用于角色/生物的网格变形工作流——例如将一个体型的角色网格快速适配到另一个体型，同时保持拓扑、UV 和材质的一致性。
 
 ## 使用场景
 
--   **角色自定义系统**：制作一个支持多种体型（高矮胖瘦）的角色创建器，共享同一套基础拓扑和 UV 的网格资产，通过该插件实时变形。
--   **角色成长或老化**：模拟角色随时间推移的体型变化，如从成年到老年。
--   **资产批量缩放**：需要将一批同拓扑但不同比例的网格资产（例如不同尺寸的桌椅）的 UV 和纹理进行批量适配。
--   **高级变形管线**：构建复杂的 Dataflow 变形管线，例如先进行网格包裹，再进行局部约束变形，最后调整纹理。
+- 你需要将一个角色的网格变形（wrap）到另一个角色的体型上 → 使用 **MeshWrap** 节点配合 Landmark 地标系统
+- 你需要基于采样权重将源网格高效插值到目标形状 → 使用 **RBF Resizing** 节点（GenerateRBFResizingWeights + ApplyRBFResizing）
+- 你需要在源形状和目标形状之间做平滑过渡动画 → 使用 **GenerateInterpolatedProxy** 节点控制 BlendAlpha
+- 你需要在变形后重新生成 UV 映射 → 使用 **UVUnwrapNode**、**AlignUVMeshNode**、**UVMeshTransformNode** 组成 UV 处理管线
+- 你需要基于物理约束（剪切/弯曲/边缘）的网格变形 → 使用 **MeshConstrainedDeformation** 节点
 
-## 蓝图用法
+## Dataflow 节点用法
 
-此插件主要提供 Dataflow 节点，这些节点可在 Dataflow 图表中使用，并通过 Dataflow 组件（如 Dataflow 节点组件）连接到 Actor 上。其核心功能并非直接暴露给传统的蓝图事件图表，而是通过 Dataflow 的节点化工作流实现。
+本插件不使用传统蓝图系统，而是通过 UE5 的 **Dataflow** 可视化数据流图来组织工作流。所有节点以 `USTRUCT` 形式定义，可在 Dataflow 编辑器中通过节点图连接使用。
+
+> ⚠️ 本插件为实验性功能，API 随时可能变更。部分节点已标记 `Deprecated = "5.8"`。
 
 ### 核心节点
 
+#### 网格转换
+
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SkeletalMeshToMesh` (v2) | 将骨骼网格体转换为数据流网格，保留导入的顶点信息用于映射。 | `FSkeletalMeshToMeshDataflowNode_v2` |
-| `GenerateResizableProxy` | 基于源网格和目标网格，生成一对拓扑相同的代理网格，用于后续插值。 | `FGenerateResizableProxyDataflowNode` |
-| `GenerateInterpolatedProxy` | 在源网格和目标网格之间进行混合，生成一个插值后的代理网格。 | `FGenerateInterpolatedProxyDataflowNode` |
-| `MeshWrapLandmarks` | 定义用于网格包裹的地标点（顶点标识对）。通常配合编辑器中的地标选择工具使用。 | `FMeshWrapLandmarksNode` |
-| `MeshWrap` | 执行网格包裹操作。将源拓扑网格的几何形状“包裹”到目标形状网格上，使用地标点进行引导。 | `FMeshWrapNode` |
-| `GenerateRBFResizingWeights` | 对源网格进行采样，生成用于 RBF 插值的权重数据。 | `FGenerateRBFResizingWeightsNode` |
-| `ApplyRBFResizing` | 应用预先计算的 RBF 权重数据，将一个网格变形为目标网格的形状。 | `FApplyRBFResizingNode` |
-| `UVResizeController` | 分析网格的 UV 通道，确定哪些通道需要随网格变形进行调整。 | `FUVResizeControllerNode` |
-| `AlignUVMesh` | 将一个网格的 UV 与另一个基准网格的 UV 进行对齐和缩放。 | `FAlignUVMeshNode` |
-| `GrowTileRegion` | 在图像的有效区域（由 UV 网格定义）内查找并复制一个方块纹理瓦片。 | `FMeshResizingGrowTileRegionNode` |
+| `SkeletalMeshToMesh` (v2) | 将 SkeletalMesh 转换为带导入顶点信息的 DataflowMesh | `FSkeletalMeshToMeshDataflowNode_v2` |
+| `SkeletalMeshToMesh` (v1, 已废弃) | 旧版转换节点，输出 DynamicMesh，5.8 起已废弃 | `FSkeletalMeshToMeshDataflowNode` |
 
-### 使用示例（Dataflow 图表描述）
+#### 代理网格与插值
 
-1.  **基础形状变形管线**:
-    -   将 `SkeletalMeshToMesh` 节点连接到你的源角色骨骼网格体。
-    -   将其输出的 `Mesh` 和 `MaterialArray` 连接到 `GenerateResizableProxy` 节点的 `SourceMesh` 和 `SourceMaterialArray` 输入。
-    -   将你的目标形状网格（可以是另一个 `SkeletalMeshToMesh` 的输出或编辑好的动态网格）连接到 `TargetMesh` 输入。
-    -   `GenerateResizableProxy` 将输出拓扑一致的 `SourceProxyMesh` 和 `TargetProxyMesh`。
-    -   你可以将这两个代理网格连接到 `GenerateInterpolatedProxy`，通过 `BlendAlpha` (0-1) 来控制源形状和目标形状的混合比例，得到最终的变形网格。
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GenerateResizableProxy` | 基于顶点映射数据生成拓扑一致的源/目标代理网格对 | `FGenerateResizableProxyDataflowNode` |
+| `GenerateInterpolatedProxy` | 在源和目标代理网格之间做混合插值，Alpha=0 为源，Alpha=1 为目标 | `FGenerateInterpolatedProxyDataflowNode` |
 
-2.  **使用网格包裹进行高级变形**:
-    -   使用 `MeshWrapLandmarks` 节点（或通过编辑器工具在网格上选择）为源拓扑网格和目标形状网格定义匹配的地标点。
-    -   将源拓扑网格、目标形状网格以及各自的地标点数组连接到 `MeshWrap` 节点。
-    -   调整 `MaxNumOuterIterations`, `LaplacianStiffness` 等参数来优化包裹结果。`MeshWrap` 节点的 `WrappedMesh` 输出即为形状匹配目标网格但拓扑来自源网格的最终结果。
+#### 网格包裹
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `MeshWrapLandmarks` | 定义网格包裹所需的地标点（可在编辑器中通过选择工具交互生成） | `FMeshWrapLandmarksNode` |
+| `MeshWrap` | 将源拓扑网格包裹到目标形状网格上，使用地标对应关系引导 | `FMeshWrapNode` |
+
+#### RBF 变形
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GenerateRBFResizingWeights` | 对源网格采样并计算 RBF 插值权重数据 | `FGenerateRBFResizingWeightsNode` |
+| `ApplyRBFResizing` | 将预计算的 RBF 权重应用到网格上进行变形，支持骨骼网格目标 | `FApplyRBFResizingNode` |
+
+#### 网格包裹（综合）
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `MeshWarp` | 综合网格变形节点，支持 WrapDeform 和 RBFInterpolate 两种方法 | `FMeshWarpNode` |
+
+#### 约束变形
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `MeshConstrainedDeformationTestPlayground` | 基于物理约束的网格变形（剪切/弯曲/边缘约束） | `FMeshConstrainedDeformationNode` |
+
+#### UV 操作
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `UVUnwrapNode` | UV 展开，支持 ExponentialMap、ConformalFreeBoundary、SpectralConformal 三种算法 | `FUVUnwrapNode` |
+| `AlignUVMeshNode` | 将变形网格的 UV 与基准网格对齐 | `FAlignUVMeshNode` |
+| `UVMeshTransformNode` | 对 UV 进行缩放、旋转、平移变换 | `FUVMeshTransformNode` |
+| `UVResizeController` | UV 缩放控制器，判断网格是否适合 UV 缩放并输出可用 UV 通道 | `FUVResizeControllerNode` |
+
+#### 纹理操作
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GrowTileRegion` | 在图像指定 UV 区域内找到方形瓦片并平铺到整张图像 | `FMeshResizingGrowTileRegionNode` |
+
+### 典型工作流
+
+**网格包裹（Mesh Wrap）工作流**：
+
+1. 使用 `SkeletalMeshToMesh` (v2) 将源骨骼网格和目标骨骼网格分别转为 DataflowMesh
+2. 使用 `MeshWrapLandmarks` 节点分别为源拓扑网格和目标形状网格定义地标点
+3. 连接两个 Landmarks 节点和两个网格到 `MeshWrap` 节点
+4. `MeshWrap` 根据 Identifier 匹配对应地标，执行包裹计算
+5. 输出的 WrappedMesh 即为目标形状上的源拓扑网格
+
+**RBF 变形工作流**：
+
+1. 使用 `SkeletalMeshToMesh` 将源网格和目标网格转为 DataflowMesh
+2. `GenerateRBFResizingWeights` 节点以源网格为输入，采样计算 RBF 权重
+3. `ApplyRBFResizing` 节点以待变形网格、目标网格和预计算权重为输入，输出变形后的网格
+
+**UV 处理管线**：
+
+1. 变形后的网格通过 `UVResizeController` 检测可用 UV 通道
+2. 使用 `AlignUVMeshNode` 将变形网格的 UV 与基准网格对齐
+3. 使用 `UVMeshTransformNode` 对 UV 做最终的缩放/旋转/平移调整
+4. 如需要，使用 `UVUnwrapNode` 重新展开 UV
 
 ## C++ 用法
 
-此插件的功能主要通过 Dataflow 节点在编辑器中以图形化方式使用，直接的 C++ 编程接口较少。开发者更可能继承或参考这些节点来创建自定义的变形逻辑。
+本插件的 C++ API 主要面向 Dataflow 节点注册和自定义扩展。
 
 ### 头文件引入
 
 ```cpp
-// 若要使用或引用其中的数据结构
-#include "MeshResizing/MeshWrapNode.h" // FMeshWrapLandmark, FMeshWrapNode
-#include "MeshResizing/RBFInterpolationNodes.h" // FMeshResizingRBFInterpolationData 等
+#include "MeshResizing/MeshWrapNode.h"
 ```
-
-### 基本用法
-
-自定义 Dataflow 节点是此插件最核心的扩展方式。你可以继承 `FDataflowNode` 来创建自己的网格处理节点。
 
 ```cpp
-// 示例：一个简单的自定义节点，用于对网格顶点进行缩放 (来自插件节点设计的简化)
-USTRUCT(Meta = (MeshResizing, Experimental))
-struct FMyScaleMeshNode : public FDataflowNode
-{
-    GENERATED_USTRUCT_BODY()
-    DATAFLOW_NODE_DEFINE_INTERNAL(FMyScaleMeshNode, "MyScaleMesh", "Custom|Mesh", "Scales mesh vertices")
-
-    FMyScaleMeshNode(const UE::Dataflow::FNodeParameters& InParam, FGuid InGuid = FGuid::NewGuid())
-        : FDataflowNode(InParam, InGuid)
-    {
-        // 注册输入输出
-        RegisterInputConnection(&Mesh);
-        RegisterOutputConnection(&Mesh); // 输入和输出可以是同一个属性
-    }
-
-private:
-    UPROPERTY(meta = (DataflowInput, DataflowOutput, DataflowPassthrough = "Mesh"))
-    TObjectPtr<UDataflowMesh> Mesh;
-
-    UPROPERTY(EditAnywhere, Category = "Scale", meta = (DataflowInput))
-    FVector3d Scale = FVector3d(1.0);
-
-    virtual void Evaluate(UE::Dataflow::FContext& Context, const FDataflowOutput* Out) const override
-    {
-        // 获取输入网格（如果需要可修改副本）
-        if (UDataflowMesh* InMesh = Context.GetValue(DataflowInput, &Mesh))
-        {
-            // 创建可编辑副本或在原网格上操作
-            // ... 应用缩放变换到网格顶点 ...
-            // 设置输出值
-            Context.SetValue(DataflowOutput, &Mesh, InMesh);
-        }
-    }
-};
+#include "MeshResizing/BaseBodyDataflowNodes.h"
 ```
 
-### 进阶用法
+### 基本用法：注册 Dataflow 节点
 
-结合多个节点构建复杂的变形效果。例如，在 C++ 层面，你可能需要编写一个函数来批量生成匹配的地标点，然后将其输入到 `FMeshWrapNode` 中进行处理。
+各子模块提供注册函数，需在使用前调用以将节点注册到 Dataflow 系统中。
+
+```cpp
+// 来源: Private/MeshResizing/BaseBodyDataflowNodes.h
+namespace UE::MeshResizing
+{
+    void RegisterBaseBodyDataflowNodes();
+}
+
+// 来源: Public/MeshResizing/MeshWrapNode.h
+namespace UE::MeshResizing
+{
+    void RegisterMeshWrapNodes();
+}
+
+// 来源: Private/MeshResizing/MeshConstraintNodes.h
+namespace UE::MeshResizing
+{
+    void RegisterMeshConstraintDataflowNodes();
+}
+
+// 来源: Private/MeshResizing/AlignUVMeshNode.h
+namespace UE::MeshResizing
+{
+    void RegisterAlignUVMeshNodes();
+}
+
+// 来源: Private/MeshResizing/UVMeshTransformNode.h
+namespace UE::MeshResizing
+{
+    void RegisterUVMeshTransformNodes();
+}
+
+// 来源: Private/MeshResizing/UVUnwrapNode.h
+namespace UE::MeshResizing
+{
+    void RegisterUVUnwrapNodes();
+}
+
+// 来源: Private/MeshResizing/MeshResizingTextureNodes.h
+namespace UE::MeshResizing
+{
+    void RegisterTextureNodes();
+}
+```
+
+### 基本用法：定义 MeshWrap 地标
+
+```cpp
+// 来源: Public/MeshResizing/MeshWrapNode.h
+// 定义单个地标：包含标识符和顶点索引
+FMeshWrapLandmark Landmark;
+Landmark.Identifier = TEXT("LeftShoulder");
+Landmark.VertexIndex = 42;
+
+// 定义地标对应关系
+FMeshWrapCorrespondence Correspondence;
+Correspondence.Identifier = TEXT("LeftShoulder");
+Correspondence.SourceVertexIndex = 42;
+Correspondence.TargetVertexIndex = 108;
+```
+
+### 进阶用法：自定义 MeshWrap 参数
+
+```cpp
+// 来源: Public/MeshResizing/MeshWrapNode.h
+// FMeshWrapNode 的关键参数说明：
+
+// 迭代控制
+int32 MaxNumOuterIterations = 10;     // 外循环最大次数
+int32 NumInnerIterations = 20;        // 内循环次数
+float ProjectionTolerance = 1e-4f;    // 提前终止阈值
+
+// 刚度权重
+float LaplacianStiffness = 1.f;              // 保持源拓扑特征的拉普拉斯刚度
+float InitialProjectionStiffness = 0.1f;     // 初始投影刚度（匹配目标形状）
+float ProjectionStiffnessMuliplier = 10.f;   // 每次外循环投影刚度的倍增系数
+float CorrespondenceStiffness = 1.f;         // 地标对应匹配刚度
+```
 
 ## Demo 示例
 
-以下是一个在 Dataflow 资产中可能使用的节点连接关系示例，展示了从骨骼网格体到最终变形结果的流程。请注意，这需要在 UE 编辑器中通过 Dataflow 图表界面实现。
+### 自定义 Dataflow 节点扩展示例
+
+本插件的核心是 Dataflow 节点系统。以下展示如何创建使用 MeshResizing 功能的自定义节点。
 
 ```cpp
-// 此示例描述了 Dataflow 节点图的连接逻辑，而非可直接编译的 C++ 代码。
-// 假设我们有两个骨骼网格体：SourceSKM (瘦型) 和 TargetSKM (胖型)。
-// 目标是生成一个介于两者之间的混合体，并确保其 UV 正确。
+// MyMeshResizeNode.h
+#pragma once
 
-// 1. 转换源网格体
-FDataflowNode& SourceConverter = DataflowGraph->AddNode(FSkeletalMeshToMeshDataflowNode_v2::StaticStruct());
-SourceConverter.SetPropertyValue(TEXT("SkeletalMesh"), SourceSKM);
+#include "CoreMinimal.h"
+#include "Dataflow/DataflowNode.h"
+#include "MeshResizing/MeshWrapNode.h"
 
-// 2. 转换目标网格体
-FDataflowNode& TargetConverter = DataflowGraph->AddNode(FSkeletalMeshToMeshDataflowNode_v2::StaticStruct());
-TargetConverter.SetPropertyValue(TEXT("SkeletalMesh"), TargetSKM);
+// 继承 FMeshWrapNode 创建自定义变体
+USTRUCT(Meta = (MeshResizing, Experimental))
+struct FMyCustomWrapNode : public FDataflowNode
+{
+    GENERATED_USTRUCT_BODY()
+    DATAFLOW_NODE_DEFINE_INTERNAL(FMyCustomWrapNode, "MyCustomWrap", "Custom", "Custom Mesh Wrap")
 
-// 3. 生成可变形代理（可选，用于平滑插值）
-FDataflowNode& ProxyGenerator = DataflowGraph->AddNode(FGenerateResizableProxyDataflowNode::StaticStruct());
-// 连接源转换器的输出到代理生成器的源输入
-DataflowGraph->Connect(SourceConverter.GetOutput(TEXT("Mesh")), ProxyGenerator.GetInput(TEXT("SourceMesh")));
-DataflowGraph->Connect(TargetConverter.GetOutput(TEXT("Mesh")), ProxyGenerator.GetInput(TEXT("TargetMesh")));
+public:
+    FMyCustomWrapNode(const UE::Dataflow::FNodeParameters& InParam, FGuid InGuid = FGuid::NewGuid())
+        : FDataflowNode(InParam, InGuid)
+    {
+        RegisterInputConnection(&SourceMesh);
+        RegisterInputConnection(&TargetMesh);
+        RegisterOutputConnection(&OutputMesh, &SourceMesh);
+    }
 
-// 4. 进行插值混合
-FDataflowNode& BlendingNode = DataflowGraph->AddNode(FGenerateInterpolatedProxyDataflowNode::StaticStruct());
-DataflowGraph->Connect(SourceConverter.GetOutput(TEXT("Mesh")), BlendingNode.GetInput(TEXT("SourceMesh")));
-DataflowGraph->Connect(TargetConverter.GetOutput(TEXT("Mesh")), BlendingNode.GetInput(TEXT("TargetMesh")));
-BlendingNode.SetPropertyValue(TEXT("BlendAlpha"), 0.7f); // 70% 胖型
+private:
+    UPROPERTY(meta = (DataflowInput))
+    TObjectPtr<UDataflowMesh> SourceMesh;
 
-// 5. 对混合结果进行 UV 对齐
-FDataflowNode& UVAligner = DataflowGraph->AddNode(FAlignUVMeshNode::StaticStruct());
-DataflowGraph->Connect(BlendingNode.GetOutput(TEXT("ProxyMesh")), UVAligner.GetInput(TEXT("ResizingMesh")));
-DataflowGraph->Connect(SourceConverter.GetOutput(TEXT("Mesh")), UVAligner.GetInput(TEXT("BaseMesh"))); // 以原始瘦型网格UV为基准
+    UPROPERTY(meta = (DataflowInput))
+    TObjectPtr<UDataflowMesh> TargetMesh;
+
+    UPROPERTY(meta = (DataflowOutput, DataflowPassthrough = "SourceMesh"))
+    TObjectPtr<UDataflowMesh> OutputMesh;
+
+    UPROPERTY(EditAnywhere, Category = "Custom", meta = (ClampMin = "0"))
+    float CustomStiffness = 1.f;
+
+    virtual void Evaluate(UE::Dataflow::FContext& Context, const FDataflowOutput* Out) const override;
+};
+```
+
+```cpp
+// MyMeshResizeNode.cpp
+#include "MyMeshResizeNode.h"
+
+void FMyCustomWrapNode::Evaluate(UE::Dataflow::FContext& Context, const FDataflowOutput* Out) const
+{
+    // 从输入端获取数据
+    const UDataflowMesh* Source = GetValue(Context, SourceMesh);
+    const UDataflowMesh* Target = GetValue(Context, TargetMesh);
+
+    if (!Source || !Target)
+    {
+        return;
+    }
+
+    // 在此实现自定义的包裹逻辑
+    // 可以调用 MeshResizingCore / MeshResizingEngine 模块中的底层函数
+    // ...
+
+    // 设置输出
+    SetValue(Context, OutputMesh, /* result mesh */);
+}
 ```
 
 ## 模块依赖
 
-此插件的模块依赖主要围绕数据流、几何网格处理和渲染。使用者需要确保其项目模块包含了对核心模块的依赖。
+由于本插件为实验性 Dataflow 节点集合，主要依赖 Dataflow 框架和几何处理模块。
 
 | 模块 | 用途 |
 |---|---|
-| `DataflowCore`, `DataflowEngine` | Dataflow 框架的核心和运行时引擎，是使用所有节点的基础。 |
-| `DynamicMesh`, `GeometryCore`, `MeshResizingCore` | 几何处理、动态网格操作和网格缩放核心算法。 |
-| `DataflowNodes`, `MeshDescription` | 提供 Dataflow 节点基础结构和网格描述转换功能。 |
-| `RenderCore`, `RHI` | 与渲染系统集成，用于节点的调试绘制和预览。 |
+| `Dataflow` | Dataflow 节点框架，所有节点的基类 `FDataflowNode` 所在模块 |
+| `DataflowEngine` | Dataflow 运行时引擎 |
+| `GeometryFramework` | 动态网格 `UDynamicMesh`、`UDataflowMesh` 等几何体类型 |
+| `GeometryCore` | 底层几何计算库（顶点映射、网格拓扑操作等） |
+| `MeshResizingCore` | MeshResizing 内部核心类型（如 `FMeshResizingRBFInterpolationData`） |
+| `MeshResizingEngine` | MeshResizing 内部引擎逻辑 |
+| `MeshDescriptionEditor` | 编辑器专用，处理 MeshDescription 相关操作 |
 
 ## 维护状态
 
@@ -175,22 +310,27 @@ DataflowGraph->Connect(SourceConverter.GetOutput(TEXT("Mesh")), UVAligner.GetInp
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下，双精度常量截断为单精度浮点数时产生的警告代码。 |
-| 2026-05-12 | `a7802337` | Dataflow: | 数据流相关更新（具体信息未在摘录中显示）。 |
-| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 在即将到来的头文件清理之前，预先添加必要的头文件包含。 |
-| 2026-01-30 | `7b60de76` | Dataflow : add support to lasso to the paint tool by leveraging the newly added feature in the mesh | 数据流：为绘图工具添加了套索选择支持，利用了网格中新添加的功能。 |
-| 2025-12-19 | `f86e1e20` | Dataflow : update a lot of nodes to use the new rendering system | 数据流：更新了大量节点以使用新的渲染系统。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 常量截断为 float 的编译警告 |
+| 2026-05-12 | `a7802337` | Dataflow: | Dataflow 相关更新（commit message 未提供详情） |
+| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 在即将到来的头文件清理前补充必要的 #include |
+| 2026-01-30 | `7b60de76` | Dataflow : add support to lasso to the paint tool by leveraging the newly added feature in the mesh | Dataflow 画笔工具新增套索选择功能 |
+| 2025-12-19 | `f86e1e20` | Dataflow : update a lot of nodes to use the new rendering system | 大量节点迁移到新的渲染系统 |
 
 ### 维护评价
 
-MeshResizing 是一个**创建时间较新、处于活跃开发中的实验性插件**。
+- **创建时间**：2024 年 12 月，至今约 1 年半
+- **最近更新频率**：约 1-2 个月一次功能性更新，保持活跃
+- **活跃度**：近期更新包括编译修复、新功能（套索工具）、渲染系统迁移和头文件清理，说明仍在积极开发中
+- **状态**：实验性插件（`IsExperimentalVersion=true`），默认未启用，API 不稳定
+- **已知限制**：
+  - 部分节点标记为 `Deprecated = "5.8"`，说明 API 仍在快速迭代
+  - 顶点映射数据选项有限（源码注释提到 "only have two choices that work currently"）
+  - RBF 插值中待变形网格输入 "currently unused"，功能尚未完整
+  - 约束变形节点命名为 "TestPlayground"，尚处于测试阶段
 
--   **创建时间**：2024年12月，至今约1年。
--   **近期更新**：最近一次提交在 2026 年 5 月，且在过去一年内有多次功能性更新（如节点渲染系统更新、工具增强），表明 Epic 工程师正在持续迭代。
--   **实验性**：插件明确标记为实验性 (`IsExperimentalVersion: true`)，且默认未启用。这意味着 API 和功能在未来版本中可能会发生**重大更改或被移除**。
--   **推荐使用**：适合在**原型开发、技术预览或内部工具**中探索 Dataflow 驱动的网格变形工作流。**不建议**直接用于生产环境的项目，除非你准备好应对其可能的不兼容变更。作为学习 Dataflow 和几何处理技术的范例非常有价值。
+**总体评价**：这是一个处于**早期活跃开发**阶段的实验性插件。Dataflow 节点覆盖了从网格转换、包裹、RBF 变形到 UV 处理的完整管线，但多个节点明确标记为实验性和已废弃状态。建议关注但**暂不用于生产环境**。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MeshResizing)
-- [官方文档]：暂无（.uplugin 中 DocsURL 为空）
+- [官方文档]()（无）

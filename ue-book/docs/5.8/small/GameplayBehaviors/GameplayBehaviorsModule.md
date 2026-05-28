@@ -1,34 +1,38 @@
 # AI Behaviors
 
-> Encapsulated fire-and-forget behaviors for AI agents
+> Encapsulated fire-and-forget behaviors for AI agents（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | AI 行为 |
+| 中文名 | AI 行为系统 |
 | 分类 | Gameplay |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `GameplayBehaviorsModule` (Runtime), `GameplayBehaviorsModule` (UncookedOnly), `GameplayBehaviorsEditorModule` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2021-09-28 |
-| 年龄标签 | 🆕（约 5 年） |
+| 年龄标签 | 👴 老古董（约 5 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/GameplayBehaviors) | |
 
 ## 用途
 
-GameplayBehaviors 提供了一套 **AI 行为封装框架**，让 AI 代理（Agent）能够执行"触发即忘"（fire-and-forget）的离散行为。该插件解决的核心问题是：在 Smart Object 或行为树驱动的 AI 系统中，如何以统一的方式定义、触发和管理一段自包含的 AI 行为（如播放动画、运行临时行为树、执行移动等）。
+GameplayBehaviors 提供了一个**封装式的 AI 行为框架**，用于让 AI 代理执行"即发即忘"（fire-and-forget）的独立行为单元。
 
-插件建立了一套完整的生命周期管理机制（Trigger → 执行 → EndBehavior/AbortBehavior），并通过 `UGameplayBehaviorSubsystem` 世界子系统追踪每个 AI 代理当前活跃的行为，支持行为中断和回调通知。同时提供了 GameplayTag 在黑板（Blackboard）中的原生支持，以及基于标签查询的行为树装饰器节点。
+该插件解决的核心问题是：在使用行为树或 EQS 驱动的 AI 系统中，某些复杂行为（播放动画蒙太奇、运行临时行为树、与 SmartObject 交互等）需要被封装为独立的、可组合的行为模块，而不是直接硬编码在行为树节点里。
 
-该插件依赖 **GameplayAbilities** 插件，与 GAS（Gameplay Ability System）生态深度整合。
+关键设计思路：
+- 每个行为是一个 `UGameplayBehavior` 子类，可被蓝图继承
+- 行为通过 `UGameplayBehaviorSubsystem` 统一管理，跟踪每个 AI 代理当前活跃的行为
+- 行为配置与行为实例分离，通过 `UGameplayBehaviorConfig` 传递参数
+- 深度集成 GameplayAbilities、行为树黑板、SmartObjects 系统
 
 ## 使用场景
 
-- 你在做 Smart Object 系统，需要 AI 角色到达交互点后执行特定动作（如坐在长椅上播放坐下动画）→ 使用 `UGameplayBehavior_AnimationBased`
-- 你需要 AI 角色临时切换到另一个行为树执行一段任务（如调查声响），完成后恢复原始行为树 → 使用 `UGameplayBehavior_BehaviorTree`
-- 你需要在行为树中基于 GameplayTag 条件控制分支逻辑 → 使用 `UBTDecorator_GameplayTagQuery`
-- 你需要在黑板中存储和读取 GameplayTag 值 → 使用 `UBlackboardKeyType_GameplayTag` 及相关蓝图函数库
-- 你需要自定义全新的 AI 行为类型（如交互、巡逻等）→ 继承 `UGameplayBehavior` 并蓝图实现
+- 你需要让 AI 角色执行一个完整的动画序列（如坐下、拾取物品），并在完成后自动通知调用方 → 用 `UGameplayBehavior_AnimationBased`
+- 你需要让 AI 角色临时运行一棵行为树（如调查声音来源），完成后恢复原行为树 → 用 `UGameplayBehavior_BehaviorTree`
+- 你需要一个统一的子系统来跟踪多个 AI 代理各自正在进行的行为，并支持中断 → 用 `UGameplayBehaviorSubsystem`
+- 你需要在行为树装饰器中基于 GameplayTag 查询来决定节点是否激活 → 用 `UBTDecorator_GameplayTagQuery`
+- 你需要在黑板中存储和查询 GameplayTag 类型的值 → 用 `UBlackboardKeyType_GameplayTag`
 
 ## 蓝图用法
 
@@ -36,171 +40,277 @@ GameplayBehaviors 提供了一套 **AI 行为封装框架**，让 AI 代理（Ag
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `K2_TriggerBehavior` | 触发一个游戏行为，传入 Avatar、配置和 SmartObject 拥有者 | `UGameplayBehavior` |
-| `K2_EndBehavior` | 正常结束行为 | `UGameplayBehavior` |
-| `K2_AbortBehavior` | 中断行为（内部调用 EndBehavior 并标记 bInterrupted=true） | `UGameplayBehavior` |
-| `K2_GetNextActorIndexInSequence` | 在 RelevantActors 数组中获取下一个有效 Actor 索引 | `UGameplayBehavior` |
-| `StopGameplayBehavior` | 静态函数，强制停止指定 Avatar 上的特定类型行为 | `UGameplayBehaviorsBlueprintFunctionLibrary` |
-| `GetBlackboardValueAsGameplayTag` | 从行为树节点获取黑板中的 GameplayTag 值 | `UGameplayBehaviorsBlueprintFunctionLibrary` |
-| `SetBlackboardValueAsGameplayTag` | 在行为树节点中设置黑板的 GameplayTag 值 | `UGameplayBehaviorsBlueprintFunctionLibrary` |
-| `GetBlackboardValueAsGameplayTagFromBlackboardComp` | 直接从 BlackboardComponent 获取 GameplayTag | `UGameplayBehaviorsBlueprintFunctionLibrary` |
-| `SetValueAsGameplayTagForBlackboardComp` | 直接向 BlackboardComponent 设置 GameplayTag | `UGameplayBehaviorsBlueprintFunctionLibrary` |
-| `AddGameplayTagFilterToBlackboardKeySelector` | 为黑板键选择器添加 GameplayTag 过滤 | `UGameplayBehaviorsBlueprintFunctionLibrary` |
-| `GetTagContainer` | 从 FValueOrBBKey_GameplayTagContainer 提取标签容器 | `UValueOrBBKey_GameplayTagBlueprintUtility` |
-
-### 蓝图可实现事件（BlueprintImplementableEvent）
-
-创建 `UGameplayBehavior` 的蓝图子类时，可以选择性实现以下事件：
-
-| 事件 | 说明 | 优先级 |
-|---|---|---|
-| `OnTriggered` | 通用触发事件，Avatar 为 AActor | 最低 |
-| `OnTriggeredPawn` | Avatar 为 Pawn 时触发 | 中 |
-| `OnTriggeredCharacter` | Avatar 为 Character 时触发（最具体，优先级最高） | 最高 |
-| `OnFinished` | 通用完成事件 | 最低 |
-| `OnFinishedPawn` | Pawn 完成事件 | 中 |
-| `OnFinishedCharacter` | Character 完成事件 | 最高 |
-
-触发时，系统会按 **Character > Pawn > Actor** 的优先级选择最具体的事件调用。
+| `K2_TriggerBehavior` | 在指定 Avatar 上触发一个行为 | `UGameplayBehavior` |
+| `K2_EndBehavior` | 正常结束指定 Avatar 上的行为 | `UGameplayBehavior` |
+| `K2_AbortBehavior` | 中断指定 Avatar 上的行为 | `UGameplayBehavior` |
+| `K2_GetNextActorIndexInSequence` | 从 RelevantActors 列表中获取下一个有效的 Actor 索引 | `UGameplayBehavior` |
+| `OnTriggered` | 行为被触发时的蓝图事件（泛型） | `UGameplayBehavior` |
+| `OnTriggeredPawn` | 行为被触发时的蓝图事件（Pawn 专用，优先级高于 OnTriggered） | `UGameplayBehavior` |
+| `OnTriggeredCharacter` | 行为被触发时的蓝图事件（Character 专用，最高优先级） | `UGameplayBehavior` |
+| `OnFinished` | 行为完成时的蓝图事件 | `UGameplayBehavior` |
+| `OnFinishedPawn` | 行为完成时的蓝图事件（Pawn 专用） | `UGameplayBehavior` |
+| `OnFinishedCharacter` | 行为完成时的蓝图事件（Character 专用） | `UGameplayBehavior` |
+| `GetTagContainer` | 从 FValueOrBBKey_GameplayTagContainer 获取 Tag 容器值 | `UValueOrBBKey_GameplayTagBlueprintUtility` |
+| `StopGameplayBehavior` | 强制停止指定类的行为（静态函数） | `UGameplayBehaviorsBlueprintFunctionLibrary` |
+| `GetBlackboardValueAsGameplayTag` | 从行为树节点读取黑板中的 GameplayTag | `UGameplayBehaviorsBlueprintFunctionLibrary` |
+| `SetBlackboardValueAsGameplayTag` | 向行为树节点的黑板写入 GameplayTag | `UGameplayBehaviorsBlueprintFunctionLibrary` |
+| `AddGameplayTagFilterToBlackboardKeySelector` | 为黑板 Key 选择器添加 GameplayTag 过滤 | `UGameplayBehaviorsBlueprintFunctionLibrary` |
 
 ### 使用示例（蓝图描述）
 
-**创建自定义行为蓝图：**
+**创建自定义行为子类：**
+1. 创建一个新的蓝图类，父类选择 `GameplayBehavior`
+2. 重写 `OnTriggeredCharacter` 事件（如果目标是 Character）
+3. 在事件中执行你的逻辑，完成后调用 `K2_EndBehavior` 通知系统行为已完成
 
-1. 右键创建新蓝图类，父类选择 `GameplayBehavior`
-2. 在蓝图中实现 `OnTriggeredCharacter` 事件
-3. 在事件中编写你的行为逻辑（如播放蒙太奇、等待一段时间等）
-4. 行为完成后调用 `K2_EndBehavior` 结束行为
+**触发行为：**
+1. 获取 `GameplayBehaviorSubsystem` 实例（通过 `GetCurrent` 静态函数）
+2. 调用 `TriggerBehavior` 静态函数，传入行为配置、Avatar Actor 和可选的 SmartObject Owner
+3. 注册 `OnBehaviorFinished` 委托以接收完成通知
 
-**在行为树中使用：**
-
-1. 添加 `BTTask_StopGameplayBehavior` 节点来停止当前行为
-2. 添加 `BTDecorator_GameplayTagQuery` 装饰器，配置 GameplayTag 查询条件
-3. 添加 `BTTask_SetKeyValueGameplayTag` 节点在黑板中设置标签值
-4. 在黑板中创建 `GameplayTag` 类型的键（使用 `BlackboardKeyType_GameplayTag`）
+**行为树中停止行为：**
+1. 在行为树中添加 `BTTask_StopGameplayBehavior` 节点
+2. 设置 `BehaviorToStop` 为要停止的行为类（留空则停止所有行为）
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "GameplayBehavior.h"
 #include "GameplayBehaviorSubsystem.h"
+#include "GameplayBehavior.h"
+#include "GameplayBehaviorConfig.h"
+#include "GameplayBehavior_AnimationBased.h"
 #include "GameplayBehaviorConfig_Animation.h"
-#include "GameplayBehaviorConfig_BehaviorTree.h"
 #include "GameplayBehaviorsBlueprintFunctionLibrary.h"
+#include "BlackboardKeyType_GameplayTag.h"
 ```
 
 ### 基本用法
 
-通过子系统触发行为，来源：`GameplayBehaviorSubsystem.h`
+通过子系统触发一个行为：
 
 ```cpp
-// 获取世界子系统
+// 来源: Public/GameplayBehaviorSubsystem.h
+
+// 获取当前世界的子系统
 UGameplayBehaviorSubsystem* Subsystem = UGameplayBehaviorSubsystem::GetCurrent(GetWorld());
 
-// 方式1：通过行为对象触发
-UGameplayBehavior* Behavior = NewObject<UGameplayBehavior_AnimationBased>(this);
-UGameplayBehaviorSubsystem::TriggerBehavior(*Behavior, *AvatarActor, /*Config=*/nullptr, /*SmartObjectOwner=*/SmartObjectActor);
+// 静态方法直接触发（会自动获取子系统实例）
+UGameplayBehaviorConfig Config;  // 或其子类
+AActor* AvatarActor = /* 你的 AI 代理 */;
+AActor* SmartObjectOwner = nullptr;  // 可选
 
-// 方式2：通过配置触发（配置会自行创建或获取行为实例）
-UGameplayBehaviorConfig_Animation* Config = NewObject<UGameplayBehaviorConfig_Animation>();
-UGameplayBehaviorSubsystem::TriggerBehavior(*Config, *AvatarActor, SmartObjectActor);
+// 方式一：通过 Config 触发（会自动创建行为实例或使用 CDO）
+UGameplayBehaviorSubsystem::TriggerBehavior(Config, *AvatarActor, SmartObjectOwner);
+
+// 方式二：直接传入行为实例
+UGameplayBehavior* Behavior = /* 获取或创建行为实例 */;
+UGameplayBehaviorSubsystem::TriggerBehavior(*Behavior, *AvatarActor, &Config, SmartObjectOwner);
+```
+
+停止指定代理上的行为：
+
+```cpp
+// 来源: Public/GameplayBehaviorSubsystem.h
+UGameplayBehaviorSubsystem* Subsystem = UGameplayBehaviorSubsystem::GetCurrent(GetWorld());
+if (Subsystem)
+{
+    // 停止特定类的行为
+    Subsystem->StopBehavior(*AvatarActor, UGameplayBehavior_AnimationBased::StaticClass());
+}
 ```
 
 ### 进阶用法
 
-**自定义行为子类并管理生命周期：**
-
-来源：`GameplayBehavior.h`、`GameplayBehaviorSubsystem.h`
+**自定义行为子类（C++）：**
 
 ```cpp
-// 停止特定类型的行为
-bool bStopped = Subsystem->StopBehavior(AvatarActor, UMyCustomBehavior::StaticClass());
+// 来源: Public/GameplayBehavior.h + Public/GameplayBehavior_AnimationBased.h
 
-// 静态函数直接停止
-bool bStopped = UGameplayBehaviorsBlueprintFunctionLibrary::StopGameplayBehavior(
-    UMyCustomBehavior::StaticClass(), AvatarActor);
-
-// 监听行为完成回调
-FOnGameplayBehaviorFinished& Delegate = Behavior->GetOnBehaviorFinishedDelegate();
-Delegate.AddUObject(this, &AMyActor::OnBehaviorCompleted);
-
-void AMyActor::OnBehaviorCompleted(UGameplayBehavior& Behavior, AActor& Avatar, const bool bInterrupted)
+UCLASS()
+class UMyCustomBehavior : public UGameplayBehavior
 {
-    // bInterrupted 为 true 表示行为被中断而非正常完成
-}
+    GENERATED_BODY()
+
+protected:
+    // 重写 Trigger 来自定义触发逻辑
+    virtual bool Trigger(AActor& Avatar, const UGameplayBehaviorConfig* Config, AActor* SmartObjectOwner) override
+    {
+        // 自定义逻辑...
+        
+        // 调用父类以触发蓝图事件
+        return Super::Trigger(Avatar, Config, SmartObjectOwner);
+    }
+
+    virtual void EndBehavior(AActor& Avatar, const bool bInterrupted) override
+    {
+        // 清理逻辑...
+        Super::EndBehavior(Avatar, bInterrupted);
+    }
+
+    // 如果需要按配置条件决定是否创建实例
+    virtual bool NeedsInstance(const UGameplayBehaviorConfig* Config) const override
+    {
+        // 返回 true 表示即使是 CDO 也要创建实例
+        return true;
+    }
+};
 ```
 
-**行为实例化策略：**
-
-来源：`GameplayBehavior.h`
+**播放动画蒙太奇行为：**
 
 ```cpp
-// 通过 InstantiationPolicy 控制行为的实例化方式：
-// - Instantiate: 始终创建新实例
-// - ConditionallyInstantiate: 根据 NeedsInstance() 决定是否创建实例
-// - DontInstantiate: 直接使用 CDO
-bool bInstanced = Behavior->IsInstanced(Config);
+// 来源: Public/GameplayBehavior_AnimationBased.h + Public/GameplayBehaviorConfig_Animation.h
+
+// 配置动画行为
+UGameplayBehaviorConfig_Animation* AnimConfig = NewObject<UGameplayBehaviorConfig_Animation>();
+// AnimMontage, PlayRate, StartSectionName, bLoop 通过 Config 的属性设置
+
+// 或直接使用 Behavior 的 PlayMontage 方法
+UGameplayBehavior_AnimationBased* AnimBehavior = NewObject<UGameplayBehavior_AnimationBased>();
+UAnimMontage* Montage = /* 加载的蒙太奇 */;
+AnimBehavior->PlayMontage(*AvatarActor, *Montage, 1.0f, NAME_None, false);
+```
+
+**在行为树装饰器中使用 GameplayTag 查询：**
+
+```cpp
+// 来源: Public/AI/BTDecorator_GameplayTagQuery.h
+// 在行为树编辑器中配置：
+// - ActorForGameplayTagQuery: 指向要检查的黑板 Actor Key
+// - GameplayTagQuery: 设置要匹配的 Tag 查询表达式
+// 装饰器会自动监听 Tag 变化并更新条件状态
+```
+
+**黑板中存储 GameplayTag：**
+
+```cpp
+// 来源: Public/BlackboardKeyType_GameplayTag.h + Public/GameplayBehaviorsBlueprintFunctionLibrary.h
+
+// 通过蓝图函数库读写
+FGameplayTagContainer Tags = UGameplayBehaviorsBlueprintFunctionLibrary::GetBlackboardValueAsGameplayTag(
+    BTNodeOwner, BlackboardKeySelector);
+
+// 直接通过黑板组件读写
+FGameplayTagContainer Tags = UGameplayBehaviorsBlueprintFunctionLibrary::GetBlackboardValueAsGameplayTagFromBlackboardComp(
+    BlackboardComp, FName("MyTagKey"));
+
+UGameplayBehaviorsBlueprintFunctionLibrary::SetValueAsGameplayTagForBlackboardComp(
+    BlackboardComp, FName("MyTagKey"), NewTagContainer);
 ```
 
 ## Demo 示例
 
+### 自定义行为子类
+
 ```cpp
-// MyPunchBehavior.h
+// MyPatrolBehavior.h
 #pragma once
 
+#include "CoreMinimal.h"
 #include "GameplayBehavior.h"
-#include "MyPunchBehavior.generated.h"
+#include "MyPatrolBehavior.generated.h"
 
 UCLASS()
-class UMyPunchBehavior : public UGameplayBehavior
+class UMyPatrolBehavior : public UGameplayBehavior
 {
     GENERATED_BODY()
 
 public:
-    UMyPunchBehavior(const FObjectInitializer& ObjectInitializer);
+    UMyPatrolBehavior(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 protected:
-    // C++ 中重写 Trigger 实现自定义逻辑
-    virtual bool Trigger(AActor& InAvatar, const UGameplayBehaviorConfig* Config, AActor* SmartObjectOwner) override;
+    // Character 专用触发事件（最高优先级）
+    UFUNCTION(BlueprintImplementableEvent, Category = GameplayBehavior, DisplayName = "OnPatrolTriggered")
+    void K2_OnPatrolTriggered(ACharacter* Avatar);
+
+    // 通用触发：路由到最具体的事件
+    virtual bool Trigger(AActor& Avatar, const UGameplayBehaviorConfig* Config, AActor* SmartObjectOwner) override;
+    virtual void EndBehavior(AActor& Avatar, const bool bInterrupted) override;
+
+private:
+    // 使用 RelevantActors 作为巡逻路径点
+    int32 CurrentWaypointIndex = 0;
+
+    UFUNCTION()
+    void OnReachedWaypoint();
 };
 ```
 
 ```cpp
-// MyPunchBehavior.cpp
-#include "MyPunchBehavior.h"
+// MyPatrolBehavior.cpp
+#include "MyPatrolBehavior.h"
+#include "GameplayBehaviorConfig.h"
+#include "GameplayTasksComponent.h"
 
-UMyPunchBehavior::UMyPunchBehavior(const FObjectInitializer& ObjectInitializer)
+UMyPatrolBehavior::UMyPatrolBehavior(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+    ActionTag = FGameplayTag::RequestGameplayTag(FName("AI.Behavior.Patrol"));
 }
 
-bool UMyPunchBehavior::Trigger(AActor& InAvatar, const UGameplayBehaviorConfig* Config, AActor* SmartObjectOwner)
+bool UMyPatrolBehavior::Trigger(AActor& Avatar, const UGameplayBehaviorConfig* Config, AActor* SmartObjectOwner)
 {
-    // 调用父类 Trigger（会自动调用蓝图事件）
-    if (!Super::Trigger(InAvatar, Config, SmartObjectOwner))
+    if (!Super::Trigger(Avatar, Config, SmartObjectOwner))
     {
         return false;
     }
 
-    // 你的自定义逻辑
-    // ...
+    CurrentWaypointIndex = 0;
 
-    // 行为完成后结束
-    EndBehavior(InAvatar, /*bInterrupted=*/false);
+    // 如果有配置，从配置中读取参数
+    if (Config)
+    {
+        // 从 Config 获取自定义参数...
+    }
+
+    // 利用 RelevantActors 作为巡逻路径点
+    if (RelevantActors.Num() > 0)
+    {
+        // 开始向第一个路径点移动...
+        // 移动完成后调用 OnReachedWaypoint
+    }
+
     return true;
+}
+
+void UMyPatrolBehavior::EndBehavior(AActor& Avatar, const bool bInterrupted)
+{
+    // 清理移动状态
+    CurrentWaypointIndex = 0;
+
+    Super::EndBehavior(Avatar, bInterrupted);
+}
+
+void UMyPatrolBehavior::OnReachedWaypoint()
+{
+    CurrentWaypointIndex++;
+    if (CurrentWaypointIndex >= RelevantActors.Num())
+    {
+        // 巡逻完成
+        if (TransientAvatar)
+        {
+            EndBehavior(*TransientAvatar, false);
+        }
+    }
+    else
+    {
+        // 继续前往下一个路径点...
+    }
 }
 ```
 
 ## 模块依赖
 
+从 Build.cs 分析，该插件的运行时模块依赖 GameplayAbilities 插件。
+
 | 模块 | 用途 |
 |---|---|
-| `GameplayAbilities` | 插件级依赖，提供 AbilitySystemComponent 集成 |
+| `GameplayAbilities` | Gameplay Ability System 集成（GAS 核心模块） |
 | `GameplayTags` | GameplayTag 系统支持 |
-| `GameplayTasks` | 行为中使用 GameplayTask（IGameplayTaskOwnerInterface） |
-| `AIModule` | 行为树相关类（UBTDecorator、UBTTaskNode、UBehaviorTreeComponent） |
+| `GameplayTasks` | GameplayTask 框架（行为可拥有任务） |
+| `AIModule` | 行为树、黑板、AI 控制器集成 |
 
 ## 维护状态
 
@@ -208,20 +318,27 @@ bool UMyPunchBehavior::Trigger(AActor& InAvatar, const UGameplayBehaviorConfig* 
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移为 UE_LOGF 宏 |
-| 2026-03-27 | `2ef401e4` | FValueOrBlackboardKeyBase::ToString is not tool only | 修复 ToString 方法的工具限定符 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF | 将 UE_LOG 日志宏迁移到 UE_LOGF 新宏 |
+| 2026-03-27 | `2ef401e4` | FValueOrBlackboardKeyBase::ToString is not tool only | 修正 ToString 函数的编译条件，不再限于工具模块 |
 | 2026-03-27 | `3d027aeb` | Node memory cleanup | 行为树节点内存清理优化 |
-| 2025-06-26 | `ec900998` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. (Applie | 添加内联生成宏优化编译 |
-| 2025-04-23 | `93a13080` | Used LyraGame build target to find and convert all files to have dllstorage on methods/staticvar ins | 修复 DLL 导出符号声明 |
+| 2025-06-26 | `ec900998` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files | 为源文件添加内联生成代码宏以优化编译 |
+| 2025-04-23 | `93a13080` | Used LyraGame build target to find and convert all files to have dllstorage on methods/staticvar ins | 修正 DLL 导出符号（DLL export）声明 |
 
 ### 维护评价
 
-- **状态**：活跃维护中。最近的更新集中在 2026 年 3-4 月，主要是代码质量改进（日志宏迁移、内存清理、编译优化）
-- **创建时间**：2021 年 9 月，已有约 5 年历史
-- **实验性标记**：仍标记为 `IsBetaVersion=true`，且 `EnabledByDefault=false`，说明 Epic 尚未将其定为稳定 API
-- **推荐程度**：该插件与 Smart Object 系统深度关联，如果你的项目使用 Smart Object 驱动 AI 行为，这是必需的基础设施。但由于仍处于实验阶段，API 可能在未来版本中发生变化，建议做好适配准备。
+- **年龄**：约 5 年，自 2021 年 9 月创建
+- **状态**：仍处于**实验性**阶段（`IsBetaVersion=true`，`EnabledByDefault=false`），从未正式毕业到稳定版
+- **更新频率**：近期有零星更新（2025-2026 年），但均为编译兼容性和代码规范化修复，**无功能性更新**
+- **已知限制**：
+  - `GameplayBehavior_AnimationBased` 同一 Avatar 同时只支持一个蒙太奇播放，多次请求会相互覆盖
+  - `GameplayBehavior_BehaviorTree` 仅适用于 AI 控制的 Pawn
+  - API 标记为 `MinimalAPI`，外部模块可访问的接口有限
+- **综合评价**：该插件已被 Lyra 示例项目使用（从 recent commit 可见 LyraGame 相关改动），但 Epic 可能已在用 StateTree 等新系统替代。作为实验性插件，API 可能在未来版本发生破坏性变更。适合在原型开发和内部项目中使用，不建议作为生产系统的核心依赖。
+
+⚠️ **警告**：该插件自创建起一直处于实验性状态，且超过 1 年无实质性功能更新。Epic 可能已将注意力转向 StateTree 等替代方案。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/GameplayBehaviors)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/GameplayBehaviors/Source/GameplayBehaviorsTestSuite)
+- 官方文档（无）
+- [GameplayAbilities 依赖插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/GameplayBehaviors)

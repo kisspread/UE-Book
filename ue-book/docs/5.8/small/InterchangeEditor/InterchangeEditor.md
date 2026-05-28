@@ -4,172 +4,287 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 交换编辑器 |
+| 中文名 | 互换编辑器 |
 | 分类 | Importers |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
 | 模块 | `InterchangeEditor` (Runtime), `InterchangeEditorPipelines` (Runtime), `InterchangeEditorUtilities` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2023-12-05 |
-| 年龄标签 | 🆕（约 2 年） |
+| 创建时间 | 2021-12-08 |
+| 年龄标签 | 🆕（约 5 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Editor) | |
 
 ## 用途
 
-此插件是 Unreal Engine 中 **Interchange 框架** 的**编辑器端集成层**。Interchange 框架本身是一个模块化的资产导入/导出系统，而 `InterchangeEditor` 插件将其功能（如导入管线、管线配置、资产处理等）暴露给虚幻编辑器，使得用户可以通过编辑器界面配置和执行通过 Interchange 定义的资产导入流程。它还提供了额外的工具，如重置通过 Interchange 导入的资产、操作关卡实例等。
+Interchange Editor 是 UE5 Interchange 导入框架的**编辑器端 UI 与管线暴露层**。它解决的核心问题是：让编辑器能够配置、执行和管理通过 Interchange 框架进行的资产导入操作。
 
-简单来说，它是 **Interchange 导入系统在编辑器中的“遥控器”和“工具箱”**。
+具体来说，这个插件提供：
+
+1. **场景导入资产（Scene Import Asset）管理**：将一次完整的场景导入操作（包括多个 Actor 和资产）封装为一个可管理的资产对象，支持整体重置
+2. **导入资产重置（Reset）**：将通过 Interchange 导入的资产或 Actor 恢复到初始导入状态，或从源文件重新导入
+3. **关卡实例（Level Instance）编辑支持**：对通过 Interchange 导入的关卡实例提供进入编辑模式、提交/放弃更改等操作
+4. **管线设置缓存**：管理导入管线的配置缓存，确保导入设置的变更能被正确追踪
+5. **FBX 导入数据转换**：在不同资产类型之间转换 FBX 导入数据
+6. **上下文菜单扩展**：在关卡编辑器的右键菜单中添加 Interchange 重置选项
+
+它不是独立的导入器，而是将 Interchange 核心框架的功能桥接到 Unreal Editor 的 UI 和工作流中。
 
 ## 使用场景
 
--   **使用自定义导入管线**：当你的项目使用基于 Interchange 的自定义管线（例如，对 FBX/glTF 导入有特殊处理逻辑）时，你需要此插件来让这些管线在编辑器中可用。
--   **管理导入的资产**：你需要批量重置或管理一批通过 Interchange 导入的资产（如模型、场景）时。
--   **操作关卡实例**：你需要以编程方式进入、退出或获取关卡实例（Level Instance）内的 Actor 信息，这些关卡实例是通过 Interchange 导入的。
--   **转换资产数据**：需要将一种格式的资产导入数据（如 FBX 导入数据）转换为另一种格式时。
+- 你通过 Interchange 导入了一个 FBX/glTF 场景文件，包含多个模型和 Actor → 用 Scene Import Asset 进行整体管理，需要重新导入时一键 Reset
+- 你修改了源模型文件（如 FBX），想让已导入的资产同步更新 → 选中 Actor 或资产执行 Reset
+- 你通过 Interchange 导入了一个关卡实例，需要编辑其中的子 Actor → 进入 Level Instance 编辑模式
+- 你的项目有自定义导入管线，需要缓存和管理管线设置 → 由管线缓存处理器自动管理
+- 你需要在蓝图中批量重置通过 Interchange 导入的多个 Actor → 使用 BlueprintCallable 节点
 
 ## 蓝图用法
 
-主要蓝图功能集中在 `UInterchangeEditorScriptLibrary` 类中。
+`UInterchangeEditorScriptLibrary` 是一个 `UBlueprintFunctionLibrary`，提供了所有蓝图可调用的静态函数，功能分组如下：
 
-### 核心节点
+### 资产重置节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `ResetSceneImportAsset` | 重置整个通过 Interchange 导入的场景资产，包括其包含的 Actor 和关联资产。 | `UInterchangeEditorScriptLibrary` |
-| `ResetActors` | 重置一个 Actor 数组（这些 Actor 必须是通过 Interchange 导入且可重置的）。 | `UInterchangeEditorScriptLibrary` |
-| `CanResetActor` | 检查指定的 Actor 是否支持通过 Interchange 进行重置。 | `UInterchangeEditorScriptLibrary` |
-| `CanResetWorld` | 检查指定的 World（关卡）是否支持通过 Interchange 进行重置。 | `UInterchangeEditorScriptLibrary` |
-| `LevelInstanceEnterEditMode` | 将一个关卡实例（Level Instance）置于可编辑模式。 | `UInterchangeEditorScriptLibrary` |
-| `LevelInstanceCommit` | 将处于编辑模式的关卡实例所做的修改应用或丢弃。 | `UInterchangeEditorScriptLibrary` |
-| `LevelInstanceGetEditableActors` | 获取处于编辑模式的关卡实例内的所有可编辑 Actor 列表。 | `UInterchangeEditorScriptLibrary` |
-| `LevelInstanceGetActors` | 获取已加载的关卡实例内的所有 Actor 列表（无需处于编辑模式）。 | `UInterchangeEditorScriptLibrary` |
+| `ResetSceneImportAsset` | 重置场景导入资产，恢复所有关联的 Actor 和导入资产 | `UInterchangeEditorScriptLibrary` |
+| `ResetLevelAsset` | 重置整个关卡资产 | `UInterchangeEditorScriptLibrary` |
+| `ResetActors` | 批量重置指定的 Actor 数组 | `UInterchangeEditorScriptLibrary` |
+| `CanResetActor` | 检查指定 Actor 是否可被重置 | `UInterchangeEditorScriptLibrary` |
+| `CanResetWorld` | 检查指定 World 是否可被重置 | `UInterchangeEditorScriptLibrary` |
+
+### 关卡实例节点
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `LevelInstanceEnterEditMode` | 使关卡实例进入编辑模式，返回是否成功 | `UInterchangeEditorScriptLibrary` |
+| `LevelInstanceCommit` | 提交或放弃关卡实例的修改 | `UInterchangeEditorScriptLibrary` |
+| `LevelInstanceGetEditableActors` | 获取进入编辑模式后可编辑的 Actor 列表 | `UInterchangeEditorScriptLibrary` |
+| `LevelInstanceGetActors` | 获取关卡实例中所有 Actor（无需进入编辑模式） | `UInterchangeEditorScriptLibrary` |
 
 ### 使用示例（蓝图描述）
 
-1.  **重置一个通过 Interchange 导入的场景资产**：
-    -   从内容浏览器或变量获取一个 `UInterchangeSceneImportAsset` 对象。
-    -   将其连接到 `ResetSceneImportAsset` 节点的 `SceneImportAsset` 引脚。
-    -   执行该节点，场景中的所有相关 Actor 和资产将被重置为其原始导入状态。
+**批量重置通过 Interchange 导入的 Actor**：
 
-2.  **在编辑关卡实例前进行检查**：
-    -   获取一个 `ALevelInstance` 对象。
-    -   将其连接到 `LevelInstanceGetActors` 节点，预先查看其包含的 Actor。
-    -   调用 `LevelInstanceEnterEditMode` 节点进入编辑模式。
-    -   使用 `LevelInstanceGetEditableActors` 获取可编辑的 Actor 列表进行操作。
-    -   最后调用 `LevelInstanceCommit` 并传入 `bDiscardChanges` 参数（如 `false`）来应用修改。
+1. 获取目标 Actor 引用数组（如通过 GetAllActorsOfClass）
+2. 对每个 Actor 连接 `CanResetActor` 节点，筛选可重置的 Actor
+3. 将筛选结果传入 `ResetActors` 节点执行重置
+
+**编辑关卡实例中的内容**：
+
+1. 获取关卡实例 Actor 引用
+2. 调用 `LevelInstanceEnterEditMode` 进入编辑模式
+3. 调用 `LevelInstanceGetEditableActors` 获取可编辑的 Actor 列表
+4. 对 Actor 进行所需修改
+5. 调用 `LevelInstanceCommit`，将 `bDiscardChanges` 设为 `false` 提交更改
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "InterchangeEditorModule.h"
-#include "InterchangeEditorLog.h"
-// 其他需要的头文件，例如用于重置的脚本库
 #include "InterchangeEditorScriptLibrary.h"
 ```
 
 ### 基本用法
 
-1.  **获取模块实例**：
-    ```cpp
-    // 确保模块已加载并可用
-    if (FInterchangeEditorModule::IsAvailable())
-    {
-        FInterchangeEditorModule& InterchangeEditorModule = FInterchangeEditorModule::Get();
-        // 可以在此处使用模块提供的服务（如果有公开接口）
-    }
-    ```
-    *来源：* `Public/InterchangeEditorModule.h`
+**重置场景导入资产**：
 
-2.  **使用日志分类**：
-    ```cpp
-    UE_LOG(LogInterchangeEditor, Log, TEXT("Interchange Editor 相关操作信息: %s"), *SomeMessage);
-    ```
-    *来源：* `Public/InterchangeEditorLog.h`
-
-### 进阶用法
-
-调用蓝图库中的静态函数（需要确保 `UInterchangeEditorScriptLibrary` 所在模块已被依赖）：
 ```cpp
-// 检查一个 Actor 是否可重置
-AActor* MyActor = /* 获取 Actor 指针 */;
-bool bCanReset = UInterchangeEditorScriptLibrary::CanResetActor(MyActor);
-
-// 重置一个场景导入资产
-UInterchangeSceneImportAsset* SceneAsset = /* 获取场景导入资产 */;
+// 重置通过 Interchange 导入的场景资产，恢复所有关联 Actor 和资产到初始状态
+UInterchangeSceneImportAsset* SceneAsset = GetSceneImportAsset(); // 获取场景导入资产
 if (SceneAsset)
 {
     UInterchangeEditorScriptLibrary::ResetSceneImportAsset(SceneAsset);
 }
 ```
-*来源：* `Public/InterchangeEditorScriptLibrary.h`
+
+**检查并重置 Actor**：
+
+```cpp
+// 先检查 Actor 是否可重置，再执行重置
+TArray<AActor*> ActorsToReset;
+for (AActor* Actor : SelectedActors)
+{
+    if (UInterchangeEditorScriptLibrary::CanResetActor(Actor))
+    {
+        ActorsToReset.Add(Actor);
+    }
+}
+UInterchangeEditorScriptLibrary::ResetActors(ActorsToReset);
+```
+
+### 进阶用法
+
+**关卡实例完整编辑流程**：
+
+```cpp
+// 完整的关卡实例编辑流程：进入编辑 → 获取 Actor → 修改 → 提交
+ALevelInstance* LevelInstance = GetLevelInstance();
+if (LevelInstance)
+{
+    // 1. 进入编辑模式
+    bool bSuccess = UInterchangeEditorScriptLibrary::LevelInstanceEnterEditMode(LevelInstance);
+    
+    if (bSuccess)
+    {
+        // 2. 获取可编辑的 Actor
+        const TArray<AActor*>& EditableActors = 
+            UInterchangeEditorScriptLibrary::LevelInstanceGetEditableActors(LevelInstance);
+        
+        // 3. 对 Actor 进行修改（示例：移动位置）
+        for (AActor* Actor : EditableActors)
+        {
+            Actor->SetActorLocation(Actor->GetActorLocation() + FVector(100.f, 0.f, 0.f));
+        }
+        
+        // 4. 提交更改（bDiscardChanges = false 表示提交）
+        UInterchangeEditorScriptLibrary::LevelInstanceCommit(LevelInstance, false);
+        
+        // 如需放弃更改，改为：
+        // UInterchangeEditorScriptLibrary::LevelInstanceCommit(LevelInstance, true);
+    }
+}
+```
+
+**不进入编辑模式获取关卡实例 Actor**：
+
+```cpp
+// LevelInstanceGetActors 不需要进入编辑模式即可获取所有 Actor
+TArray<AActor*> AllActors = UInterchangeEditorScriptLibrary::LevelInstanceGetActors(LevelInstance);
+UE_LOG(LogInterchangeEditor, Log, TEXT("Level instance contains %d actors"), AllActors.Num());
+```
+
+**使用模块可用性检查**：
+
+```cpp
+#include "InterchangeEditorModule.h"
+
+// 在依赖 Interchange Editor 功能前检查模块是否可用
+if (FInterchangeEditorModule::IsAvailable())
+{
+    FInterchangeEditorModule& Module = FInterchangeEditorModule::Get();
+    // 使用模块功能...
+}
+```
 
 ## Demo 示例
 
-以下是一个控制台命令示例，用于检查当前编辑器中选定的第一个 Actor 是否为可重置的 Interchange Actor。
+**InterchangeEditorScriptLibrary** — 完整的资产重置与关卡实例编辑示例：
 
 ```cpp
-// MyInterchangeTestCommand.h
+// MyInterchangeHelper.h
 #pragma once
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "MyInterchangeHelper.generated.h"
 
-class UInterchangeTestCommand
+class AActor;
+class ALevelInstance;
+class UInterchangeSceneImportAsset;
+
+UCLASS(BlueprintType, Blueprintable)
+class YOURPROJECT_API UMyInterchangeHelper : public UObject
 {
+    GENERATED_BODY()
+
 public:
-    static void RegisterConsoleCommand();
+    /**
+     * 安全重置场景导入资产，带日志输出
+     */
+    UFUNCTION(BlueprintCallable, Category="Interchange Helper")
+    static bool SafeResetSceneImportAsset(UInterchangeSceneImportAsset* SceneAsset);
+
+    /**
+     * 获取关卡实例中的所有 Actor 信息
+     */
+    UFUNCTION(BlueprintCallable, Category="Interchange Helper")
+    static TArray<FString> GetLevelInstanceActorNames(ALevelInstance* LevelInstance);
+
+    /**
+     * 完整的关卡实例编辑流程
+     */
+    UFUNCTION(BlueprintCallable, Category="Interchange Helper")
+    static bool EditLevelInstance(ALevelInstance* LevelInstance);
 };
+```
 
-// MyInterchangeTestCommand.cpp
-#include "MyInterchangeTestCommand.h"
+```cpp
+// MyInterchangeHelper.cpp
+#include "MyInterchangeHelper.h"
 #include "InterchangeEditorScriptLibrary.h"
-#include "Editor.h"
+#include "LevelInstance/LevelInstanceActor.h"
 
-void UInterchangeTestCommand::RegisterConsoleCommand()
+bool UMyInterchangeHelper::SafeResetSceneImportAsset(UInterchangeSceneImportAsset* SceneAsset)
 {
-    IConsoleManager::Get().RegisterConsoleCommand(
-        TEXT("Interchange.CheckSelected"),
-        TEXT("Checks if the first selected actor can be reset via Interchange."),
-        FConsoleCommandDelegate::CreateLambda([]()
+    if (!SceneAsset)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("SafeResetSceneImportAsset: SceneAsset is null"));
+        return false;
+    }
+
+    UInterchangeEditorScriptLibrary::ResetSceneImportAsset(SceneAsset);
+    UE_LOG(LogTemp, Log, TEXT("Successfully reset scene import asset: %s"), *SceneAsset->GetName());
+    return true;
+}
+
+TArray<FString> UMyInterchangeHelper::GetLevelInstanceActorNames(ALevelInstance* LevelInstance)
+{
+    TArray<FString> Result;
+    if (!LevelInstance)
+    {
+        return Result;
+    }
+
+    TArray<AActor*> Actors = UInterchangeEditorScriptLibrary::LevelInstanceGetActors(LevelInstance);
+    Result.Reserve(Actors.Num());
+    for (AActor* Actor : Actors)
+    {
+        if (Actor)
         {
-            if (GEditor && GEditor->GetSelectedActors())
-            {
-                USelection* Selection = GEditor->GetSelectedActors();
-                if (Selection->Num() > 0)
-                {
-                    AActor* SelectedActor = Cast<AActor>(Selection->GetSelectedObject(0));
-                    if (SelectedActor)
-                    {
-                        bool bCanReset = UInterchangeEditorScriptLibrary::CanResetActor(SelectedActor);
-                        UE_LOG(LogTemp, Log, TEXT("Actor '%s' CanReset: %s"),
-                            *SelectedActor->GetName(),
-                            bCanReset ? TEXT("True") : TEXT("False"));
-                    }
-                }
-            }
-        }),
-        ECVF_Default
-    );
+            Result.Add(Actor->GetName());
+        }
+    }
+    return Result;
+}
+
+bool UMyInterchangeHelper::EditLevelInstance(ALevelInstance* LevelInstance)
+{
+    if (!LevelInstance)
+    {
+        return false;
+    }
+
+    // 进入编辑模式
+    if (!UInterchangeEditorScriptLibrary::LevelInstanceEnterEditMode(LevelInstance))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Failed to enter edit mode for level instance"));
+        return false;
+    }
+
+    // 获取并操作 Actor
+    const TArray<AActor*>& EditableActors = 
+        UInterchangeEditorScriptLibrary::LevelInstanceGetEditableActors(LevelInstance);
+    UE_LOG(LogTemp, Log, TEXT("Found %d editable actors"), EditableActors.Num());
+
+    // 提交更改
+    UInterchangeEditorScriptLibrary::LevelInstanceCommit(LevelInstance, false);
+    return true;
 }
 ```
 
 ## 模块依赖
 
-从 `InterchangeEditor` 模块的 `Build.cs` 分析，除标准模块外，需特别关注以下依赖：
+该插件由三个模块组成，以下是各模块的独特依赖（标准 Core/Engine 等已省略）：
 
 | 模块 | 用途 |
 |---|---|
-| `InterchangeCore` | Interchange 框架的核心模块。 |
-| `InterchangeImport` | 提供各种格式的具体导入器（Translator）。 |
-| `InterchangeExport` | 提供各种格式的具体导出器（Writer）。 |
-| `InterchangePipelines` | 提供基础的导入/导出管线（Pipeline）框架。 |
-| `InterchangeEngine` | 管理 Interchange 任务的调度和执行。 |
-| `InterchangeMessages` | 传递框架内部的消息。 |
-| `AssetDefinition` | 用于定义资产在编辑器中的显示和操作方式（本插件的 `UAssetDefinition_InterchangeSceneImportAsset` 依赖此）。 |
-| `ContentBrowser` | 与内容浏览器交互。 |
-| `LevelEditor` | 用于扩展关卡编辑器的右键菜单（`FInterchangeResetContextMenuExtender` 依赖此）。 |
+| `InterchangeCore` | Interchange 导入框架核心 |
+| `InterchangeFramework` | Interchange 框架实现 |
+| `InterchangeNodes` | Interchange 节点定义 |
+| `LevelInstance` | 关卡实例功能支持 |
+| `Engine` | 关卡/Actor 基础（标准依赖） |
+| `InterchangeImport` | Interchange 导入器实现 |
+| `InterchangePipelines` | 导入管线基础 |
 
 ## 维护状态
 
@@ -177,20 +292,23 @@ void UInterchangeTestCommand::RegisterConsoleCommand()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-12 | `fb1426e8` | [PackageAutoSaver] Add the ability to temporarily suspend the autosaver. | 为自动保存器添加了临时挂起功能，可能影响编辑器资产保存流程。 |
-| 2026-05-12 | `099f7387` | [Interchange] Animation frame alignment and glTF translator frame aligner removed. | 移除了动画帧对齐和 glTF 翻译器的帧对齐器，是一次功能清理。 |
-| 2026-04-22 | `cc360b1e` | Add accessor to InterchangeEditorScriptLibrary that returns actors in a level instance without loading | 向脚本库添加了新函数，用于获取关卡实例内的 Actor 而无需加载关卡，优化了性能。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将旧版 UE_LOG 宏迁移到 UE_LOGF 格式化宏，属于代码现代化重构。 |
-| 2026-04-13 | `05458c60` | [Interchange] Reworking Static and Skeletal Mesh import settings | 重构了静态网格和骨骼网格的导入设置，涉及底层导入逻辑变更。 |
+| 2026-05-12 | `fb1426e8` | [PackageAutoSaver] Add the ability to temporarily suspend the autosaver. | 新增临时挂起自动保存器的功能 |
+| 2026-05-12 | `099f7387` | [Interchange] Animation frame alignment and glTF translator frame aligner removed. | 移除动画帧对齐和 glTF 转换器帧对齐器 |
+| 2026-04-22 | `cc360b1e` | Add accessor to InterchangeEditorScriptLibrary that returns actors in a level instance without loadi | 新增无需加载即可获取关卡实例 Actor 的接口 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏到新格式 UE_LOGF |
+| 2026-04-13 | `05458c60` | [Interchange] Reworking Static and Skeletal Mesh import settings | 重构静态网格和骨骼网格的导入设置 |
 
 ### 维护评价
 
--   **活跃维护**：从最近的提交记录（2026年）看，该插件仍在 **积极维护** 中。近期的更新包括功能添加（`LevelInstanceGetActors`）、功能清理（移除帧对齐）和代码现代化（日志宏迁移），表明 Epic 团队仍在持续改进此插件。
--   **推荐使用**：作为 Unreal Engine 官方 Interchange 系统的核心编辑器集成部分，它是使用 Interchange 框架进行资产导入的 **必要组件**。对于依赖 Interchange 管线的项目，此插件是标准且推荐使用的。
--   **注意**：此插件是 `Interchange` 主插件的配套编辑器部分，通常与 `Interchange`（运行时部分）一起使用。确保两者版本匹配。
+- **活跃维护**：最近 1 个月内有多次实质性更新（2026 年 4-5 月）
+- **功能演进中**：导入管线和设置持续重构，表明 Interchange 框架仍在快速迭代
+- **API 扩展**：`cc360b1e` 新增了 `LevelInstanceGetActors` 接口，说明编辑器脚本 API 在持续扩展
+- **Epic 官方维护**：由 Epic Games 直接维护，作为 UE5 推荐的资产导入框架
+
+**推荐使用**：Interchange 是 UE5 官方推荐的下一代资产导入框架（替代旧的 FBX Importer），该编辑器插件是使用 Interchange 工作流的必备组件。随着 UE5 对旧导入器的逐步废弃，建议新项目采用 Interchange。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Editor)
--   官方文档：暂无专属文档页面，主要参考 [Interchange 框架通用文档](https://docs.unrealengine.com/5.8/en-US/interchange-framework-in-unreal-engine/)。
--   测试用例：测试文件位于 `Engine/Tests/Interchange` 目录下。
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Editor)
+- 官方文档：暂无
+- 测试用例：未在插件目录内发现独立测试文件

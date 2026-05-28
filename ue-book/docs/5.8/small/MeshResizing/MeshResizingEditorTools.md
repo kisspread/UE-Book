@@ -7,162 +7,144 @@
 | 中文名 | 网格缩放 |
 | 分类 | Editor |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（可能包含蓝图资产） |
+| 包含内容 | ✅ 有（编辑器工具） |
 | 模块 | `MeshResizingCore` (Runtime), `MeshResizingEditorTools` (Runtime), `MeshResizingEngine` (Runtime), `MeshResizingDataflowNodes` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-12-09 |
-| 年龄标签 | 🆕（约 2 年） |
+| 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MeshResizing) | |
 
 ## 用途
-`MeshResizing` 是一个实验性插件，提供了一套网格包裹（Mesh Wrapping）和形变的工作流工具。它允许用户在源网格和目标网格上标记对应的“地标点”（Landmarks），并基于这些对应关系，在 Dataflow 图表中驱动网格形变节点，从而将一个网格的形状适配到另一个相似的拓扑结构上。其核心解决的问题是：当需要将一个网格（如角色服装、部件）适配到另一个形状略有不同的网格（如不同体型的角色）时，进行快速、可控的形变和适配。
+
+Mesh Resizing 插件提供了一套实验性的工具，用于对静态网格（Static Mesh）进行“调整大小”操作。其核心并非简单的等比例缩放，而是基于用户在源网格和目标网格上设置的一系列对应“地标”（Landmarks），通过网格变形算法来重新拓扑网格，使其适配新的尺寸，同时尽可能保留表面细节和拓扑结构。该插件与 Unreal Engine 的 Dataflow 框架深度集成，提供了可视化的节点来操作网格变形过程。
 
 ## 使用场景
-- **角色换装系统**：将同一套服装网格适配到不同体型或姿态的角色身体网格上。
-- **部件复用**：将一个经过雕刻或建模的网格部件（如肩甲、头盔）适配到相似但尺寸、角度略有不同的基础模型上。
-- **程序化资产适配**：在 Dataflow 程序化建模流程中，使用节点对网格进行基于地标点的非刚性形变。
+
+- 你有一个角色模型和一套为其精确制作的盔甲，现在需要为另一个体型不同的角色复用这套盔甲。你可以使用 Mesh Resizing，在新旧角色的身体关键部位（如肩膀、肘部、膝盖）设置地标，引导盔甲网格安全地变形以适配新体型，避免穿模和拉伸。
+- 你在 Dataflow 中构建了一个程序化网格生成流程，其中一个步骤需要将一个基础网格动态调整到不同的尺寸。你可以使用 `MeshResizingDataflowNodes` 提供的节点来实现这个调整，并在编辑器中通过可视化工具精确控制变形区域。
 
 ## 蓝图用法
 
+该插件的编辑器工具主要通过 C++ 和交互式工具框架使用，但提供了配置类供蓝图或编辑器细节面板交互。
+
 ### 核心节点
 
-此插件的功能主要通过 **编辑器工具（Editor Tool）** 和 **Dataflow 节点** 体现，而非暴露给游戏运行时（Runtime）的蓝图节点。其蓝图交互主要体现在编辑器工具属性面板的配置上。
-
-| 节点/属性 | 说明 | 所在类 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Landmarks` 属性 | 一个地标点列表，每个点包含一个字符串标识符 `Identifier` 和一个顶点索引 `VertexIndex`。用于标记源和目标网格上的对应关系。 | `UMeshWrapLandmarkSelectionToolProperties` |
-| `CurrentEditableLandmark` 属性 | 当前正在编辑的地标索引。设置为 `-1` 或按住 Shift 键可新增地标，按住 Ctrl 键选择已有地标可修改此值。 | `UMeshWrapLandmarkSelectionToolProperties` |
-| `bShowVertices` 属性 | 在视口中是否显示网格的顶点。 | `UMeshWrapLandmarkSelectionToolProperties` |
-| `bShowEdges` 属性 | 在视口中是否显示网格的边。 | `UMeshWrapLandmarkSelectionToolProperties` |
+| `Landmarks` | 可在编辑器属性面板中编辑的地标数组，每个地标包含一个标识符和对应的顶点索引。 | `UMeshWrapLandmarkSelectionToolProperties` |
+| `CurrentEditableLandmark` | 设置或获取当前正在编辑的地标索引。设置为 -1 或按住 Shift 键可添加新地标。 | `UMeshWrapLandmarkSelectionToolProperties` |
+| `Show Vertices` / `Show Edges` | 控制是否在编辑器中显示网格的顶点和边缘以辅助地标选择。 | `UMeshWrapLandmarkSelectionToolProperties` |
 
-### 使用示例（编辑器内操作）
+### 使用示例（蓝图描述）
 
-1.  **启动工具**：在编辑器模式下，通过特定的 Dataflow 图表面板或上下文菜单，找到并启动 “Mesh Wrap Landmark Selection Tool”。
-2.  **选择网格**：工具会要求你选择一个网格物体（Target）进行操作。
-3.  **标记地标**：
-    - 在视口中，直接点击网格顶点或边来创建新的地标点（按住 Shift 键添加）。
-    - 在属性面板的 `Landmarks` 数组中，手动为每个地标点填写唯一的字符串标识符（如 “Head”, “LeftShoulder”），以便与另一网格上的对应点匹配。
-    - 可以通过按住 Ctrl 键点击视口中已有的地标点来在 `CurrentEditableLandmark` 中快速定位和编辑它。
-4.  **配置显示**：通过勾选 `Show Vertices` 和 `Show Edges` 来控制视口中辅助几何体的显示，帮助更精确地选点。
-5.  **完成与取消**：编辑完地标后，点击工具栏上的“接受”（绿勾）应用更改，或“取消”（红叉）放弃。
+在编辑器中激活 Mesh Wrap Landmark Selection Tool 后，你会在工具属性面板（Details Panel）中看到 `Landmarks` 数组和 `CurrentEditableLandmark` 属性。
+1.  将 `CurrentEditableLandmark` 设置为 -1（或按住 Shift 键）。
+2.  在视口中的源网格上点击，即可添加一个新的地标。该点的顶点索引会被自动记录。
+3.  为该地标输入一个唯一的 `Identifier`（如 “left_shoulder”）。
+4.  在目标网格上同样设置一个具有相同 `Identifier` 的地标。
+5.  通过调整 `CurrentEditableLandmark` 索引并按住 Ctrl 键在视口中选择，可以修改已有地标的顶点位置。
+6.  确认地标匹配无误后，执行工具操作，插件将根据这些对应点对网格进行变形调整。
 
 ## C++ 用法
 
 ### 头文件引入
 
-根据具体使用的模块，引入相应的头文件。例如，使用编辑器工具功能：
 ```cpp
 #include "MeshResizing/MeshWrapLandmarkSelectionTool.h"
+#include "MeshResizing/MeshResizingToolActionCommandBindings.h"
 ```
 
-### 基本用法（工具与地标数据）
+### 基本用法
 
-`MeshResizing` 的核心 C++ 交互发生在编辑器工具和其内部数据结构中。
+`MeshResizingEditorTools` 模块的核心是 `UMeshWrapLandmarkSelectionTool`，它通常由 `UMeshWrapLandmarkSelectionToolBuilder` 构建。
+**来源文件**: `Private/MeshResizing/MeshWrapLandmarkSelectionTool.h`
 
-**定义和检查地标（Landmark）：**
 ```cpp
-// 定义一个地标点结构体，来自 MeshWrapLandmarkSelectionTool.h
-FMeshWrapToolLandmark Landmark;
-Landmark.Identifier = TEXT("ShoulderRight");
-Landmark.VertexIndex = 1234; // 目标网格上的顶点索引
+// 获取工具构建器
+UInteractiveToolManager* ToolManager = GetToolManager();
+UMeshWrapLandmarkSelectionToolBuilder* ToolBuilder = NewObject<UMeshWrapLandmarkSelectionToolBuilder>();
+ToolManager->RegisterToolBuilder(UMeshWrapLandmarkSelectionTool::StaticClass(), ToolBuilder);
 
-// 两个地标点通过 Identifier 和 VertexIndex 进行相等性比较
-bool bAreSame = (Landmark == OtherLandmark);
+// 程序化设置工具属性（通常在工具内部完成）
+UMeshWrapLandmarkSelectionToolProperties* Properties = Tool->ToolProperties;
+Properties->Landmarks.Add(FMeshWrapToolLandmark{ TEXT("point_a"), 105 });
+Properties->bShowVertices = true;
 ```
 
-**访问工具属性（通过 CDO）：**
+### 进阶用法
+
+工具通过 `IDataflowEditorToolBuilder` 接口与 Dataflow 系统集成，可以注册自定义的工具动作命令。
+**来源文件**: `Private/MeshResizing/MeshResizingToolActionCommandBindings.h`
+
 ```cpp
-// 获取工具属性的默认对象（CDO），用于查询或设置属性
-UMeshWrapLandmarkSelectionToolProperties* ToolPropsCDO = GetMutableDefault<UMeshWrapLandmarkSelectionToolProperties>();
-
-// 获取当前地标列表的引用
-TArray<FMeshWrapToolLandmark>& Landmarks = ToolPropsCDO->Landmarks;
-
-// 设置当前编辑的地标索引（例如，在代码中自动聚焦到第一个地标）
-if (Landmarks.Num() > 0)
+// 定义工具动作命令
+class FMyCustomToolActionCommands : public FMeshResizingToolActionCommands<FMyCustomToolActionCommands, UMyCustomTool>
 {
-    ToolPropsCDO->CurrentEditableLandmark = 0;
-}
-```
-
-### 进阶用法（工具与 Dataflow 集成）
-
-该插件的工具深度集成了 Dataflow 系统，工具本身可以读取和更新 Dataflow 图表中的节点。
-
-```cpp
-// 工具类内部持有 Dataflow 上下文和需要更新的节点指针（来自 MeshWrapLandmarkSelectionTool.h）
-// UDataflowContextObject* DataflowContextObject;
-// FMeshWrapLandmarksNode* SelectionNodeToUpdate;
-
-// 当用户在工具中修改了地标后，工具会调用类似以下的方法将更改同步到 Dataflow 节点
-void UpdateSelectedNode()
-{
-    if (SelectionNodeToUpdate && ToolProperties)
+public:
+    FMyCustomToolActionCommands()
+        : FMeshResizingToolActionCommands(TEXT("MyToolContext"), LOCTEXT("MyToolContext", "My Custom Tool"))
     {
-        // 将工具属性中编辑好的地标列表，设置到对应的 Dataflow 节点属性上
-        SelectionNodeToUpdate->Landmarks = ToolProperties->Landmarks;
-        // 通知 Dataflow 图表，该节点属性已变化，可能需要重新计算
-        // ... (触发图更新逻辑)
+        // 定义具体的UI命令（如快捷键）
     }
-}
+};
+
+// 在插件启动时，将命令注册到 Dataflow 工具注册表
+FMeshResizingToolActionCommandBindings* ActionBindings = new FMeshResizingToolActionCommandBindings();
+UE::Dataflow::FDataflowToolRegistry::Get().RegisterToolActionCommands(MakeShareable(ActionBindings));
 ```
 
 ## Demo 示例
 
-由于此插件为编辑器工具且实验性，没有简单的独立运行时 Demo。其用法主要通过在编辑器中启动工具并交互来演示。一个极简的 C++ 框架示例如下：
+以下示例展示了如何在一个编辑器模式（Mode）或交互式工具上下文中，程序化地创建并使用 Mesh Wrap Landmark Selection Tool 的属性。
 
-**MyMeshResizingTest.h**
 ```cpp
+// MyMeshResizingHelper.h
 #pragma once
 #include "CoreMinimal.h"
-#include "Subsystems/EngineSubsystem.h"
-#include "MeshResizing/MeshWrapLandmarkSelectionTool.h" // 包含地标结构体
-#include "MyMeshResizingTest.generated.h"
+#include "MeshResizing/MeshWrapLandmarkSelectionTool.h"
 
-UCLASS()
-class UMyMeshResizingTestSubsystem : public UEngineSubsystem
+class FMyMeshResizingHelper
 {
-    GENERATED_BODY()
 public:
-    // 一个示例函数，演示如何操作地标数据
-    void CreateSampleLandmarks();
+    static void ConfigureLandmarkTool(UMeshWrapLandmarkSelectionTool* Tool);
 };
-```
 
-**MyMeshResizingTest.cpp**
-```cpp
-#include "MyMeshResizingTest.h"
+// MyMeshResizingHelper.cpp
+#include "MyMeshResizingHelper.h"
+#include "UObject/ConstructorHelpers.h"
 
-void UMyMeshResizingTestSubsystem::CreateSampleLandmarks()
+void FMyMeshResizingHelper::ConfigureLandmarkTool(UMeshWrapLandmarkSelectionTool* Tool)
 {
-    // 此函数仅为演示数据操作，实际应用中这些数据会由编辑器工具管理
-    TArray<FMeshWrapToolLandmark> SampleLandmarks;
+    if (!Tool || !Tool->ToolProperties) return;
 
-    FMeshWrapToolLandmark HeadLandmark;
-    HeadLandmark.Identifier = TEXT("Head_Top");
-    HeadLandmark.VertexIndex = 0;
-    SampleLandmarks.Add(HeadLandmark);
+    UMeshWrapLandmarkSelectionToolProperties* Props = Tool->ToolProperties;
 
-    FMeshWrapToolLandmark SpineLandmark;
-    SpineLandmark.Identifier = TEXT("Spine_Base");
-    SpineLandmark.VertexIndex = 100;
-    SampleLandmarks.Add(SpineLandmark);
+    // 清除现有地标
+    Props->Landmarks.Reset();
 
-    UE_LOG(LogTemp, Log, TEXT("Created %d sample landmarks for Mesh Resizing demo."), SampleLandmarks.Num());
+    // 添加新的地标对应关系
+    Props->Landmarks.Add({ TEXT("head_top"), 128 });
+    Props->Landmarks.Add({ TEXT("left_elbow"), 256 });
+    Props->Landmarks.Add({ TEXT("right_knee"), 312 });
+
+    // 设置当前编辑第一个地标
+    Props->CurrentEditableLandmark = 0;
+
+    // 开启顶点显示以辅助调试
+    Props->bShowVertices = true;
 }
 ```
 
 ## 模块依赖
 
-从模块名称和插件性质推断，使用者通常需要依赖以下模块（具体以实际 `Build.cs` 文件为准）：
-
 | 模块 | 用途 |
 |---|---|
-| `Dataflow` | 核心的 Dataflow 图表框架，用于创建和执行节点 |
-| `GeometryProcessing` | 提供网格处理、拓扑分析（如 `FGroupTopology`）等底层几何操作 |
-| `InteractiveToolsFramework` | 构建编辑器交互工具的基础框架 |
-| `MeshResizingCore` | 插件的核心类型和工具定义 |
-| `MeshResizingEngine` | 插件的引擎层面逻辑和形变算法 |
+| `InteractiveToolsFramework` | 提供交互式工具框架（UInteractiveTool, UInteractiveToolBuilder 等基类） |
+| `Dataflow` | 提供与 Dataflow 节点图编辑器集成的基础设施（IDataflowEditorToolBuilder, UDataflowContextObject） |
+| `GeometryCore` | 提供几何处理核心功能（如 FGroupTopology） |
+| `ModelingComponents` | 提供网格编辑、预览和选择机制（如 UPolygonSelectionMechanic） |
+| `MeshResizingCore` | 本插件的核心数据类型和接口定义 |
+| `MeshResizingEngine` | 包含实际的网格调整算法和引擎集成代码 |
 
 ## 维护状态
 
@@ -170,18 +152,22 @@ void UMyMeshResizingTestSubsystem::CreateSampleLandmarks()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下，双精度常量截断为浮点数导致的编译警告。 |
-| 2026-05-12 | `a7802337` | Dataflow: ... | 对 Dataflow 相关功能进行了更新。 |
-| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 在即将进行的头文件清理前，预先添加了必要的包含声明。 |
-| 2026-01-30 | `7b60de76` | Dataflow : add support to lasso to the paint tool by leveraging the newly added feature in the mesh ... | Dataflow：利用网格处理中新增的功能，为绘制工具添加了套索选择支持。 |
-| 2025-12-19 | `f86e1e20` | Dataflow : update a lot of nodes to use the new rendering system | Dataflow：将许多节点更新为使用新的渲染系统。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了严格浮点模式下双精度常量截断为浮点数产生的编译器警告。 |
+| 2026-05-12 | `a7802337` | Dataflow: | 对 Dataflow 相关功能进行了更新（具体信息未在消息中给出）。 |
+| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 为即将到来的头文件清理提前添加必要的包含。 |
+| 2026-01-30 | `7b60de76` | Dataflow : add support to lasso to the paint tool by leveraging the newly added feature in the mesh | 为 Dataflow 中的绘制工具添加了套索支持，利用了网格模块的新功能。 |
+| 2025-12-19 | `f86e1e20` | Dataflow : update a lot of nodes to use the new rendering system | 更新了大量 Dataflow 节点以使用新的渲染系统。 |
 
 ### 维护评价
 
-`MeshResizing` 是一个**创建时间很近（2024年底）且目前仍在活跃维护**的实验性插件。从最近一年的提交记录看，它持续获得功能更新（如集成 Dataflow、改进工具交互）和质量优化（如修复编译警告），表明 Epic Games 内部有项目在使用或积极开发此功能。然而，其 `IsExperimentalVersion=true` 和 `EnabledByDefault=false` 的状态明确表示这是一个**实验性功能**，API 和工作流在未来版本中可能发生重大变化，甚至可能被移除。**不建议在需要长期稳定性的正式项目中将其作为核心依赖**，但非常适合在研发或实验项目中探索网格包裹和程序化形变的最新能力。
+**状态**：**实验性，活跃维护中**。
+- **创建时间**：该插件创建于2024年底，非常年轻。
+- **活跃度**：从 git log 看，截止2026年5月仍有实质性功能更新和优化提交（如引入套索功能、适配新渲染系统、修复编译警告），表明 Epic 的开发团队仍在积极投入。
+- **稳定性**：标记为 `IsExperimentalVersion: true` 且 `EnabledByDefault: false`，说明它尚未成熟，API 和功能可能发生变更，不建议在生产项目中依赖。
+- **建议**：适用于对网格变形工作流有前沿需求的开发者进行**原型验证和技术调研**。在生产环境中使用前，需充分评估其稳定性和未来支持情况。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MeshResizing)
-- [官方文档]()（暂无）
-- [测试用例]()（暂未在提供的上下文中发现公开的测试文件路径）
+- [官方文档]( ) （暂无）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MeshResizing/Source/MeshResizingEditorTools/Tests) （注：测试用例路径基于模块结构推断，可能位于插件内或 Engine/Tests 下）

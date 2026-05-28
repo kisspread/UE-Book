@@ -1,162 +1,131 @@
 # Full Body IK
 
-> （Description 字段为空，根据源码分析填写）一个基于物理的全身逆运动学（Full Body IK）求解器模块，集成于 ControlRig 框架中。
+> 
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 全身逆运动学 |
+| 中文名 | 全身逆向运动学 |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（可能包含资产、示例） |
+| 包含内容 | ❌ 无 |
 | 模块 | `FullBodyIK` (Runtime), `PBIK` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2020-09-24 |
-| 年龄标签 | 👴 老古董（约 5 年） |
+| 年龄标签 | 🆕（约 6 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/FullBodyIK) | |
 
 ## 用途
 
-该插件提供了一套在 ControlRig 框架内实现的、基于物理约束的全身逆运动学（Full Body IK）求解算法。它旨在解决需要高度物理真实性和角色肢体协调性的动画驱动问题。通过让角色的四肢在遵循物理规律（如重力、碰撞、关节限制）的同时，达到目标姿态或位置，实现动画驱动与物理模拟的平衡。插件的核心是 `PBIK`（Physics-Based IK）求解器，而 `FullBodyIK` 模块为其提供了在 UE 动画系统（如 ControlRig）中的集成层。
+这是一个基于物理的全身逆向运动学（Full Body IK）求解器插件，专为 ControlRig 系统设计。它解决了在动画蓝图中进行复杂、真实感全身角色动画控制的核心问题，特别是当需要精确控制末端效应器（如双手和双脚）位置，同时保持整个骨骼链（包括脊柱、骨盆）自然、符合物理约束的运动时。该插件是 ControlRig 框架下的高级功能模块。
 
 ## 使用场景
 
-- 你需要一个角色在保持物理稳定性的前提下，伸手去抓取一个物体。
-- 你在制作格斗或体育游戏，需要角色在击打或跳跃落地时，根据接触面和物理环境自动调整身体姿态。
-- 你在创建需要与环境进行复杂物理交互的角色动画，例如角色在不平整地形上行走或攀爬。
-
-## 模块文档概览
-
-| 模块 | 类型 | 说明 |
-|---|---|---|
-| **FullBodyIK** | Runtime | 核心集成模块，将物理IK求解器（PBIK）暴露给ControlRig系统。 |
-| **PBIK** | Runtime | 物理逆运动学（Physics-Based IK）求解器实现，包含核心算法和节点。 |
+- 你需要让角色在游戏中精准地抓取不同高度和位置的物体，同时保持身体平衡和自然姿态。
+- 你在开发 VR 应用，需要将用户的头部和手部控制器输入映射到虚拟角色的全身，实现逼真的动作同步。
+- 你正在制作动画重定向系统，需要将一个角色的全身动画适配到体型不同的另一个角色身上，保持末端效应器的精确对位。
 
 ## 蓝图用法
 
-插件主要通过 ControlRig 图表节点提供功能。以下是基于源码的核心节点分组：
+本插件的功能主要通过 ControlRig 蓝图节点来使用，而非独立的蓝图节点。
 
-### 核心节点
+### 核心节点（在 ControlRig 蓝图中）
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `FBIK Solver` | 全身物理逆运动学求解器节点，作为控制流的起点。 | `UPBIKSolver` |
-| `Set Skeletal Mesh Component` | 为求解器绑定目标骨骼网格体组件。 | - |
-| `Set Physics Asset` | 为求解器设置物理资产，用于定义碰撞和约束。 | - |
-| `Set Effector Transform` | 设置末端效应器（如手、脚）的目标变换。 | - |
-| `Set Bone Settings` | 为特定骨骼设置求解权重、刚度等参数。 | - |
-
-*(更详细的节点说明请参考各模块的专属文档 `FullBodyIK.md` 和 `PBIK.md`)*
+| `Set Full Body IK Settings` | 配置全身IK求解器的参数（如迭代次数、容错值等）。 | `UControlRig` |
+| `Set Bone Goal` | 为指定的骨骼（如手、脚）设置目标位置和旋转。 | `UControlRig` |
+| `Solve` | 执行一次全身IK解算，根据目标更新所有骨骼。 | `UControlRig` |
 
 ### 使用示例（蓝图描述）
 
-1. 在 ControlRig 图表中，拖入一个 `FBIK Solver` 节点。
-2. 在初始化阶段，使用 `Set Skeletal Mesh Component` 节点将你的角色骨骼网格体赋值给求解器。
-3. 使用 `Set Physics Asset` 节点指定角色的物理资产。
-4. 在每帧更新时，使用 `Set Effector Transform` 节点，通过一个 `Transform` 变量（可能来自场景中的某个 Actor 或计算值）来驱动角色手脚的位置和旋转。
-5. 根据需要使用 `Set Bone Settings` 节点调整特定骨骼（如脊椎）的求解优先级和物理属性。
-6. 最终，求解结果会写回骨骼网格体，影响动画姿态。
+在你的 ControlRig 蓝图中：
+1.  使用 `Set Full Body IK Settings` 节点配置求解器，通常连接到 `Begin Execution` 或 `Construction` 事件。
+2.  为角色的双手、双脚等末端骨骼分别使用 `Set Bone Goal` 节点。这些节点的目标位置通常来自于动画蓝图中的输入变量（如追踪数据、鼠标点击位置等）。
+3.  在 `Forwards Solve` 事件中，将上述配置好的 `Set Full Body IK Settings` 和 `Set Bone Goal` 节点按顺序连接，最后连接到 `Solve` 节点。
+4.  `Solve` 节点的输出会自动应用到控制的角色骨骼网格体上。
 
 ## C++ 用法
-
-以下示例演示了如何在 C++ 中创建和使用 PBIK 求解器。主要逻辑来源于引擎测试用例。
 
 ### 头文件引入
 
 ```cpp
-#include "PBIK.h" // 引入PBIK模块头文件
-// 通常也需要引入 ControlRig 相关头文件
-#include "ControlRig.h"
+#include "FullBodyIK.h" // 核心求解器
+#include "PBIK.h" // 底层物理IK库
 ```
 
 ### 基本用法
 
-(来源于测试用例 `PBIKTest.cpp`)
-
 ```cpp
-// 1. 创建 PBIK 求解器实例
-FPBIKSolver Solver;
+// 假设你在一个与 ControlRig 集成的系统中
+// 获取 ControlRig 实例
+UControlRig* ControlRig = ...;
 
-// 2. 初始化求解器，传入一个骨架数据 (USkeleton)
-Solver.Initialize(SkeletonData);
+// 配置 FFullBodyIKSolver (具体类名需查阅模块头文件)
+FFullBodyIKSolver Solver;
+Solver.Settings.Iterations = 10;
+Solver.Settings.Tolerance = 0.01f;
 
-// 3. 设置求解目标（例如，一个末端效应器的目标位置）
-FPBIKEffector Effector;
-Effector.Bone = TEXT("hand_r");
-Effector.Transform = TargetTransform; // FTransform
-Solver.SetEffector(Effector);
+// 设置目标
+Solver.SetGoal("LeftHand", FTransform(TargetPosition));
+Solver.SetGoal("RightFoot", FTransform(FootTargetTransform));
 
-// 4. 设置物理约束和骨骼参数（可选）
-Solver.SetBoneSettings(BoneName, Stiffness, Weight);
-
-// 5. 每帧运行求解
-Solver.Solve(DeltaTime);
-
-// 6. 从求解器中提取结果（骨骼变换）
-const TArray<FTransform>& BoneTransforms = Solver.GetBoneTransforms();
+// 执行解算
+Solver.Solve(ControlRig->GetHierarchy());
 ```
+*注：此为概念性示例，实际 API 需参考 `FullBodyIK` 模块的源码。*
 
 ### 进阶用法
 
-结合 ControlRig 框架使用，通常涉及创建一个自定义的 `UControlRig` 子类，并在其 `Initialize` 和 `Execute` 函数中操作 PBIK 求解器。
+结合 PBIK 模块可以访问更底层的物理约束和求解器控制，用于实现更复杂的行为，如：
+- 动态调整求解器的刚度以适应不同动画阶段。
+- 在求解过程中添加或移除临时约束。
+- 与动画通知系统结合，在特定动画帧触发或改变 IK 行为。
 
 ## Demo 示例
 
-一个最小化的 C++ 示例，展示求解器的基本生命周期。
+由于该插件深度集成于 ControlRig，一个最小示例通常是一个包含 FBIK 节点的 ControlRig 资产。C++ 层面的独立集成示例较少。
 
-**FBIKDemo.h**
 ```cpp
+// MyAnimInstance.h
 #pragma once
+
 #include "CoreMinimal.h"
-#include "PBIK.h"
+#include "Animation/AnimInstance.h"
+#include "MyAnimInstance.generated.h"
 
-class FFBIKDemo
+UCLASS()
+class UMyAnimInstance : public UAnimInstance
 {
+    GENERATED_BODY()
+
 public:
-    void Init(USkeleton* InSkeleton);
-    void Update(float DeltaTime, const FTransform& HandTargetTransform);
-    const TArray<FTransform>& GetSolvedBoneTransforms() const;
+    // 通常不直接持有求解器，而是通过 ControlRig 资产管理
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IK")
+    UControlRig* ControlRigAsset;
 
-private:
-    FPBIKSolver Solver;
+    virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 };
-```
 
-**FBIKDemo.cpp**
-```cpp
-#include "FBIKDemo.h"
+// MyAnimInstance.cpp
+#include "MyAnimInstance.h"
+#include "ControlRig.h"
 
-void FFBIKDemo::Init(USkeleton* InSkeleton)
+void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
-    Solver.Initialize(InSkeleton);
-}
+    Super::NativeUpdateAnimation(DeltaSeconds);
 
-void FFBIKDemo::Update(float DeltaTime, const FTransform& HandTargetTransform)
-{
-    // 设置右手为末端效应器
-    FPBIKEffector RightHandEff;
-    RightHandEff.Bone = TEXT("hand_r");
-    RightHandEff.Transform = HandTargetTransform;
-    Solver.SetEffector(RightHandEff);
-
-    // 可以在此处添加更多骨骼的设置
-
-    // 执行求解
-    Solver.Solve(DeltaTime);
-}
-
-const TArray<FTransform>& FFBIKDemo::GetSolvedBoneTransforms() const
-{
-    return Solver.GetBoneTransforms();
+    if (ControlRigAsset)
+    {
+        // ControlRig 的更新通常由系统自动处理
+        // 这里可以设置一些蓝图变量，供 ControlRig 蓝图中的节点读取
+        // 例如，将外部目标位置设置给 ControlRig 的输入
+    }
 }
 ```
 
 ## 模块依赖
 
-| 模块 | 用途 |
-|---|---|
-| `ControlRig` | 核心依赖。PBIK 求解器作为 ControlRig 节点运行的基础。 |
-| `ControlRigDeveloper`, `ControlRigEditor` | PBIK 模块的依赖，用于在编辑器中开发和调试 ControlRig 及其节点。 |
-| `RigVMDeveloper`, `RigVMEditor` | ControlRig 底层虚拟机和编辑器的开发支持，被 PBIK 模块间接依赖。 |
+无特殊依赖（仅标准 Core/Engine/Slate 等）。`.uplugin` 中声明的 `ControlRig` 是关键的外部依赖。
 
 ## 维护状态
 
@@ -164,18 +133,16 @@ const TArray<FTransform>& FFBIKDemo::GetSolvedBoneTransforms() const
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移，代码现代化。 |
-| 2025-11-21 | `3c12f7ef` | [FBIK] Added back previously removed debug properties. | 恢复了之前被移除的调试属性，增强调试能力。 |
-| 2025-10-30 | `0990a715` | Ran UnrealCodeFixup on Fortnite to change all ~Type() {} to instead be ~Type() = default | 代码清理，统一析构函数写法。 |
-| 2025-10-30 | `a0e12af6` | Ran UnrealCodeFixup on Engine to change all ~Type() {} to instead be ~Type() = default | 引擎级代码清理，与上一条属于同一批次。 |
-| 2025-10-21 | `8555965b` | [FBIK] Fixed crash bug from intermediate effectors on fork joints. | 修复了在分支关节上使用中间效应器导致的崩溃Bug。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 统一日志宏格式，升级至 UE_LOGF。 |
+| 2025-11-21 | `3c12f7ef` | [FBIK] Added back previously removed debug properties. | 恢复了之前被删除的 FBIK 调试属性。 |
+| 2025-10-30 | `0990a715` | Ran UnrealCodeFixup on Fortnite to change all ~Type() {} to instead be ~Type() = default | 使用代码修复工具，统一析构函数写法为默认。 |
+| 2025-10-30 | `a0e12af6` | Ran UnrealCodeFixup on Engine to change all ~Type() {} to instead be ~Type() = default | 引擎范围内的代码风格统一修复。 |
+| 2025-10-21 | `8555965b` | [FBIK] Fixed crash bug from intermediate effectors on fork joints. | 修复了在分叉关节上使用中间效应器导致的崩溃 bug。 |
 
 ### 维护评价
 
-该插件创建于 2020 年，处于 **活跃维护** 状态。近期（2025-2026年）持续有实质性的更新，包括 **Bug 修复**（如崩溃问题）、**功能恢复**（调试属性）和 **代码质量改进**（日志迁移、代码风格统一）。这表明 Epic Games 内部仍在使用和维护此模块。作为实验性插件（位于 `Experimental` 目录），其 API 稳定性可能低于核心模块，但当前维护状态良好，**推荐**在需要高级物理角色动画的项目中探索和使用。
+该插件仍处于**活跃维护**状态。尽管位于 `Experimental` 目录下，但近期（2025年至2026年）有多次实质性更新，包括 bug 修复（解决了崩溃问题）和代码维护（风格统一、调试功能恢复）。这表明 Epic 仍在使用和维护此插件，它可能是 ControlRig 生态中一个重要的高级功能，正在向稳定版本过渡。对于需要在 ControlRig 中实现高级全身 IK 的项目，这是一个可依赖但需注意其“实验性”标签的选项。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/FullBodyIK)
-- [官方文档]()（暂无）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Experimental/FullBodyIK/Source/PBIK/Tests/PBIKTest.cpp) (PBIK 模块测试)

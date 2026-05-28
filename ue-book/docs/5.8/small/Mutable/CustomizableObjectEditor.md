@@ -6,8 +6,8 @@
 |---|---|
 | 中文名 | 可定制对象系统 |
 | 分类 | CustomizableObjects |
-| 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、图表编辑器、调试工具） |
+| 默认启用 | ✅ 是 |
+| 包含内容 | ❌ 无（纯代码插件） |
 | 模块 | `MutableRuntime` (Runtime), `CustomizableObject` (Runtime), `MutableTools` (Runtime), `CustomizableObjectEditor` (Runtime), `MutableValidation` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-09-05 |
@@ -16,329 +16,289 @@
 
 ## 用途
 
-Mutable 是一个**运行时角色/物体自定义系统**，它允许开发者通过可视化节点图定义可定制对象（Customizable Object），在运行时根据参数组合动态生成最终的网格体、材质和纹理，而无需预先烘焙所有变体。
+Mutable 是 UE5 的**运行时角色/物品自定义系统**，用于创建可由玩家在游戏运行时动态定制外观的游戏对象。它解决的核心问题是：**如何在保证运行时性能的前提下，支持大量视觉变体的组合爆炸**。
 
-**核心问题**：在角色自定义游戏（如 MMO、RPG、换装系统）中，装备、发型、肤色等组合会产生指数级的资产变体。如果预先烘焙所有组合，内存和磁盘空间将爆炸性增长。
+传统方式为每种外观变体制作独立资源会导致资产爆炸（如 10 种发型 × 5 种肤色 × 3 种服装 = 150 个独立资产）。Mutable 通过图节点系统定义变体规则，编译为高效的运行时模型，在运行时按需生成最终网格体和材质，将 150 个资产压缩为一组编译数据 + 参数配置。
 
-**Mutable 的解决方案**：
-- **编译时**：将 UE 图表编译为 Mutable 虚拟机字节码（Model），描述所有可能的资产组合逻辑
-- **运行时**：根据参数（如"发型=3"、"护甲=皮革"、"颜色=红色"）执行字节码，动态生成最终的 SkeletalMesh、StaticMesh、材质和纹理
-- **流式加载**：支持 LOD 流式和纹理流式，按需生成不同精度的资产
-
-与传统方法相比，100 个装备 × 10 种肤色 × 20 种发型 = 20,000 种组合，Mutable 只需要存储原始资产 + 一份编译后的 Model，运行时按需生成。
+**核心工作流**：
+1. **图编辑**：在 CustomizableObject 图编辑器中用节点定义对象结构（引用网格体、材质、纹理等资产），连接修饰器节点（变形、裁剪、纹理混合等），暴露整数/浮点/颜色/投影器等参数
+2. **编译**：将图编译为 Mutable 虚拟机模型（.mut 文件），存入 DerivedDataCache
+3. **运行时实例化**：为每个 `UCustomizableObjectInstance` 设置参数值，Mutable 引擎按需生成最终的 `USkeletalMesh`/`UStaticMesh`、纹理和材质
+4. **烘焙（可选）**：将特定参数组合的实例序列化为静态资产，用于离线场景
 
 ## 使用场景
 
-- 你在做 MMO / RPG 的角色自定义系统（捏脸 + 装备换装）→ 用 Mutable 定义完整的角色定制流程
-- 你需要武器/装备有大量材质变体但不想烘焙 1000+ 个独立资产 → 用 Mutable 动态组合纹理参数
-- 你的游戏需要运行时修改物体外观（如涂装系统、破坏系统）→ 用 Mutable 的参数驱动系统
-- 你需要在编辑器中快速预览所有参数组合的效果 → 用 Mutable 编辑器的实时预览功能
-- 你有 DataTable 驱动的大量装备数据，需要自动生成对应的网格/材质 → 用 Table 节点将 DataTable 映射到 Mutable 图表
-
-## 编辑器用法
-
-Mutable 的核心工作流是**图表编辑器**：在 Customizable Object 编辑器中通过节点图定义资产的组合逻辑。
-
-### 核心概念
-
-| 概念 | 说明 |
-|---|---|
-| Customizable Object (CO) | 定义可定制对象逻辑的 UAsset，包含节点图 |
-| Customizable Object Instance (COI) | CO 的运行时实例，持有参数值 |
-| Model | CO 编译后的虚拟机字节码，运行时执行 |
-| State | CO 的状态（如"完整"、"低配"），定义运行时可用参数 |
-| Parameter | 运行时可修改的参数（Int、Float、Bool、Color、Projector 等） |
-| Layout | 纹理打包策略，定义 UV 区域到运行时生成纹理的映射 |
-| Macro Library | 可复用的子图表库 |
-
-### 主要节点类型
-
-| 节点 | 用途 |
-|---|---|
-| Object Node | CO 的根节点，定义对象名称、状态列表、组件设置 |
-| Skeletal Mesh Node | 引入骨骼网格体，为每个 LOD/Section 生成输出引脚 |
-| Material Section Node | 定义材质，自动从连接的网格体获取材质参数引脚 |
-| Table Node | 从 DataTable/Struct 自动生成参数选项 |
-| Group Node | 定义可附加子 CO 的插槽（如"护甲"插槽） |
-| Modifier Nodes | 裁剪、变形、材质覆盖等修改器 |
-| Switch/Variation Node | 条件分支，根据参数选择不同子图 |
-| Macro Instance Node | 引用 Macro Library 中的可复用子图 |
-
-### 编辑器面板
-
-打开 CO 资产后，编辑器包含以下面板：
-
-| 面板 | 功能 |
-|---|---|
-| Viewport | 实时预览当前参数组合的最终效果 |
-| Graph | 可视化节点图，定义资产组合逻辑 |
-| Details | 选中节点的属性面板 |
-| Instance Properties | 实例参数调节面板（预览用） |
-| Texture Analyzer | 分析运行时生成纹理的内存占用 |
-| Performance Analyzer | 批量测试实例更新性能 |
-| Code Viewer | 查看 Mutable 虚拟机字节码（调试用） |
-| Tag Explorer | 浏览 CO 层级中所有标签 |
-
-### 编译选项
-
-| 选项 | 说明 |
-|---|---|
-| Optimization Level | 编译优化等级，影响生成速度与运行时质量 |
-| Texture Compression | 纹理压缩策略（Fast / High Quality） |
-| Embedded Data Limit | 嵌入数据大小限制 |
-
-### 烘焙 (Baking)
-
-将实例的运行时生成资产序列化到磁盘，用于制作宣传截图、LOD 回退资产等。
-
-```
-FCustomizableObjectEditorViewportClient::BakeInstance()
-  → ScheduleCOCompilationForBaking()    // 编译 CO
-  → ScheduleInstanceUpdateForBaking()   // 更新实例
-  → BakeCustomizableObjectInstance()    // 序列化资产到磁盘
-```
+- 你在做一个角色自定义游戏（捏脸、换装、武器皮肤）→ 用 Mutable
+- 你需要在运行时动态组合大量视觉变体且不想资产爆炸 → 用 Mutable
+- 你需要材质参数的运行时动态组合（多材质层、纹理替换、颜色混合）→ 用 Mutable
+- 你需要基于 LOD 的自动纹理和网格体优化 → 用 Mutable 的 Layout 系统
+- 你需要将自定义结果烘焙为静态资产（过场动画、宣传截图）→ 用 Mutable 的 Bake 功能
+- 你需要可复用的自定义图逻辑片段 → 用 Mutable 的 Macro Library 系统
 
 ## 蓝图用法
 
-Mutable 的核心 API 主要面向 C++ 和编辑器，蓝图暴露有限。以下是可蓝图调用的函数。
+Mutable 的核心工作流通过 `UCustomizableObjectEditorFunctionLibrary` 暴露蓝图节点。注意：大部分图编辑操作在 CustomizableObject 编辑器中完成，蓝图主要用于编译和实例管理。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `CompileCustomizableObjectSynchronously` | 同步编译 CO（仅编辑器） | `UCustomizableObjectEditorFunctionLibrary` |
-| `NewCustomizableObject` | 创建新 CO 资产（仅编辑器） | `UCustomizableObjectEditorFunctionLibrary` |
+| `CompileCustomizableObjectSynchronously` | 同步编译指定的 CustomizableObject（已废弃，推荐用 `UCustomizableObject::Compile`） | `UCustomizableObjectEditorFunctionLibrary` |
+| `NewCustomizableObject` | 在指定路径创建新的 CustomizableObject 资产，可指定父对象和分组 | `UCustomizableObjectEditorFunctionLibrary` |
 
-### 编译状态枚举
+### 新建可定制对象参数结构
 
-```cpp
-UENUM(BlueprintType)
-enum class ECustomizableObjectCompilationState : uint8
-{
-    None,       // 未开始
-    InProgress, // 编译中
-    Completed,  // 完成
-    Failed      // 失败
-};
-```
+`FNewCustomizableObjectParameters` 结构体用于创建新对象时的配置：
 
-### 创建新 CO
+| 属性 | 类型 | 说明 |
+|---|---|---|
+| `PackagePath` | `FString` | 包路径（如 "/Game"），不可以斜杠结尾 |
+| `AssetName` | `FString` | 资产名称（如 "SampleAssetName"） |
+| `ParentObject` | `UCustomizableObject*` | 要附加子对象的父 CustomizableObject |
+| `ParentGroupNode` | `FString` | 父对象中的分组节点名称（仅当指定了 ParentObject 时有效） |
 
-```
-// 蓝图：NewCustomizableObject
-参数：
-  - PackagePath: "/Game/Characters"     // 包路径
-  - AssetName: "MyCustomizableObject"   // 资产名
-  - ParentObject: (可选) 父 CO 引用
-  - ParentGroupNode: (可选) 父 CO 中的 Group 节点名
-```
+### 使用示例（蓝图描述）
+
+**编译对象**：
+1. 获取目标 `UCustomizableObject` 的引用
+2. 调用 `CompileCustomizableObjectSynchronously`，设置优化等级和纹理压缩模式
+3. 返回 `ECustomizableObjectCompilationState`（None/InProgress/Completed/Failed）
+
+**创建新对象**：
+1. 填充 `FNewCustomizableObjectParameters`（路径、名称、父对象、分组）
+2. 调用 `NewCustomizableObject`
+3. 获取返回的 `UCustomizableObject*`
+
+**实例参数编辑**（在 CO Instance Editor 中）：
+- 整数参数：下拉列表选择选项（对应图中的 Int Parameter 节点）
+- 浮点参数：滑块编辑（对应 Float Parameter 节点）
+- 颜色参数：颜色选择器（对应 Color Parameter 节点）
+- 投影器参数：视口中的 Gizmo 控件控制位置/方向/缩放（对应 Projector Parameter 节点）
+- 布尔参数：复选框（对应 Bool Parameter 节点）
+- 变换参数：变换编辑器（对应 Transform Parameter 节点）
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "MuCO/CustomizableObject.h"
-#include "MuCO/CustomizableObjectInstance.h"
-#include "MuCO/CustomizableObjectSystem.h"
-```
-
-### 基本用法：创建和更新实例
-
-```cpp
-// 来源: 基于 CustomizableObjectInstanceEditor.h 和 FCustomizableObjectEditorViewportClient 的使用模式
-
-// 1. 获取 CO 引用（在编辑器中通常通过资产引用获取）
-UCustomizableObject* CustomizableObject = ...; // 加载或获取 CO 资产
-
-// 2. 创建实例
-UCustomizableObjectInstance* Instance = NewObject<UCustomizableObjectInstance>();
-Instance->SetCustomizableObject(CustomizableObject);
-
-// 3. 设置参数（示例：设置整数参数）
-// Instance->SetIntParameter("HatType", 2);
-
-// 4. 更新实例（异步生成最终资产）
-// Instance->UpdateSkeletalMeshAsyncResult();
-
-// 5. 监听更新完成
-// 绑定 FObjectInstanceUpdatedDelegate 回调
-```
-
-### 编译 CO（编辑器时）
-
-```cpp
-// 来源: CustomizableObjectEditorFunctionLibrary.h
+// 编辑器函数库（蓝图节点）
 #include "MuCOE/CustomizableObjectEditorFunctionLibrary.h"
 
-// 同步编译
-ECustomizableObjectCompilationState State = 
-    UCustomizableObjectEditorFunctionLibrary::CompileCustomizableObjectSynchronously(
-        MyCustomizableObject,
-        ECustomizableObjectOptimizationLevel::None,
-        ECustomizableObjectTextureCompression::Fast,
-        false  // bGatherReferences
-    );
+// 图遍历工具
+#include "MuCOE/GraphTraversal.h"
+
+// 编译器接口
+#include "MuCOE/CustomizableObjectCompiler.h"
+
+// 扩展数据编译接口
+#include "MuCOE/ExtensionDataCompilerInterface.h"
+
+// 编辑器模块接口
+#include "MuCOE/ICustomizableObjectEditorModulePrivate.h"
+```
+
+### 基本用法
+
+**同步编译 Customizable Object**
+
+来源：`Source/CustomizableObjectEditor/Public/MuCOE/CustomizableObjectEditorFunctionLibrary.h`
+
+```cpp
+#include "MuCOE/CustomizableObjectEditorFunctionLibrary.h"
+
+// 获取目标 CustomizableObject
+UCustomizableObject* MyObject = LoadObject<UCustomizableObject>(nullptr, TEXT("/Game/MyCO"));
+
+// 同步编译（会阻塞当前线程）
+ECustomizableObjectCompilationState State = UCustomizableObjectEditorFunctionLibrary::CompileCustomizableObjectSynchronously(
+    MyObject,
+    ECustomizableObjectOptimizationLevel::None,
+    ECustomizableObjectTextureCompression::Fast,
+    /*bGatherReferences=*/ false
+);
 
 if (State == ECustomizableObjectCompilationState::Completed)
 {
-    UE_LOG(LogTemp, Log, TEXT("Compilation succeeded"));
+    UE_LOG(LogTemp, Log, TEXT("编译成功"));
 }
-```
-
-### 进阶用法：烘焙实例到磁盘
-
-```cpp
-// 来源: CustomizableObjectInstanceBakingUtils.h
-
-#include "MuCOE/CustomizableObjectInstanceBakingUtils.h"
-
-// 1. 先确保 CO 已编译
-// 2. 配置烘焙参数
-FBakingConfiguration BakingConfig;
-// BakingConfig.Prefix = TEXT("SKM_");
-// BakingConfig.AssetPath = TEXT("/Game/BakedAssets/");
-// BakingConfig.UserGivenName = TEXT("DefaultCharacter");
-
-// 3. 执行烘焙
-TMap<UPackage*, const FResourceBakingData> SavedPackages;
-bool bSuccess = BakeCustomizableObjectInstance(
-    *Instance,
-    BakingConfig,
-    false,  // bIsUnattendedExecution
-    SavedPackages
-);
-
-if (bSuccess)
+else if (State == ECustomizableObjectCompilationState::Failed)
 {
-    // 保存所有标记的包
-    for (auto& Pair : SavedPackages)
-    {
-        UPackage* Package = Pair.Key;
-        // 保存到磁盘
-    }
+    UE_LOG(LogTemp, Error, TEXT("编译失败"));
 }
 ```
 
-### 进阶用法：通过图遍历分析 CO 层级
+**创建新的 Customizable Object**
+
+来源：`Source/CustomizableObjectEditor/Public/MuCOE/CustomizableObjectEditorFunctionLibrary.h`
 
 ```cpp
-// 来源: GraphTraversal.h
+FNewCustomizableObjectParameters Params;
+Params.PackagePath = TEXT("/Game/Characters");
+Params.AssetName = TEXT("HeroCustomizable");
 
+// 创建子对象附加到父对象的指定分组
+Params.ParentObject = LoadObject<UCustomizableObject>(nullptr, TEXT("/Game/Characters/BaseCharacter"));
+Params.ParentGroupNode = TEXT("HeadGroup");
+
+UCustomizableObject* NewCO = UCustomizableObjectEditorFunctionLibrary::NewCustomizableObject(Params);
+```
+
+### 进阶用法
+
+**图遍历与根对象查找**
+
+来源：`Source/CustomizableObjectEditor/Private/MuCOE/GraphTraversal.h`
+
+```cpp
 #include "MuCOE/GraphTraversal.h"
 
-// 获取 CO 的根节点
-UCustomizableObjectNodeObject* RootNode = GetRootNode(MyCustomizableObject);
+UCustomizableObject* ChildObject = LoadObject<UCustomizableObject>(nullptr, TEXT("/Game/Characters/ChildCO"));
 
-// 获取完整的 CO 层级中所有对象
+// 获取整个 CO 层级的根对象
+UCustomizableObject* RootObject = GraphTraversal::GetRootObject(ChildObject);
+
+// 检查某个 CO 是否是根对象
+bool bIsRoot = GraphTraversal::IsRootObject(*ChildObject);
+
+// 获取图中所有相关的 CustomizableObject
 TSet<UCustomizableObject*> AllObjects;
-GraphTraversal::GetAllObjectsInGraph(MyCustomizableObject, AllObjects);
+GraphTraversal::GetAllObjectsInGraph(RootObject, AllObjects);
 
-// 判断是否为根对象
-bool bIsRoot = GraphTraversal::IsRootObject(*MyCustomizableObject);
-
-// 获取根 CO（对于子对象）
-UCustomizableObject* RootCO = GraphTraversal::GetRootObject(ChildCustomizableObject);
-
-// 遍历节点
-GraphTraversal::VisitNodes(*RootNode, [](UCustomizableObjectNode& Node)
+// 遍历图中的所有节点
+UCustomizableObjectNodeObject* RootNode = GetRootNode(RootObject);
+if (RootNode)
 {
-    // 对每个节点执行操作
-    UE_LOG(LogTemp, Log, TEXT("Node: %s"), *Node.GetNodeTitle(ENodeTitleType::FullTitle).ToString());
-});
+    GraphTraversal::VisitNodes(*RootNode, [](UCustomizableObjectNode& Node)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Node: %s (%s)"), *Node.GetName(), *Node.GetClass()->GetName());
+    });
+}
+```
+
+**追踪引脚连接**
+
+来源：`Source/CustomizableObjectEditor/Private/MuCOE/GraphTraversal.h`
+
+```cpp
+#include "MuCOE/GraphTraversal.h"
+
+// 追踪输入引脚到其连接的输出引脚
+UEdGraphPin* InputPin = SomeNode->FindPin(TEXT("Mesh"));
+UEdGraphPin* ConnectedOutput = FollowInputPin(InputPin);
+
+if (ConnectedOutput)
+{
+    UCustomizableObjectNode* SourceNode = Cast<UCustomizableObjectNode>(ConnectedOutput->GetOwningNode());
+    // 处理源节点...
+}
+
+// 追踪输出引脚（返回连接到该输出的所有输入引脚）
+TArray<UEdGraphPin*> ConnectedInputs = FollowOutputPinArray(OutputPin);
+
+// 通过宏上下文追踪引脚（跨宏边界）
+TArray<const UCustomizableObjectNodeMacroInstance*> MacroContext;
+const UEdGraphPin* SourcePin = GraphTraversal::FindIOPinSourceThroughMacroContext(SomePin, &MacroContext);
+```
+
+**扩展数据编译接口**
+
+来源：`Source/CustomizableObjectEditor/Public/MuCOE/ExtensionDataCompilerInterface.h`
+
+```cpp
+#include "MuCOE/ExtensionDataCompilerInterface.h"
+
+// 在编译过程中注册扩展数据
+void MyExtensionNode::GenerateMutableNode(FMutableGraphGenerationContext& GenerationContext)
+{
+    FExtensionDataCompilerInterface Interface(GenerationContext);
+    
+    // 注册扩展数据对象（bDuplicate=true 表示烘焙时复制）
+    UE::Mutable::Private::PASSTHROUGH_ID Id = Interface.MakeExtensionData(*MyExtensionDataObject, true);
+    
+    // 记录编译日志
+    Interface.CompilerLog(FText::FromString(TEXT("Extension data registered")), this);
+}
 ```
 
 ## Demo 示例
 
-以下示例展示如何在编辑器工具中编译一个 CO 并创建预览实例。
+以下示例展示如何在 C++ 中以编程方式管理 CustomizableObject 的编译流程：
 
 ```cpp
-// MyCustomizableObjectTool.h
+// CustomObjectManager.h
 #pragma once
 
 #include "CoreMinimal.h"
 #include "MuCO/CustomizableObject.h"
 #include "MuCO/CustomizableObjectInstance.h"
+#include "MuCOE/CustomizableObjectEditorFunctionLibrary.h"
+#include "MuCOE/GraphTraversal.h"
 
-class FMyCustomizableObjectTool
+class FCustomObjectManager
 {
 public:
-    /** 编译 CO 并创建预览实例 */
-    void CompileAndPreview(UCustomizableObject* InObject);
+    // 编译指定的 CustomizableObject 并创建运行时实例
+    static UCustomizableObjectInstance* CompileAndCreateInstance(UCustomizableObject* Object);
     
-    /** 更新预览实例 */
-    void UpdatePreview();
-
-private:
-    UPROPERTY()
-    TObjectPtr<UCustomizableObject> CustomizableObject;
-    
-    UPROPERTY()
-    TObjectPtr<UCustomizableObjectInstance> PreviewInstance;
-    
-    void OnInstanceUpdated(UCustomizableObjectInstance* Instance);
+    // 获取对象层级信息
+    static void LogObjectHierarchy(UCustomizableObject* Object);
 };
 ```
 
 ```cpp
-// MyCustomizableObjectTool.cpp
-#include "MyCustomizableObjectTool.h"
-#include "MuCOE/CustomizableObjectEditorFunctionLibrary.h"
+// CustomObjectManager.cpp
+#include "CustomObjectManager.h"
 
-void FMyCustomizableObjectTool::CompileAndPreview(UCustomizableObject* InObject)
+UCustomizableObjectInstance* FCustomObjectManager::CompileAndCreateInstance(UCustomizableObject* Object)
 {
-    if (!InObject)
+    if (!Object)
     {
-        UE_LOG(LogTemp, Error, TEXT("Invalid Customizable Object"));
-        return;
+        UE_LOG(LogTemp, Error, TEXT("CustomObjectManager: Object is null"));
+        return nullptr;
     }
     
-    CustomizableObject = InObject;
-    
-    // 编译 CO
+    // 同步编译
     ECustomizableObjectCompilationState State = 
         UCustomizableObjectEditorFunctionLibrary::CompileCustomizableObjectSynchronously(
-            CustomizableObject,
+            Object,
             ECustomizableObjectOptimizationLevel::None,
-            ECustomizableObjectTextureCompression::Fast
+            ECustomizableObjectTextureCompression::Fast,
+            false
         );
     
     if (State != ECustomizableObjectCompilationState::Completed)
     {
-        UE_LOG(LogTemp, Error, TEXT("Compilation failed for %s"), 
-            *CustomizableObject->GetName());
-        return;
+        UE_LOG(LogTemp, Error, TEXT("CustomObjectManager: Compilation failed for %s"), *Object->GetName());
+        return nullptr;
     }
     
-    UE_LOG(LogTemp, Log, TEXT("Compilation succeeded, creating preview instance"));
-    
-    // 创建预览实例
-    PreviewInstance = NewObject<UCustomizableObjectInstance>();
-    PreviewInstance->SetCustomizableObject(CustomizableObject);
-    
-    // 绑定更新回调并触发更新
-    PreviewInstance->UpdatedDelegate.AddRaw(this, 
-        &FMyCustomizableObjectTool::OnInstanceUpdated);
-    UpdatePreview();
-}
-
-void FMyCustomizableObjectTool::UpdatePreview()
-{
-    if (!PreviewInstance)
+    // 编译成功后，正常流程中实例由 UE 自动管理
+    // 这里展示如何获取根对象信息
+    UCustomizableObject* Root = GraphTraversal::GetRootObject(Object);
+    if (Root)
     {
-        return;
+        UE_LOG(LogTemp, Log, TEXT("Root object: %s"), *Root->GetName());
     }
     
-    // 触发实例异步更新
-    // PreviewInstance->UpdateSkeletalMeshAsyncResult();
+    return nullptr; // 实例由引擎管理
 }
 
-void FMyCustomizableObjectTool::OnInstanceUpdated(UCustomizableObjectInstance* Instance)
+void FCustomObjectManager::LogObjectHierarchy(UCustomizableObject* Object)
 {
-    UE_LOG(LogTemp, Log, TEXT("Preview instance updated successfully"));
+    if (!Object) return;
     
-    // 此时 Instance 持有生成的 SkeletalMesh 和材质
-    // 可以将其附加到 Actor 上进行预览
+    // 获取所有相关对象
+    TSet<UCustomizableObject*> AllObjects;
+    GraphTraversal::GetAllObjectsInGraph(Object, AllObjects);
+    
+    UE_LOG(LogTemp, Log, TEXT("Object %s has %d related COs"), *Object->GetName(), AllObjects.Num());
+    
+    for (UCustomizableObject* CO : AllObjects)
+    {
+        bool bIsRoot = GraphTraversal::IsRootObject(*CO);
+        UE_LOG(LogTemp, Log, TEXT("  - %s (Root: %s)"), *CO->GetName(), bIsRoot ? TEXT("Yes") : TEXT("No"));
+    }
 }
 ```
 
@@ -346,12 +306,9 @@ void FMyCustomizableObjectTool::OnInstanceUpdated(UCustomizableObjectInstance* I
 
 | 模块 | 用途 |
 |---|---|
-| `MutableRuntime` | Mutable 虚拟机运行时，执行编译后的 Model 生成最终资产 |
-| `MutableTools` | Mutable 图表编译工具，将 UE 节点图编译为虚拟机字节码 |
-| `DerivedDataCache` | 编译产物的派生数据缓存（DDC），避免重复编译 |
-| `MessageLog` | 编译过程中的日志和错误报告 |
-
-**说明**：`CustomizableObject` 模块依赖 `UnrealEd` 和 `MutableTools`，表明其 Editor 类型属性（虽然标记为 Runtime，实际在编辑器和 Cook 时使用）。对于纯运行时使用，只需依赖 `MutableRuntime`。
+| `MutableRuntime` | Mutable 虚拟机运行时引擎，执行模型生成最终网格体/纹理/材质 |
+| `MutableTools` | Mutable 编译工具链，将图节点编译为优化的运行时模型 |
+| `MutableValidation` | Mutable 数据验证模块 |
 
 ## 维护状态
 
@@ -359,28 +316,24 @@ void FMyCustomizableObjectTool::OnInstanceUpdated(UCustomizableObjectInstance* I
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `70229bdc` | [Mutable] Fix duplicated Skeletal Mesh geometry if there is multiple SKM with the same name. | 修复多个同名骨骼网格体导致几何体重复的问题 |
-| 2026-05-26 | `2b0ca8bd` | [mutable] Fixed "Clip mesh with UV Mask" op not loading the appropriate mask mip. | 修复 UV Mask 裁剪操作未加载正确的 mask mip 级别 |
-| 2026-05-26 | `06ea27d3` | [Mutable] Fix texture parameters using the wrong method to compute the LODBias. | 修复纹理参数使用错误方法计算 LODBias |
+| 2026-05-26 | `70229bdc` | [Mutable] Fix duplicated Skeletal Mesh geometry if there is multiple SKM with the same name. | 修复同名多个骨骼网格体时几何数据重复的问题 |
+| 2026-05-26 | `2b0ca8bd` | [mutable] Fixed "Clip mesh with UV Mask" op not loading the appropriate mask mip. | 修复 UV 遮罩裁剪操作未正确加载对应 mipmap 的问题 |
+| 2026-05-26 | `06ea27d3` | [Mutable] Fix texture parameters using the wrong method to compute the LODBias. | 修复纹理参数使用错误方法计算 LODBias 的问题 |
 | 2026-05-26 | `e9c39661` | [Mutable] Allow more clothing asset types by using the ClothingAssetBase interface. | 通过 ClothingAssetBase 接口支持更多服装资产类型 |
-| 2026-05-25 | `c8ce9ff7` | [Mutable] Fix possible data race when comparing PassthroughObjects. | 修复比较 PassthroughObject 时可能出现的数据竞争 |
+| 2026-05-25 | `c8ce9ff7` | [Mutable] Fix possible data race when comparing PassthroughObjects. | 修复比较 PassthroughObject 时可能发生的数据竞争 |
 
 ### 维护评价
 
-**活跃维护中** ✅
+**活跃维护** — Mutable 是 Epic 官方维护的大型运行时自定义系统，处于**积极开发**状态：
 
-- **创建时间**：2024-09-05 从 Experimental 升级为 Beta（实际开发历史更长，此前在 Experimental 目录下）
-- **更新频率**：最近一周内有 5 次 commit，且均为实质性的 bug 修复，维护非常活跃
-- **版本状态**：Beta 阶段（`IsBetaVersion=true`，默认不启用），但已在生产环境使用
-- **代码规模**：1206 个源文件，是 UE 中规模最大的插件之一
-- **已知限制**：
-  - Beta 状态，API 可能在后续版本中发生变化
-  - 编译过程对复杂 CO 可能耗时较长
-  - 某些高级功能（如 LiveUpdate 模式）会显著增加内存使用
-- **推荐程度**：**推荐使用**。对于需要角色自定义/装备换装系统的项目，Mutable 是 UE 官方提供的唯一成熟方案。Beta 状态主要意味着 API 可能有变化，核心功能已经足够稳定。
+- **创建时间**：2024-09-05 从 Experimental 升级为 Beta 状态（代码库实际历史更久，可追溯至 UE4 时代）
+- **更新频率**：极其活跃，最近的 commit 密集出现在 2026-05-25 至 2026-05-26，持续修复运行时 bug 和改进编译流程
+- **维护状态**：⚠️ **Beta 阶段**（`IsBetaVersion=true`）。2024 年 9 月从 Experimental 移入 Beta，尚未标记为正式版（GA）
+- **代码规模**：1206 个源文件，包含完整的编辑器图系统、编译器、运行时引擎、调试工具
+- **已知限制**：Beta 版本可能存在 API 变化，生产环境使用需谨慎评估稳定性
+- **推荐**：✅ **推荐使用** — 作为 UE5 官方的角色自定义方案，是当前最成熟的解决方案。虽然是 Beta 状态，但已具备完整的工具链和运行时支持，适合新项目采用。需注意定期跟进官方更新以获取 bug 修复
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable)
-- [官方文档](https://github.com/anticto/Mutable-Documentation/wiki)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Mutable)
+- [官方文档](https://github.com/anticto/Mutable-Documentation/wiki)（社区维护）

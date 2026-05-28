@@ -8,47 +8,50 @@
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
-| 模块 | `DatasmithVREDTranslator` (Editor), `DatasmithDeltaGenTranslator` (Editor), `DatasmithFBXTranslator` (Editor) |
+| 模块 | `DatasmithDeltaGenTranslator` (Editor), `DatasmithFBXTranslator` (Editor), `DatasmithVREDTranslator` (Editor) |
 | 实验性 | 否 |
 | 创建时间 | 2019-10-04 |
-| 年龄标签 | 🏛️ 文物（约 7 年） |
+| 年龄标签 | 👴 老古董（约 6 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithFBXImporter) | |
 
 ## 用途
 
-为 Unreal Engine 的 Datasmith 导入管线提供对汽车和工业设计行业常用 DCC 软件的 FBX 变体的支持。该插件针对 **DeltaGen** 和 **VRED** 两款专业可视化软件的 FBX 导出格式进行解析，将几何体、材质、场景层级、动画等数据正确翻译为 UE 内容资产。这些软件的 FBX 格式包含非标准的自定义属性和数据结构，普通 FBX 导入器无法正确处理，因此需要专门的翻译模块。
+该插件是 Datasmith 生态系统的 FBX 翻译层，专门为汽车行业两大主流可视化工具 **DeltaGen**（3DEXCITE）和 **VRED**（Autodesk）提供导入支持。它通过解析这两款工具导出的 FBX 文件中的特有数据结构（如材质分层、场景层级、动画等），将其转换为 Unreal Engine 可理解的 Datasmith 资产。
 
-该插件默认不启用，需要手动在项目设置中激活。
+为什么存在：DeltaGen 和 VRED 使用的 FBX 文件包含大量厂商特定的元数据和场景组织方式，标准 FBX 导入器无法正确处理。此插件填补了这一空白，是汽车数字化样机流程中不可或缺的一环。
 
 ## 模块列表
 
 | 模块 | 说明 |
 |---|---|
-| [DatasmithFBXTranslator](DatasmithFBXTranslator.md) | 基础 FBX 翻译器，提供通用的 FBX 场景解析和数据转换逻辑 |
-| [DatasmithDeltaGenTranslator](DatasmithDeltaGenTranslator.md) | DeltaGen 专用翻译器，处理 DeltaGen FBX 格式中的自定义属性和场景结构 |
-| [DatasmithVREDTranslator](DatasmithVREDTranslator.md) | VRED 专用翻译器，处理 VRED FBX 变体格式并支持 VRED Python 导出器的最新 API 变更 |
+| `DatasmithFBXTranslator` | FBX 翻译器基础模块，处理通用 FBX → Datasmith 转换逻辑 |
+| `DatasmithDeltaGenTranslator` | DeltaGen 特定翻译器，处理 DeltaGen 导出的 FBX 场景数据 |
+| `DatasmithVREDTranslator` | VRED 特定翻译器，处理 VRED 导出的 FBX 场景数据（含 Python 导出器支持） |
 
 ## 使用场景
 
-- 你从 **DeltaGen** 导出了汽车造型评审数据（含材质变体、场景状态等）→ 启用此插件后直接通过 Datasmith 管线导入 UE
-- 你从 **VRED** 导出了产品可视化场景（含复杂材质层级和动画）→ 启用此插件后通过 Datasmith 导入 UE
-- 你使用 **标准 FBX 格式**但属于上述软件的特定导出设置 → 基础 FBX 翻译器可处理兼容的 FBX 变体
+- 你在做**汽车数字化样机**，需要将 DeltaGen 中渲染的整车模型导入 UE → 启用此插件
+- 你在使用 **Autodesk VRED** 进行汽车内饰/外饰可视化，需要导入到 UE 中做实时渲染 → 启用此插件
+- 你需要将汽车供应商提供的 DeltaGen/VRED FBX 文件集成到 UE 虚拟展厅项目中 → 启用此插件
 
-## 相关链接
-
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithFBXImporter)
-- [DatasmithFBXTranslator](DatasmithFBXTranslator.md)
-- [DatasmithDeltaGenTranslator](DatasmithDeltaGenTranslator.md)
-- [DatasmithVREDTranslator](DatasmithVREDTranslator.md)
+**注意**：此插件默认未启用（`EnabledByDefault: false`），需在 Edit → Plugins 中手动启用。
 
 ## 模块依赖
 
-该插件依赖以下外部插件（已在 .uplugin 中声明）：
-
-| 插件 | 用途 |
+| 模块 | 用途 |
 |---|---|
-| `DatasmithImporter` | 提供 Datasmith 导入器核心框架 |
-| `DatasmithContent` | 提供 Datasmith 资产类型定义 |
+| `DatasmithImporter` | Datasmith 核心导入框架 |
+| `DatasmithContent` | Datasmith 资产类型定义 |
+
+无其他特殊依赖。
+
+## 子模块文档
+
+| 模块 | 文档 |
+|---|---|
+| DatasmithDeltaGenTranslator | [DatasmithDeltaGenTranslator.md](DatasmithDeltaGenTranslator.md) |
+| DatasmithFBXTranslator | [DatasmithFBXTranslator.md](DatasmithFBXTranslator.md) |
+| DatasmithVREDTranslator | [DatasmithVREDTranslator.md](DatasmithVREDTranslator.md) |
 
 ## 维护状态
 
@@ -56,16 +59,19 @@
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode | 修复严格浮点模式下双精度常量截断为 float 的编译警告 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF | 将 UE_LOG 迁移到新的 UE_LOGF 宏 |
-| 2026-02-03 | `88ba268b` | Fix unreachable code errors | 修复不可达代码导致的编译错误 |
-| 2025-03-13 | `b059f7b4` | Fix trivial unreachable code warnings | 修复不可达代码的编译警告 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 转 float 的截断警告 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移至 UE_LOGF 宏 |
+| 2026-02-03 | `88ba268b` | Fix unreachable code errors | 修复不可达代码编译错误 |
+| 2025-03-13 | `b059f7b4` | Fix trivial unreachable code warnings. | 修复不可达代码警告 |
 | 2024-10-02 | `0a14cf0e` | Update VRED python exporter to support API changes in VRED | 更新 VRED Python 导出器以适配 VRED API 变更 |
 
 ### 维护评价
 
-- 创建于 2019 年，属于 Enterprise（企业级）类别插件，已有约 7 年历史
-- 近两年有持续的编译兼容性维护更新，保持与最新 UE 版本同步
-- 2024 年有一次功能性更新（VRED API 适配），说明该插件仍在企业客户驱动下演进
-- 所有更新均为维护性质（编译修复、API 迁移），无重大功能扩展
-- **推荐使用**：如果你的企业工作流涉及 DeltaGen 或 VRED，这是唯一官方支持的导入路径。普通用户无需启用。
+该插件处于**被动维护**状态。近 2 年的更新全部为编译警告修复和平台适配，没有功能性增强。作为 Enterprise 级别的插件，它仍能正常工作且随引擎版本同步编译，但功能上已趋于稳定。
+
+适合在需要导入 DeltaGen/VRED 资产的项目中使用。如果你的数据来源不是这两个工具，请使用通用的 DatasmithImporter 或标准 FBX 导入器。
+
+## 相关链接
+
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithFBXImporter)
+- [DatasmithImporter 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithImporter)（前置依赖）

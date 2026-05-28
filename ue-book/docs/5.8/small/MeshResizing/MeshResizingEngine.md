@@ -1,13 +1,13 @@
 # Mesh Resizing
 
-> Mesh Resizing
+> Mesh Resizing（网格调整大小）
 
 | 属性 | 值 |
 |---|---|
 | 中文名 | 网格调整 |
 | 分类 | Editor |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产） |
+| 包含内容 | ✅ 有（蓝图资产、示例场景） |
 | 模块 | `MeshResizingCore` (Runtime), `MeshResizingEditorTools` (Runtime), `MeshResizingEngine` (Runtime), `MeshResizingDataflowNodes` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2024-12-09 |
@@ -16,140 +16,81 @@
 
 ## 用途
 
-Mesh Resizing 插件旨在为数字角色（Digital Human）制作流程提供网格变形和重拓扑工具。其核心目的是优化角色衣物的网格拓扑，使其在满足高质量的衣料模拟（如 Chaos Cloth）的同时，拥有较少的顶点数量，从而提升运行时性能。它通过一种“调整”过程，将一个高精度的网格（如从扫描或雕刻软件获得）适配到一个用于模拟和实时渲染的简化网格上，确保视觉保真度与性能之间的平衡。
+`MeshResizing` 是一个实验性编辑器插件，旨在为用户提供在编辑器中对静态网格（Static Mesh）或骨骼网格（Skeletal Mesh）进行非均匀、交互式尺寸调整的功能。它超越了简单的等比缩放，允许用户通过类似“捏脸”或塑形的方式，对网格的特定区域进行变形和调整。其核心是提供一套基于 Dataflow 的节点和相应的编辑器工具，使得复杂的网格调整操作可以在可视化的节点图中完成，结果可以记录并应用到资产上。
+
+该插件主要解决的问题是：在角色定制、物体适配或需要对网格进行局部形态调整时，传统的建模软件流程冗长。`MeshResizing` 希望在 UE 编辑器内提供一个直接的、可迭代的解决方案。
 
 ## 使用场景
 
-- 你在创建数字角色，并需要为其高精度的服装资产准备一个可用于实时物理模拟（衣料）的低精度版本。
-- 你的工作流程依赖于将高模细节（如雕刻褶皱）“烘焙”或适配到为游戏优化的低模上。
-- 你需要使用 Dataflow 节点系统来程序化或批处理网格调整任务。
+- 你正在开发一个需要角色高度自定义系统的游戏（如捏脸、换装体型调整）→ 使用 MeshResizing 创建自定义调整工具和数据流。
+- 你需要快速调整一系列静态网格资产（如家具、建筑部件）以适应不同的场景需求，而不想回到DCC软件中重复建模 → 在编辑器内使用 MeshResizing 工具进行交互式调整。
+- 你正在制作一个需要程序化调整网格形态的工具（例如，根据碰撞体自动调整物体形状） → 使用 MeshResizing 的 Dataflow 节点构建自定义逻辑。
 
 ## 蓝图用法
 
-由于该插件默认禁用且处于实验阶段，其蓝图 API 主要集中在 `MeshResizingEditorTools` 模块中，为编辑器工具提供支持。
+此插件的核心功能主要通过 **Dataflow 节点** 和 **编辑器工具** 暴露，传统的蓝图函数较少。主要的可编程接口集中在 `MeshResizingDataflowNodes` 模块中。
 
-### 核心节点
+### 核心节点 (Dataflow Nodes)
+
+Dataflow 节点通常通过编辑器中的“资产编辑器”或自定义的 Dataflow 图表来使用。
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `ResizeMesh` | 对传入的网格资产执行调整操作 | `UMeshResizingBPLibrary` |
+| `FMeshResizingDataflowNodes` | 静态工具类，包含所有注册的 Dataflow 节点工厂方法。 | `MeshResizingDataflowNodes` 模块 |
 
-### 使用示例（蓝图描述）
+具体节点（如输入网格、应用变形、设置锚点等）需要通过编辑器中的 Dataflow 图形界面搜索添加。
 
-1.  在蓝图编辑器中，调用 `ResizeMesh` 节点。
-2.  将源网格（高模）和目标网格（用于调整的基础低模）资产引用连接到输入引脚。
-3.  配置调整参数（如迭代次数、约束强度等）。
-4.  执行节点，输出调整后的网格数据或直接保存为新资产。
+### 使用示例 (蓝图/编辑器描述)
+
+1.  **创建 Dataflow 资产**: 在内容浏览器中右键创建“Dataflow”资产。
+2.  **添加节点**: 在打开的 Dataflow 图表编辑器中，右键搜索“Mesh Resizing”类别，添加如“获取网格数据”、“应用调整”等节点。
+3.  **连接逻辑**: 将节点按照数据输入->处理->输出的逻辑连接起来，形成一个调整工作流。
+4.  **应用结果**: 通过节点图最终输出调整后的网格数据，可以保存到新的资产或覆盖原资产。
 
 ## C++ 用法
 
-该插件的核心调整算法位于 `MeshResizingCore` 和 `MeshResizingEngine` 模块中。
+此插件的 C++ API 主要面向工具和 Dataflow 节点的开发者，用于扩展其功能。
 
 ### 头文件引入
 
 ```cpp
-#include "MeshResizingEngine/MeshResizingEngine.h" // 用于引擎级调整功能
-#include "MeshResizingCore/MeshResizing.h"        // 用于核心数据结构与算法
+#include "MeshResizingEngine/MeshResizingEngine.h" // 核心引擎功能
 ```
 
 ### 基本用法
 
-以下为调用网格调整功能的简化示例，需在编辑器环境下运行。
+（由于未提供具体的测试用例文件路径，以下为根据模块功能的推测示例）
 
 ```cpp
-// 假设已经获取了 UStaticMesh* SourceMesh 和 UStaticMesh* TargetMesh
-#include "MeshResizingEngine/MeshResizingSubsystem.h"
+// 假设在某个工具或节点的实现中
+#include "MeshResizingEngine/MeshResizingUtils.h"
 
-// 通过子系统执行调整
-if (UMeshResizingSubsystem* MeshResizingSubsystem = GEditor->GetEditorSubsystem<UMeshResizingSubsystem>())
+void AdjustMeshRegion(UStaticMesh* Mesh, const FVector& RegionCenter, float ScaleFactor)
 {
-    FMeshResizingParameters Params;
-    // 设置参数...
-    
-    FMeshResizingResult Result;
-    MeshResizingSubsystem->ResizeMesh(SourceMesh, TargetMesh, Params, Result);
-    
-    if (Result.bSuccess)
-    {
-        // 使用调整后的网格数据 Result.ResizedMesh
-    }
+    // 使用引擎模块提供的工具函数
+    MeshResizingUtils::ScaleMeshRegion(Mesh, RegionCenter, ScaleFactor);
 }
 ```
 
-*（注意：以上为基于模块功能和UE插件模式的推断代码，具体API请参考实际头文件。）*
+### 进阶用法
+
+结合多个模块（如 `MeshResizingCore` 的数据结构和 `MeshResizingEngine` 的处理逻辑）来实现复杂的调整算法。
 
 ## Demo 示例
 
-一个最小化的 C++ 编辑器工具示例，演示如何调用调整功能。
-
-**MyMeshResizingTool.h**
-```cpp
-#pragma once
-#include "CoreMinimal.h"
-#include "EditorUtilityWidget.h"
-#include "MyMeshResizingTool.generated.h"
-
-UCLASS()
-class UMyMeshResizingTool : public UEditorUtilityWidget
-{
-    GENERATED_BODY()
-
-public:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh Resizing")
-    UStaticMesh* SourceHighResMesh;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh Resizing")
-    UStaticMesh* TargetLowResMesh;
-
-    UFUNCTION(BlueprintCallable, Category = "Mesh Resizing")
-    void ExecuteResize();
-};
-```
-
-**MyMeshResizingTool.cpp**
-```cpp
-#include "MyMeshResizingTool.h"
-#include "MeshResizingEngine/MeshResizingSubsystem.h"
-
-void UMyMeshResizingTool::ExecuteResize()
-{
-    if (!SourceHighResMesh || !TargetLowResMesh)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("源或目标网格未设置。"));
-        return;
-    }
-
-    UMeshResizingSubsystem* Subsystem = GEditor->GetEditorSubsystem<UMeshResizingSubsystem>();
-    if (Subsystem)
-    {
-        FMeshResizingParameters Parameters; // 使用默认参数
-        FMeshResizingResult Result;
-        
-        if (Subsystem->ResizeMesh(SourceHighResMesh, TargetLowResMesh, Parameters, Result) && Result.bSuccess)
-        {
-            UE_LOG(LogTemp, Log, TEXT("网格调整成功！"));
-            // 可在此处处理或保存 Result.ResizedMesh
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("网格调整失败。"));
-        }
-    }
-}
-```
+由于这是一个实验性插件，且没有提供具体的测试文件路径，一个完整的最小 C++ 示例目前难以准确构建。建议参考插件自带的蓝图资产或编辑器工具来学习其使用模式。通常，您可以在引擎的 `Content/Experimental/MeshResizing` 或类似路径下找到示例场景和图表。
 
 ## 模块依赖
 
-要使用 MeshResizing 功能，你的模块通常需要依赖以下模块：
+`MeshResizingEngine` 模块的依赖通常包括其他 MeshResizing 内部模块，以及一些图形和几何处理相关的模块。
 
 | 模块 | 用途 |
 |---|---|
-| `MeshResizingCore` | 核心数据结构和算法库 |
-| `MeshResizingEngine` | 提供子系统、引擎服务和主要调整流程 |
+| `MeshResizingCore` | 提供核心数据类型、接口和基础功能 |
+| `GeometryCore`, `GeometryFramework` | 提供几何计算和几何体表示的基础框架 |
+| `MeshResizingDataflowNodes` | (若依赖) 用于 Dataflow 节点的交互 |
 
-此外，根据你的具体用途，可能还需要依赖：
-- `MeshResizingEditorTools`：如果需要使用编辑器UI工具或蓝图API。
-- `MeshResizingDataflowNodes`：如果需要在 Dataflow 图表中使用调整节点。
+*注意：具体依赖项请参考 `MeshResizingEngine.Build.cs` 文件中的 `PublicDependencyModuleNames` 和 `PrivateDependencyModuleNames`。*
 
 ## 维护状态
 
@@ -157,21 +98,21 @@ void UMyMeshResizingTool::ExecuteResize()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下双精度常量截断为浮点的警告。 |
-| 2026-05-12 | `a7802337` | Dataflow: | Dataflow 相关更新。 |
-| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 在即将到来的头文件清理前添加必要的包含。 |
-| 2026-01-30 | `7b60de76` | Dataflow : add support to lasso to the paint tool by leveraging the newly added feature in the mesh | Dataflow：为涂抹工具添加套索支持，利用网格中新添加的功能。 |
-| 2025-12-19 | `f86e1e20` | Dataflow : update a lot of nodes to use the new rendering system | Dataflow：更新大量节点以使用新的渲染系统。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为浮点数导致的代码警告。 |
+| 2026-05-12 | `a7802337` | Dataflow: (Commit message incomplete in provided data) | 数据流相关更新（具体内容不完整）。 |
+| 2026-03-16 | `1f05dc85` | Adding includes before upcoming header cleanup. | 在即将到来的头文件清理前，预先添加必要的头文件引用。 |
+| 2026-01-30 | `7b60de76` | Dataflow : add support to lasso to the paint tool by leveraging the newly added feature in the mesh | 数据流：为画笔工具增加套索选择支持，利用了网格模块新增的特性。 |
+| 2025-12-19 | `f86e1e20` | Dataflow : update a lot of nodes to use the new rendering system | 数据流：更新大量节点以使用新的渲染系统。 |
 
 ### 维护评价
 
-- **创建时间**：约 1 年（2024年12月）。
-- **更新频率**：从提交记录看，在创建后的约半年内有持续的功能性更新和改进，尤其集中在 Dataflow 节点系统上。最近的提交（2026年5月）是编译修复，表明仍处于活跃开发中。
-- **状态**：**实验性活跃维护**。插件标记为 `IsExperimentalVersion: true` 且默认禁用，表明其 API 和功能可能在未来发生重大变化。但近期更新表明 Epic 正在积极完善它，特别是其 Dataflow 集成部分。
-- **推荐度**：目前**仅推荐**给需要研究前沿网格处理技术、或愿意接受API变动风险的开发者和艺术家，用于原型开发和评估。不建议用于需要长期稳定的核心生产管线。
+- **活跃维护**: 是。自2024年12月创建以来，持续有功能更新和修复，最近的提交在2026年5月，表明项目仍在积极开发中。
+- **实验性**: 是。`.uplugin` 中明确标记为实验性版本，且默认未启用。
+- **风险提示**: 作为实验性插件，API 和功能可能在未来版本中发生重大变化或被移除。不建议在追求稳定性的正式项目中深度依赖。
+- **推荐使用**: 推荐用于**原型开发、内部工具制作或技术预研**，以探索编辑器内网格程序化调整的可能性。在用于生产环境前，需充分评估其稳定性和长期维护承诺。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MeshResizing)
-- 官方文档：暂无
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MeshResizing/Tests)
+- 官方文档: 暂无
+- 测试用例: 暂未在提供信息中指定路径，可在源码目录内查找 `Tests` 文件夹或搜索相关自动化测试文件。

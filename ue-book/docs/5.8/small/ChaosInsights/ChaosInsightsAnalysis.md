@@ -4,7 +4,7 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 混沌洞察 |
+| 中文名 | Chaos 物理锁洞察 |
 | 分类 | Insights |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
@@ -16,107 +16,193 @@
 
 ## 用途
 
-这个插件是 **Unreal Insights 工具的专用扩展**，专门用于分析 **Chaos 物理系统** 的性能和行为。它的核心功能是提供一个 **物理场景锁分析器**，帮助开发者检测多线程环境下的锁争用问题。
+ChaosInsights 是 **Unreal Insights** 的扩展插件，专门用于分析 Chaos 物理引擎的**锁竞争问题**。
 
-**解决的问题**：
-1.  **锁争用可视化**：多线程物理系统中，游戏线程和工作线程都需要访问物理场景数据，这需要读写锁。当多个线程竞争同一把锁时，会导致等待和卡顿。
-2.  **难以察觉的性能瓶颈**：这些锁争用通常很难通过常规的性能分析工具发现，因为它们分散在多个线程中。
-3.  **操作密度分析**：帮助开发者理解在一段代码区域内锁被递归获取的次数，从而评估操作的复杂度和并发性。
+在多线程物理模拟中，物理场景的主锁（Physics Scene Lock）是高频竞争的瓶颈：
+- **读锁（Read Lock）**：物理查询（Query）需要获取读锁来访问场景数据
+- **写锁（Write Lock）**：游戏线程移动组件或同步物理模拟结果时需要获取写锁
 
-**为什么存在**：
-它填补了现有性能分析工具在分析 Chaos 物理系统多线程锁行为方面的空白，使开发者能够直观地看到锁的等待、持有和递归情况，从而优化代码，减少游戏线程的卡顿。
+当工作线程持有锁的时间过长（例如运行大量查询），或在游戏线程需要移动组件/同步物理模拟的时间窗口内持锁，就会导致游戏线程卡顿。这类问题通常很难通过常规手段发现。
+
+本插件通过在 Unreal Insights 的 Trace 捕获中启用 `ChaosLocks` 通道，可视化所有尝试获取物理场景锁的线程行为，帮助开发者定位锁竞争问题。它分别显示读锁和写锁，并清晰展示线程等待锁的时间，同时报告每个锁区域内的递归锁获取次数（用于分析操作密度）。
 
 ## 使用场景
 
--   你在开发一个使用 **Chaos 物理引擎** 且涉及大量 **物理查询或异步物理模拟** 的项目。
--   你的游戏在特定场景下出现 **间歇性卡顿**，怀疑是物理系统的多线程锁争用导致。
--   你需要在 **Unreal Insights** 中捕获并分析物理场景锁的争用情况，以定位并优化问题代码。
--   你需要分析物理系统的并发性能，了解锁操作的密度和分布。
+- 你的游戏使用 Chaos 物理引擎且遇到间歇性卡顿 → 用本插件检查物理锁竞争
+- 你在多线程环境中进行大量物理查询（射线检测、重叠检测等）→ 验证查询是否阻塞游戏线程
+- 你需要分析物理模拟的同步阶段是否有瓶颈 → 可视化锁等待模式
+- 你在优化物理性能但找不到瓶颈来源 → 启用 ChaosLocks 通道进行详细分析
+
+**重要**：本插件仅在 **Unreal Insights 应用程序**（独立分析工具）和 **Editor** 中加载（`ProgramAllowList: ["UnrealInsights"]`），不会在打包的游戏运行时加载。
 
 ## 蓝图用法
 
-此插件为 **Unreal Insights 工具专用插件**，其模块类型为 `EditorAndProgram`，仅支持 `UnrealInsights` 程序。它不提供任何可供游戏运行时使用的蓝图节点或资产。
+本插件是 Unreal Insights 的 Trace 分析扩展，不包含任何蓝图可调用接口。所有功能均在 Unreal Insights 应用程序的 Timing View 中呈现。
 
-**使用方式**：
-在 Unreal Insights 工具中，启用 `ChaosLocks` 通道进行捕获，即可在 Insights 的时间线视图中查看物理场景锁的争用情况。
+### 使用方式（Insights 操作步骤）
+
+1. 在你的项目中启用 Trace 捕获，并勾选 `ChaosLocks` 通道
+2. 录制一段包含物理操作的游戏运行数据
+3. 在 Unreal Insights 中打开捕获文件
+4. Timing View 中会出现 Chaos Lock 区域，每条 Lane 代表一个线程的锁状态
+5. 蓝色区域为读锁持有时间，红色区域为写锁持有时间
+6. 线程等待锁的时间会以不同颜色标注，便于识别阻塞点
 
 ## C++ 用法
 
-此插件的分析逻辑是 Unreal Insights Trace 分析器的一部分，**不提供给游戏或编辑器模块直接使用的公共 C++ API**。其公共头文件主要用于为 Unreal Insights 工具提供数据模型。
+本插件的 C++ API 面向 **Insights 分析扩展开发者**，用于读取和扩展物理锁分析数据。
 
-### 头文件引入 (仅用于 Insights 分析器开发)
+### 头文件引入
 
 ```cpp
-// 用于构建 Insights 分析器的锁区域模型
 #include "ChaosInsightsAnalysis/Model/LockRegions.h"
 ```
 
-### 基本用法 (作为 Insights 分析器开发者)
+### 基本用法
 
-如果你正在开发一个需要集成 Chaos 锁分析的 Unreal Insights 扩展，可以参考以下模式。
+通过 `LockRegions.h` 中的公共 API 访问锁区域分析数据。
 
 ```cpp
-// 在你的 Insights 分析模块中，实现获取锁区域提供者的功能
-// 来源：Private/ChaosInsightsAnalysisModule.h 和 Public/ChaosInsightsAnalysis/Model/LockRegions.h
+#include "ChaosInsightsAnalysis/Model/LockRegions.h"
 
-// 1. 获取锁区域提供者
-const ChaosInsightsAnalysis::ILockRegionProvider& Provider = ChaosInsightsAnalysis::ReadRegionProvider(*AnalysisSession);
+// 在 Insights 分析会话中获取锁区域数据提供者
+const ChaosInsightsAnalysis::ILockRegionProvider& Provider = 
+    ChaosInsightsAnalysis::ReadRegionProvider(AnalysisSession);
 
-// 2. 遍历所有锁区域以进行数据聚合
+// 获取总区域数和 Lane 数
 uint64 TotalRegions = Provider.GetRegionCount();
 int32 LaneCount = Provider.GetLaneCount();
 
-// 3. 在特定时间范围内迭代区域
-double Start = 0.0;
-double End = 10.0; // 10秒内
-Provider.ForEachRegionInRange(Start, End, [](const ChaosInsightsAnalysis::FLockRegion& Region)
-{
-    // 处理每个锁区域的数据
-    // Region.BeginTime, .AcquireTime, .EndTime, .bIsWrite, .LockCount 等
-    return true; // 返回 true 继续迭代
-});
+// 遍历指定时间范围内的锁区域
+Provider.ForEachRegionInRange(StartTime, EndTime, 
+    [](const ChaosInsightsAnalysis::FLockRegion& Region) -> bool
+    {
+        // 判断是否为写锁
+        bool bIsWriteLock = Region.bIsWrite;
+        
+        // 获取锁的等待时间（从尝试获取到实际获得）
+        double WaitDuration = Region.AcquireTime - Region.BeginTime;
+        
+        // 获取锁的持有时间（从获得到释放）
+        double HoldDuration = Region.EndTime - Region.AcquireTime;
+        
+        // 获取递归锁计数
+        int32 RecursiveLockCount = Region.LockCount;
+        
+        // 获取持锁线程
+        const TCHAR* ThreadName = Region.Text;
+        uint64 ThreadId = Region.Thread;
+        
+        return true; // 返回 true 继续遍历，false 停止
+    });
 ```
 
-### 进阶用法 (数据模型分析)
+*来源: `Public/ChaosInsightsAnalysis/Model/LockRegions.h`*
+
+### 进阶用法
+
+遍历所有 Lane 并分别分析每个线程的锁行为：
 
 ```cpp
-// 来源：Public/ChaosInsightsAnalysis/Model/LockRegions.h
-// FLockRegion 结构体包含了完整的锁生命周期信息
-
-ChaosInsightsAnalysis::FLockRegion SomeRegion = ...;
-// 分析锁等待时间
-double WaitDuration = SomeRegion.AcquireTime - SomeRegion.BeginTime;
-// 分析锁持有时间
-double HoldDuration = SomeRegion.EndTime - SomeRegion.AcquireTime;
-// 判断是读锁还是写锁
-bool bIsExclusiveLock = SomeRegion.bIsWrite;
-// 检查递归锁深度
-int32 RecursiveLocks = SomeRegion.LockCount;
+// 按 Lane 遍历所有线程的锁数据
+Provider.ForEachLane(
+    [](const ChaosInsightsAnalysis::FLockRegionLane& Lane, const int32 LaneIndex) -> void
+    {
+        // 获取该 Lane 的区域总数
+        int32 RegionCount = Lane.Num();
+        
+        // 遍历该线程在指定时间范围内的所有锁区域
+        Lane.ForEachRegionInRange(0.0, MaxTime,
+            [&LaneIndex](const ChaosInsightsAnalysis::FLockRegion& Region) -> bool
+            {
+                if (Region.bIsWrite && Region.AcquireTime - Region.BeginTime > 0.001)
+                {
+                    // 发现写锁等待超过 1ms 的情况，可能是性能瓶颈
+                    UE_LOG(LogTemp, Warning, 
+                        TEXT("Lane %d: Write lock waited %.3fms"), 
+                        LaneIndex, 
+                        (Region.AcquireTime - Region.BeginTime) * 1000.0);
+                }
+                return true;
+            });
+    });
 ```
+
+*来源: `Public/ChaosInsightsAnalysis/Model/LockRegions.h`*
 
 ## Demo 示例
 
-由于此插件是 Unreal Insights 工具的内部组件，不提供面向游戏或编辑器的独立演示。一个“最小示例”就是使用 Unreal Insights 工具捕获带有 `ChaosLocks` 通道的会话。
+以下示例展示如何创建一个简单的锁区域分析器，在分析会话中统计锁竞争情况。
 
-**使用步骤**：
-1.  启用 `ChaosInsights` 插件（默认已启用）。
-2.  启动 Unreal Insights 工具（`UnrealInsights.exe`）。
-3.  在目标应用程序（如编辑器或游戏）中，通过 `trace.start ChaosLocks` 控制台命令启动包含 Chaos 锁分析的追踪会话。
-4.  在 Unreal Insights 中打开捕获的 `.utrace` 文件。
-5.  在时间线视图中查找 “Chaos Locks” 区域，查看各个线程的锁争用情况。
+**ChaosLockAnalyzer.h**:
+
+```cpp
+#pragma once
+
+#include "ChaosInsightsAnalysis/Model/LockRegions.h"
+#include "TraceServices/AnalysisService.h"
+
+// 自定义的锁统计分析器
+class FChaosLockStatsAnalyzer
+{
+public:
+    struct FLockStats
+    {
+        int32 TotalReadLocks = 0;
+        int32 TotalWriteLocks = 0;
+        double MaxWaitTime = 0.0;
+        double TotalHoldTime = 0.0;
+    };
+
+    static FLockStats AnalyzeSession(const TraceServices::IAnalysisSession& Session, 
+                                      double StartTime, double EndTime)
+    {
+        using namespace ChaosInsightsAnalysis;
+        
+        FLockStats Stats;
+        const ILockRegionProvider& Provider = ReadRegionProvider(Session);
+        
+        Provider.ForEachRegionInRange(StartTime, EndTime,
+            [&Stats](const FLockRegion& Region) -> bool
+            {
+                double WaitTime = Region.AcquireTime - Region.BeginTime;
+                double HoldTime = Region.EndTime - Region.AcquireTime;
+                
+                if (Region.bIsWrite)
+                {
+                    Stats.TotalWriteLocks++;
+                }
+                else
+                {
+                    Stats.TotalReadLocks++;
+                }
+                
+                if (WaitTime > Stats.MaxWaitTime)
+                {
+                    Stats.MaxWaitTime = WaitTime;
+                }
+                
+                Stats.TotalHoldTime += HoldTime;
+                return true;
+            });
+        
+        return Stats;
+    }
+};
+```
 
 ## 模块依赖
 
-从模块名称和插件类型推断，此插件依赖 Unreal Insights 的核心分析和 UI 框架。对于使用此插件的最终用户（即使用 Unreal Insights 工具的开发者），无需额外处理依赖关系。
-
-对于扩展此插件的开发者，典型的依赖可能包括：
+从源码头文件分析，本插件依赖以下 Unreal Insights 专用模块：
 
 | 模块 | 用途 |
 |---|---|
-| `TraceAnalysis` | 提供 Unreal Insights 的底层分析框架 |
-| `TraceServices` | 提供分析会话、数据存储和线性分配器等服务 |
-| `InsightsCore` | Unreal Insights 的核心功能模块 |
-| `InsightsFrontend` | Unreal Insights 的前端 UI 框架 |
+| `TraceServices` | Insights 分析会话、线性分配器、分页数组、提供者接口 |
+| `TraceAnalysis` | Trace 事件分析器基类 `UE::Trace::IAnalyzer` |
+
+无其他特殊依赖（仅标准 Core/Engine 等基础模块）。
+
+> **注意**：本插件的模块类型为 `EditorAndProgram`，且通过 `ProgramAllowList` 限制为仅在 `UnrealInsights` 程序中加载。你的模块若要依赖本插件，也必须在 Insights 程序上下文中构建。
 
 ## 维护状态
 
@@ -124,22 +210,24 @@ int32 RecursiveLocks = SomeRegion.LockCount;
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏迁移到新的 UE_LOGF 格式，可能是 UE 内部规范更新。 |
-| 2025-05-30 | `20572801` | Updated headers using UnrealCodeFixup to make sure dllstorage is on methods/staticvars instead of ty | 更新头文件以符合代码规范，确保 DLL 导出宏放在正确的位置。 |
-| 2025-04-30 | `e9656f2e` | [Insights] Chaos Insights: Fixed crash due to usage of a ITimingViewSession pointer after the Timing | 修复了在 Insights 时间线视图标签页禁用后，因悬空指针导致的崩溃。 |
-| 2025-04-29 | `ee649d35` | Fix Unreal Insights Trace crashes after enabling and disabling the Timing Tab. | 修复了启用和禁用 Insights 时间线标签页后导致的追踪崩溃。 |
-| 2025-04-11 | `7565ac94` | Added ChaosInsights module for Chaos related extensions to insights and implemented a physics scene lock profiler. | 初始提交：添加了 ChaosInsights 模块，并实现了物理场景锁性能分析器。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移至 UE_LOGF 新接口 |
+| 2025-05-30 | `20572801` | Updated headers using UnrealCodeFixup to make sure dllstorage is on methods/staticvars instead of ty | 修复 DLL 导出声明，确保 dllexport 正确标注在方法上 |
+| 2025-04-30 | `e9656f2e` | [Insights] Chaos Insights: Fixed crash due to usage of a ITimingViewSession pointer after the Timing View is destroyed | 修复 Timing View 销毁后使用悬空指针导致的崩溃 |
+| 2025-04-29 | `ee649d35` | Fix Unreal Insights Trace crashes after enabling and disabling the Timing Tab. | 修复反复启用/禁用 Timing 标签页时的崩溃问题 |
+| 2025-04-11 | `7565ac94` | Added ChaosInsights module for Chaos related extensions to insights and implemented a physics scene lock profiler. | 初始提交，实现物理场景锁性能分析器 |
 
 ### 维护评价
 
--   **创建时间**：插件创建于 2025 年 4 月，历史不长，属于较新的工具。
--   **维护活跃度**：在创建后的一个多月内（至 2025 年 5 月）有密集的 bug 修复和规范更新。最近一次更新（2026 年 4 月）是内部日志规范的迁移。整体来看，**处于维护中**，但近期更新主要是内部规范调整，无重大功能迭代。
--   **状态**：插件标记为 `IsBetaVersion: true`，说明仍处于 **实验性/测试阶段**。
--   **限制**：作为 Insights 专用插件，功能高度专业化，仅适用于物理调试场景。
--   **推荐使用**：如果你的项目正在使用 Chaos 物理并面临棘手的多线程性能问题，**强烈推荐** 尝试此插件来定位锁争用。对于没有相关问题的项目，则无需关注。
+- **创建时间**：2025-04-11，约 1 年前的新插件
+- **近期活跃度**：2026-04 仍有更新（日志宏迁移），插件处于**活跃维护**状态
+- **早期修复密集**：创建后 3 周内连续修复了 2 个崩溃问题，说明当时处于快速迭代阶段
+- **稳定性**：2025-05 后无功能性变更，仅有代码质量改进（DLL 导出、日志宏迁移），表明功能已趋于稳定
+- **实验性标记**：`IsBetaVersion=true`，仍标记为 Beta 版本
+- **推荐使用**：✅ 推荐用于 Chaos 物理锁竞争分析。虽然是 Beta 状态，但功能完整且已有约 1 年的实际使用验证。注意它仅作为 Insights 扩展使用，不影响游戏运行时。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosInsights)
--   官方文档 (暂无)
--   测试用例 (插件内未包含测试用例)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosInsights)
+- [ChaosInsightsAnalysis 模块](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosInsights/Source/ChaosInsightsAnalysis)
+- [ChaosInsightsUI 模块](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosInsights/Source/ChaosInsightsUI)
+- [LockRegions 模型头文件](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/ChaosInsights/Source/ChaosInsightsAnalysis/Public/ChaosInsightsAnalysis/Model/LockRegions.h)

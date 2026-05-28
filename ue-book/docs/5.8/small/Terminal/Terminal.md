@@ -16,27 +16,36 @@
 
 ## 用途
 
-Terminal 插件在 Unreal Editor 内部实现了一个**原生 Slate 终端模拟器**，让你无需切换到外部终端窗口即可直接执行 shell 命令。
+这是一个在 Unreal Editor 内嵌原生终端模拟器的插件。它通过 Slate 的 `SLeafWidget` 直接在 `OnPaint` 中逐字符单元格渲染终端画面，不依赖任何外部 UI 框架，也不需要蓝图资产。
 
-它解决的核心问题是：编辑器内的命令行操作。开发者经常需要在编辑器和外部终端之间来回切换（运行构建脚本、Git 操作、adb 命令等），这个插件将终端直接嵌入编辑器的 Tab 面板中。
+插件的核心价值在于：在编辑器中提供一个功能完备的终端窗口，支持 VT/ANSI 转义序列、256 色、鼠标追踪、选区复制粘贴、滚动回看等功能。底层通过平台原生 PTY 接口（Windows 使用 ConPTY，Linux/macOS 使用 POSIX PTY）与系统 Shell 进程通信，由后台 I/O 线程读取输出并在游戏线程上解析渲染。
 
-底层架构由三层组成：
-1. **ITerminalSession** — 平台抽象的 PTY 会话接口，Windows 使用 ConPTY，Linux/macOS 使用 POSIX PTY
-2. **FTerminalBuffer + FVTParser** — 环形缓冲区 + 完整的 VT/ANSI 转义序列解析器（遵循 vt100.net Paul Williams 状态机模型）
-3. **STerminal** — Slate 叶节点 Widget，逐单元格绘制字符网格，处理键盘/鼠标输入
-
-支持的功能包括：颜色方案、鼠标跟踪、文本选择与复制粘贴、滚动回看、备用屏幕缓冲区、同步输出模式等。
+这解决的问题是：开发者经常需要在编辑器和外部终端之间频繁切换来执行构建脚本、运行命令行工具或查看日志。该插件将终端直接嵌入编辑器的 Dock Tab 中，减少上下文切换开销。
 
 ## 使用场景
 
-- 你在编辑器中频繁运行 Git 命令或构建脚本 → 用 Terminal 直接在编辑器 Tab 中操作
-- 你需要快速执行 shell 命令而不想离开编辑器 → 用 Terminal
-- 你在做一个编辑器扩展，需要嵌入终端面板 → 用 `STerminal` Widget
-- 你需要在 Linux/macOS 上使用终端 → Terminal 支持 POSIX PTY 跨平台后端
+- 你需要在 UE 编辑器内直接运行 Shell 命令（编译、Git、构建脚本等） → 用 Terminal 插件
+- 你想在编辑器中查看长时间运行的命令输出而不需要切换窗口 → 用 Terminal 插件
+- 你需要一个支持 VT 转义序列、颜色、鼠标追踪的完整终端体验 → 用 Terminal 插件
 
 ## 蓝图用法
 
-此插件为纯 C++/Slate 实现，**没有暴露蓝图 API**。所有交互通过编辑器菜单（Window → Terminal）或 C++ 代码进行。
+本插件是纯 Slate/C++ 实现，不暴露任何 `BlueprintCallable` 节点。终端的配置通过 `UTerminalSettings`（编辑器设置面板）完成。
+
+### 编辑器设置项
+
+在 **编辑 → 编辑器偏好设置 → Terminal** 中可配置以下选项：
+
+| 设置 | 说明 | 默认值 |
+|---|---|---|
+| ShellExecutablePath | Shell 可执行文件路径（空则使用系统默认） | 空（系统默认） |
+| FontFamily | 字体名称（不含扩展名） | `CascadiaMono` |
+| FontSize | 字体大小（6-72 磅） | 10 |
+| ScrollbackLimit | 最大滚动回看行数 | 131072 |
+| ColorSchemeName | 颜色方案名称 | `Default` |
+| StartupCommands | 新终端窗口创建时自动执行的命令列表 | 空 |
+| bPreventCloseDuringActivity | 关闭编辑器时如有输出活动则提示确认 | `true` |
+| ActivityTimeoutSeconds | 输出静默超时秒数（1.0-60.0） | 5.0 |
 
 ## C++ 用法
 
@@ -48,132 +57,183 @@ Terminal 插件在 Unreal Editor 内部实现了一个**原生 Slate 终端模�
 #include "TerminalBuffer.h"
 #include "VTParser.h"
 #include "TerminalColorScheme.h"
-#include "TerminalSettings.h"
-#include "TerminalSubsystem.h"
 #include "TerminalKeyTranslator.h"
 ```
 
-### 基本用法 — 创建终端会话
-
-通过 `ITerminalSession` 抽象接口创建跨平台终端会话：
+### 基本用法：在 Slate 布局中嵌入终端
 
 ```cpp
-#include "ITerminalSession.h"
+// 创建一个带滚动条的终端 Widget
+TSharedPtr<SScrollBar> ScrollBar;
+TSharedRef<STerminal> TerminalWidget = SNew(STerminal)
+    .ExternalScrollbar(ScrollBar);
 
-// 创建当前平台对应的 PTY 会话
-FString Error;
-TSharedPtr<ITerminalSession> Session = ITerminalSession:: CreateForCurrentPlatform(Error);
-if (!Session.IsValid())
-{
-    UE_LOG(LogTerminal, Error, TEXT("无法创建终端会话: %s"), *Error);
-    return;
-}
+// 向终端发送命令
+TerminalWidget->ExecuteCommand(TEXT("dir"));
 
-// 创建会话，指定 shell 路径（空字符串使用系统默认）、工作目录和窗口大小
-if (!Session->Create(TEXT(""), FPaths::ProjectDir(), 80, 24))
-{
-    UE_LOG(LogTerminal, Error, TEXT("终端会话创建失败"));
-    return;
-}
-
-// 写入命令
-FString Cmd = TEXT("echo Hello from UE5\r");
-FTCHARToUTF8 Converter(*Cmd);
-Session->WriteInput(
-    TArrayView<const uint8>(
-        reinterpret_cast<const uint8*>(Converter.Get()),
-        Converter.Length()
-    )
-);
-
-// 消费输出（在游戏线程调用）
-TArray<uint8> Output = Session->ConsumeOutput();
-```
-
-### 基本用法 — 使用 STerminal Widget
-
-```cpp
-#include "STerminal.h"
-
-// 在 Slate 面板中创建终端 Widget
-TSharedRef<STerminal> TerminalWidget = SNew(STerminal);
-
-// 发送命令执行
-TerminalWidget->ExecuteCommand(TEXT("ls -la"));
-
-// 检查会话是否运行中
+// 检查终端会话是否正在运行
 if (TerminalWidget->IsSessionRunning())
 {
-    // 订阅输出通知
-    TerminalWidget->OnOutputReceived.AddLambda([](int32 NumBytes)
-    {
-        UE_LOG(LogTerminal, Log, TEXT("终端输出了 %d 字节"), NumBytes);
-    });
+    UE_LOG(LogTemp, Log, TEXT("Terminal session is active"));
 }
+
+// 监听输出事件
+TerminalWidget->OnOutputReceived.AddLambda([](int32 NumBytes)
+{
+    UE_LOG(LogTemp, Log, TEXT("Received %d bytes of output"), NumBytes);
+});
 ```
 
-### 进阶用法 — 手动解析 VT 序列
+### 进阶用法：自定义 PTY 会话
 
 ```cpp
-#include "VTParser.h"
-#include "TerminalBuffer.h"
+// 通过工厂方法创建平台适配的 PTY 会话
+FString Error;
+TSharedPtr<ITerminalSession> Session = ITerminalSession::CreateForCurrentPlatform(Error);
+if (!Session.IsValid())
+{
+    UE_LOG(LogTerminal, Error, TEXT("Failed to create session: %s"), *Error);
+    return;
+}
 
-// 创建缓冲区和解析器
-FTerminalBuffer Buffer;
-Buffer.Initialize(80, 24, 131072);
+// 创建会话：指定 Shell 路径、工作目录、终端尺寸
+Session->Create(TEXT(""), TEXT("C:/Projects"), 120, 40);
 
-FVTParser Parser;
-Parser.SetBuffer(&Buffer);
+// 写入输入
+TArray<uint8> Input = { 'h', 'e', 'l', 'l', 'o', '\r' };
+Session->WriteInput(Input);
 
-// 解析一段包含 ANSI 转义序列的输出
-const char* Data = "\033[1;32mBold Green\033[0m Normal";
-Parser.Parse(
-    reinterpret_cast<const uint8*>(Data),
-    FCStringAnsi::Strlen(Data)
-);
+// 在游戏线程中消费输出
+TArray<uint8> Output = Session->ConsumeOutput();
+if (Output.Num() > 0)
+{
+    // 用 VTParser 解析输出
+    FTerminalBuffer Buffer;
+    Buffer.Initialize(120, 40, 131072);
 
-// 读取单元格内容
-const FTerminalCell& Cell = Buffer.GetCell(0, 0);
-// Cell.Character == 'B', Cell.Attributes 包含 Bold 标志
+    FVTParser Parser;
+    Parser.SetBuffer(&Buffer);
+    Parser.Parse(Output.GetData(), Output.Num());
+}
+
+// 监听进程退出
+Session->OnProcessExited.BindLambda([](int32 ExitCode)
+{
+    UE_LOG(LogTerminal, Log, TEXT("Shell exited with code %d"), ExitCode);
+});
+
+// 调整大小
+Session->Resize(160, 50);
+
+// 关闭会话
+Session->Shutdown();
 ```
 
-### 进阶用法 — 自定义颜色方案
+### 进阶用法：自定义颜色方案
 
 ```cpp
-#include "TerminalColorScheme.h"
-
-// 从 JSON 创建自定义颜色方案
+// 从 JSON 字符串解析颜色方案
 FString JSON = TEXT(R"({
     "Name": "Solarized Dark",
     "DefaultForeground": "#839496",
     "DefaultBackground": "#002b36",
     "CursorColor": "#839496",
     "SelectionColor": "#073642",
-    "Palette": ["#073642","#dc322f","#859900","#b58900","#268bd2","#d33682","#2aa198","#eee8d5","#002b36","#cb4b16","#586e75","#657b83","#839496","#6c71c4","#93a1a1","#fdf6e3"]
+    "Palette": ["#073642", "#dc322f", "#859900", "#b58900",
+                "#268bd2", "#d33682", "#2aa198", "#eee8d5",
+                "#586e75", "#cb4b16", "#586e75", "#657b83",
+                "#839496", "#6c71c4", "#93a1a1", "#fdf6e3"]
 })");
 
 FTerminalColorScheme Scheme;
 if (FTerminalColorScheme::FromJSON(JSON, Scheme))
 {
-    // 通过子系统应用
-    UTerminalSubsystem* Subsystem = GEditor->GetEditorSubsystem<UTerminalSubsystem>();
-    // Subsystem->GetColorScheme() 可获取已加载的方案
+    UE_LOG(LogTerminal, Log, TEXT("Loaded scheme: %s"), *Scheme.Name);
 }
+
+// 使用默认方案
+FTerminalColorScheme DefaultScheme = FTerminalColorScheme::MakeDefault();
 ```
 
-### 进阶用法 — 键盘事件转译
+### 进阶用法：键位转译
 
 ```cpp
-#include "TerminalKeyTranslator.h"
-
-// 将 Slate 键盘事件转为终端字节序列
-UE::Terminal::FKeyTranslationOptions Options;
-Options.bApplicationCursorKeys = false;
+// 将 Slate 键事件转换为 VT 字节序列
+FKeyTranslationOptions Options;
+Options.bApplicationCursorKeys = false; // DECCKM 关闭时，方向键使用 CSI 序列
 
 TArray<uint8> Bytes = UE::Terminal::TranslateKeyToBytes(KeyEvent, Options);
 if (Bytes.Num() > 0)
 {
+    // 发送到 PTY 会话
     Session->WriteInput(Bytes);
+}
+```
+
+## Demo 示例
+
+### 自定义终端面板 Widget
+
+```cpp
+// MyTerminalPanel.h
+#pragma once
+
+#include "Widgets/SCompoundWidget.h"
+
+class SScrollBar;
+class STerminal;
+
+class SMyTerminalPanel : public SCompoundWidget
+{
+public:
+    SLATE_BEGIN_ARGS(SMyTerminalPanel) {}
+    SLATE_END_ARGS()
+
+    void Construct(const FArguments& InArgs);
+
+private:
+    void OnTerminalOutput(int32 NumBytes);
+
+    TSharedPtr<STerminal> TerminalWidget;
+    TSharedPtr<SScrollBar> TerminalScrollBar;
+};
+```
+
+```cpp
+// MyTerminalPanel.cpp
+#include "MyTerminalPanel.h"
+#include "STerminal.h"
+#include "Widgets/SScrollBar.h"
+
+void SMyTerminalPanel::Construct(const FArguments& InArgs)
+{
+    TerminalScrollBar = SNew(SScrollBar)
+        .Orientation(Orient_Vertical);
+
+    ChildSlot
+    [
+        SNew(SHorizontalBox)
+        + SHorizontalBox::Slot()
+        .FillWidth(1.0f)
+        [
+            SAssignNew(TerminalWidget, STerminal)
+            .ExternalScrollbar(TerminalScrollBar)
+        ]
+        + SHorizontalBox::Slot()
+        .AutoWidth()
+        [
+            TerminalScrollBar.ToSharedRef()
+        ]
+    ];
+
+    TerminalWidget->OnOutputReceived.AddSP(
+        this, &SMyTerminalPanel::OnTerminalOutput);
+}
+
+void SMyTerminalPanel::OnTerminalOutput(int32 NumBytes)
+{
+    // 输出到达时可在此更新 UI 状态
+    UE_LOG(LogTemp, Verbose, TEXT("Terminal output: %d bytes"), NumBytes);
 }
 ```
 
@@ -181,9 +241,12 @@ if (Bytes.Num() > 0)
 
 | 模块 | 用途 |
 |---|---|
-| `Freetype` | 字体渲染（等宽字体加载） |
-| `HarfBuzz` | 文本整形（结合字符处理） |
-| `ApplicationCore` | 系统字体路径解析 |
+| `Json` | 解析颜色方案 JSON 文件 |
+| `JsonUtilities` | JSON 序列化/反序列化工具 |
+
+无其他特殊依赖（仅标准 Core/Engine/Slate 等）。
+
+> **注意**：平台 PTY 依赖是通过条件编译实现的（Windows 使用 ConPTY API，Linux/macOS 使用 POSIX PTY），不需要额外模块依赖。
 
 ## 维护状态
 
@@ -191,29 +254,31 @@ if (Bytes.Num() > 0)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 修复函数类型转换警告，兼容 MSVC 和 Clang 编译器 |
-| 2026-05-12 | `91d5944f` | [Terminal] Surface session activity and prompt before closing the editor mid-output. | 编辑器关闭时检测终端活动并提示用户确认 |
-| 2026-04-28 | `2832901f` | [Terminal] Drop `defaultconfig` from `UTerminalSettings`. | 移除设置类的 defaultconfig 标记，改为用户级配置 |
-| 2026-04-20 | `c9454ad1` | [Terminal] Forward full key/modifier matrix to the *PTY* via a dedicated translator. | 重构键盘输入，使用专用转译器处理完整的按键/修饰键矩阵 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏到新的 UE_LOGF 格式 |
+| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 修复跨编译器函数类型转换警告 |
+| 2026-05-12 | `91d5944f` | [Terminal] Surface session activity and prompt before closing the editor mid-output. | 编辑器关闭时检测终端输出活动并提示确认 |
+| 2026-04-28 | `2832901f` | [Terminal] Drop `defaultconfig` from `UTerminalSettings`. | 移除设置类的 defaultconfig 修饰符 |
+| 2026-04-20 | `c9454ad1` | [Terminal] Forward full key/modifier matrix to the *PTY* via a dedicated translator. | 引入专用键位转译器，完整转发按键和修饰键 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏到 UE_LOGF 格式 |
 
 ### 维护评价
 
-Terminal 插件创建于 2026 年 4 月，是一个**非常新的实验性插件**（约 1 个月）。
+这是一个**非常新的实验性插件**，创建于 2026 年 4 月，距今仅约一个月，但在此期间保持了**活跃的开发节奏**（5 次 commit 涉及功能增强、编译器兼容性修复和代码质量改进）。
 
-**积极信号**：
-- 创建以来保持活跃开发，不到一个月内有 5 次实质性提交
-- 功能逐步完善：键盘输入重构、编辑器关闭保护、跨编译器兼容修复
-- 架构设计成熟：平台抽象层（ConPTY/POSIX PTY）、完整的 VT 状态机解析器、环形缓冲区
+**优点**：
+- 架构清晰：通过 `ITerminalSession` 接口抽象平台差异，VT 解析器遵循 vt100.net 规范
+- 功能完备：支持 256 色、鼠标追踪、选区、滚动回看、颜色方案
+- 跨平台：Windows（ConPTY）和 Linux/macOS（POSIX PTY）均有实现
 
-**注意事项**：
-- 标记为 `IsExperimentalVersion=true`，`EnabledByDefault=false`，需要手动启用
-- 目前处于早期阶段，API 可能会有变动
-- Windows 使用 ConPTY，需要 Windows 10 1809+ 版本
-- `NoRedist=true`，不可单独再分发
+**风险与限制**：
+- **实验性**：标记为 `IsExperimentalVersion=true`，API 可能发生破坏性变更
+- **未默认启用**：需要手动在插件管理器中启用
+- **NoRedist**：不可再分发，表明是 Epic 内部/引擎专属功能
+- **仅限编辑器**：无法在打包游戏中使用
 
-**推荐**：适合对编辑器内终端功能有需求的开发者试用和反馈。作为实验性功能，不建议在生产工作流中强依赖。
+**推荐**：如果你在使用 UE5.5+ 且希望在编辑器内拥有终端体验，值得尝试。但不建议在生产流程中深度依赖此插件，因为其实验性状态意味着 API 可能在未来版本中变动。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Terminal)
+- 官方文档（无）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/Terminal/Source/TerminalTests)

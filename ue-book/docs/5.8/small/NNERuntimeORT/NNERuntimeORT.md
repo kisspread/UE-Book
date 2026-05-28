@@ -4,58 +4,58 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | ONNX 运行时后端 |
+| 中文名 | NNE ONNX 运行时 |
 | 分类 | ML |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
-| 模块 | `NNERuntimeORT` (RuntimeAndProgram) |
-| 实验性 | ⚠️ 是 |
+| 模块 | `NNERuntimeORT` (Runtime) |
+| 实验性 | ⚦️ 是 |
 | 创建时间 | 2023-11-07 |
-| 年龄标签 | 🆕（约 3 年） |
+| 年龄标签 | 🆕（约 2 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNERuntimeORT) | |
 
 ## 用途
 
-NNERuntimeORT 是 Unreal Engine 神经网络引擎（NNE）的 ONNX Runtime 后端实现。它为 NNE 提供了基于 ONNX Runtime 的推理执行能力，支持两种加速方式：
+NNERuntimeORT 是虚幻引擎神经网络引擎 (NNE) 的一个运行时后端插件。它解决了在 UE5 中使用 ONNX 格式模型进行实时机器学习推理的问题。其核心作用是将 NNE 的抽象神经网络模型接口，映射到高性能的 ONNX Runtime (ORT) 引擎上执行。
 
-- **CPU 执行提供程序**：在所有支持的平台上使用 CPU 进行神经网络推理
-- **DirectML 执行提供程序**：在 Windows 平台上使用 DirectML 进行 GPU 加速推理
+该插件存在的主要意义在于：
+1.  **CPU 与 GPU 推理支持**：提供在 CPU 上运行 ONNX 模型的能力（通过 `INNERuntimeCPU`），并**仅限于 Windows 平台**，通过 DirectML 提供对 GPU 加速的推理支持（通过 `INNERuntimeGPU` 和 `INNERuntimeRDG`）。
+2.  **集成到虚幻渲染管线**：通过 `INNERuntimeRDG` 接口，将 GPU 推理操作集成到虚幻的渲染依赖图（RDG）中，允许神经网络推理与渲染管线高效协同。
+3.  **提供可配置的运行时环境**：允许用户通过开发者设置（`UNNERuntimeORTSettings`）精细控制 ONNX Runtime 的线程池和执行模式（顺序/并行），以优化性能。
 
-这个插件的核心价值在于将 ONNX Runtime 集成为 NNE 的推理后端，让开发者可以在 UE 项目中加载和运行 ONNX 格式的神经网络模型。ONNX 是机器学习领域最通用的模型格式，通过这个插件，开发者可以使用 PyTorch、TensorFlow 等框架训练的模型，并在 UE 中进行实时推理。
-
-插件支持三种模型实例接口：
-1. **IModelCPU / IModelInstanceCPU**：纯 CPU 推理
-2. **IModelGPU / IModelInstanceGPU**：DirectML GPU 推理（Windows）
-3. **IModelRDG / IModelInstanceRDG**：通过 RDG（Render Dependency Graph）集成的 GPU 推理，可与 UE 渲染管线深度集成
+简而言之，它是连接虚幻引擎 NNE 抽象层与工业级推理引擎 ONNX Runtime 的桥梁，让开发者能在游戏中或编辑器里高效运行 ONNX 模型。
 
 ## 使用场景
 
-- 你需要在 UE 中运行 ONNX 格式的神经网络模型（如风格迁移、图像分类、物体检测等）
-- 你需要跨平台的 CPU 推理能力 → 使用 CPU 运行时
-- 你在 Windows 上需要 GPU 加速推理且不想依赖特定 GPU 厂商的 SDK → 使用 DirectML 运行时
-- 你需要将神经网络推理集成到 UE 的渲染管线中（如用于后处理效果）→ 使用 RDG 运行时
-- 你需要细粒度控制 ONNX Runtime 的线程配置以优化推理性能
+-   你在开发一个需要实时 AI 行为的游戏（如角色决策、路径规划），希望使用预训练的 ONNX 模型在 CPU 或 GPU 上进行推理 → 使用 `NNERuntimeCpu` 或 `NNERuntimeDml`（Windows）。
+-   你正在制作一个图像风格迁移、超分辨率或降噪等视觉效果工具，需要将计算任务无缝集成到虚幻的渲染管线中，避免 GPU 同步开销 → 使用 `NNERuntimeDmlRDG`（仅限 Windows + D3D12）。
+-   你希望优化推理性能，需要调整 ONNX Runtime 的线程数、是否使用全局线程池以及执行模式（顺序/并行） → 配置 `Project Settings > Plugins > NNERuntimeORT`。
 
 ## 蓝图用法
 
-NNERuntimeORT 本身不提供 BlueprintCallable 函数。它是 NNE 的后端实现，通过 NNE 插件的统一接口（如 `UNNEModelData`）间接使用。
+此插件本身不直接暴露蓝图节点。它的所有功能都通过 NNE（神经网络引擎）核心插件的蓝图接口来使用。在蓝图中，你操作的是 NNE 提供的通用 `UNNEModelData`、`UNNEModelInstanceCPU` 等对象，而 NNE 会在后台根据模型格式（ONNX）和选择的运行时（NNERuntimeORT）调用此插件的具体实现。
 
-要通过蓝图使用 ONNX 模型推理，请参考 NNE 主插件的文档。NNERuntimeORT 注册的运行时名称为：
-- CPU 运行时：`"NNERuntimeORTCpu"`
-- DirectML 运行时：`"NNERuntimeORTDml"`
+因此，蓝图用法遵循 NNE 的标准流程：
+1.  加载 `UNNEModelData` 资产。
+2.  使用 NNE 的蓝图节点（如 `Create Model Instance`）创建模型实例。
+3.  设置输入数据并运行推理。
 
-### 设置项
+**核心节点**（均来自 NNE 核心插件）
 
-NNERuntimeORT 通过项目设置暴露线程配置选项（位于 **编辑 → 项目设置 → 插件 → NNERuntimeORT**）：
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `Create Model Instance` | 从 `UNNEModelData` 创建一个可运行的模型实例。 | `NNEBlueprintLibrary` |
+| `Set Input Data` / `Set Input Tensor` | 设置模型实例的输入数据。 | `UNNEModelInstance*` |
+| `Run` / `Run Sync` | 执行模型推理。 | `UNNEModelInstance*` |
 
-| 设置 | 说明 |
-|---|---|
-| Use global thread pool | 是否使用全局线程池（跨会话共享） |
-| Intra-op thread count | 算子内并行线程数（0=默认，1=单线程） |
-| Inter-op thread count | 算子间并行线程数（0=默认，1=单线程） |
-| Execution mode | 执行模式：SEQUENTIAL（顺序）或 PARALLEL（并行）。注意：DirectML 强制使用顺序模式 |
+### 使用示例（蓝图描述）
 
-编辑器和游戏运行时有独立的线程配置。
+在蓝图中，流程如下：
+1.  引用一个已导入的 `UNNEModelData` 资产（`.onnx` 文件）。
+2.  使用 “Create Model Instance” 节点，输入该模型数据，输出一个模型实例对象（例如，`UNNEModelInstanceCPU`）。
+3.  使用 “Set Input Data” 节点，为模型实例的输入张量赋值（例如，一个代表图像数据的浮点数组）。
+4.  调用 “Run Sync” 节点执行同步推理。
+5.  使用 “Get Output Data” 节点获取推理结果。
 
 ## C++ 用法
 
@@ -63,302 +63,183 @@ NNERuntimeORT 通过项目设置暴露线程配置选项（位于 **编辑 → �
 
 ```cpp
 #include "NNE.h"
-#include "NNERuntimeORT/NNERuntimeORT.h"  // 若需要直接引用运行时接口
+#include "NNERuntimeCPU.h" // 用于 CPU 推理
+#include "NNERuntimeGPU.h" // 用于 GPU 推理 (Windows)
+#include "NNERuntimeRDG.h" // 用于 RDG 集成 (Windows + D3D12)
 ```
 
-### 基本用法：通过 NNE 接口使用 CPU 推理
+### 基本用法
 
-NNERuntimeORT 作为 NNE 后端，通过 NNE 的标准 API 使用。以下展示了完整的推理流程：
+从测试用例和插件代码中提取的典型 CPU 推理流程。
 
 ```cpp
-#include "NNE.h"
-#include "NNEModelData.h"
+// (基于测试用例和 NNE 核心 API 模拟的代码)
+// 假设你已经有一个 UNNEModelData* ModelData 指针
 
-// 1. 获取 ONNX Runtime CPU 运行时
-TArray<UE::NNE::TWeakObjectPtr<UNNERuntimeCPU>> Runtimes = UE::NNE::GetAllRuntime<UNNERuntimeCPU>();
-UNNERuntimeORTCpu* ORTRuntime = nullptr;
-for (auto& Runtime : Runtimes)
+// 1. 获取一个可用的运行时（例如，ORT CPU 运行时）
+TWeakObjectPtr<UNNE::INNERuntime> Runtime = UNNE::GetRuntime(TEXT("NNERuntimeORTCpu"));
+
+// 2. 检查运行时是否可以为此模型数据创建 CPU 模型
+if (Runtime->CanCreateModelCPU(ModelData) == NNE::ECanCreateModelCPUStatus::Ok)
 {
-    if (Runtime->GetRuntimeName() == TEXT("NNERuntimeORTCpu"))
+    // 3. 创建 CPU 模型
+    TSharedPtr<UE::NNE::IModelCPU> Model = Runtime->CreateModelCPU(ModelData);
+
+    if (Model.IsValid())
     {
-        ORTRuntime = Cast<UNNERuntimeORTCpu>(Runtime.Get());
-        break;
+        // 4. 创建模型实例
+        TSharedPtr<UE::NNE::IModelInstanceCPU> ModelInstance = Model->CreateModelInstanceCPU();
+
+        if (ModelInstance.IsValid())
+        {
+            // 5. 设置输入数据（示例，假设只有一个输入张量）
+            TArray<float> InputData; // 填充你的输入数据
+            NNE::FTensorBindingCPU InputBinding;
+            InputBinding.Data = InputData.GetData();
+            InputBinding.SizeInBytes = InputData.Num() * sizeof(float);
+
+            // 6. 设置输出缓冲区
+            TArray<float> OutputData;
+            OutputData.SetNumUninitialized(/* 根据模型输出描述计算 */);
+            NNE::FTensorBindingCPU OutputBinding;
+            OutputBinding.Data = OutputData.GetData();
+            OutputBinding.SizeInBytes = OutputData.Num() * sizeof(float);
+
+            // 7. 运行推理
+            NNE::IModelInstanceCPU::ERunSyncStatus Status = ModelInstance->RunSync({InputBinding}, {OutputBinding});
+            if (Status == NNE::IModelInstanceCPU::ERunSyncStatus::Ok)
+            {
+                // 8. 使用 OutputData 中的推理结果
+            }
+        }
     }
 }
-
-// 2. 加载 ONNX 模型数据
-TArray64<uint8> ModelDataBuffer;
-FFileHelper::LoadFileToArray(ModelDataBuffer, TEXT("MyModel.onnx"));
-
-// 创建模型数据
-TMap<FString, TConstArrayView64<uint8>> AdditionalFileData;
-FGuid ModelId = FGuid::NewGuid();
-TSharedPtr<UE::NNE::FSharedModelData> ModelData = ORTRuntime->CreateModelData(
-    TEXT("onnx"), ModelDataBuffer, AdditionalFileData, ModelId, nullptr);
-
-// 3. 创建模型数据资产并生成模型和实例
-UObject* Outer = GetTransientPackage();
-UNNEModelData* NNEModelData = NewObject<UNNEModelData>(Outer);
-NNEModelData->SetModelData(ModelData);
-
-TSharedPtr<UE::NNE::IModelCPU> Model = ORTRuntime->CreateModelCPU(NNEModelData);
-TSharedPtr<UE::NNE::IModelInstanceCPU> ModelInstance = Model->CreateModelInstanceCPU();
-
-// 4. 设置输入形状并运行推理
-TConstArrayView<NNE::FTensorDesc> InputDescs = ModelInstance->GetInputTensorDescs();
-TConstArrayView<NNE::FTensorDesc> OutputDescs = ModelInstance->GetOutputTensorDescs();
-
-// 构建输入张量形状
-TArray<NNE::FTensorShape> InputShapes;
-InputShapes.Add(NNE::FTensorShape::Make({1, 3, 224, 224}));
-ModelInstance->SetInputTensorShapes(InputShapes);
-
-// 准备输入输出数据
-TArray<float> InputData(1 * 3 * 224 * 224, 0.0f);  // 填充实际数据
-TArray<float> OutputData(1000, 0.0f);
-
-NNE::FTensorBindingCPU InputBinding = {InputData.GetData(), InputData.Num() * sizeof(float)};
-NNE::FTensorBindingCPU OutputBinding = {OutputData.GetData(), OutputData.Num() * sizeof(float)};
-
-TConstArrayView<NNE::FTensorBindingCPU> InputBindings = {InputBinding};
-TConstArrayView<NNE::FTensorBindingCPU> OutputBindings = {OutputBinding};
-
-// 执行推理
-ModelInstance->RunSync(InputBindings, OutputBindings);
 ```
 
-**来源**：基于 `Private/NNERuntimeORT.h` 和 `Private/NNERuntimeORTModel.h` 的接口定义。
+**来源文件路径**：逻辑基于 `Private/NNERuntimeORT.h` (`UNNERuntimeORTCpu`) 和 `Private/NNERuntimeORTModel.h` (`FModelInstanceORTCpu`, `FModelORTCpu`) 中的接口实现。
 
-### 进阶用法：DirectML GPU 推理
+### 进阶用法
 
-在 Windows 平台上使用 DirectML 进行 GPU 加速推理：
+使用 RDG 接口将 GPU 推理集成到渲染管线中（仅限 Windows D3D12）。这更复杂，通常用于后处理等场景。
 
 ```cpp
-#if PLATFORM_WINDOWS
-#include "NNE.h"
-#include "NNEModelData.h"
+// (概念性代码，展示了集成思路，非直接可编译片段)
+#include "RenderGraphBuilder.h"
 
-// 获取 DirectML 运行时
-TArray<UE::NNE::TWeakObjectPtr<UNNERuntimeGPU>> GPURuntimes = UE::NNE::GetAllRuntime<UNNERuntimeGPU>();
-UNNERuntimeORTDmlProxy* DmlRuntime = nullptr;
-for (auto& Runtime : GPURuntimes)
+// 在你的渲染通道或自定义 Pass 中...
+FRDGBuilder& GraphBuilder = ...; // 通常从 FSceneView 或 FRenderingCompositePassContext 获取
+
+// 1. 获取 ORT DML RDG 运行时并创建 RDG 模型实例 (假设已缓存)
+TSharedPtr<NNE::IModelInstanceRDG> RDGModelInstance = ...;
+
+// 2. 准备输入输出的 RDG 缓冲区 (FRDGBufferSRV*, FRDGBufferUAV*)
+FRDGBufferSRV* InputBufferSRV = ...;
+FRDGBufferUAV* OutputBufferUAV = ...;
+
+// 3. 构建输入输出绑定
+NNE::FTensorBindingRDG InputBinding = {InputBufferSRV};
+NNE::FTensorBindingRDG OutputBinding = {OutputBufferUAV};
+
+// 4. 将推理任务加入 RDG
+NNE::IModelInstanceRDG::EEnqueueRDGStatus EnqueueStatus = RDGModelInstance->EnqueueRDG(GraphBuilder, {InputBinding}, {OutputBinding});
+
+if (EnqueueStatus == NNE::IModelInstanceRDG::EEnqueueRDGStatus::Ok)
 {
-    if (Runtime->GetRuntimeName() == TEXT("NNERuntimeORTDml"))
-    {
-        DmlRuntime = Cast<UNNERuntimeORTDmlProxy>(Runtime.Get());
-        break;
-    }
+    // 推理操作已被添加到渲染图，将在后续执行
 }
-
-// 加载模型并创建 GPU 模型实例
-// （模型数据创建流程与 CPU 相同）
-TSharedPtr<UE::NNE::IModelGPU> GPUModel = DmlRuntime->CreateModelGPU(NNEModelData);
-TSharedPtr<UE::NNE::IModelInstanceGPU> GPUInstance = GPUModel->CreateModelInstanceGPU();
-
-// GPU 推理同样使用 FTensorBindingCPU（DirectML 在 CPU 内存上操作）
-GPUInstance->SetInputTensorShapes(InputShapes);
-GPUInstance->RunSync(InputBindings, OutputBindings);
-#endif // PLATFORM_WINDOWS
 ```
-
-### 进阶用法：RDG 集成推理
-
-将推理集成到 UE 渲染管线中（仅 Windows DirectML）：
-
-```cpp
-#if PLATFORM_WINDOWS
-// 需要通过 UNNERuntimeRDG 接口获取支持 RDG 的运行时
-TArray<UE::NNE::TWeakObjectPtr<UNNERuntimeRDG>> RDGRuntimes = UE::NNE::GetAllRuntime<UNNERuntimeRDG>();
-
-TSharedPtr<UE::NNE::IModelRDG> RDGModel = RDGRuntime->CreateModelRDG(NNEModelData);
-TSharedPtr<UE::NNE::IModelInstanceRDG> RDGInstance = RDGModel->CreateModelInstanceRDG();
-
-RDGInstance->SetInputTensorShapes(InputShapes);
-
-// 在 RDG Pass 中执行推理
-FRDGBuilder& GraphBuilder = ...; // 从渲染线程获取
-TConstArrayView<NNE::FTensorBindingRDG> RDGInputs = ...;  // GPU 资源绑定
-TConstArrayView<NNE::FTensorBindingRDG> RDGOutputs = ...;
-RDGInstance->EnqueueRDG(GraphBuilder, RDGInputs, RDGOutputs);
-#endif // PLATFORM_WINDOWS
-```
-
-**来源**：基于 `Private/NNERuntimeORTModel.h` 中 `FModelInstanceORTDmlRDG` 类的接口。
 
 ## Demo 示例
 
-一个完整的最小 CPU 推理示例（Actor 组件）：
+一个最小化的 C++ 示例，展示如何使用 ORT CPU 运行时进行推理。此示例假设你已经通过其他方式（如资产加载）获得了 `ModelData`。
 
+**NNEORTDemo.h**
 ```cpp
-// NNEInferenceComponent.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "NNE.h"
-#include "NNEModelData.h"
-#include "NNEInferenceComponent.generated.h"
 
-UCLASS(ClassGroup=(NNE), meta=(BlueprintSpawnableComponent))
-class YOURPROJECT_API UNNEInferenceComponent : public UActorComponent
+class UNNEModelData;
+
+class FNNEORTDemo
 {
-    GENERATED_BODY()
-
 public:
-    UNNEInferenceComponent();
-
-    /** 加载 ONNX 模型文件 */
-    UFUNCTION(BlueprintCallable, Category = "NNE")
-    bool LoadModel(const FString& ModelPath);
-
-    /** 运行推理（简化示例） */
-    UFUNCTION(BlueprintCallable, Category = "NNE")
-    bool RunInference(const TArray<float>& InputData, TArray<float>& OutputData);
-
-protected:
-    UPROPERTY(EditAnywhere, Category = "NNE")
-    FString RuntimeName = TEXT("NNERuntimeORTCpu");
-
-    TSharedPtr<UE::NNE::IModelCPU> Model;
-    TSharedPtr<UE::NNE::IModelInstanceCPU> ModelInstance;
+    void RunSimpleInference(UNNEModelData* ModelData);
 };
 ```
 
+**NNEORTDemo.cpp**
 ```cpp
-// NNEInferenceComponent.cpp
-#include "NNEInferenceComponent.h"
-#include "HAL/FileManager.h"
-#include "Misc/FileHelper.h"
+#include "NNEORTDemo.h"
+#include "NNE.h"
+#include "NNERuntimeCPU.h"
 
-UNNEInferenceComponent::UNNEInferenceComponent()
+void FNNEORTDemo::RunSimpleInference(UNNEModelData* ModelData)
 {
-    PrimaryComponentTick.bCanEverTick = false;
-}
+    if (!ModelData) return;
 
-bool UNNEInferenceComponent::LoadModel(const FString& ModelPath)
-{
-    // 加载模型文件
-    TArray64<uint8> ModelBuffer;
-    if (!FFileHelper::LoadFileToArray(ModelBuffer, *ModelPath))
+    // 1. 获取 ORT CPU 运行时
+    const FName RuntimeName = TEXT("NNERuntimeORTCpu");
+    TWeakObjectPtr<UNNE::INNERuntime> Runtime = UNNE::GetRuntime(RuntimeName);
+    if (!Runtime.IsValid() || Runtime->CanCreateModelCPU(ModelData) != NNE::ECanCreateModelCPUStatus::Ok)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to load model: %s"), *ModelPath);
-        return false;
+        UE_LOG(LogTemp, Error, TEXT("ORT CPU runtime not available or cannot create model."));
+        return;
     }
 
-    // 查找运行时
-    TArray<UE::NNE::TWeakObjectPtr<UNNERuntimeCPU>> Runtimes = UE::NNE::GetAllRuntime<UNNERuntimeCPU>();
-    UNNERuntimeCPU* Runtime = nullptr;
-    for (auto& R : Runtimes)
+    // 2. 创建模型与实例
+    TSharedPtr<UE::NNE::IModelCPU> Model = Runtime->CreateModelCPU(ModelData);
+    TSharedPtr<UE::NNE::IModelInstanceCPU> Instance = Model->CreateModelInstanceCPU();
+
+    // 3. 查询输入输出描述（实际应用需根据描述计算尺寸）
+    TConstArrayView<NNE::FTensorDesc> InputDescs = Instance->GetInputTensorDescs();
+    TConstArrayView<NNE::FTensorDesc> OutputDescs = Instance->GetOutputTensorDescs();
+
+    if (InputDescs.Num() == 0 || OutputDescs.Num() == 0)
     {
-        if (R.IsValid() && R->GetRuntimeName() == RuntimeName)
-        {
-            Runtime = R.Get();
-            break;
-        }
+        UE_LOG(LogTemp, Warning, TEXT("Model has no inputs or outputs."));
+        return;
     }
 
-    if (!Runtime)
+    // 4. 准备示例输入数据（假设第一个输入是浮点张量，形状为 [1,3,224,224]）
+    const NNE::FTensorDesc& FirstInputDesc = InputDescs[0];
+    const NNE::FTensorShape InputShape = NNE::FTensorShape::MakeFromSymbolic(FirstInputDesc.GetShape());
+    const uint64 InputDataSize = InputShape.Volume() * sizeof(float);
+    TArray<float> InputData;
+    InputData.AddZeroed(InputShape.Volume());
+
+    // 5. 准备输出缓冲区
+    const NNE::FTensorDesc& FirstOutputDesc = OutputDescs[0];
+    const NNE::FTensorShape OutputShape = NNE::FTensorShape::MakeFromSymbolic(FirstOutputDesc.GetShape());
+    const uint64 OutputDataSize = OutputShape.Volume() * sizeof(float);
+    TArray<float> OutputData;
+    OutputData.AddZeroed(OutputShape.Volume());
+
+    // 6. 绑定并运行
+    NNE::FTensorBindingCPU InputBinding = {InputData.GetData(), InputDataSize};
+    NNE::FTensorBindingCPU OutputBinding = {OutputData.GetData(), OutputDataSize};
+
+    auto Status = Instance->RunSync({InputBinding}, {OutputBinding});
+    if (Status == NNE::IModelInstanceCPU::ERunSyncStatus::Ok)
     {
-        UE_LOG(LogTemp, Error, TEXT("Runtime %s not found"), *RuntimeName);
-        return false;
+        UE_LOG(LogTemp, Log, TEXT("Inference completed successfully. First output value: %f"), OutputData[0]);
     }
-
-    // 创建模型数据
-    TMap<FString, TConstArrayView64<uint8>> AdditionalData;
-    FGuid FileId = FGuid::NewGuid();
-    TSharedPtr<UE::NNE::FSharedModelData> ModelData = 
-        Runtime->CreateModelData(TEXT("onnx"), ModelBuffer, AdditionalData, FileId, nullptr);
-
-    if (!ModelData.IsValid())
+    else
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create model data"));
-        return false;
+        UE_LOG(LogTemp, Error, TEXT("Inference failed."));
     }
-
-    // 包装为 UNNEModelData
-    UNNEModelData* NNEData = NewObject<UNNEModelData>(GetTransientPackage());
-    NNEData->SetModelData(ModelData);
-
-    // 创建模型和实例
-    TSharedPtr<UE::NNE::IModelCPU> NewModel = Runtime->CreateModelCPU(NNEData);
-    if (!NewModel.IsValid()) return false;
-
-    TSharedPtr<UE::NNE::IModelInstanceCPU> Instance = NewModel->CreateModelInstanceCPU();
-    if (!Instance.IsValid()) return false;
-
-    Model = NewModel;
-    ModelInstance = Instance;
-
-    UE_LOG(LogTemp, Log, TEXT("Model loaded successfully. Inputs: %d, Outputs: %d"),
-        ModelInstance->GetInputTensorDescs().Num(),
-        ModelInstance->GetOutputTensorDescs().Num());
-    
-    return true;
-}
-
-bool UNNEInferenceComponent::RunInference(const TArray<float>& InputData, TArray<float>& OutputData)
-{
-    if (!ModelInstance.IsValid())
-    {
-        UE_LOG(LogTemp, Error, TEXT("Model instance not initialized"));
-        return false;
-    }
-
-    // 根据模型描述设置输入形状
-    TConstArrayView<NNE::FTensorDesc> InputDescs = ModelInstance->GetInputTensorDescs();
-    TConstArrayView<NNE::FTensorDesc> OutputDescs = ModelInstance->GetOutputTensorDescs();
-
-    if (InputDescs.Num() == 0 || OutputDescs.Num() == 0) return false;
-
-    // 使用符号化形状（假设模型使用动态形状或已知形状）
-    TArray<NNE::FTensorShape> InputShapes;
-    for (const auto& Desc : InputDescs)
-    {
-        InputShapes.Add(NNE::FTensorShape::MakeFromSymbolic(Desc.GetShape()));
-    }
-    
-    ModelInstance->SetInputTensorShapes(InputShapes);
-
-    // 准备输出缓冲区
-    int32 OutputSize = 1;
-    for (const auto& Desc : OutputDescs)
-    {
-        for (int32 Dim : Desc.GetShape())
-        {
-            if (Dim > 0) OutputSize *= Dim;
-        }
-    }
-    OutputData.SetNumZeroed(OutputSize);
-
-    // 绑定数据
-    NNE::FTensorBindingCPU InputBinding;
-    InputBinding.Data = InputData.GetData();
-    InputBinding.SizeInBytes = InputData.Num() * sizeof(float);
-
-    NNE::FTensorBindingCPU OutputBinding;
-    OutputBinding.Data = OutputData.GetData();
-    OutputBinding.SizeInBytes = OutputData.Num() * sizeof(float);
-
-    TConstArrayView<NNE::FTensorBindingCPU> Inputs(&InputBinding, 1);
-    TConstArrayView<NNE::FTensorBindingCPU> Outputs(&OutputBinding, 1);
-
-    // 执行推理
-    auto Status = ModelInstance->RunSync(Inputs, Outputs);
-    return Status == NNE::IModelInstanceCPU::ERunSyncStatus::Ok;
 }
 ```
 
-> **注意**：`SetInputTensorShapes` 需要根据具体模型的实际输入维度来设置。上面示例使用了符号化形状作为简化，实际使用时需要根据模型的输入维度构造具体的形状值。
-
 ## 模块依赖
+
+从 `Build.cs` 分析，使用此插件你的模块需要依赖以下特定模块：
 
 | 模块 | 用途 |
 |---|---|
-| `NNE` | 神经网络引擎核心模块，定义运行时接口（IModelCPU、IModelGPU、IModelRDG 等） |
-| `NNEOnnxruntime` | 第三方 ONNX Runtime 库的构建模块（External 类型） |
-| `DirectML` | DirectML GPU 加速支持（Windows 平台条件依赖） |
-| `RenderCore` | RDG（Render Dependency Graph）集成所需的渲染核心 |
-| `RHI` | 渲染硬件接口，用于 DirectML 与 D3D12 的集成 |
+| `NNE` | 神经网络引擎核心模块，提供 `IModelCPU`, `IModelGPU` 等抽象接口。 |
+| `NNEOnnxruntime` | 第三方 ONNX Runtime 的构建模块。 |
+| `DirectML` | (仅限 Windows) 微软的 DirectML 框架，用于 GPU 加速。 |
 
 ## 维护状态
 
@@ -366,23 +247,21 @@ bool UNNEInferenceComponent::RunInference(const TArray<float>& InputData, TArray
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-21 | `d9fee063` | [NNE] NNERuntimeORT ONNX Runtime upgrade to version 1.24.3 and DirectML upgrade to version 1.15.4. | 升级 ONNX Runtime 至 1.24.3 和 DirectML 至 1.15.4 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志系统迁移至新 UE_LOGF 宏 |
-| 2026-03-30 | `33f008b5` | [Backout] - CL52245530 | 回退了之前的提交 CL52245530 |
-| 2026-03-30 | `c8c79a38` | [NNE] NNERuntimeORT ONNX Runtime upgrade to version 1.24.3 and DirectML upgrade to version 1.15.4. | 再次尝试升级 ONNX Runtime 和 DirectML 版本 |
-| 2026-03-14 | `95105f12` | Split PooledRenderTarget and SceneRenderingAllocator off into separate header and add explicit inclu | 拆分渲染资源头文件，优化编译依赖 |
+| 2026-04-21 | `d9fee063` | [NNE] NNERuntimeORT ONNX Runtime upgrade to version 1.24.3 and DirectML upgrade to version 1.15.4. | 将 ONNX Runtime 升级至 1.24.3，DirectML 升级至 1.15.4，提升推理性能和兼容性。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志系统从 UE_LOG 迁移至 UE_LOGF，属于引擎级日志系统更新适配。 |
+| 2026-03-30 | `33f008b5` | [Backout] - CL52245530 | 回退了之前的某次提交（CL52245530），可能涉及不稳定的改动。 |
+| 2026-03-30 | `c8c79a38` | [NNE] NNERuntimeORT ONNX Runtime upgrade to version 1.24.3 and DirectML upgrade to version 1.15.4. | 同样的升级提交，可能是之前的提交被回退后重新提交。 |
+| 2026-03-14 | `95105f12` | Split PooledRenderTarget and SceneRenderingAllocator off into separate header and add explicit inclu... | 重构代码，将 `PooledRenderTarget` 和 `SceneRenderingAllocator` 拆分到单独的头文件中，改善代码组织。 |
 
 ### 维护评价
 
-- **活跃维护**：最近 6 个月内有持续的功能更新和依赖库升级
-- **ONNX Runtime 依赖频繁升级**：最近的提交主要集中在升级第三方 ONNX Runtime 和 DirectML 库版本，表明 Epic 在积极跟进上游更新
-- **Beta 状态**：`.uplugin` 中 `IsBetaVersion=true` 且 `EnabledByDefault=false`，说明此插件仍处于 Beta 阶段
-- **跨平台支持**：仅支持 Win64、Linux、LinuxArm64、Mac，DirectML GPU 加速仅限 Windows
-- **推荐使用**：作为 NNE 的主要推理后端之一，适合需要在 UE 中运行 ONNX 模型的场景。但需要注意其 Beta 状态，API 可能在后续版本中发生变化
+-   **活跃维护**：该插件仍在积极维护中。最近一次提交（2026-04-21）是关键依赖（ONNX Runtime, DirectML）的版本升级，这表明团队在持续跟进上游更新以获取性能改进和新特性。
+-   **Beta 状态**：插件标记为 `IsBetaVersion=true` 且默认未启用（`EnabledByDefault=false`），这表明它可能还未达到完全稳定的生产就绪状态，API 或行为在未来版本中可能会有变动。
+-   **平台限制**：核心的 GPU (DirectML) 推理和 RDG 集成功能仅限于 Windows 平台。
+-   **推荐使用**：**推荐在 Windows 平台上进行机器学习相关的 UE5 项目开发时使用**。对于 CPU 推理需求，它是跨平台（Win64, Linux, Mac）的可靠选择。由于其 Beta 状态，建议在生产环境中充分测试，并关注版本更新日志。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNERuntimeORT)
-- [官方文档](https://dev.epicgames.com/community/learning/courses/e7w/unreal-engine-neural-network-engine-nne)
-- [NNE 主插件源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNE)
-- [支持论坛](https://forums.unrealengine.com/t/course-neural-network-engine-nne/1162628)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNERuntimeORT)
+-   [官方文档](https://dev.epicgames.com/community/learning/courses/e7w/unreal-engine-neural-network-engine-nne)
+-   [支持论坛](https://forums.unrealengine.com/t/course-neural-network-engine-nne/1162628)

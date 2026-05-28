@@ -4,263 +4,164 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | Metasounds 实验性扩展 |
+| 中文名 | 实验性元声音 |
 | 分类 | Audio |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（MetaSound 节点资产、示例配置） |
+| 包含内容 | ✅ 有（蓝图资产） |
 | 模块 | `AudioExperimentalRuntime` (Runtime), `MetasoundExperimentalRuntime` (Runtime), `MetasoundExperimentalEngineRuntime` (Runtime), `MetasoundExperimentalEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-04-22 |
-| 年龄标签 | 🆕（约 0 年） |
+| 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetasoundExperimental) | |
 
 ## 用途
 
-本插件是 MetaSound 系统的实验性扩展，核心功能是引入 **CAT（Channel Agnostic Type，通道无关类型）** 音频处理框架。
-
-传统 MetaSound 节点在设计时就锁定了通道格式（如 Mono、Stereo、5.1），这导致同一套 MetaSound 图无法灵活适配不同的输出通道配置。CAT 系统通过抽象通道布局，让 MetaSound 图在运行时动态地进行通道格式转换、混合和声像处理，无需预先知道具体的通道数量和布局。
-
-具体解决的问题：
-- **跨格式音频处理**：同一个 MetaSound 图可以在 Mono 输出设备和 7.1 环绕声设备上无缝运行
-- **动态通道转换**：在图内部实时进行格式转换（如 Stereo→5.1），支持上混/下混策略配置
-- **多输入混合**：将不同通道格式的音频输入混合为统一格式输出
-- **声像控制**：基于方位角的 CAT 声像处理，支持等功率和线性两种映射方法
-
-该插件从 Epic 内部的 NotForLicensees 目录迁出，属于开发中的新特性，尚未稳定。
+这个插件是 MetaSound 系统的实验性扩展，用于在正式发布前测试新的音频功能。其核心是引入了**通道无关类型 (Channel Agnostic Types, CAT)** 系统。传统的 MetaSound 节点通常需要明确指定音频通道格式（如 Mono, Stereo），而 CAT 允许节点在运行时动态处理不同通道格式的音频数据，使得构建自适应多通道音频图成为可能。插件包含了用于 CAT 格式转换、混合、声像平移等功能的实验性节点，并提供了示例节点供开发者参考。
 
 ## 使用场景
 
-- 你需要构建一个 **通用音频处理图**，希望它同时适配耳机（Stereo）和家庭影院（7.1）→ 用 CAT 节点替代固定格式节点
-- 你需要在 MetaSound 图中 **动态混合多个不同通道格式的音频源** → 用 CatMixer 节点
-- 你需要在图中 **临时转换通道格式** 后再进行其他处理 → 用 CatCasting 节点
-- 你需要将通道无关的音频 **声像分配到特定的空间布局**（如 Stereo 或 Quad）→ 用 CatPanner 节点
-- 你正在为 MetaSound 开发新的 **可配置自定义节点**，需要参考示例 → 查看 ExampleNode 配置模板
+- 你的 MetaSound 图需要处理来自不同源（可能是单声道或立体声）的音频信号，并希望图能自动适配输出通道格式。
+- 你正在尝试构建一个更灵活、可重用的音频处理逻辑，不希望为每种可能的通道配置都创建单独的节点或分支。
+- 你想提前体验和测试 MetaSound 团队正在开发的新节点功能。
 
 ## 蓝图用法
 
-本插件的节点主要通过 MetaSound 编辑器中的节点面板访问，不直接暴露为常规蓝图节点。以下是节点配置层面的可用属性和选项。
+该插件主要通过其提供的实验性 MetaSound 节点在编辑器中使用。这些节点带有可配置的属性，通常通过节点细节面板进行设置。
 
-### 核心配置选项
+### 核心配置类与节点
 
-#### 格式选择辅助类
-
-| 方法 | 说明 | 所在类 |
+| 配置结构 | 说明 | 关键可配置属性 |
 |---|---|---|
-| `GetCastingOptions` | 获取所有可用的 CAT 格式选项 | `UMetasoundCatCastingOptionsHelper` |
-| `GetCastingOptions_NoAbstract` | 获取非抽象格式选项（排除声场、高阶Ambisonics） | `UMetasoundCatCastingOptionsHelper` |
-| `GetCastingOptions_DiscreteOnly` | 仅离散格式（兼容 Mixer 的格式） | `UMetasoundCatCastingOptionsHelper` |
-| `GetCastingOptions_AudioMixerOnly` | 仅标准 AudioMixer 格式：Mono、Stereo、Quad、5.1、7.1 | `UMetasoundCatCastingOptionsHelper` |
-| `GetAzimuthalChannelOptions` | 获取方位角离散通道选项 | `UMetasoundCatAzimuthalChannelOptionsHelper` |
+| `FMetaSoundCatCastingNodeConfiguration` | **CAT 格式转换节点**的配置。用于将输入的 CAT 信号转换为目标格式。 | `ToType` (目标格式), `TranscodeMethod` (转换方法), `MixMethod` (混音方法) |
+| `FMetaSoundCatMixingNodeConfiguration` | **CAT 混音器节点**的配置。用于混合多个 CAT 输入信号。 | `FormatChoosingMethod` (输出格式选择策略), `NumInputs` (输入数量), `CatCastingMethod` |
+| `FMetaSoundCatPannerNodeConfiguration` | **CAT 声像平移节点**的配置。用于将 CAT 信号平移到指定的方位角离散通道格式。 | `PanToType` (目标通道格式), `PanningMethod` (平移算法) |
+| `FMetaSoundExperimentalExampleNodeConfiguration` | **示例节点**的配置，展示了动态接口和自定义操作器数据的基本用法。 | `String`, `NumInputs`, `NumOutputs` |
 
-#### CatCasting 节点配置
+### 使用示例（蓝图描述）
 
-在 MetaSound 编辑器中放置 CatCasting 节点后，可配置：
-
-| 属性 | 类型 | 说明 |
-|---|---|---|
-| ToType | FName | 目标输出格式（如 Mono、Stereo2Dot0） |
-| TranscodeMethod | EMetasoundCatCastingMethod | 转码方法：ChannelDrop（丢弃通道）或 MixUpOrDown（上下混） |
-| MixMethod | EMetasoundChannelMapMonoUpmixMethod | 上混方法（仅 MixUpOrDown 时可用）：Linear、EqualPower、FullVolume |
-
-#### CatMixer 节点配置
-
-| 属性 | 类型 | 说明 |
-|---|---|---|
-| FormatChoosingMethod | EMetasoundMixerFormatChoosingMethod | 输出格式决策：HighestInput / LowestInput / MetasoundOutput / Custom |
-| CatCastingMethod | EMetasoundCatCastingMethod | 转码方法 |
-| ChannelMapMonoUpmixMethod | EMetasoundChannelMapMonoUpmixMethod | 上混方法 |
-| CustomMixFormat | FName | 自定义混合格式（仅 Custom 时可用） |
-| NumInputs | int32 | 输入数量（1-100） |
-
-#### CatPanner 节点配置
-
-| 属性 | 类型 | 说明 |
-|---|---|---|
-| PanToType | FName | 目标输出通道类型（仅方位角离散格式） |
-| PanningMethod | ECatPannerMethod | 声像算法：EqualPower（等功率）或 Linear（线性） |
-
-### 使用示例（MetaSound 编辑器）
-
-**场景：创建一个自适应通道格式的音频输出图**
-
-1. 在 MetaSound 编辑器中创建新图
-2. 添加 **CatMixer** 节点，设置 `FormatChoosingMethod` 为 `MetasoundOutput`（自动匹配输出设备格式）
-3. 连接多个不同格式的音频输入到 CatMixer 的输入端
-4. 如需最终转换，在 CatMixer 输出后连接 **CatCasting** 节点，指定目标格式
-
-**场景：立体声声像控制**
-
-1. 添加 **CatPanner** 节点
-2. 设置 `PanToType` 为 `Cat:Stereo2Dot0`
-3. 设置 `PanningMethod` 为 `EqualPower`
-4. 连接 CAT 音频输入和方位角控制信号
+1.  **启用插件**：在编辑器中的“插件”面板里找到 “Metasounds Experimental” 并启用它，然后重启编辑器。
+2.  **查找实验性节点**：在 MetaSound 编辑器中右键点击搜索节点，你将能找到如 “CAT Casting”、“CAT Mixer”、“CAT Panner” 等实验性节点。
+3.  **配置节点**：将节点添加到图表后，在节点细节面板中可以找到其专属的配置属性。例如，对于 “CAT Casting” 节点，你可以设置 `ToType` 为 “Stereo2Dot0” 或 “Mono”。
+4.  **连接使用**：将这些节点像标准 MetaSound 节点一样连接到你的音频图中。它们能够接收和输出 `FChannelAgnosticType` 类型的数据，实现通道自适应处理。
 
 ## C++ 用法
+
+这些实验性功能主要用于 MetaSound 编辑器和运行时内部，作为其他节点的实现基础。直接的用户 C++ 使用场景较少，主要涉及理解和扩展 CAT 系统。
 
 ### 头文件引入
 
 ```cpp
-// CAT 核心类型
-#include "MetasoundFormatAgnosticType.h"
-
-// CatCasting 节点
+// 包含 CAT 类型转换节点的定义，了解 FCatCastingOperator
 #include "MetasoundCatCastingNode.h"
 
-// CatPanner 节点
-#include "MetasoundCatPannerNode.h"
-
-// 示例节点配置
-#include "MetasoundExampleNodeConfiguration.h"
+// 包含 CAT 类型定义
+#include "MetasoundFormatAgnosticType.h"
 ```
 
 ### 基本用法
 
-**使用方位角工具函数**（来自 `MetasoundCatPannerNode.h`）：
+插件中的节点是作为 MetaSound 运算符 (`IOperator`) 实现的。`FCatCastingOperator` 是 CAT 格式转换节点的核心实现。
 
 ```cpp
-#include "MetasoundCatPannerNode.h"
-
-// 将归一化方位角（0.0-1.0）转换为角度（0-360）
-float NormalizedAzimuth = 0.25f;  // 表示 90° 方向
-float Degrees = Metasound::NormalizedAzimuthToDegrees(NormalizedAzimuth);
-// Degrees = 90.0f
-```
-
-**自定义节点配置结构**（参考 `FMetaSoundExperimentalExampleNodeConfiguration`）：
-
-```cpp
-// 来源: Public/MetasoundExampleNodeConfiguration.h
-// 自定义配置需要继承 FMetaSoundFrontendNodeConfiguration
-struct FMyCustomNodeConfiguration : public FMetaSoundFrontendNodeConfiguration
+// 来源: Private/MetasoundCatCastingNode.h
+// 这个类实现了 CAT 信号的转换逻辑
+class FCatCastingOperator final : public TExecutableOperator<FCatCastingOperator>
 {
-    GENERATED_BODY()
-
-    UPROPERTY(EditAnywhere, Category = General)
-    FString MySetting;
-
-    // 重写此方法以动态生成节点接口
-    virtual TInstancedStruct<FMetasoundFrontendClassInterface> 
-        OverrideDefaultInterface(const FMetasoundFrontendClass& InNodeClass) const override;
-
-    // 重写此方法以传递运行时数据到 Operator
-    virtual TSharedPtr<const Metasound::IOperatorData> 
-        GetOperatorData() const override;
+public:
+    // 构造函数，接收构建参数、输入CAT数据、操作器数据和具体名称
+    FCatCastingOperator(const FBuildOperatorParams& InParams, FChannelAgnosticTypeReadRef&& InInputCat, const CatCastingPrivate::FCatCastingOperatorData& InData, const FName InConcreteName);
+    
+    // ... 其他成员 ...
+    
+    // 核心执行函数，在此执行实际的通道转换
+    void Execute();
 };
 ```
 
 ### 进阶用法
 
-**创建自定义 Operator 并使用 TNodeFacade**（参考 `FCatCastingOperator`）：
-
-```cpp
-// 来源: Private/MetasoundCatCastingNode.h
-namespace Metasound
-{
-    // 自定义 Operator 需要继承 TExecutableOperator
-    class FMyOperator final : public TExecutableOperator<FMyOperator>
-    {
-    public:
-        FMyOperator(const FBuildOperatorParams& InParams, /* 其他参数 */);
-        
-        // 定义节点接口（输入/输出端口）
-        static FVertexInterface GetInterface(/* 参数 */);
-        
-        // 工厂方法，由框架调用以创建 Operator 实例
-        static TUniquePtr<IOperator> CreateOperator(
-            const FBuildOperatorParams& InParams, 
-            FBuildResults& OutResults
-        );
-
-        // 绑定输入数据引用
-        virtual void BindInputs(FInputVertexInterfaceData& InOutVertexData) override;
-        
-        // 绑定输出数据引用
-        virtual void BindOutputs(FOutputVertexInterfaceData& InOutVertexData) override;
-
-        // 重置状态
-        void Reset(const FResetParams& InParams);
-
-        // 每帧执行的核心逻辑
-        void Execute();
-    
-        // 节点元数据
-        static FNodeClassMetadata GetNodeInfo();
-    };
-
-    // 使用 TNodeFacade 将 Operator 包装为可注册的节点类
-    using FMyNode = TNodeFacade<FMyOperator>;
-}
-```
-
-**使用 TOperatorData 传递配置到 Operator**（参考 `FWidgetExampleOperatorData`）：
-
-```cpp
-// 来源: Public/MetasoundExampleNodeConfiguration.h
-namespace Metasound::Experimental
-{
-    // 自定义 OperatorData 用于从配置传递数据到 Operator
-    class FMyOperatorData : public TOperatorData<FMyOperatorData>
-    {
-    public:
-        static const FLazyName OperatorDataTypeName;
-
-        FMyOperatorData(const float& InFloat)
-            : MyFloat(InFloat)
-        {
-        }
-
-        float MyFloat;
-    };
-}
-```
+要创建一个新的、可配置的 CAT 节点，你需要：
+1.  定义一个继承自 `FMetaSoundFrontendNodeConfiguration` 的 USTRUCT，添加所需的 UPROPERTY 配置属性。
+2.  实现 `OverrideDefaultInterface` 方法来根据配置动态生成节点的接口。
+3.  实现 `GetOperatorData` 方法，将配置数据打包传递给实际的运算符。
+4.  创建对应的运算符类，继承自 `TExecutableOperator`，并在其中实现具体的音频处理逻辑。
+可参考 `FMetaSoundCatCastingNodeConfiguration` 和 `FCatCastingOperator` 的实现模式。
 
 ## Demo 示例
 
-**最小 CAT 方位角工具使用示例**：
+以下是一个极简的示例，展示如何通过配置实例化并执行一个 CAT 格式转换操作。请注意，这通常在 MetaSound 图编译的内部流程中发生，以下代码用于演示原理。
 
 ```cpp
-// MyCatHelper.h
+// MyCatDemoOperator.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MetasoundCatPannerNode.h"
+#include "MetasoundCatCastingNode.h"
 
-class FMyCatHelper
+class FMyCatDemoOperator
 {
 public:
-    // 将归一化方位角列表转换为角度
-    static TArray<float> ConvertNormalizedAzimuths(const TArray<float>& InNormalizedAzimuths)
-    {
-        TArray<float> Results;
-        Results.Reserve(InNormalizedAzimuths.Num());
-        for (float NormAz : InNormalizedAzimuths)
-        {
-            Results.Add(Metasound::NormalizedAzimuthToDegrees(NormAz));
-        }
-        return Results;
-    }
+    static void RunDemo();
 };
 ```
 
 ```cpp
-// MyCatHelper.cpp
-#include "MyCatHelper.h"
+// MyCatDemoOperator.cpp
+#include "MyCatDemoOperator.h"
+#include "MetasoundParamDriver.h" // 用于创建参数
 
-// 使用示例：
-// TArray<float> Azimuths = { 0.0f, 0.25f, 0.5f, 0.75f };
-// TArray<float> Degrees = FMyCatHelper::ConvertNormalizedAzimuths(Azimuths);
-// 结果: { 0.0f, 90.0f, 180.0f, 270.0f }
+void FMyCatDemoOperator::RunDemo()
+{
+    using namespace Metasound;
+
+    // 1. 创建模拟的节点构建参数 (实际中由 MetaSound 图编译器提供)
+    FBuildOperatorParams Params;
+    // ... 初始化 Params，包括 Settings, Inputs, Outputs 等 ...
+
+    // 2. 创建一个模拟的输入 CAT 数据 (例如，一个单声道信号)
+    // FChannelAgnosticType 输入数据通常由上游节点提供
+    FChannelAgnosticType MonoSignalData;
+    // ... 填充 MonoSignalData ...
+
+    // 3. 准备转换节点的配置 (对应节点细节面板中的设置)
+    CatCastingPrivate::FCatCastingOperatorData OperatorData;
+    OperatorData.ToFormatName = TEXT("Stereo2Dot0"); // 目标：立体声
+    OperatorData.TranscodeMethod = Audio::EChannelTranscodeMethod::MixUpOrDown;
+    OperatorData.MixMethod = Audio::EChannelMapMonoUpmixMethod::EqualPower;
+
+    // 4. 创建转换运算符实例
+    // 注意：实际使用中，FCatCastingOperator 的创建由工厂函数 CreateOperator 管理
+    auto Operator = MakeUnique<FCatCastingOperator>(
+        Params,
+        MakeDataReadReference<FChannelAgnosticType>(MonoSignalData), // 模拟输入引用
+        OperatorData,
+        TEXT("DemoCastingNode") // 节点名称
+    );
+
+    // 5. 绑定输入输出 (在完整图中由图编译器完成)
+    FInputVertexInterfaceData InputData;
+    InputData.AddOrGetWriteReference<FChannelAgnosticType>(FName("From"), MonoSignalData);
+    Operator->BindInputs(InputData);
+
+    FOutputVertexInterfaceData OutputData;
+    Operator->BindOutputs(OutputData);
+
+    // 6. 执行转换
+    Operator->Execute();
+
+    // 7. 获取输出 (输出应为立体声信号)
+    // auto OutputRef = OutputData.GetWriteReference<FChannelAgnosticType>(FName("To"));
+    // ... 处理 OutputRef 中的立体声数据 ...
+}
 ```
 
 ## 模块依赖
 
-本插件的 Build.cs 仅声明了 `CoreUObject` 依赖，但作为 MetaSound 的实验性扩展，实际使用时需要：
+要使用此插件提供的功能，你的项目需要依赖 `Metasound` 插件。
 
 | 模块 | 用途 |
 |---|---|
-| `Metasound` | MetaSound 核心框架（插件级硬依赖） |
-| `MetasoundFrontend` | MetaSound 前端节点配置和接口定义 |
-| `AudioMixer` | 底层音频混合器，CAT 格式转换依赖其通道映射能力 |
+| `Metasound` | MetaSound 核心插件，提供了音频图表运行时和编辑器基础，是本实验插件的必需前提。 |
 
 ## 维护状态
 
@@ -268,23 +169,25 @@ public:
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `e4fa3490` | Adds the experimental MetaSound Channel Agnostic Types (CAT) Wave | 添加 CAT 波形节点支持 |
-| 2026-05-13 | `f91eb8fe` | Resolved merge conflict with FSoundWaveData api deprecation fixup. | 修复 FSoundWaveData API 废弃相关的合并冲突 |
-| 2026-05-12 | `ca21145e` | [CAT] Multiply node | 添加 CAT 乘法节点 |
-| 2026-05-12 | `2940bc45` | [CAT] Ladder Filter node | 添加 CAT 梯形滤波器节点 |
-| 2026-04-17 | `f1f7082c` | Unshelved from pending changelist '52759261' | 从待提交变更集中恢复 |
+| 2026-05-13 | `e4fa3490` | Adds the experimental MetaSound Channel Agnostic Types (CAT) Wave | 添加了实验性的 MetaSound 通道无关类型 (CAT) 波形资产支持。 |
+| 2026-05-13 | `f91eb8fe` | Resolved merge conflict with FSoundWaveData api deprecation fixup. | 解决了与 FSoundWaveData API 弃用修复相关的合并冲突。 |
+| 2026-05-12 | `ca21145e` | [CAT] Multiply node | 添加了 CAT 乘法节点。 |
+| 2026-05-12 | `2940bc45` | [CAT] Ladder Filter node | 添加了 CAT 梯形滤波器节点。 |
+| 2026-04-17 | `f1f7082c` | Unshelved from pending changelist '52759261': | 从待定更改列表中恢复。 |
 
 ### 维护评价
 
-- **活跃程度**：🟢 **高度活跃** — 创建不到一个月，已有密集的功能提交
-- **开发方向**：正在快速扩展 CAT 节点库（Wave、Multiply、Ladder Filter 等新节点）
-- **稳定性**：⚠️ **不稳定** — 标记为实验性（IsExperimentalVersion=true），默认不启用，API 随时可能变化
-- **来源**：从内部 NotForLicensees 目录迁出（CL 41822709），属于 Epic 内部开发中的前沿功能
-- **依赖风险**：底层 FSoundWaveData API 已有废弃标记，合并冲突说明该插件与引擎其他部分的改动频繁交叉
+该插件由 Epic Games 的 MetaSound 团队维护，正处于 **非常活跃的开发期**。从近期提交记录可以看出，团队正在密集地为通道无关类型 (CAT) 系统添加新功能节点（如 Wave, Multiply, Ladder Filter）。
 
-**建议**：仅用于学习 MetaSound 节点扩展开发的模式和了解未来方向，**不建议用于生产项目**。CAT 框架设计理念先进，但 API 尚未稳定，等待其合并到主 MetaSound 插件后再正式采用。
+**需要注意**：
+1.  **实验性**：插件明确标记为 `IsExperimentalVersion=true` 且 `EnabledByDefault=false`，表明其 API 和功能未来可能发生重大变更，不建议在生产项目中依赖。
+2.  **依赖性**：它依赖于核心的 `Metasound` 插件。
+3.  **功能定位**：主要服务于 MetaSound 图表编辑器，提供新的节点类型，而非提供大量可供外部代码直接调用的运行时 API。
+
+**结论**：这是一个前沿的、积极开发的实验性插件，适合希望提前了解 MetaSound 未来发展（特别是通道无关类型系统）的开发者或在安全的测试环境中试用。不建议将其用于稳定发布的项目。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/MetasoundExperimental)
-- [MetaSound 主插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/Metasound)
+- 官方文档：暂无
+- 测试用例：在当前提供的路径中未发现专用测试用例目录。

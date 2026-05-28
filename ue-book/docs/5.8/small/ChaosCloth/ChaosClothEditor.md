@@ -4,183 +4,87 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | Chaos 布料 |
+| 中文名 | 混沌布料 |
 | 分类 | Physics |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
 | 模块 | `ChaosCloth` (Runtime), `ChaosClothEditor` (Editor) |
 | 实验性 | 否 |
 | 创建时间 | 2024-03-22 |
-| 年龄标签 | 🆕（约 2 年） |
+| 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosCloth) | |
 
 ## 用途
 
-Chaos Cloth 插件为 Unreal Engine 5 提供了基于 Chaos 物理引擎的布料模拟系统。它负责处理布料（如服装、旗帜、窗帘等）的物理计算和渲染，为角色或物体提供动态、逼真的布料效果。该插件将原先分散的布料模拟功能整合到 Chaos 物理框架下，取代了旧的布料方案。
+ChaosCloth 是 Unreal Engine 中用于高级衣物和布料物理模拟的核心插件，基于 Chaos 物理系统。它的存在是为了提供高性能、高保真的布料模拟解决方案，取代或补充旧有的布料系统。该插件不仅包含运行时模拟引擎，还整合了专门的编辑器工具，方便美术和开发者在编辑器内对布料资产进行调试、预览和参数调整。
+
+**核心功能**：
+1.  **运行时模拟**：负责在游戏运行时计算角色衣物、旗帜、窗帘等布料对象的物理运动。
+2.  **编辑器集成**：提供了在 Skeletal Mesh Editor（骨骼网格体编辑器）中预览和调试布料模拟的扩展工具。
+3.  **模块化架构**：将运行时模拟逻辑 (`ChaosCloth`) 和编辑器支持 (`ChaosClothEditor`) 分离，便于维护和按需加载。
 
 ## 使用场景
 
-- **角色服装模拟**：为游戏角色创建逼真的飘动裙摆、披风、斗篷等动态衣物。
-- **环境物体**：模拟旗帜、窗帘、桌布等场景中布料的物理运动。
-- **过场动画**：在电影级过场中实现复杂的布料交互效果。
-- **需要高性能物理模拟的项目**：当项目深度集成 Chaos 物理引擎并需要布料模拟时，Chaos Cloth 是官方推荐方案。
+-   **角色服装模拟**：为 RPG、MMO 或任何带角色的 3D 游戏制作动态飘动的斗篷、披风、裙摆。
+-   **环境布料**：模拟游戏场景中飘动的旗帜、窗帘、帐篷等环境物体。
+-   **高品质过场动画**：在电影级品质的过场动画中，制作衣物与角色骨骼动画结合的真实感运动。
+-   **物理驱动的玩法**：利用布料物理创造基于物理的玩法元素，例如在风中飞舞的线索或可撕扯的织物。
 
 ## 蓝图用法
 
-该插件主要通过编辑器自定义和扩展来工作，直接暴露给蓝图的节点相对较少。其核心功能通常通过`UChaosClothComponent`（属于`ClothComponent`模块，非本插件提供）和编辑器内的属性面板来使用。
-
-### 核心属性与自定义
-
-在布料资产编辑器的属性面板中，带权重图的属性（如风力影响、刚度等）会使用由 `FChaosClothWeightedValueCustomization` 自定义的界面，允许同时编辑一个基础数值和一个可选的权重贴图，以实现精细控制。
-
-| 功能 | 说明 | 所在类 |
-|---|---|---|
-| 权重图属性自定义 | 为同时拥有数值和权重图的布料属性提供统一的编辑界面 | `FChaosClothWeightedValueCustomization` |
-
-### 编辑器视图扩展
-
-`FSimulationEditorExtender` 为布料模拟的编辑器预览窗口添加了调试可视化选项。
-
-| 节点/选项 | 说明 | 所在类 |
-|---|---|---|
-| 视图菜单扩展 | 在布料资产编辑器的“Show”菜单中添加 Chaos 布料专用的调试显示选项 | `FSimulationEditorExtender` |
-| 调试绘制 | 在编辑器视口中绘制布料模拟的线框、碰撞体等调试信息 | `FSimulationEditorExtender` |
+此插件主要通过编辑器界面进行配置和调试，不直接提供可蓝图化的函数节点。其核心使用流程是在 **Skeletal Mesh Editor** 中为骨骼网格体（Skeletal Mesh）的 Cloth 数据资产配置模拟参数，并通过 `FSimulationEditorExtender` 提供的可视化工具进行预览。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "ChaosSimulationEditorExtender.h" // 用于编辑器扩展
-#include "ChaosClothWeightedValueCustomization.h" // 用于自定义属性自定义
+// 若需扩展编辑器功能
+#include "ChaosClothEditorModule.h"
+#include "ChaosSimulationEditorExtender.h"
 ```
 
-### 基本用法 (编辑器扩展)
+### 基本用法（编辑器模块注册）
 
-`FSimulationEditorExtender` 是主要的可编程接口，用于向布料资产编辑器注入自定义的调试可视化和菜单选项。通常，你无需直接创建此对象，模块在启动时会自动注册它。
-
+该插件的编辑器模块负责注册其编辑器扩展功能。
 ```cpp
-// 源自 ChaosClothEditor/Private/ChaosClothEditorModule.cpp
-// 模块启动时注册扩展器
+// 文件路径：Engine/Plugins/ChaosCloth/Source/ChaosClothEditor/Private/ChaosClothEditorModule.cpp
 void FChaosClothEditorModule::StartupModule()
 {
-    // ... 其他初始化代码 ...
-    ChaosEditorExtender = Chaos::FSimulationEditorExtender();
-    // 将扩展器注册到 Persona（角色编辑器）系统中
-    IModularFeatures::Get().RegisterModularFeature(ISimulationEditorExtender::GetModularFeatureName(), &ChaosEditorExtender);
-}
-
-// 模块关闭时注销
-void FChaosClothEditorModule::ShutdownModule()
-{
-    IModularFeatures::Get().UnregisterModularFeature(ISimulationEditorExtender::GetModularFeatureName(), &ChaosEditorExtender);
+    // ChaosEditorExtender 是一个 FSimulationEditorExtender 实例
+    // 它在启动时自动将自身注册为布料模拟的编辑器扩展
 }
 ```
 
-### 进阶用法 (自定义属性界面)
+### 进阶用法（扩展编辑器可视化）
 
-`FChaosClothWeightedValueCustomization` 继承自 `FMathStructCustomization`，用于自定义编辑器中特定结构体属性的显示方式，使其能在同一行同时显示数值滑块和权重贴图入口。
-
+`FSimulationEditorExtender` 允许开发者扩展布料模拟在编辑器视口中的调试绘制功能。
 ```cpp
-// 通常，在编辑器模块中为特定的 UStruct 注册属性自定义。
-// 这是框架行为，较少需要手动调用，但了解其接口有助于扩展或调试。
-// 示例：在某个 PropertyModule 注册代码中可能看到类似逻辑
-FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>(TEXT("PropertyEditor"));
-// 为某个结构体（如 FChaosClothWeightedValue）注册自定义
-PropertyModule.RegisterCustomPropertyTypeLayout(
-    FChaosClothWeightedValue::StaticStruct()->GetFName(),
-    FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FChaosClothWeightedValueCustomization::MakeInstance)
-);
+// 文件路径：Engine/Plugins/ChaosCloth/Source/ChaosClothEditor/Public/ChaosSimulationEditorExtender.h
+// FSimulationEditorExtender 继承自 ISimulationEditorExtender
+// 它重写了关键的虚函数来为 Chaos Cloth 提供定制的调试视图
+virtual void DebugDrawSimulation(const IClothingSimulationInterface* Simulation, USkeletalMeshComponent* OwnerComponent, FPrimitiveDrawInterface* PDI) override;
+virtual void DebugDrawSimulationTexts(const IClothingSimulationInterface* Simulation, USkeletalMeshComponent* OwnerComponent, FCanvas* Canvas, const FSceneView* SceneView) override;
 ```
 
 ## Demo 示例
 
-以下示例展示了如何在自定义的编辑器模块中监听并响应 Chaos 布料模拟的调试绘制事件。
+ChaosCloth 插件本身不提供独立的可运行项目 Demo。其使用方式是作为 Unreal Engine 布料系统的后端。一个最小的“使用”示例如下：
 
-```cpp
-// MyClothDebugModule.h
-#pragma once
-
-#include "CoreMinimal.h"
-#include "Modules/ModuleManager.h"
-#include "ISimulationEditorExtender.h"
-
-class FMyClothDebugModule : public IModuleInterface
-{
-public:
-    virtual void StartupModule() override;
-    virtual void ShutdownModule() override;
-
-private:
-    // 实现一个自定义的编辑器扩展器
-    class FMySimulationEditorExtender : public ISimulationEditorExtender
-    {
-    public:
-        virtual UClass* GetSupportedSimulationFactoryClass() override;
-        virtual void DebugDrawSimulation(const IClothingSimulationInterface* Simulation, USkeletalMeshComponent* OwnerComponent, FPrimitiveDrawInterface* PDI) override;
-        // ... 其他接口实现 ...
-    };
-
-    FMySimulationEditorExtender MyExtender;
-};
-```
-
-```cpp
-// MyClothDebugModule.cpp
-#include "MyClothDebugModule.h"
-#include "ChaosClothEditor/ChaosSimulationEditorExtender.h" // 包含接口定义
-#include "ClothSimData.h" // 可能包含 IClothingSimulationInterface 等
-
-#define LOCTEXT_NAMESPACE "MyClothDebugModule"
-
-void FMyClothDebugModule::StartupModule()
-{
-    // 注册我们自定义的扩展器
-    IModularFeatures::Get().RegisterModularFeature(ISimulationEditorExtender::GetModularFeatureName(), &MyExtender);
-}
-
-void FMyClothDebugModule::ShutdownModule()
-{
-    IModularFeatures::Get().UnregisterModularFeature(ISimulationEditorExtender::GetModularFeatureName(), &MyExtender);
-}
-
-UClass* FMyClothDebugModule::FMySimulationEditorExtender::GetSupportedSimulationFactoryClass()
-{
-    // 声明此扩展器支持 Chaos 布料模拟工厂
-    return UChaosClothSimulationFactory::StaticClass(); // 假设的类名，需根据实际代码确认
-}
-
-void FMyClothDebugModule::FMySimulationEditorExtender::DebugDrawSimulation(
-    const IClothingSimulationInterface* Simulation,
-    USkeletalMeshComponent* OwnerComponent,
-    FPrimitiveDrawInterface* PDI)
-{
-    // 在这里添加自定义的调试绘制代码
-    // 例如，绘制布料的边或特定碰撞体
-    if (Simulation && PDI)
-    {
-        // 获取布料数据并绘制...
-        PDI->DrawLine(FVector::ZeroVector, FVector(100, 0, 0), FLinearColor::Red, SDPG_Foreground);
-    }
-}
-
-#undef LOCTEXT_NAMESPACE
-
-IMPLEMENT_MODULE(FMyClothDebugModule, MyClothDebug)
-```
+1.  **启用插件**：在项目的 `.uproject` 文件或编辑器插件设置中确保 “Chaos Cloth” 插件已启用。
+2.  **创建 Cloth 数据**：在 Skeletal Mesh Editor 中，为一个骨骼网格体添加 Cloth 属性并绘制权重图。
+3.  **配置模拟**：在 Cloth 属性面板（由 ChaosCloth 运行时模块驱动）中设置风力、重力、碰撞等参数。
+4.  **预览**：在编辑器的 Persona 预览场景中，利用 `FSimulationEditorExtender` 提供的菜单选项来开启各种调试可视化（如碰撞体、速度场等）。
 
 ## 模块依赖
 
-根据插件元数据及模块用途，要使用此插件，你的项目或模块可能需要依赖以下模块：
+从 `.uplugin` 的 `Plugins` 依赖和模块类型推断，使用此插件或进行开发时，主要依赖以下非标准模块：
 
 | 模块 | 用途 |
 |---|---|
-| `ChaosCloth` | Chaos 布料模拟的核心运行时逻辑。 |
-| `ClothComponent` | 提供 `UChaosClothComponent` 等具体组件，是实际在 Actor 上使用的部分。 |
-| `Chaos` | Chaos 物理引擎核心。 |
-| `ClothSimulationData` | 定义布料模拟数据的接口和结构。 |
-| `ChaosCaching` | 用于缓存和播放布料模拟数据，插件元数据中明确依赖。 |
-| `Buoyancy`, `Water` | 用于布料与水体交互的模拟，插件元数据中明确依赖。 |
+| `ChaosCaching` | 用于物理状态缓存，可能服务于布料模拟的某些高级特性或回放。 |
+| `Buoyancy` | 提供流体浮力模拟，可能与布料在水面的行为有关。 |
+| `Water` | 提供水体系统，与 `Buoyancy` 模块配合，支持布料与水体的交互。 |
 
 ## 维护状态
 
@@ -188,18 +92,18 @@ IMPLEMENT_MODULE(FMyClothDebugModule, MyClothDebug)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下双精度常量转换为浮点数时产生的编译警告。 |
-| 2026-04-23 | `85f3a947` | [Chaos Cloth] Clamp SolverLOD in ChaosClothingSimulationSolver to prevent out of bound crash when so... | 钳制求解器LOD级别以防止越界崩溃，提升了稳定性。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复在严格浮点模式下双精度常量截断为浮点数产生的编译警告。 |
+| 2026-04-23 | `85f3a947` | [Chaos Cloth] Clamp SolverLOD in ChaosClothingSimulationSolver to prevent out of bound crash when so | 钳制求解器LOD级别，防止因LOD层级过低导致的越界崩溃。 |
 | 2026-04-21 | `9322be91` | Minor cloth debug draw improvements: | 对布料调试绘制进行了小幅改进。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移到 UE_LOGF。 |
-| 2026-03-31 | `0d36bcd0` | Chaos Cloth : | Chaos 布料相关的提交（信息不完整，但表明仍在活动）。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移至 UE_LOGF。 |
+| 2026-03-31 | `0d36bcd0` | Chaos Cloth : | （信息不完整，推测为与 Chaos Cloth 相关的提交） |
 
 ### 维护评价
 
-**活跃维护**。该插件于 2024 年 3 月从 Experimental 状态迁移至正式版本，并持续得到维护。从 Git 历史看，在 2026 年 3 月至 5 月期间仍有至少 5 次提交，内容包括错误修复、稳定性提升和代码现代化改进（如日志宏迁移）。这表明 Epic Games 的开发团队仍在积极维护此核心物理模拟模块，没有废弃迹象。作为 UE5 Chaos 物理生态系统的关键组成部分，它被推荐用于需要布料模拟的新项目。
+-   **活跃度**：插件创建于 2024 年初，是一个较新的系统。从 Git 历史看，在 2026 年仍有多次实质性更新，包括 Bug 修复、稳定性提升（防止崩溃）和代码现代化（日志宏迁移），表明处于 **活跃维护** 状态。
+-   **稳定性**：最近的提交专注于修复崩溃和警告，显示团队正在积极提升系统的稳定性。
+-   **推荐度**：作为 Epic 官方主推的 Chaos 物理系统的一部分，且在持续迭代中，**强烈推荐** 新项目和需要高质量布料模拟的项目使用此插件，而非旧的布料系统。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosCloth)
-- 官方文档链接未提供（`DocsURL` 为空）。
-- 测试用例链接未在提供的信息中明确给出，通常位于 `Engine/Plugins/ChaosCloth/Tests/` 或 `Engine/Tests/` 目录下。
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosCloth)

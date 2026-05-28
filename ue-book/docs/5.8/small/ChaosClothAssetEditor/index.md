@@ -4,52 +4,53 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 布料资产编辑器（已废弃） |
+| 中文名 | 混沌布料资产编辑器（已废弃） |
 | 分类 | Physics |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（已废弃内容） |
-| 模块 | 无（纯内容插件） |
+| 包含内容 | ❌ 无 |
+| 模块 | 无（纯依赖插件） |
 | 实验性 | 否 |
 | 创建时间 | 2024-03-22 |
-| 年龄标签 | 🆕（约 2 年） |
+| 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetEditor) | |
 
 ## 用途
 
-这是一个**已废弃**的插件。其原始用途是为 UE5 的 Chaos 布料资产系统提供编辑器集成和工具。它现在已不再被推荐使用。
+这是一个**已被废弃的过渡性插件**，本身不包含任何源代码或功能模块。它的唯一作用是声明对两个替代插件的依赖，确保依赖旧名称的项目仍能正常加载：
 
-该插件在历史上曾作为一个聚合容器，将 `ChaosClothAssetEditorCore` 和 `ChaosClothAssetUsdDataflowNodes` 两个插件的功能模块整合在一起。后来，Epic Games 将这个“聚合”插件标记为废弃，并将其中的模块拆分到上述两个更专注于特定功能的独立插件中。因此，这个插件目前的存在价值主要是一个**向后兼容的占位符**和**功能迁移的导向标志**，其实际功能已完全由其依赖的两个插件承接。
+- **ChaosClothAssetEditorCore** — 布料资产编辑器的核心功能
+- **ChaosClothAssetUsdDataflowNodes** — 布料资产的 USD 数据流节点
 
-**核心要点**：如果你在项目中看到或需要使用此插件，应立即迁移到 `ChaosClothAssetEditorCore` 和 `ChaosClothAssetUsdDataflowNodes` 插件。
+原始的 `ChaosClothAssetEditor` 插件在 2026 年 1 月被拆分为三个独立插件（将 USD 相关代码分离出去），这个废弃插件作为向后兼容的占位符保留。
 
 ## 使用场景
 
-- 你的项目较老，最初使用 `ChaosClothAssetEditor` 插件进行布料物理模拟和资产创建，现在需要升级到最新版本。
-- 你正在清理项目插件列表，发现此插件被禁用或标记为废弃，并希望了解其替代方案。
-- **新项目**：**绝对不要使用此插件**，请直接使用 `ChaosClothAssetEditorCore` 和 `ChaosClothAssetUsdDataflowNodes`。
+- 你的项目之前依赖 `ChaosClothAssetEditor`，升级后需要保持兼容 → 该插件会自动拉取新的替代插件
+- **新项目不应使用此插件** → 直接启用 `ChaosClothAssetEditorCore` 和 `ChaosClothAssetUsdDataflowNodes`
 
 ## 蓝图用法
 
-由于此插件本身**没有模块（Modules 为空）**，它不提供任何可直接在蓝图中调用的函数或节点。所有蓝图相关的功能均由其依赖的 `ChaosClothAssetEditorCore` 和 `ChaosClothAssetUsdDataflowNodes` 插件提供。
+该插件无任何模块，不提供蓝图节点。所有功能请参阅替代插件的文档：
 
-请查阅上述两个插件的文档以获取蓝图用法。
+- `ChaosClothAssetEditorCore` — 布料资产编辑器核心
+- `ChaosClothAssetUsdDataflowNodes` — USD 数据流节点
 
 ## C++ 用法
 
-同样，由于此插件没有模块，它不包含任何 C++ API。如果你需要在 C++ 中操作布料资产，应该链接并使用 `ChaosClothAssetEditorCore` 或 `ChaosClothAssetUsdDataflowNodes` 插件的模块。
+该插件无任何 C++ 模块，不提供 API。如需在 C++ 中使用布料资产编辑器功能，请直接依赖替代插件对应的模块。
 
 ## Demo 示例
 
-不适用。此插件已废弃，且不包含代码模块。相关示例请参考 `ChaosClothAssetEditorCore` 和 `ChaosClothAssetUsdDataflowNodes` 插件。
+不适用。该插件不包含源代码。
 
 ## 模块依赖
 
-此插件本身没有代码模块，但它通过 `Plugins` 部分声明了对以下插件的硬性依赖。这意味着启用此插件会强制启用其依赖项。
+该插件无自身模块。它通过 `.uplugin` 的 `Plugins` 字段声明对以下插件的依赖：
 
 | 插件 | 用途 |
 |---|---|
-| `ChaosClothAssetEditorCore` | 提供 Chaos 布料资产编辑器的核心功能、节点和资产类型。 |
-| `ChaosClothAssetUsdDataflowNodes` | 提供与 USD (Universal Scene Description) 数据流相关的布料资产处理节点。 |
+| `ChaosClothAssetEditorCore` | 布料资产编辑器核心功能（原 ChaosClothAssetEditor 的主体） |
+| `ChaosClothAssetUsdDataflowNodes` | 布料资产与 USD 格式互转的数据流节点 |
 
 ## 维护状态
 
@@ -57,19 +58,23 @@
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-21 | `600f5cce` | [Chaos Cloth Asset] Moved Cloth Asset modules out of beta. | 布料资产模块从 Beta 状态毕业，标志着相关系统趋于稳定。 |
-| 2026-01-27 | `4c7d09a3` | Chaos Cloth Asset - Split the ChaosClothEditor plugin into three plugins in order to move USD code o... | 将原 ChaosClothEditor 插件拆分为三个插件，以隔离 USD 相关代码，导致此插件被废弃。 |
-| 2026-01-26 | `ae188081` | Guard against crash and unexpected results in cloth remesh node | 修复了布料重网格节点中的崩溃和非预期结果问题。 |
-| 2026-01-26 | `306c3592` | Chaos Cloth Asset - Replaced lambda by existing LinearToSRGB function in the static mesh color space | 在静态网格颜色空间处理中用现有函数替换 lambda，进行代码重构。 |
-| 2026-01-26 | `d217d1d3` | Chaos Cloth Asset: ... | （摘要截断）这是将模块拆分出的那批提交之一。 |
+| 2026-04-21 | `600f5cce` | [Chaos Cloth Asset] Moved Cloth Asset modules out of beta. | 布料资产模块正式脱离 Beta 状态 |
+| 2026-01-27 | `4c7d09a3` | Chaos Cloth Asset - Split the ChaosClothEditor plugin into three plugins in order to move USD code o | 将编辑器插件拆分为三个插件，分离 USD 相关代码 |
+| 2026-01-26 | `ae188081` | Guard against crash and unexpected results in cloth remesh node | 修复布料重网格节点的崩溃和异常结果 |
+| 2026-01-26 | `306c3592` | Chaos Cloth Asset - Replaced lambda by existing LinearToSRGB function in the static mesh color space | 用已有的 LinearToSRGB 函数替换自定义 lambda |
+| 2026-01-26 | `d217d1d3` | Chaos Cloth Asset: | 布料资产相关改动（提交信息被截断） |
 
 ### 维护评价
 
-- **状态**：**已废弃 (Deprecated)**。该插件在 2026 年初被正式废弃，其功能被更现代的插件组合所取代。
-- **更新频率**：插件本身已停止更新。但其依赖的 `ChaosClothAssetEditorCore` 和 `ChaosClothAssetUsdDataflowNodes` 插件仍在**活跃维护**中（如2026年4月仍有更新），证明 Chaos 布料资产系统本身是持续发展的。
-- **推荐使用**：**不推荐**。这是一个历史遗留插件，用于保持旧项目的兼容性。对于新功能开发或新项目，请直接使用 `ChaosClothAssetEditorCore` 和 `ChaosClothAssetUsdDataflowNodes`。
-- **迁移建议**：应在项目设置中**禁用**此插件，并**启用**其依赖的两个新插件，以确保获得最新的功能、修复和性能优化。
+⚠️ **此插件已被废弃（Deprecated），不建议在任何项目中使用。**
+
+- 该插件在 2026 年 1 月拆分后即成为一个空壳过渡插件，仅用于向后兼容
+- 最近的更新（2026-04-21）是将替代插件标记为正式版，与本插件无直接关系
+- 所有实际功能已迁移至 `ChaosClothAssetEditorCore` 和 `ChaosClothAssetUsdDataflowNodes`
+- **迁移建议**：如果你的项目仍在引用此插件，请移除它，改为直接引用上述两个替代插件
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetEditor)
+- [ChaosClothAssetEditorCore 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetEditorCore)
+- [ChaosClothAssetUsdDataflowNodes 插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/ChaosClothAssetUsdDataflowNodes)

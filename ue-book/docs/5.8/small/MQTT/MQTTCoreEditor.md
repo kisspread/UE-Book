@@ -4,7 +4,7 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 消息队列遥测传输 |
+| 中文名 | MQTT 协议 |
 | 分类 | IOT |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
@@ -15,220 +15,192 @@
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Protocols/MQTT) | |
 
 ## 用途
-该插件为 Unreal Engine 提供了 MQTT 协议的客户端和 Broker（代理服务器）实现。MQTT 是一种轻量级的、基于发布/订阅模式的消息传输协议，专为物联网 (IoT)、移动应用和低带宽、高延迟或不可靠的网络环境设计。此插件使 UE5 项目能够与其他 MQTT 设备或服务进行通信，实现状态同步、数据上报、远程控制等功能。
+
+MQTT 是一种轻量级的 IoT（物联网）消息传输协议，采用发布/订阅模式在设备之间传递消息。本插件为 Unreal Engine 提供了内置的 MQTT Broker（代理服务器）和 Client（客户端）实现，使引擎能够直接接入 IoT 生态系统。
+
+该插件解决的核心问题是：让 UE5 应用程序能够无需外部依赖即可连接、订阅和发布 MQTT 消息，典型用途包括与 IoT 传感器、智能家居设备、工业控制器等进行实时双向通信。插件内部依赖 `JsonBlueprintUtilities` 进行 JSON 数据的序列化/反序列化，方便以结构化格式交换消息载荷。
+
+**注意**：此插件当前标记为**实验性**（`IsExperimentalVersion=true`）且**默认不启用**（`EnabledByDefault=false`），API 可能会在未来版本中发生变化。
 
 ## 使用场景
-- 你需要在游戏中实时接收来自 IoT 传感器（如温度、湿度、运动传感器）的数据。
-- 你正在开发一个智能家居或智能建筑模拟器，需要与真实的智能设备（如灯、空调）进行交互。
-- 你需要将游戏中的事件（如玩家操作、游戏状态变化）发布到 MQTT Broker，供其他应用（如仪表盘、监控系统）订阅和消费。
-- 你需要在多个 UE 应用实例之间，通过一个中心 Broker 进行轻量级的状态同步。
-- 你希望快速原型化或测试基于 MQTT 的通信逻辑。
+
+- 你正在开发一个数字孪生应用，需要实时读取工厂 IoT 传感器数据 → 使用 MQTT 客户端订阅传感器 Topic
+- 你需要在 UE5 场景中实时控制智能家居设备（灯光、温度等）→ 通过 MQTT 客户端发布控制指令
+- 你想要在 UE5 中构建一个内嵌的 MQTT Broker，让多个外部设备直接连接 → 使用 MQTT Broker 功能
+- 你需要将 UE5 中的模拟数据推送到 IoT 平台（如 AWS IoT、Azure IoT Hub）→ 通过 MQTT 发布消息
+- 你在做汽车 HMI 或工业 HMI 项目，设备间通信基于 MQTT 协议 → 直接集成本插件
 
 ## 蓝图用法
 
-### 核心节点
+由于本插件当前标记为实验性且提供的源码分析仅覆盖了 `MQTTCoreEditor`（编辑器辅助模块），核心运行时模块 `MQTTCore` 的详细蓝图 API 需要参阅源码中的 `Public/` 头文件。基于插件的整体架构，可预期的核心功能分组如下：
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `Create Client` | 创建并返回一个 MQTT 客户端实例。 | `UMQTTClient` |
-| `Connect` | 连接到指定的 MQTT Broker。 | `UMQTTClient` |
-| `Subscribe` | 订阅一个或多个主题，并设置回调函数来处理收到的消息。 | `UMQTTClient` |
-| `Publish` | 向指定主题发布一条消息。 | `UMQTTClient` |
-| `Unsubscribe` | 取消订阅一个或多个主题。 | `UMQTTClient` |
-| `Disconnect` | 断开与 Broker 的连接。 | `UMQTTClient` |
-| `On Message Received` | 当订阅的主题收到新消息时触发的回调委托。 | `UMQTTClient` |
+### 核心功能分组
+
+| 功能 | 说明 |
+|---|---|
+| **Broker 管理** | 启动、停止内嵌 MQTT Broker，配置监听端口和连接参数 |
+| **Client 连接** | 创建 MQTT 客户端实例，连接到外部 Broker（支持 TCP/TLS） |
+| **订阅与发布** | 订阅 Topic 并接收消息、向指定 Topic 发布消息 |
+| **消息处理** | 处理接收到的 MQTT 消息，支持 QoS 等级配置 |
+| **JSON 载荷** | 结合 JsonBlueprintUtilities 进行消息载荷的 JSON 序列化 |
+
+> **提示**：使用前需在项目的 `.uproject` 文件或编辑器插件设置中手动启用此插件（`EnabledByDefault=false`）。
 
 ### 使用示例（蓝图描述）
-1.  **创建并连接**：在蓝图中，使用 `Create Client` 节点创建一个客户端对象。然后，调用其 `Connect` 函数，填入 Broker 的地址（Host）和端口（Port）。可以为 `On Connected` 和 `On Connection Failure` 绑定事件以处理连接结果。
-2.  **订阅主题**：连接成功后，使用 `Subscribe` 函数，填入想要监听的主题字符串（如 `home/sensor/temperature`）。为 `On Message Received` 事件创建一个自定义事件，该事件会接收 `Payload`（负载数据）等参数。
-3.  **发布消息**：当需要发送数据时，使用 `Publish` 函数，填入目标主题和要发送的消息负载（通常是 JSON 格式的字符串）。
-4.  **断开连接**：在不再需要时，调用 `Disconnect` 函数。
+
+典型的蓝图工作流程：
+
+1. **创建客户端**：实例化 MQTT 客户端对象，配置 Broker 地址、端口、Client ID
+2. **连接 Broker**：调用连接函数，设置连接/断开的回调事件
+3. **订阅 Topic**：连接成功后，调用 Subscribe 并指定 Topic 字符串和 QoS 等级
+4. **接收消息**：在消息回调事件中处理收到的 Payload（可使用 JSON 工具解析）
+5. **发布消息**：调用 Publish 函数向指定 Topic 发送 Payload
+6. **断开连接**：不再需要时调用断开连接并释放资源
 
 ## C++ 用法
 
 ### 头文件引入
+
 ```cpp
-#include “MQTTCore.h”
+// MQTTCore 运行时模块
+#include "MQTTCore.h"
+
+// MQTTCoreEditor 编辑器模块（仅在编辑器环境下使用）
+#include "IMQTTCoreEditorModule.h"
 ```
 
 ### 基本用法
-基于典型的 MQTT 客户端使用模式。
+
+由于提供的源码分析主要覆盖了编辑器辅助模块，以下展示了编辑器模块的基本访问方式。MQTT 核心功能（Broker/Client API）位于 `MQTTCore` 运行时模块中，需参考该模块的 `Public/` 头文件获取完整 API。
 
 ```cpp
-// 假设在某个 Actor 或 Subsystem 中
-#include “MQTTClient.h” // 具体类名需根据源码确认
-
-void AMQTTExampleActor::BeginPlay()
+// 检查 MQTTCoreEditor 模块是否已加载
+if (FModuleManager::Get().IsModuleLoaded("MQTTCoreEditor"))
 {
-    Super::BeginPlay();
-
-    // 创建客户端实例
-    MQTTClient = NewObject<UMQTTClient>(this);
-
-    // 绑定连接状态回调
-    MQTTClient->OnConnected.AddDynamic(this, &AMQTTExampleActor::HandleConnected);
-    MQTTClient->OnConnectionError.AddDynamic(this, &AMQTTExampleActor::HandleConnectionError);
-
-    // 发起连接
-    MQTTClient->Connect(“broker.example.com”, 1883);
-}
-
-void AMQTTExampleActor::HandleConnected()
-{
-    UE_LOG(LogTemp, Log, TEXT(“MQTT 连接成功”));
-
-    // 订阅主题
-    MQTTClient->Subscribe(“game/player/status”);
-
-    // 绑定消息接收回调
-    MQTTClient->OnMessageReceived.AddDynamic(this, &AMQTTExampleActor::HandleMessage);
-}
-
-void AMQTTExampleActor::HandleMessage(const FString& Topic, const FString& Payload)
-{
-    UE_LOG(LogTemp, Log, TEXT(“收到来自 %s 的消息: %s”), *Topic, *Payload);
-    // 在这里解析 Payload（如 JSON）并执行游戏逻辑
+    IMQTTCoreEditorModuleInterface& EditorModule = 
+        FModuleManager::GetModuleChecked<IMQTTCoreEditorModuleInterface>("MQTTCoreEditor");
+    // 使用编辑器扩展功能...
 }
 ```
 
-### 进阶用法
-结合 JSON 序列化/反序列化处理结构化数据。
+### 模块日志
+
+插件内部定义了专用日志类别，可用于调试：
 
 ```cpp
-// 发送一个包含 JSON 数据的消息
-void AMQTTExampleActor::SendPlayerUpdate(int32 Score, const FVector& Location)
-{
-    // 创建 JSON 对象
-    TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
-    JsonObject->SetNumberField(TEXT(“score”), Score);
-    JsonObject->SetStringField(TEXT(“location”), Location.ToString());
+// 使用 MQTT 日志类别（定义在 MQTTCore 模块中）
+UE_LOG(LogMQTT, Log, TEXT("MQTT connection established to broker"));
 
-    // 序列化为字符串
-    FString OutputString;
-    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
-    FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
-
-    // 发布消息
-    if (MQTTClient && MQTTClient->IsConnected())
-    {
-        MQTTClient->Publish(“game/player/update”, OutputString);
-    }
-}
+// MQTTCoreEditor 模块的日志类别
+UE_LOG(LogMQTTCoreEditor, Verbose, TEXT("Editor module initialized"));
 ```
+
+### 统计计数器
+
+`MQTTCoreEditor` 模块注册了统计组，可在控制台中通过 `stat MQTTCoreEditor` 查看编辑器侧性能数据。
 
 ## Demo 示例
 
+以下是一个最小化的 MQTT 客户端使用示例（基于插件架构推断）：
+
+### MyMQTTActor.h
+
 ```cpp
-// MQTTDemoActor.h
 #pragma once
 
-#include “CoreMinimal.h”
-#include “GameFramework/Actor.h”
-#include “MQTTClient.h”
-#include “MQTTDemoActor.generated.h”
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "MyMQTTActor.generated.h"
 
 UCLASS()
-class AMQTTDemoActor : public AActor
+class AMyMQTTActor : public AActor
 {
     GENERATED_BODY()
 
 public:
-    AMQTTDemoActor();
+    AMyMQTTActor();
 
-protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-    UFUNCTION()
-    void OnMQTTConnected();
+    /** 连接到 MQTT Broker */
+    UFUNCTION(BlueprintCallable, Category = "MQTT")
+    void ConnectToBroker(const FString& Host, int32 Port, const FString& ClientId);
 
-    UFUNCTION()
-    void OnMQTTMessageReceived(const FString& Topic, const FString& Payload);
+    /** 发布消息到指定 Topic */
+    UFUNCTION(BlueprintCallable, Category = "MQTT")
+    void PublishMessage(const FString& Topic, const FString& Payload);
 
-    UFUNCTION()
-    void OnMQTTConnectionError(const FString& ErrorMessage);
+    /** 订阅指定 Topic */
+    UFUNCTION(BlueprintCallable, Category = "MQTT")
+    void SubscribeTopic(const FString& Topic);
 
 private:
-    UPROPERTY()
-    TObjectPtr<UMQTTClient> MQTTClient;
+    /** Broker 连接地址 */
+    UPROPERTY(EditAnywhere, Category = "MQTT")
+    FString BrokerHost = TEXT("localhost");
 
-    void PublishHeartbeat();
+    /** Broker 端口 */
+    UPROPERTY(EditAnywhere, Category = "MQTT")
+    int32 BrokerPort = 1883;
 };
 ```
 
-```cpp
-// MQTTDemoActor.cpp
-#include “MQTTDemoActor.h”
-#include “JsonObjectConverter.h”
+### MyMQTTActor.cpp
 
-AMQTTDemoActor::AMQTTDemoActor()
+```cpp
+#include "MyMQTTActor.h"
+#include "MQTTCore.h" // MQTTCore 运行时模块
+
+AMyMQTTActor::AMyMQTTActor()
 {
     PrimaryActorTick.bCanEverTick = false;
 }
 
-void AMQTTDemoActor::BeginPlay()
+void AMyMQTTActor::BeginPlay()
 {
     Super::BeginPlay();
 
-    // 创建并配置客户端
-    MQTTClient = NewObject<UMQTTClient>(this);
-    MQTTClient->OnConnected.AddDynamic(this, &AMQTTDemoActor::OnMQTTConnected);
-    MQTTClient->OnConnectionError.AddDynamic(this, &AMQTTDemoActor::OnMQTTConnectionError);
-    MQTTClient->OnMessageReceived.AddDynamic(this, &AMQTTDemoActor::OnMQTTMessageReceived);
-
-    // 连接到公共测试 Broker
-    MQTTClient->Connect(“test.mosquitto.org”, 1883);
+    // 自动连接到配置的 Broker
+    ConnectToBroker(BrokerHost, BrokerPort, TEXT("UE5_Client_01"));
 }
 
-void AMQTTDemoActor::OnMQTTConnected()
+void AMyMQTTActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    UE_LOG(LogTemp, Warning, TEXT(“MQTTDemo: 连接成功！”));
-
-    // 订阅一个测试主题
-    MQTTClient->Subscribe(“ue5/mqtt/demo/request”);
-
-    // 发布一条初始消息
-    PublishHeartbeat();
-}
-
-void AMQTTDemoActor::OnMQTTMessageReceived(const FString& Topic, const FString& Payload)
-{
-    UE_LOG(LogTemp, Warning, TEXT(“MQTTDemo 收到消息 [%s]: %s”), *Topic, *Payload);
-    // 可以在这里回复一个 pong
-    MQTTClient->Publish(“ue5/mqtt/demo/response”, “Pong from UE5！”);
-}
-
-void AMQTTDemoActor::OnMQTTConnectionError(const FString& ErrorMessage)
-{
-    UE_LOG(LogTemp, Error, TEXT(“MQTTDemo 连接失败: %s”), *ErrorMessage);
-}
-
-void AMQTTDemoActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    if (MQTTClient && MQTTClient->IsConnected())
-    {
-        MQTTClient->Disconnect();
-    }
+    // 清理 MQTT 连接
     Super::EndPlay(EndPlayReason);
 }
 
-void AMQTTDemoActor::PublishHeartbeat()
+void AMyMQTTActor::ConnectToBroker(const FString& Host, int32 Port, const FString& ClientId)
 {
-    TSharedPtr<FJsonObject> Heartbeat = MakeShareable(new FJsonObject);
-    Heartbeat->SetStringField(TEXT(“actor”), GetName());
-    Heartbeat->SetNumberField(TEXT(“timestamp”), FPlatformTime::Seconds());
+    // 根据 MQTTCore 模块提供的 API 建立连接
+    // 具体 API 参见 MQTTCore/Public/ 下的头文件
+    UE_LOG(LogTemp, Log, TEXT("Connecting to MQTT Broker at %s:%d with ID: %s"), 
+        *Host, Port, *ClientId);
+}
 
-    FString HeartbeatJson;
-    FJsonObjectConverter::JsonObjectToUStruct(Heartbeat.ToSharedRef(), &HeartbeatJson);
-    MQTTClient->Publish(“ue5/mqtt/demo/heartbeat”, HeartbeatJson);
+void AMyMQTTActor::PublishMessage(const FString& Topic, const FString& Payload)
+{
+    UE_LOG(LogTemp, Log, TEXT("Publishing to [%s]: %s"), *Topic, *Payload);
+}
+
+void AMyMQTTActor::SubscribeTopic(const FString& Topic)
+{
+    UE_LOG(LogTemp, Log, TEXT("Subscribing to topic: %s"), *Topic);
 }
 ```
 
+> **注意**：以上示例为基于插件架构的框架代码，具体的 Broker/Client API 调用方法需要参考 `MQTTCore` 模块 `Public/` 目录下的实际头文件声明。
+
 ## 模块依赖
+
+从 Build.cs 分析，本插件具有以下依赖关系：
 
 | 模块 | 用途 |
 |---|---|
-| `JsonBlueprintUtilities` | 提供 JSON 与 UObject/UStruct 之间的序列化与反序列化功能，便于处理 MQTT 消息负载。 |
+| `JsonBlueprintUtilities` | JSON 数据处理（插件级依赖，用于 MQTT 消息载荷的序列化） |
+
+无特殊模块依赖（仅标准 Core/Engine/Slate 等）。
 
 ## 维护状态
 
@@ -236,15 +208,26 @@ void AMQTTDemoActor::PublishHeartbeat()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移到 UE_LOGF 格式，属于维护性改进。 |
-| 2026-01-30 | `52a87df5` | Fixed a crash that occurred when receiving MQTT packets with payloads >=128 bytes due to incorrect va | 修复了接收大于等于128字节负载的MQTT数据包时，因缓冲区计算错误导致的崩溃。 |
-| 2025-06-11 | `afdf8d75` | Replace some usages of FORCEINLINE with inline in Online modules. | 将部分 `FORCEINLINE` 替换为 `inline`，代码风格统一。 |
-| 2025-05-09 | `163c5cc4` | [MQTT] Removed platform restrictions | 移除了 MQTT 模块的平台编译限制，使其能在所有平台上构建。 |
-| 2025-02-13 | `ec3fb596` | Replaced `IsValid(this)` under the rest of Engine/. | 替换了 `IsValid(this)` 的检查方式，属于引擎范围内的代码重构。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移至新的 UE_LOGF 格式 |
+| 2026-01-30 | `52a87df5` | Fixed a crash that occurred when receiving MQTT packets with payloads =128 bytes due to incorrect va | 修复接收 128 字节载荷的 MQTT 数据包时的崩溃问题 |
+| 2025-06-11 | `afdf8d75` | Replace some usages of FORCEINLINE with inline in Online modules. | 将部分 FORCEINLINE 替换为 inline，代码规范调整 |
+| 2025-05-09 | `163c5cc4` | [MQTT] Removed platform restrictions | 移除平台限制，扩展跨平台支持 |
+| 2025-02-13 | `ec3fb596` | Replaced `IsValid(this)` under the rest of Engine/. | 替换 IsValid(this) 调用，引擎范围代码规范修复 |
 
 ### 维护评价
-该插件创建于 2022 年，约 4 年历史。从 git 历史看，**2025-2026 年期间仍有功能性更新和关键 bug 修复**（如修复大数据包崩溃），表明它目前仍处于**维护中**状态。插件被标记为 `IsExperimentalVersion` 且 `EnabledByDefault=false`，说明它尚未达到正式发布状态，API 和功能可能变动。它解决了 UE5 原生不支持的物联网通信需求，对于有明确 MQTT 通信需求的 IoT 项目或原型开发是**推荐使用**的，但需注意其“实验性”标签，并做好未来接口变更的准备。
+
+- **创建时间**：2022 年 8 月，约 4 年前由 Epic Games 工程师引入（关联 Jira UE-155100）
+- **更新频率**：持续有更新，最近一次为 2026 年 4 月，维护频率约为每 2-3 个月一次
+- **维护状态**：**活跃维护中** — 近一年内有实质性 bug 修复（128 字节载荷崩溃修复）和平台扩展
+- **实验性状态**：该插件仍标记为 `IsExperimentalVersion=true` 且 `EnabledByDefault=false`，表明 Epic 尚未将其视为稳定 API
+- **已知风险**：
+  - 实验性标记意味着 API 可能在未来版本中发生变化或被移除
+  - 默认不启用，需要手动在项目设置中开启
+  - 最近修复的 128 字节载荷崩溃说明底层协议实现仍在迭代中
+
+**推荐程度**：⚠️ 谨慎使用。适合 IoT 原型开发和内部项目，但不建议在需要长期稳定性的生产环境中依赖此插件。若用于生产环境，建议密切关注引擎版本更新中的变更日志。
 
 ## 相关链接
+
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Protocols/MQTT)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Protocols/MQTT/Tests) (路径推断)
+- [官方文档]()（暂无）

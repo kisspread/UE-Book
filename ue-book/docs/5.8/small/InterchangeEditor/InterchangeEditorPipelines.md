@@ -1,156 +1,213 @@
 # Interchange Editor
 
-> The Interchange Editor plugin exposes the Interchange import framework and pipelines to Unreal Editor.（照抄，不翻译）
+> The Interchange Editor plugin exposes the Interchange import framework and pipelines to Unreal Editor.
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 交互编辑器 |
+| 中文名 | 编辑器管道 |
 | 分类 | Importers |
 | 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
 | 模块 | `InterchangeEditor` (Runtime), `InterchangeEditorPipelines` (Runtime), `InterchangeEditorUtilities` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | unknown |
-| 年龄标签 | 🆕（约 0 年） |
+| 创建时间 | 2019-02-14 |
+| 年龄标签 | 👴 老古董（约 7 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Editor) | |
 
 ## 用途
 
-Interchange Editor 插件为 Unreal Editor 提供了一个用于配置和管理资产导入过程的图形化界面和框架。它本身不处理具体的文件格式解析，而是作为核心 Interchange 框架的编辑器端扩展，解决了以下问题：
+InterchangeEditorPipelines 模块是 Interchange 导入框架的编辑器端扩展，其核心功能是将 Interchange 的翻译器（Translator）和管道（Pipeline）系统暴露给 Unreal Editor。它主要解决在编辑器中配置和管理资产导入流程的问题，为用户和开发者提供了定制化导入规则的工具。
 
-1.  **统一配置界面**：为所有使用 Interchange 框架的资产导入提供一个统一的对话框 (`SInterchangePipelineConfigurationDialog`)，用于在导入前预览、配置和调整导入管线（Pipelines）。
-2.  **可视化检查**：提供图检查器 (`SInterchangeGraphInspectorWindow`)，允许开发者直观地查看和调试由翻译器（Translator）生成的中间数据图（BaseNodeContainer）。
-3.  **管线定制**：支持创建和使用蓝图（Blueprint）或 Python 脚本编写的自定义导入管线，实现高度可定制的导入逻辑。
-4.  **资产分类管理**：通过“资产卡”(`SInterchangeAssetCard`) 的UI，让用户在导入前可以按资产类型（如静态网格、骨骼网格）选择性启用或禁用导入。
-
-该插件是连接用户操作（导入文件）与底层 Interchange 导入引擎的桥梁，是编辑器工作流的核心组成部分。
+具体来说，它提供了：
+1.  **导入配置 UI**：在导入资产时弹出管道配置对话框，允许用户选择、配置和预览导入管道。
+2.  **资产定义**：为 Interchange 蓝图管道和 Python 管道资产提供编辑器内的显示、创建和编辑支持。
+3.  **细节面板自定义**：为 `UInterchangePipelineBase` 和 `UInterchangeBaseNode` 等核心对象提供高度定制的“细节”（Details）面板，以便直观地查看和编辑其复杂属性。
+4.  **特殊管道实现**：包含如 `UInterchangeCardsPipeline`（用于控制导入资产类型的开关）和 `UInterchangeGraphInspectorPipeline`（用于场景图检查）等编辑器专用管道。
 
 ## 使用场景
 
--   **从外部格式（如 FBX、glTF）导入资产时**，在弹出的导入对话框中看到的所有管线选项、冲突信息和预览功能，都由 Interchange Editor 插件提供。
--   **需要为特定项目定制资产导入流程时**，可以通过此插件创建自定义的蓝图管线（`UInterchangeEditorBlueprintPipelineBase`），并在导入对话框中选择它们。
--   **开发或调试新的 Interchange 翻译器或管线时**，可以使用图检查器窗口来查看翻译器输出的节点树和属性，以便定位问题。
--   **在编辑器脚本或工具中集成导入功能时**，可以通过此插件提供的接口（如 `UInterchangePipelineConfigurationGeneric`）来调用配置对话框。
+-   你正在开发一个需要支持自定义资产格式导入的游戏或工具，并希望在编辑器中提供一个图形化界面让用户调整导入参数。
+-   你需要为团队制定一套标准化的资产导入流程，并希望将这套流程打包成可配置的导入管道预设。
+-   你使用 Interchange 框架从 FBX、glTF 等格式导入资产，并希望更精细地控制特定翻译器（如 glTF 或 MaterialX）的导入行为。
+-   你需要调试或检查 Interchange 导入过程中生成的节点图和属性，使用 `SInterchangeGraphInspectorWindow` 来可视化。
 
 ## 蓝图用法
 
-此插件的大部分功能通过编辑器UI暴露，核心节点和类主要用于C++扩展。通过蓝图可用的主要是其暴露的配置对话框。
+本模块主要提供编辑器端的管道创建基类和配置逻辑，蓝图用法侧重于创建编辑器专用的蓝图管道。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `ShowPipelineDialog_Internal` | 显示导入管线配置对话框的底层实现。通常通过更高层的 `UInterchangePipelineConfigurationGeneric` 类间接使用。 | `UInterchangePipelineConfigurationGeneric` |
+| 创建“编辑器蓝图管道” | 创建一个仅在编辑器中有效的 Interchange 蓝图管道资产。 | `UInterchangeEditorBlueprintPipelineBaseFactory` |
+| 创建“蓝图管道” | 创建一个标准的 Interchange 蓝图管道资产。 | `UInterchangeBlueprintPipelineBaseFactory` |
+| 创建“Python 管道” | 创建一个 Interchange Python 管道资产。 | `UInterchangePythonPipelineAssetFactory` |
 
 ### 使用示例（蓝图描述）
 
-在蓝图中，通常不直接调用导入对话框，而是通过 `UInterchangeEditorSubsystem` 或直接在内容浏览器中拖拽文件触发。自定义管线可以通过创建基于 `UInterchangeEditorBlueprintPipelineBase` 的蓝图资产来实现，然后在导入对话框的“管线堆栈”下拉菜单中选择。
+1.  在内容浏览器中右键，选择“创建高级资产” -> “Interchange” -> “Interchange Blueprint”。
+2.  在弹出的子菜单中，可以选择创建“Interchange Blueprint Pipeline”或“Interchange Editor Blueprint Pipeline”。
+3.  创建后，打开该蓝图资产，在“我的蓝图”面板中覆盖 `Execute Pipeline` 事件图，即可开始用蓝图节点实现自定义的导入逻辑。
 
 ## C++ 用法
+
+由于该模块主要为编辑器提供 UI 和流程，其 C++ 接口多用于扩展或深度定制编辑器行为。
 
 ### 头文件引入
 
 ```cpp
-// 引入自定义管线基类
-#include “InterchangeEditorBlueprintPipelineBase.h”
-// 引入管线配置对话框类
-#include “PipelineConfiguration/InterchangePipelineConfigurationGeneric.h”
+#include "InterchangeEditorPipelinesModule.h"
+// 对于需要使用特定管道的场景
+#include "InterchangeCardsPipeline.h"
+#include "InterchangeGraphInspectorPipeline.h"
 ```
 
 ### 基本用法
 
-创建一个自定义的编辑器专用导入管线。
+以下示例展示了如何通过模块接口检查模块是否可用。
+(基于 `IInterchangeEditorPipelinesModule` 接口设计)
 
 ```cpp
-// MyPipeline.h
-#pragma once
-
-#include “InterchangeEditorBlueprintPipelineBase.h”
-#include “MyPipeline.generated.h”
-
-UCLASS()
-class UMyCustomImportPipeline : public UInterchangeEditorPipelineBase
+// 检查InterchangeEditorPipelines模块是否已加载
+if (IInterchangeEditorPipelinesModule::IsAvailable())
 {
-	GENERATED_BODY()
-
-public:
-	// 定义可配置的导入属性
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = “Import Settings”)
-	bool bImportMaterial = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = “Import Settings”)
-	float UniformScale = 1.0f;
-
-protected:
-	// 重写执行管线的核心函数
-	virtual void ExecutePipeline(UInterchangeBaseNodeContainer* BaseNodeContainer, const TArray<UInterchangeSourceData*>& SourceDatas, const FString& ContentBasePath) override
-	{
-		// 在此处添加自定义的节点处理逻辑
-		// 例如：遍历所有网格节点，应用缩放
-		// BaseNodeContainer->GetNodes(…);
-	}
-};
+    // 获取模块单例并执行操作
+    IInterchangeEditorPipelinesModule& EditorPipelinesModule = IInterchangeEditorPipelinesModule::Get();
+    // ... 可以调用模块提供的额外接口（如果未来扩展）
+}
 ```
 
 ### 进阶用法
 
-通过代码直接触发带自定义参数的导入配置对话框。
+要创建自定义的编辑器专用管道，应继承自 `UInterchangeEditorPipelineBase`。
+(基于 `UInterchangeEditorPipelineBase` 类定义)
 
 ```cpp
-// 假设我们有一个源数据和一个默认的管线堆栈
-UInterchangeSourceData* SourceData = ...; // 获取或创建源数据
-TArray<FInterchangeStackInfo> PipelineStacks = ...; // 准备管线堆栈
+// MyEditorPipeline.h
+#pragma once
+#include "InterchangeEditorBlueprintPipelineBase.h"
+#include "MyEditorPipeline.generated.h"
 
-// 创建配置参数
-FPipelineConfigurationDialogParams DialogParams;
-DialogParams.SourceData = SourceData;
-DialogParams.PipelineStacks = PipelineStacks;
-DialogParams.bReimport = false;
-
-// 获取配置器并显示对话框
-if (UInterchangePipelineConfigurationGeneric* Configuration = UInterchangePipelineConfigurationGeneric::StaticClass()->GetDefaultObject<UInterchangePipelineConfigurationGeneric>())
+UCLASS(BlueprintType, MinimalAPI)
+class UMyEditorPipeline : public UInterchangeEditorPipelineBase
 {
-	EInterchangePipelineConfigurationDialogResult Result = Configuration->ShowPipelineDialog(DialogParams);
-	if (Result == EInterchangePipelineConfigurationDialogResult::Import)
-	{
-		// 用户点击了导入，使用 DialogParams.OutPipelines 中的管线继续导入流程
-	}
+    GENERATED_BODY()
+
+public:
+    // 覆盖执行函数，实现自定义的编辑器端导入处理逻辑
+    virtual void ExecutePipeline(UInterchangeBaseNodeContainer* BaseNodeContainer, const TArray<UInterchangeSourceData*>& SourceDatas, const FString& ContentBasePath) override;
+
+    // 此管道不支持重新导入
+    virtual bool SupportReimport() const override { return false; }
+
+    // 此管道必须在游戏线程执行
+    virtual bool CanExecuteOnAnyThread(EInterchangePipelineTask PipelineTask) override
+    {
+        return false;
+    }
+};
+```
+
+```cpp
+// MyEditorPipeline.cpp
+#include "MyEditorPipeline.h"
+
+void UMyEditorPipeline::ExecutePipeline(UInterchangeBaseNodeContainer* BaseNodeContainer, const TArray<UInterchangeSourceData*>& SourceDatas, const FString& ContentBasePath)
+{
+    Super::ExecutePipeline(BaseNodeContainer, SourceDatas, ContentBasePath);
+
+    // 在这里添加你的自定义编辑器端导入逻辑
+    // 例如，基于节点类型过滤或修改节点属性
 }
 ```
-*(注：`ShowPipelineDialog` 为 `UInterchangePipelineConfigurationBase` 的公共接口，此处用 `Generic` 类的实例调用)*
 
 ## Demo 示例
 
-一个最小的自定义编辑器管线，它会在导入时记录一条日志。
+一个最小的自定义编辑器专用管道示例。
 
+**头文件 (MyCustomEditorPipeline.h)**
 ```cpp
-// SimpleEditorPipeline.h
 #pragma once
 
-#include “InterchangeEditorBlueprintPipelineBase.h”
-#include “SimpleEditorPipeline.generated.h”
+#include "CoreMinimal.h"
+#include "InterchangeEditorBlueprintPipelineBase.h"
+#include "MyCustomEditorPipeline.generated.h"
 
-UCLASS()
-class USimpleEditorPipeline : public UInterchangeEditorPipelineBase
+/**
+ * 一个自定义的编辑器专用管道示例，仅在编辑器导入资产时执行。
+ */
+UCLASS(BlueprintType, MinimalAPI)
+class UMyCustomEditorPipeline : public UInterchangeEditorPipelineBase
 {
 	GENERATED_BODY()
 
+public:
+	UMyCustomEditorPipeline();
+
 protected:
-	virtual void ExecutePipeline(UInterchangeBaseNodeContainer* BaseNodeContainer, const TArray<UInterchangeSourceData*>& SourceDatas, const FString& ContentBasePath) override
-	{
-		UE_LOG(LogTemp, Log, TEXT(“SimpleEditorPipeline: Executing with %d source datas.”), SourceDatas.Num());
-		// 这里可以调用父类默认行为，或完全自定义
-		Super::ExecutePipeline(BaseNodeContainer, SourceDatas, ContentBasePath);
-	}
+	/** 管道核心执行逻辑 */
+	virtual void ExecutePipeline(UInterchangeBaseNodeContainer* BaseNodeContainer, const TArray<UInterchangeSourceData*>& SourceDatas, const FString& ContentBasePath) override;
+
+public:
+	/** 自定义属性，可在细节面板中编辑 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom Settings")
+	bool bShouldApplyCustomRule = true;
+
+	/** 自定义属性，可在细节面板中编辑 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom Settings")
+	float CustomScaleFactor = 1.0f;
 };
+```
+
+**实现文件 (MyCustomEditorPipeline.cpp)**
+```cpp
+#include "MyCustomEditorPipeline.h"
+#include "InterchangeImportTest.h"
+
+UMyCustomEditorPipeline::UMyCustomEditorPipeline()
+{
+	// 设置管道的显示名称
+	FriendlyName = TEXT("我的自定义编辑器管道");
+}
+
+void UMyCustomEditorPipeline::ExecutePipeline(UInterchangeBaseNodeContainer* BaseNodeContainer, const TArray<UInterchangeSourceData*>& SourceDatas, const FString& ContentBasePath)
+{
+	// 首先调用父类的执行逻辑
+	Super::ExecutePipeline(BaseNodeContainer, SourceDatas, ContentBasePath);
+
+	if (!bShouldApplyCustomRule)
+	{
+		return;
+	}
+
+	// 示例：遍历所有节点，找到网格体节点并应用自定义缩放
+	TArray<UInterchangeBaseNode*> AllNodes;
+	BaseNodeContainer->GetAllNodes(AllNodes);
+
+	for (UInterchangeBaseNode* Node : AllNodes)
+	{
+		if (Node->GetTypeName() == UInterchangeMeshNode::StaticClass()->GetFName())
+		{
+			// 对网格体节点应用自定义缩放（仅为演示逻辑）
+			UE_LOG(LogInterchangeImportTest, Log, TEXT("Applying custom scale %f to mesh node: %s"), CustomScaleFactor, *Node->GetUniqueID());
+			// 实际应用需要修改节点属性，例如通过 Attribute 系统
+		}
+	}
+}
 ```
 
 ## 模块依赖
 
+从模块的 `.Build.cs` 文件分析，本模块主要依赖 Interchange 核心模块和标准的编辑器、资产系统模块。
+
 | 模块 | 用途 |
 |---|---|
-| `Interchange` | 核心的资产导入框架和中间数据表示（BaseNode, Translator等）。 |
-| `InterchangeCore` | 可能包含 `UInterchangePipelineBase` 等核心类。 |
+| `InterchangeCore` | Interchange 框架的核心运行时模块。 |
+| `InterchangeImport` | Interchange 导入功能和翻译器的核心实现。 |
+| `InterchangeExport` | (可能被依赖) Interchange 导出功能。 |
+| `AssetDefinition` | 提供 UAssetDefinition 相关功能，用于自定义资产在内容浏览器中的显示。 |
+
+*注：此插件的依赖绝大多数为 UE 核心模块（如 Core, Engine, Slate）和 Interchange 自身模块，无特殊第三方依赖。*
 
 ## 维护状态
 
@@ -158,19 +215,21 @@ protected:
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-12 | `099f7387` | [Interchange] Animation frame alignment and glTF translator frame aligner removed. | 移除了动画帧对齐和glTF翻译器的帧对齐器功能。 |
-| 2026-04-22 | `cc360b1e` | Add accessor to InterchangeEditorScriptLibrary that returns actors in a level instance without loading it. | 为脚本库添加了访问器，可在不加载关卡实例的情况下获取其中的Actor。 |
+| 2026-05-12 | `099f7387` | [Interchange] Animation frame alignment and glTF translator frame aligner removed. | 移除了动画帧对齐功能以及 glTF 翻译器的帧对齐器。 |
+| 2026-04-22 | `cc360b1e` | Add accessor to InterchangeEditorScriptLibrary that returns actors in a level instance without loading the level. | 为编辑器脚本库添加了一个访问器，用于在不加载关卡的情况下获取关卡实例中的 Actor。 |
 | 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移到 UE_LOGF。 |
-| 2026-04-13 | `05458c60` | [Interchange] Reworking Static and Skeletal Mesh import settings | 重构了静态网格和骨骼网格的导入设置。 |
+| 2026-04-13 | `05458c60` | [Interchange] Reworking Static and Skeletal Mesh import settings. | 重构静态和骨骼网格体的导入设置。 |
+| 2026-03-28 | `b7011d12` | [Interchange] Removing `bImportIfMaterialNotFound` from material pipeline. | 从材质管道中移除了 `bImportIfMaterialNotFound` 属性。 |
 
 ### 维护评价
 
-该插件是 UE5 Interchange 资产导入流程的核心编辑器组件，处于**活跃维护**状态。近期提交显示 Epic 正在持续对其进行优化和清理（如日志宏迁移、功能移除、设置重构），以确保其稳定性和与新框架的兼容性。
-
-由于其作为基础设施的角色，预计会跟随引擎长期维护。虽然近期没有增加颠覆性的新功能，但持续的维护表明它是健康且可靠的。**强烈推荐**在基于 Interchange 框架开发项目时使用此插件。
+-   **活跃维护**：插件在近 6 个月内有多次功能性更新（如重构导入设置、移除过时功能），表明仍在积极开发和维护中。
+-   **稳定**：作为 UE 官方资产导入框架（Interchange）的编辑器部分，它是引擎的核心功能之一，长期支持有保障。
+-   **演进中**：从 commit 历史看，API 和功能在不断调整（如移除动画帧对齐、修改材质管道），使用时需注意版本差异。
+-   **推荐使用**：对于需要自定义导入流程的项目，此模块是必须依赖和使用的标准工具，建议采用。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Editor)
-- [官方文档]() (无)
-- [测试用例]() (未提供路径)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Editor)
+-   [官方文档](https://docs.unrealengine.com/5.0/en-US/interchange-in-unreal-engine/) (Interchange 整体文档)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Interchange/Tests) (注意：Interchange 的测试用例通常位于独立的 `Tests` 插件目录下，与 Editor 插件同级)

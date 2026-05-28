@@ -1,341 +1,252 @@
 # Full Body IK
 
-> 
+> *(Description 字段为空，基于源码分析)* 全身逆运动学（Full Body IK）求解器，基于雅可比矩阵（Jacobian）方法实现多链多效应器逆运动学，集成 ControlRig 系统，用于角色动画的逆运动学求解。
 
 | 属性 | 值 |
 |---|---|
 | 中文名 | 全身逆运动学 |
 | 分类 | Other |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（ControlRig 节点资产） |
+| 包含内容 | ✅ 有（蓝图资产） |
 | 模块 | `FullBodyIK` (Runtime), `PBIK` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2020-09-24 |
-| 年龄标签 | 🆕（约 5 年） |
+| 年龄标签 | 👴 老古董（约 6 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/FullBodyIK) | |
 
 ## 用途
 
-FullBodyIK 是一个基于雅可比矩阵（Jacobian）方法的全身逆运动学求解器，集成于 ControlRig 框架中。它解决的核心问题是：**给定一个角色骨骼的根节点和多个末端执行器（End Effector）的目标位置/旋转，自动计算所有中间骨骼关节的旋转，使末端到达目标位置**。
+FullBodyIK 是一个基于**雅可比矩阵**（Jacobian Matrix）的全身逆运动学求解器插件。它解决的核心问题是：给定角色骨骼链的末端目标位置/旋转，自动计算所有中间关节的旋转，使末端到达目标。
 
-与简单的 TwoBoneIK（只处理单条链如手臂/腿）不同，FullBodyIK 可以同时求解**多条骨骼链共享同一根节点**的 IK 问题，适用于：
+该插件提供两大核心能力：
 
-- 全身接触地面的适配（不同地形高度）
-- 双手抓取物体时的全身协调
-- 交互式 IK（角色一只手扶墙，另一只手拿道具，同时保持平衡）
+1. **多链多效应器 IK 求解**：支持从单个根骨骼出发，同时求解多个末端效应器（如左右手、左右脚），适用于角色全身动画（如角色抓握、脚踩地面等场景）。
+2. **多种雅可比求解器变体**：内置支持位置目标、旋转目标、组合目标的多种求解器，支持 3DOF（三自由度）和四元数（Quaternion）两种工作模式，可在精度和性能之间灵活权衡。
 
-底层提供两种雅可比求解算法：
-1. **Jacobian Pseudo Inverse Damped Least Square (JPIDLS)** — 默认，精度更高但计算开销更大
-2. **Jacobian Transpose** — 更廉价，适合对性能敏感的场景
+插件深度集成 ControlRig 系统，作为 ControlRig 的自定义 RigUnit 使用，直接在动画蓝图的 ControlRig 图表中操作骨骼层级。
 
-> **注意**：此插件中的 `FRigUnit_FullbodyIK` 已在 UE 5.0 标记为 `Deprecated`，推荐使用 ControlRig 内置的更新版 FullBodyIK 节点。
+**注意**：`FRigUnit_FullbodyIK` 已在 UE 5.0 中标记为 `Deprecated`，官方已推荐使用 PBIK 模块（Physic Based IK）作为替代方案。
 
 ## 使用场景
 
-- 你需要让角色在不平整地面上自然地调整全身姿态 → 用 FullBodyIK
-- 你需要让角色双手同时抓握两个不同位置的物体 → 用 FullBodyIK 的多执行器支持
-- 你只需要简单的手臂/腿 IK → 不需要此插件，用 TwoBoneIK 即可
-- 你需要基于 ControlRig 的动画蓝图工作流 → 此插件提供对应的 RigUnit
+- 你需要角色双手同时抓握不同物体的全身 IK → 用 FullBodyIK 的多效应器设置
+- 你需要角色脚部精确踩在不平坦地形上 → 用位置效应器（Position Effector）约束脚部位置
+- 你需要角色转身时头部始终面向某个方向 → 用旋转效应器（Rotation Effector）约束头部朝向
+- 你需要在 ControlRig 图表中实现全身动画混合 → 用 `FRigUnit_FullbodyIK` 节点
+- 你需要对关节施加僵硬度约束（如肘部/膝盖不容易侧弯） → 用 `FFBIKConstraintOption` 配合极向量（Pole Vector）
 
 ## 蓝图用法
-
-FullBodyIK 通过 ControlRig 的 `FRigUnit_FullbodyIK` 节点在动画蓝图中使用。该节点不是标准蓝图节点，而是在 ControlRig 图表中使用的 RigUnit。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Fullbody IK` | 全身 IK 求解器节点（已废弃，5.0 后） | `FRigUnit_FullbodyIK` |
+| `Fullbody IK` | 全身 IK 求解主节点（ControlRig RigUnit） | `FRigUnit_FullbodyIK` |
 
-### 控制参数
+### 关键输入参数
 
-#### FSolverInput（求解器参数）
+`FRigUnit_FullbodyIK` 通过 ControlRig 图表暴露以下输入：
 
-| 属性 | 类型 | 默认值 | 说明 |
-|---|---|---|---|
-| `LinearMotionStrength` | float | 3.0 | 线性运动强度，影响末端执行器对骨骼链的拉力 |
-| `MinLinearMotionStrength` | float | 2.0 | 最小线性运动强度，用于沿链深度衰减 |
-| `AngularMotionStrength` | float | 3.0 | 角度运动强度 |
-| `MinAngularMotionStrength` | float | 2.0 | 最小角度运动强度 |
-| `DefaultTargetClamp` | float | 0.2 | 目标钳制缩放（0-0.7），越小越稳定但收敛越慢 |
-| `Precision` | float | 0.1 | 收敛精度阈值 |
-| `Damping` | float | 30.0 | 阻尼值，减少振荡但增加迭代次数 |
-| `MaxIterations` | int32 | 30 | 最大迭代次数（通常 4-16） |
-| `bUseJacobianTranspose` | bool | false | 使用更廉价的 Jacobian Transpose 算法 |
-
-#### FFBIKEndEffector（末端执行器）
-
-| 属性 | 类型 | 说明 |
+| 参数 | 类型 | 说明 |
 |---|---|---|
-| `Item` | FRigElementKey | 链末端骨骼名 |
-| `Position` | FVector | 目标世界位置 |
-| `PositionAlpha` | float | 位置影响力（0-1） |
-| `PositionDepth` | int32 | 位置影响沿链的深度 |
-| `Rotation` | FQuat | 目标旋转 |
-| `RotationAlpha` | float | 旋转影响力（0-1） |
-| `RotationDepth` | int32 | 旋转影响沿链的深度 |
-| `Pull` | float | 目标钳制缩放，防止奇异点 |
+| `Root` | `FRigElementKey` | 骨骼链的根骨骼 |
+| `Effectors` | `TArray<FFBIKEndEffector>` | 末端效应器列表，每个包含目标骨骼、位置/旋转目标、强度、深度 |
+| `Constraints` | `TArray<FFBIKConstraintOption>` | 约束配置列表，每个骨骼可设置僵硬度、角度限制、极向量 |
+| `SolverProperty` | `FSolverInput` | 求解器参数：迭代次数、阻尼、精度等 |
+| `MotionProperty` | `FMotionProcessInput` | 运动处理参数：是否强制旋转目标等 |
+| `bPropagateToChildren` | `bool` | 是否将变换传播到子骨骼 |
+| `DebugOption` | `FFBIKDebugOption` | 调试绘制选项 |
 
-#### FFBIKConstraintOption（约束选项）
+### FFBIKEndEffector 效应器配置
 
-| 属性 | 类型 | 说明 |
-|---|---|---|
-| `Item` | FRigElementKey | 约束目标骨骼 |
-| `bEnabled` | bool | 是否启用 |
-| `LinearStiffness` | FVector | 线性刚度（XYZ，0-1），1=完全不动 |
-| `AngularStiffness` | FVector | 角度刚度（Twist/Swing1/Swing2，0-1） |
-| `bUseAngularLimit` | bool | 是否使用角度限制 |
-| `AngularLimit` | FFBIKBoneLimit | 各轴角度限制类型与范围 |
-| `bUsePoleVector` | bool | 是否使用极向量 |
-| `PoleVector` | FVector | 极向量方向或位置 |
-| `PoleVectorOption` | EPoleVectorOption | 极向量模式（局部方向/全局位置） |
-| `OffsetRotation` | FRotator | 构建局部坐标系时的偏移旋转 |
+每个效应器可配置：
+
+- **Item**：目标骨骼名称
+- **Position / PositionAlpha / PositionDepth**：位置目标、位置混合权重、影响深度
+- **Rotation / RotationAlpha / RotationDepth**：旋转目标、旋转混合权重、影响深度
+- **Pull**：拉力系数（0-1），控制效应器到目标的最大距离缩放，防止奇异点
+
+### FFBIKConstraintOption 约束配置
+
+每个骨骼的约束可配置：
+
+- **LinearStiffness / AngularStiffness**：线性/角度僵硬度（0-1），限制关节移动自由度
+- **bUseAngularLimit / AngularLimit**：是否启用角度限制及限制值
+- **bUsePoleVector / PoleVector**：极向量，用于控制关节平面朝向（如膝盖朝向）
 
 ### 使用示例（ControlRig 图表描述）
 
-在 ControlRig 图表中：
+在 ControlRig 图表中使用 FullBodyIK 的典型工作流：
 
-1. 添加 `Fullbody IK` 节点
-2. 设置 `Root` 为角色的根骨骼（如 `pelvis`）
-3. 在 `Effectors` 数组中添加执行器：
-   - 执行器 0：`Item` = `hand_r`，`Position` = 右手目标位置
-   - 执行器 1：`Item` = `hand_l`，`Position` = 左手目标位置
-4. 可选：在 `Constraints` 中为特定骨骼添加约束（如肘部的极向量、肩膀的角度限制）
-5. 调整 `SolverProperty` 中的 `MaxIterations` 和 `Damping` 以平衡性能与精度
+1. 添加 `Fullbody IK` 节点到图表
+2. 设置 `Root` 为角色的髋部骨骼（如 `pelvis`）
+3. 配置 `Effectors` 数组：
+   - 左手效应器：Item = `hand_l`，Position = 目标抓取位置，PositionAlpha = 1.0
+   - 右手效应器：Item = `hand_r`，Position = 目标抓取位置，PositionAlpha = 1.0
+   - 左脚效应器：Item = `foot_l`，Position = 地面接触点
+   - 右脚效应器：Item = `foot_r`，Position = 地面接触点
+4. 配置 `Constraints` 数组：
+   - 膝盖骨骼（`calf_l`）设置极向量 `PoleVector = (1, 0, 0)` 引导膝盖朝前
+   - 肘部骨骼设置 `AngularStiffness = (0, 0.8, 0.8)` 限制侧弯
+5. 调整 `SolverProperty`：`MaxIterations = 10`，`Precision = 0.1`，`Damping = 30`
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
+#include "RigUnit_FullbodyIK.h"
 #include "JacobianSolver.h"
 #include "JacobianIK.h"
 #include "FBIKConstraint.h"
+#include "FBIKShared.h"
+#include "FBIKConstraintOption.h"
 ```
 
 ### 基本用法
 
-最简单的雅可比 IK 求解调用（来源：`Public/JacobianSolver.h`）：
+使用底层雅可比求解器直接求解 IK（不依赖 ControlRig）：
 
 ```cpp
-#include "JacobianSolver.h"
-#include "JacobianIK.h"
+// 来源: Public/JacobianSolver.h, Public/JacobianIK.h
 
-using namespace JacobianIK;
-
-// 准备骨骼链数据
+// 1. 构建骨骼链数据
 TArray<FFBIKLinkData> LinkData;
-// ... 填充 LinkData，每个代表一个关节
+// ... 初始化 LinkData，设置 ParentLinkIndex, Length, Transform, MotionBaseAxes 等
 
-// 设置末端执行器目标
+// 2. 设置末端效应器目标
+using namespace JacobianIK;
 TMap<int32, FFBIKEffectorTarget> EndEffectors;
-FFBIKEffectorTarget EffTarget;
-EffTarget.bPositionEnabled = true;
-EffTarget.Position = FVector(100.f, 0.f, 50.f); // 目标位置
-EffTarget.LinearMotionStrength = 0.8f;
-EffTarget.AngularMotionStrength = 0.5f;
-EffTarget.ConvergeScale = 0.5f;
-EndEffectors.Add(LinkData.Num() - 1, EffTarget); // 最后一个 link 作为末端
+FFBIKEffectorTarget Effector;
+Effector.bPositionEnabled = true;
+Effector.Position = FVector(100.f, 0.f, 150.f);  // 目标位置
+Effector.LinearMotionStrength = 0.8f;
+Effector.ConvergeScale = 0.5f;
+EndEffectors.Add(5, Effector);  // 链索引 5 为目标效应器
 
-// 配置求解器参数
-FSolverParameter SolverParam;
+// 3. 配置求解器参数
+JacobianIK::FSolverParameter SolverParam;
 SolverParam.DampingValue = 10.f;
-SolverParam.JacobianSolver = EJacobianSolver::JacobianPIDLS;
+SolverParam.JacobianSolver = JacobianIK::EJacobianSolver::JacobianPIDLS;
 SolverParam.bClampToTarget = true;
+SolverParam.bUpdateClampMagnitude = true;
 
-// 创建求解器并求解
+// 4. 创建求解器并执行
 FJacobianSolver_PositionTarget_3DOF Solver;
-bool bConverged = Solver.SolveJacobianIK(
+TArray<FJacobianDebugData> DebugData;
+bool bSuccess = Solver.SolveJacobianIK(
     LinkData,
     EndEffectors,
     SolverParam,
-    30,    // 最大迭代次数
-    1.f    // 容差
+    30,       // 迭代次数
+    1.0f,     // 容差
+    &DebugData
 );
 ```
 
 ### 进阶用法
 
-使用约束系统配合求解器（来源：`Public/FBIKConstraintLib.h`、`Public/FBIKConstraint.h`）：
+使用自定义后处理委托（PostProcessDelegate）在每次迭代后应用约束：
 
 ```cpp
-#include "JacobianSolver.h"
-#include "FBIKConstraint.h"
-#include "FBIKConstraintLib.h"
+// 来源: Public/JacobianSolver.h
 
-// 构建约束
-TArray<FFBIKConstraintOption> ConstraintOptions;
-FFBIKConstraintOption ElbowConstraint;
-ElbowConstraint.Item = FRigElementKey(TEXT("lowerarm_r"), ERigElementType::Bone);
-ElbowConstraint.bUsePoleVector = true;
-ElbowConstraint.PoleVectorOption = EPoleVectorOption::Direction;
-ElbowConstraint.PoleVector = FVector::ForwardVector; // 极向量朝前
-ElbowConstraint.bUseAngularLimit = true;
-ElbowConstraint.AngularLimit.LimitType_Y = EFBIKBoneLimitType::Limit;
-ElbowConstraint.AngularLimit.Limit.Y = 90.f; // 屈伸限制 90 度
-ConstraintOptions.Add(ElbowConstraint);
-
-// 使用后处理委托在每次迭代后应用约束
 FJacobianSolver_PositionTarget_3DOF Solver;
+
+// 设置迭代后处理回调 - 在每次求解迭代后应用约束
 Solver.SetPostProcessDelegateForIteration(
     FPostProcessDelegateForIteration::CreateLambda(
-        [&LinkData, &Constraints](TArray<FFBIKLinkData>& InOutLinkData)
+        [](TArray<FFBIKLinkData>& InOutLinkData)
         {
-            FBIKConstraintLib::ApplyConstraint(InOutLinkData, &Constraints);
-        })
+            // 在这里应用自定义约束
+            // 例如：限制关节角度、应用极向量约束等
+            for (FFBIKLinkData& Link : InOutLinkData)
+            {
+                // 限制旋转幅度
+                // ...
+            }
+        }
+    )
 );
 
-// 求解
-Solver.SolveJacobianIK(LinkData, EndEffectors, SolverParam, 30, 1.f);
+// 执行求解
+Solver.SolveJacobianIK(LinkData, EndEffectors, SolverParam);
+
+// 用完后清理
+Solver.ClearPostProcessDelegateForIteration();
 ```
-
-### 求解器选择指南
-
-| 求解器类 | 目标类型 | 自由度 | 适用场景 |
-|---|---|---|---|
-| `FJacobianSolver_PositionTarget_3DOF` | 位置 | 3DOF 旋转 | 手臂/腿 IK |
-| `FJacobianSolver_PositionTarget_Quat` | 位置 | 四元数旋转 | 更平滑的位置 IK |
-| `FJacobianSolver_RotationTarget_3DOF` | 旋转 | 3DOF 旋转 | 注视/朝向控制 |
-| `FJacobianSolver_RotationTarget_Quat` | 旋转 | 四元数旋转 | 更平滑的旋转目标 |
-| `FJacobianSolver_PositionRotationTarget_3DOF` | 位置+旋转 | 3DOF 旋转 | 完整末端定位 |
-| `FJacobianSolver_PositionRotationTarget_Quat` | 位置+旋转 | 四元数旋转 | 高精度末端定位 |
-| `FJacobianSolver_PositionTarget_3DOF_Translation` | 位置 | 3DOF 平移 | 平移关节（非旋转） |
-| `FJacobianSolver_PositionRotationTarget_LocalFrame` | 位置+旋转 | 自定义坐标系 | 自定义刚度方向 |
 
 ## Demo 示例
 
-以下是一个最小可编译的 FullBodyIK 使用示例：
+基于 ControlRig 的最小使用示例（自定义 RigUnit 中调用 FullBodyIK）：
 
 ```cpp
-// MyIKComponent.h
+// MyIKUnit.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "JacobianSolver.h"
-#include "JacobianIK.h"
-#include "FBIKConstraint.h"
-#include "MyIKComponent.generated.h"
+#include "Units/RigUnit.h"
+#include "RigUnit_FullbodyIK.h"
 
-using namespace JacobianIK;
-
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class MYGAME_API UMyIKComponent : public UActorComponent
+USTRUCT(meta=(DisplayName="My Custom IK", Category="Custom"))
+struct FMyIKUnit : public FRigUnit_HighlevelBaseMutable
 {
     GENERATED_BODY()
 
-public:
-    UMyIKComponent();
+    RIGVM_METHOD()
+    virtual void Execute() override;
 
-    virtual void TickComponent(float DeltaTime, ELevelTick TickType,
-        FActorComponentTickFunction* ThisTickFunction) override;
+    UPROPERTY(meta = (Input, Constant, CustomWidget = "BoneName"))
+    FRigElementKey RootBone;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IK")
-    FVector TargetPosition;
+    UPROPERTY(meta = (Input))
+    TArray<FFBIKEndEffector> Effectors;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IK")
-    float Damping = 10.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IK")
-    int32 MaxIterations = 15;
-
-protected:
-    virtual void BeginPlay() override;
-
-private:
-    void InitializeLinkData();
-
-    TArray<FFBIKLinkData> LinkData;
-    TMap<int32, FFBIKEffectorTarget> EndEffectors;
-    FJacobianSolver_PositionTarget_3DOF Solver;
+    UPROPERTY(transient)
+    FRigUnit_FullbodyIK_WorkData WorkData;
 };
 ```
 
 ```cpp
-// MyIKComponent.cpp
-#include "MyIKComponent.h"
+// MyIKUnit.cpp
+#include "MyIKUnit.h"
 
-UMyIKComponent::UMyIKComponent()
+void FMyIKUnit::Execute()
 {
-    PrimaryComponentTick.bCanEverTick = true;
-}
+    // 该示例展示如何在自定义 RigUnit 中复用 FullBodyIK 的底层求解器
+    // 实际使用建议直接使用 ControlRig 图表中的 Fullbody IK 节点
 
-void UMyIKComponent::BeginPlay()
-{
-    Super::BeginPlay();
-    InitializeLinkData();
-}
+    // 1. 准备求解器
+    WorkData.IKSolver = FJacobianSolver_FullbodyIK();
 
-void UMyIKComponent::InitializeLinkData()
-{
-    // 构建 3 关节链：根 → 中间 → 末端
-    LinkData.SetNum(3);
-
-    // 根关节
-    LinkData[0].ParentLinkIndex = INDEX_NONE;
-    LinkData[0].Length = 0.f;
-    LinkData[0].SetTransform(FTransform::Identity);
-    LinkData[0].AddMotionBase(FMotionBase(FVector(0, 0, 1))); // Z 轴旋转
-    LinkData[0].AddMotionBase(FMotionBase(FVector(0, 1, 0))); // Y 轴旋转
-    LinkData[0].AddMotionBase(FMotionBase(FVector(1, 0, 0))); // X 轴旋转
-
-    // 中间关节
-    LinkData[1].ParentLinkIndex = 0;
-    LinkData[1].Length = 50.f;
-    LinkData[1].SetTransform(FTransform(FRotator::ZeroRotator, FVector(0, 0, 50)));
-    LinkData[1].AddMotionBase(FMotionBase(FVector(0, 0, 1)));
-    LinkData[1].AddMotionBase(FMotionBase(FVector(0, 1, 0)));
-    LinkData[1].AddMotionBase(FMotionBase(FVector(1, 0, 0)));
-
-    // 末端关节
-    LinkData[2].ParentLinkIndex = 1;
-    LinkData[2].Length = 50.f;
-    LinkData[2].SetTransform(FTransform(FRotator::ZeroRotator, FVector(0, 0, 50)));
-    LinkData[2].AddMotionBase(FMotionBase(FVector(0, 0, 1)));
-    LinkData[2].AddMotionBase(FMotionBase(FVector(0, 1, 0)));
-    LinkData[2].AddMotionBase(FMotionBase(FVector(1, 0, 0)));
-
-    // 末端执行器指向最后一个 link
-    FFBIKEffectorTarget EffTarget;
-    EffTarget.bPositionEnabled = true;
-    EffTarget.Position = FVector(100.f, 0.f, 80.f);
-    EffTarget.LinearMotionStrength = 0.8f;
-    EffTarget.AngularMotionStrength = 0.5f;
-    EffTarget.ConvergeScale = 0.5f;
-    EndEffectors.Add(2, EffTarget);
-
-    TargetPosition = EffTarget.Position;
-}
-
-void UMyIKComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-    FActorComponentTickFunction* ThisTickFunction)
-{
-    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-    // 更新末端目标位置
-    if (FFBIKEffectorTarget* Eff = EndEffectors.Find(2))
+    // 2. 配置效应器（简化示意）
+    WorkData.EffectorTargets.Reset();
+    for (int32 i = 0; i < Effectors.Num(); ++i)
     {
-        Eff->Position = TargetPosition;
+        JacobianIK::FFBIKEffectorTarget Target;
+        Target.bPositionEnabled = true;
+        Target.Position = Effectors[i].Position;
+        Target.LinearMotionStrength = Effectors[i].PositionAlpha;
+        Target.bRotationEnabled = (Effectors[i].RotationAlpha > 0.f);
+        Target.Rotation = Effectors[i].Rotation;
+        WorkData.EffectorTargets.Add(i, Target);
     }
 
-    // 配置求解器参数
-    FSolverParameter SolverParam;
-    SolverParam.DampingValue = Damping;
-    SolverParam.JacobianSolver = EJacobianSolver::JacobianPIDLS;
-    SolverParam.bClampToTarget = true;
-    SolverParam.bUpdateClampMagnitude = true;
+    // 3. 求解
+    JacobianIK::FSolverParameter SolverParam;
+    SolverParam.DampingValue = 30.f;
+    SolverParam.JacobianSolver = JacobianIK::EJacobianSolver::JacobianPIDLS;
 
-    // 执行 IK 求解
-    Solver.SolveJacobianIK(
-        LinkData,
-        EndEffectors,
+    WorkData.IKSolver.SolveJacobianIK(
+        WorkData.LinkData,
+        WorkData.EffectorTargets,
         SolverParam,
-        MaxIterations,
+        10,   // 迭代次数
         0.1f  // 容差
     );
 
-    // LinkData 中的变换现在包含求解后的结果
-    // 可以将结果写回骨骼组件
+    // 4. 将结果写回骨骼层级
+    // ... 通过 URigHierarchy 更新骨骼变换
 }
 ```
 
@@ -343,10 +254,33 @@ void UMyIKComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 | 模块 | 用途 |
 |---|---|
-| `ControlRig` | ControlRig 运行时框架，提供 RigUnit 基类和骨骼层级访问 |
+| `ControlRig` | 核心动画蓝图集成框架（插件依赖） |
 | `ControlRigDeveloper` | ControlRig 开发者工具（PBIK 模块） |
-| `RigVMDeveloper` | RigVM 虚拟机开发工具（PBIK 模块） |
-| `Eigen` | 第三方线性代数库，用于雅可比矩阵运算（通过 ThirdParty 引入） |
+| `RigVMDeveloper` | RigVM 虚拟机开发者接口 |
+| `Eigen` | 第三方线性代数库，用于雅可比矩阵计算（通过 ThirdPartyInclude 引入） |
+
+## 求解器类层次
+
+以下是 FullBodyIK 模块内置的雅可比求解器变体，按目标类型和运动自由度分类：
+
+```
+FJacobianSolverBase
+├── FJacobianSolver_PositionTarget_3DOF          // 位置目标 + 3自由度旋转
+│   ├── FJacobianSolver_RotationTarget_3DOF       // 旋转目标 + 3自由度
+│   ├── FJacobianSolver_PositionRotationTarget_3DOF  // 位置+旋转目标 + 3自由度
+│   └── FJacobianSolver_PositionTarget_3DOF_Translation  // 位置目标 + 平移关节
+├── FJacobianSolver_PositionTarget_Quat           // 位置目标 + 四元数旋转
+│   └── FJacobianSolver_PositionRotationTarget_Quat  // 位置+旋转目标 + 四元数
+├── FJacobianSolver_RotationTarget_Quat           // 旋转目标 + 四元数
+└── FJacobianSolver_PositionRotationTarget_LocalFrame  // 位置+旋转目标 + 自定义坐标系
+```
+
+**选择建议**：
+- 一般骨骼链 IK → `PositionTarget_3DOF`（最常用）
+- 需要头部朝向控制 → `PositionRotationTarget_3DOF`
+- 对精度要求高、关节使用四元数表示 → 使用 `Quat` 变体
+- 需要自定义关节局部坐标系（如特定僵硬度方向）→ `LocalFrame` 变体
+- 性能敏感场景 → 使用 Jacobian Transpose 求解（`bUseJacobianTranspose = true`），代价是精度较低
 
 ## 维护状态
 
@@ -354,21 +288,20 @@ void UMyIKComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将 UE_LOG 迁移到 UE_LOGF 日志宏 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移到 UE_LOGF |
 | 2025-11-21 | `3c12f7ef` | [FBIK] Added back previously removed debug properties. | 恢复之前被移除的调试属性 |
-| 2025-10-30 | `0990a715` | Ran UnrealCodeFixup on Fortnite to change all ~Type() {} to instead be ~Type() = default | 将析构函数改为默认实现 |
-| 2025-10-30 | `a0e12af6` | Ran UnrealCodeFixup on Engine to change all ~Type() {} to instead be ~Type() = default | 将析构函数改为默认实现 |
-| 2025-10-21 | `8555965b` | [FBIK] Fixed crash bug from intermediate effectors on fork joints. | 修复分叉关节中间执行器导致的崩溃 |
+| 2025-10-30 | `0990a715` | Ran UnrealCodeFixup on Fortnite to change all ~Type() {} to instead be ~Type() = default | 全局代码规范化：析构函数改用 = default |
+| 2025-10-30 | `a0e12af6` | Ran UnrealCodeFixup on Engine to change all ~Type() {} to instead be ~Type() = default | 全局代码规范化：析构函数改用 = default |
+| 2025-10-21 | `8555965b` | [FBIK] Fixed crash bug from intermediate effectors on fork joints. | 修复分叉关节中间效应器导致的崩溃 bug |
 
 ### 维护评价
 
-- **创建时间**：2020 年 9 月，约 5 年历史
-- **维护状态**：**维护中**。最近一次更新（2026-04）是全引擎范围的日志宏迁移；2025-11 和 2025-10 有实质性 bug 修复和功能恢复
-- **废弃警告**：`FRigUnit_FullbodyIK` 在 UE 5.0 已标记 `Deprecated`，说明 Epic 可能正在将功能合并到 ControlRig 主模块中，或已有替代方案
-- **实验性**：虽然文件位于 `Experimental` 目录，但 .uplugin 中 `IsBetaVersion` 和 `IsExperimentalVersion` 均为 false
-- **建议**：如果你需要基础的雅可比 IK 求解器库（纯 C++，不依赖 ControlRig），可以直接使用 `JacobianSolver.h` 和 `JacobianIK.h` 中的类。如果需要在 ControlRig 中使用全身 IK，建议检查 ControlRig 主模块是否已内置更新版的实现
+- **活跃程度**：维护不活跃。最近的实质性功能性更新（崩溃修复）在 2025-10-21，此后仅有代码规范化和日志迁移等机械性改动。
+- **实验性状态**：位于 `Experimental` 目录下，虽 `IsExperimentalVersion=false`，但核心 RigUnit 已在 UE 5.0 标记为 `Deprecated`，官方推荐使用 PBIK 模块替代。
+- **技术债务**：依赖第三方 Eigen 库进行线性代数计算，增加了编译复杂度。
+- **建议**：⚠️ **不推荐用于新项目**。该插件的 `FRigUnit_FullbodyIK` 已废弃，建议使用 PBIK 模块。如需在此基础上做自定义开发，底层的 `FJacobianSolverBase` 类层次仍可参考，但需注意可能随版本移除。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/FullBodyIK)
-- [RigUnit 源码](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Experimental/FullBodyIK/Source/FullBodyIK/Private/RigUnit_FullbodyIK.h)
+- 测试用例：未在插件目录内发现独立测试文件

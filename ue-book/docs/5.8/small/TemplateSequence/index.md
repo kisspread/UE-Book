@@ -11,99 +11,160 @@
 | 模块 | `TemplateSequence` (Runtime), `TemplateSequenceEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2019-10-02 |
-| 年龄标签 | 👴 老古董（约 7 年） |
+| 年龄标签 | 👴 老古董（约 6 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MovieScene/TemplateSequence) | |
 
 ## 用途
 
-TemplateSequence 插件是 **Unreal Engine 中 Sequencer（定序器）系统的高级扩展**。它解决的核心问题是**动画序列的复用与模板化**。
-
--   **核心概念**：它引入了“模板序列”的概念，即一个预录制的、包含复杂对象变换、属性动画、事件等内容的序列。这个序列可以作为一个**模板**，被快速应用到其他场景中的同类对象上。
--   **解决的问题**：传统的 Level Sequence 与场景对象绑定较死。如果需要为多个相似角色（如同类型敌人）创建复杂但模式相同的动画（如一套攻击动画），手动为每个角色创建独立序列效率低下且难以维护。TemplateSequence 允许你创建一套“标准”的动画模板，然后通过简单的配置或代码驱动，将其应用到多个目标对象上，实现了动画逻辑与具体对象的**解耦**和**复用**。
--   **存在价值**：它是为需要**批量化、可配置化管理复杂动画**的项目准备的工具，尤其适用于有大量行为相似的 AI 角色或可交互物体的游戏项目。它将 Sequencer 的动画能力从“场景录制”提升到了“可编程的动画资产”层面。
+Template Sequence 插件的核心功能是提供一种可复用的动画片段（Animation Clip）技术，称为“模板序列”。它解决了在 Sequencer（过场动画编辑器）中重复制作相似动画片段的效率问题。通过将一段精心调整好的动画（如角色特定的动作、摄像机运动、材质参数变化等）封装成模板，可以像预制件一样在其他 Sequencer 轨道中多次实例化，并允许在实例中进行覆盖和微调，从而大幅提升复杂角色动画和过场动画的制作效率与一致性。
 
 ## 使用场景
 
--   你在为大量同类型敌人（如小兵、动物）创建复杂的攻击、受击、死亡动画序列 → 用 TemplateSequence 创建一个动画模板，然后应用到所有敌人上。
--   你需要制作一个可交互的物体（如机关门、移动平台），其动画逻辑在不同关卡或实例中需要微调（如移动速度、延迟） → 用 TemplateSequence 作为基础模板，通过参数化覆盖来定制。
--   你在开发过程中需要快速预览和迭代角色动画，而不希望每次都重新绑定到具体场景模型 → 使用 TemplateSequence 脱离具体场景对象进行动画编辑和测试。
-
-## 模块列表
-
-| 模块 | 类型 | 说明 |
-|---|---|---|
-| `TemplateSequence` | Runtime | 提供模板序列的核心运行时数据结构、播放器和组件，用于在运行时加载和应用模板序列。 |
-| `TemplateSequenceEditor` | Editor | 提供在编辑器中创建、编辑和预览模板序列的工具、资产类型和自定义界面。 |
+- 你正在开发一个拥有多名主角的角色扮演游戏，其中一些攻击、跳跃或待机动画在多个角色间相似但需微调 → 使用 Template Sequence 创建基础动画模板，然后在不同角色的动画蓝图或过场动画中实例化并覆盖关键差异。
+- 你正在制作一部动画短片或游戏过场，其中有大量重复的镜头转场效果（如淡入淡出、特定类型的镜头抖动）→ 将转场效果封装为模板序列，在 Sequencer 中重复使用，只需调整时长和位置。
+- 你作为技术美术，需要为团队提供标准化的动画资产，但允许设计师在特定场景中进行个性化调整 → 创建模板序列作为基础资产，供其他人在 Sequencer 中安全地修改和扩展。
 
 ## 蓝图用法
+
+该插件的蓝图 API 主要集中在序列资产的操作上。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Create Template Sequence Player` | 创建一个用于播放模板序列的播放器实例。 | `UTemplateSequenceSubsystem` |
-| `Play` / `Stop` / `Pause` | 控制模板序列的播放状态。 | `UTemplateSequencePlayer` |
-| `Set Sequence` | 为播放器设置要播放的模板序列资产。 | `UTemplateSequencePlayer` |
-| `Set Bound Actor` | 将播放器绑定到一个场景中的 Actor，模板序列将驱动该 Actor 的属性和变换。 | `UTemplateSequencePlayer` |
-| `Add to Player` / `Remove from Player` | 将模板序列组件（作为子序列）添加或移除自一个父序列播放器。 | `UTemplateSequenceComponent` |
+| `Create Template Sequence` | 根据指定的命名和资源路径，创建一个新的空模板序列资产。 | `UTemplateSequenceSubsystem` |
+| `Find Template Sequence` | 根据名称查找已存在的模板序列资产。 | `UTemplateSequenceSubsystem` |
+| `Add Template Sequence Object Binding` | 向一个 Sequencer 轨道中添加模板序列实例。 | `UTemplateSequenceSubsystem` |
 
 ### 使用示例（蓝图描述）
 
-1.  **在角色蓝图中播放**：
-    - 在角色蓝图中添加一个 `Template Sequence Component`。
-    - 在 BeginPlay 事件中，使用 `Set Sequence` 节点为该组件指定一个 `UTemplateSequence` 资产。
-    - 调用组件的 `Play` 节点开始播放，角色将按照模板序列中的设定进行动画。
-
-2.  **动态控制多个实例**：
-    - 使用 `Create Template Sequence Player` 节点（通常在一个管理器 Actor 或 Subsystem 中）创建多个播放器实例。
-    - 通过循环和 `Set Bound Actor` 节点，将每个播放器实例分别绑定到场景中不同的敌人 Actor 上。
-    - 然后分别调用 `Play`，即可让所有敌人播放同一套模板动画，但绑定在各自不同的目标上。
+1.  **创建模板序列**：使用 `Create Template Sequence` 节点，输入一个唯一的名称（如 `ATK_Combo1_Template`）和保存路径，即可在内容浏览器中生成一个新的模板序列资产。
+2.  **在 Sequencer 中应用**：
+    *   打开一个 Level Sequence。
+    *   在轨道区域右键，选择 `Template Sequence` -> `Add Template Sequence Object Binding`。
+    *   在弹出的面板中选择之前创建的模板序列资产（如 `ATK_Combo1_Template`）。
+    *   此时，模板序列会作为一个新的轨道组出现在 Sequencer 中，包含了原始模板的所有动画数据。
+3.  **覆盖与调整**：展开新添加的模板序列轨道组，可以像编辑普通轨道一样，在其中添加新的关键帧、修改曲线，这些修改仅影响当前实例，不会改变原始模板资产。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "TemplateSequenceSubsystem.h"
-#include "TemplateSequencePlayer.h"
-#include "Sections/MovieSceneTemplateSequenceSection.h"
+#include "TemplateSequence.h"
+// 如果在编辑器模块中，还需要
+#include "TemplateSequenceEditor.h"
 ```
 
 ### 基本用法
 
+在 C++ 中，模板序列的核心是 `UTemplateSequence` 资产类和 `UTemplateSequenceSubsystem` 子系统。
+
 ```cpp
-// 获取模板序列子系统（需在运行时）
-UTemplateSequenceSubsystem* TemplateSeqSubsystem = GetWorld()->GetSubsystem<UTemplateSequenceSubsystem>();
-if (TemplateSeqSubsystem)
+// 示例：在编辑器工具或运行时逻辑中，通过子系统创建一个模板序列
+// 来源：引擎子系统标准用法，具体实现可参考 TemplateSequenceSubsystem.h
+if (UTemplateSequenceSubsystem* Subsystem = GEditor->GetEditorSubsystem<UTemplateSequenceSubsystem>())
 {
-    // 创建一个播放器
-    UTemplateSequencePlayer* Player = TemplateSeqSubsystem->CreateTemplateSequencePlayer(TemplateSequenceAsset, FMovieSceneSequencePlaybackSettings(), TemplateSequencePlayerOut);
-    if (Player)
+    // 创建一个新的模板序列资产
+    UTemplateSequence* NewTemplate = Subsystem->CreateTemplateSequence(
+        TEXT("MyNewTemplate"),
+        TEXT("/Game/Sequences/Templates"),
+        UTemplateSequence::StaticClass(),
+        ULevelSequence::StaticClass()
+    );
+
+    if (NewTemplate)
     {
-        // 绑定到目标 Actor
-        Player->SetBoundActor(TargetActor);
-        // 开始播放
-        Player->Play();
+        // 现在可以对 NewTemplate 进行编辑，例如添加动画轨道
+        UE_LOG(LogTemplateSequence, Log, TEXT("成功创建模板序列: %s"), *NewTemplate->GetPathName());
     }
 }
 ```
 
 ### 进阶用法
 
-结合模板序列组件，在 Actor 中直接管理和播放：
+结合 `ULevelSequence` API，可以将模板序列作为轨道添加到过场序列中。
 
 ```cpp
-// MyCharacter.h
-UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation")
-UTemplateSequenceComponent* AttackAnimationComponent;
+// 假设我们已经有了一个主关卡序列 (MasterSequence) 和一个模板序列资产 (TemplateAsset)
+ULevelSequence* MasterSequence = ...;
+ULevelSequence* TemplateAsset = ...;
 
-// MyCharacter.cpp (BeginPlay)
-if (AttackTemplateSequenceAsset)
+// 获取 MasterSequence 的可修改电影场景
+UMovieScene* MasterMovieScene = MasterSequence->GetMovieScene();
+
+// 创建模板序列的轨道
+UMovieSceneSequenceTrack* TemplateTrack = MasterMovieScene->AddTrack<UMovieSceneSequenceTrack>();
+
+// 添加一个片段，将模板序列实例化
+if (UMovieSceneSequenceSection* Section = Cast<UMovieSceneSequenceSection>(TemplateTrack->CreateNewSection()))
 {
-    AttackAnimationComponent->SetSequence(AttackTemplateSequenceAsset);
-    // 可以订阅播放完成事件
-    FMovieSceneSequenceDelegate& OnFinished = AttackAnimationComponent->GetSequencePlayer()->OnFinished;
-    OnFinished.AddDynamic(this, &AMyCharacter::OnAttackAnimationFinished);
+    Section->SetSequence(TemplateAsset);
+    Section->SetRange(TRange<FFrameNumber>(0, 1000)); // 设置播放范围
+    TemplateTrack->AddSection(*Section);
+}
+
+// 最后需要编译序列以使改动生效
+MasterSequence->Compile();
+```
+
+## Demo 示例
+
+一个简单的编辑器工具类，用于创建和列出模板序列。
+
+```cpp
+// TemplateSequenceDemoTool.h
+#pragma once
+
+#include "CoreMinimal.h"
+#include "EditorUtilityWidget.h"
+#include "TemplateSequenceDemoTool.generated.h"
+
+UCLASS()
+class UTemplateSequenceDemoTool : public UEditorUtilityWidget
+{
+    GENERATED_BODY()
+
+public:
+    UFUNCTION(BlueprintCallable, Category = "TemplateSequence Demo")
+    void CreateNewTemplate(const FString& TemplateName);
+
+    UFUNCTION(BlueprintCallable, Category = "TemplateSequence Demo")
+    TArray<UTemplateSequence*> GetAllTemplates() const;
+};
+```
+
+```cpp
+// TemplateSequenceDemoTool.cpp
+#include "TemplateSequenceDemoTool.h"
+#include "TemplateSequence.h"
+#include "TemplateSequenceSubsystem.h"
+
+void UTemplateSequenceDemoTool::CreateNewTemplate(const FString& TemplateName)
+{
+    if (UTemplateSequenceSubsystem* Subsystem = GEditor->GetEditorSubsystem<UTemplateSequenceSubsystem>())
+    {
+        UTemplateSequence* NewTemplate = Subsystem->CreateTemplateSequence(
+            TemplateName,
+            TEXT("/Game/Templates"),
+            UTemplateSequence::StaticClass(),
+            ULevelSequence::StaticClass()
+        );
+        if (NewTemplate)
+        {
+            UE_LOG(LogTemp, Log, TEXT("模板序列 '%s' 创建成功。"), *TemplateName);
+        }
+    }
+}
+
+TArray<UTemplateSequence*> UTemplateSequenceDemoTool::GetAllTemplates() const
+{
+    TArray<UTemplateSequence*> OutTemplates;
+    if (UTemplateSequenceSubsystem* Subsystem = GEditor->GetEditorSubsystem<UTemplateSequenceSubsystem>())
+    {
+        Subsystem->GetAllTemplateSequences(OutTemplates);
+    }
+    return OutTemplates;
 }
 ```
 
@@ -111,12 +172,9 @@ if (AttackTemplateSequenceAsset)
 
 | 模块 | 用途 |
 |---|---|
-| `LevelSequence` | 核心的定序器播放和数据结构支持。 |
-| `LevelSequenceEditor` | 提供基础的定序器编辑器框架。 |
-| `MovieScene` | Sequencer 的底层场景和轨道系统。 |
-| `MovieSceneTools` | 编辑器中的 Sequencer 工具和编辑功能。 |
-| `TemplateSequence` (Runtime) | 本插件的核心运行时模块。 |
-| `TemplateSequenceEditor` (Editor) | 本插件的编辑器模块。 |
+| `MovieScene` | Sequencer 的核心模块，提供序列、轨道、片段等基础框架。 |
+| `LevelSequence` | 关卡序列模块，模板序列的核心父类 `ULevelSequence` 的来源。 |
+| `MovieSceneTools` | 提供编辑器中的序列相关工具和 UI。 |
 
 ## 维护状态
 
@@ -124,20 +182,21 @@ if (AttackTemplateSequenceAsset)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为浮点数的编译警告。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将旧的 UE_LOG 宏迁移到新的 UE_LOGF 宏，属于日志系统更新。 |
-| 2026-04-10 | `c03b3afd` | PR #14610: Rep layout mismatch in level sequence player due to with editoronly data property | 修复了由于包含仅编辑器数据属性而导致的 Level Sequence Player 网络复制布局不匹配问题。 |
-| 2026-02-20 | `49054c9f` | Sequencer: Add Bake Transform to object binding menu | 在 Sequencer 的对象绑定菜单中添加了“烘焙变换”功能。 |
-| 2026-02-11 | `5919e4fa` | Remove 7 virtual functions in UObject (either deprecated or toolonly) | 从 UObject 中移除了7个虚拟函数（已弃用或仅用于工具），属于底层重构。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下，双精度常量转换为浮点数时产生的编译警告。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将旧的 UE_LOG 宏迁移到新的 UE_LOGF 宏。 |
+| 2026-04-10 | `c03b3afd` | PR #14610: Rep layout mismatch in level sequence player due to with editoronly data property | 修复了由于包含编辑器专用数据属性而导致关卡序列播放器中复制布局不匹配的问题。 |
+| 2026-02-20 | `49054c9f` | Sequencer: Add Bake Transform to object binding menu | 在 Sequencer 的对象绑定菜单中增加了“烘焙变换”选项。 |
+| 2026-02-11 | `5919e4fa` | Remove 7 virtual functions in UObject (either deprecated or toolonly) | 移除了 UObject 中 7 个虚函数（已废弃或仅工具使用）。 |
 
 ### 维护评价
 
--   **状态**：**维护中**。插件在2019年创建，至今已有约7年历史。虽然状态标记为实验性且默认未启用，但从近一年的提交记录看，仍有持续的维护活动，包括编译问题修复、网络同步Bug修复以及跟随引擎核心（如日志、UObject）的更新。
--   **活跃度**：近期（6个月内）有实质性更新，主要围绕**稳定性**（修复警告、网络复制）和**功能增强**（添加烘焙变换）。
--   **建议**：该插件功能专一且强大，适用于需要深度使用 Sequencer 进行动画模板化管理的项目。由于其**实验性**和**默认禁用**的特性，建议在决定采用前，先在测试项目中充分评估其稳定性和与现有工作流的契合度。它并非一个“即插即用”的通用动画系统，而是面向特定高级需求的工具。
+**综合评价：**
+*   **状态**：**维护中，但标记为实验性**。
+*   **年龄与活跃度**：插件已存在约6年，近期（2026年）仍有持续的更新，主要集中在代码质量改进、bug 修复和与引擎其他部分的同步上（如虚函数清理、日志宏迁移）。这表明 Epic 仍在内部使用和维护它。
+*   **功能性质**：其核心动画复用功能对于大型项目具有显著价值。然而，`.uplugin` 中 `IsBetaVersion=true` 和 `EnabledByDefault=false` 表明 Epic 仍将其视为实验性功能，可能意味着 API 仍有变动风险，或某些高级功能尚不完善。
+*   **推荐**：**推荐用于项目开发，尤其是在编辑器环境下**。对于需要高效处理重复动画片段的团队，值得投入学习。但由于其“实验性”标签，在项目初期应谨慎评估其稳定性，并做好应对未来 API 变更的准备。不建议在追求最高稳定性的生产环境运行时关键路径中重度依赖。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MovieScene/TemplateSequence)
--   官方文档：无 (`.uplugin` 中 `DocsURL` 为空)
--   测试用例：通常位于 `Engine/Plugins/MovieScene/TemplateSequence/Tests/` 目录下。
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MovieScene/TemplateSequence)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MovieScene/TemplateSequence/Tests) (如果存在)

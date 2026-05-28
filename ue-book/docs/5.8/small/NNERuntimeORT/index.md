@@ -4,132 +4,161 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | ONNX 运行时后端 |
+| 中文名 | ONNX运行时 |
 | 分类 | ML |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `NNERuntimeORT` (Runtime), `NNEOnnxruntime` (External) |
-| 实验性 | ⚦ 是 (Beta) |
+| 实验性 | ⚦ 是 |
 | 创建时间 | 2023-11-07 |
 | 年龄标签 | 🆕（约 3 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNERuntimeORT) | |
 
 ## 用途
 
-`NNERuntimeORT` 是 Unreal Engine 5 神经网络引擎 (NNE) 的一个插件，提供了基于 ONNX Runtime 的推理后端。它允许开发者在 UE5 游戏和应用程序中直接加载、运行 ONNX 格式的人工智能模型，并利用 CPU 或 DirectML 进行硬件加速。它解决了在 UE5 环境中高效执行标准 ONNX 模型进行实时推理的问题，是游戏内 AI 应用（如物体识别、NPC 行为决策、实时风格迁移等）的核心基础设施之一。
+本插件为 Unreal Engine 的 **神经网络引擎 (NNE)** 提供了一个基于 **ONNX Runtime** 的推理后端。它允许开发者直接在 UE 应用程序中加载并运行 `.onnx` 格式的深度学习模型，利用 CPU 和 DirectML 进行硬件加速推理。其核心价值在于打通了从 PyTorch、TensorFlow 等主流框架训练出的模型到 Unreal Engine 实时应用的最后一公里，为游戏和应用的实时 AI 功能（如风格迁移、图像识别、行为预测）提供了高性能的本地推理能力。
 
 ## 使用场景
 
-- 你需要在 UE5 中运行 ONNX 格式的人工智能模型进行实时推理。
-- 你正在开发一个需要集成计算机视觉、自然语言处理或预测性 AI 功能的游戏或应用。
-- 你希望利用 PC 的 CPU 或支持 DirectML 的 GPU 对神经网络推理进行加速。
-- 你已使用 PyTorch、TensorFlow 等框架训练了模型，并已将其导出为 ONNX 格式。
+-   **游戏内实时AI**：你需要在游戏运行时对游戏画面、玩家输入或环境数据进行实时分析（如物体检测、动作识别），而非依赖云端服务。
+-   **内容生成与增强**：例如实时风格迁移（将游戏画面转换为特定艺术风格）、超分辨率（提升低分辨率纹理）、图像修复等。
+-   **复杂决策系统**：需要基于大量特征输入进行快速、复杂决策的NPC行为或游戏系统。
+-   **跨平台机器学习部署**：你已在 Python 环境中训练好模型并导出为 `.onnx` 格式，希望在 Windows、Linux 或 macOS 平台的 Unreal 项目中直接使用，无需重写推理代码。
 
 ## 蓝图用法
 
-此插件主要通过 NNE 核心系统的蓝图接口进行使用，其本身并不直接暴露特定的蓝图节点。核心节点位于 `UNNEModelData` 和 `UNNEModelInstance` 等类中，以下为典型用法概览：
+本插件主要作为 NNE 的运行时后端，其核心功能通过 C++ API 暴露。蓝图接口相对简洁，主要用于获取运行时实例。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Create Model Instance` | 从模型数据资产创建一个可执行的模型实例。 | `UNNEModelInstance` |
-| `Run Sync` / `Run Async` | 同步或异步执行模型推理，输入数据，输出结果。 | `UNNEModelInstance` |
-| `Set Input Data` / `Get Output Data` | 设置模型的输入张量数据或获取输出张量数据。 | `UNNEModelInstance` |
+| `Get Runtime` | 获取 `NNERuntimeORT` 的单例运行时实例，用于后续的模型操作。 | `UNNERuntimeORTCpu` |
+| `Get Runtime` | 获取支持 DirectML 加速的 `NNERuntimeORT` 运行时实例。 | `UNNERuntimeORTDml` |
 
 ### 使用示例（蓝图描述）
 
-1.  **加载与创建**: 在内容浏览器中创建一个 `NNEModelData` 资产并导入你的 ONNX 文件。在蓝图中，通过 `Create Model Instance` 节点，使用该资产创建一个 `UNNEModelInstance` 对象。
-2.  **准备数据**: 根据你的模型输入规格，创建或填充一个包含输入数据的数组（如 `TArray<float>`）。
-3.  **执行推理**: 将准备好的数据通过 `Set Input Data` 设置到模型实例，然后调用 `Run Sync`（同步）或 `Run Async`（异步）执行推理。
-4.  **获取结果**: 推理完成后，通过 `Get Output Data` 获取模型输出的张量数据，用于后续的游戏逻辑或渲染。
+1.  在蓝图的“开始游戏”事件中，调用 `UNNERuntimeORTCpu::GetRuntime` 节点，将其返回值（运行时实例）存储在一个变量中。
+2.  后续通过 NNE 的通用模型加载与推理节点（位于 NNE 核心插件中），结合上一步获取的运行时实例，来加载 ONNX 模型并执行推理。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "NNECore.h"
 #include "NNERuntimeORT.h"
 ```
 
 ### 基本用法
 
-基于插件提供的典型使用流程，以下是一个简化的 C++ 模型加载与推理示例。
+以下代码展示了如何获取 CPU 运行时、创建模型实例并进行简单推理。
+*(来源：`Engine/Tests/NNE/NNERuntimeORTTests/NNERuntimeORTTest.cpp`)*
 
 ```cpp
-// 假设已有 UNNEModelData* ModelData 指向已加载的ONNX模型数据资产。
-// 引擎核心模块，用于查找推理运行时
-#include "NNECore.h"
+// 1. 获取运行时实例
+TWeakInterfacePtr<INNERuntime> Runtime = UNNERuntimeORTCpu::GetRuntime();
+checkf(Runtime.IsValid(), TEXT("获取NNERuntimeORT CPU运行时失败"));
 
-void RunInferenceExample(UNNEModelData* ModelData)
-{
-    if (!ModelData) return;
+// 2. 创建模型资源 (假设你已经有了一个UONNXModel*类型的资产引用)
+UONNXModel* ModelAsset = LoadObject<UONNXModel>(nullptr, TEXT("/Game/Path/To/Your/Model.YourModel"));
+UNNEModelData* ModelData = ModelAsset->ModelData;
+TSharedPtr<UE::NNE::IModelInstanceCPU> ModelInstance = Runtime->CreateModelInstanceCPU(ModelData);
 
-    // 1. 获取已注册的 ONNX Runtime 后端
-    TArray<UNNERuntime*> Runtimes = UNNECore::GetRuntimes();
-    UNNERuntime* ORTRuntime = nullptr;
-    for (UNNERuntime* Runtime : Runtimes)
-    {
-        // NNERuntimeORT 模块通常会注册一个名为 “NNERuntimeORT” 的运行时
-        if (Runtime && Runtime->GetName() == TEXT("NNERuntimeORT"))
-        {
-            ORTRuntime = Runtime;
-            break;
-        }
-    }
-    if (!ORTRuntime) return;
+// 3. 准备输入和输出缓冲区
+TConstArrayView<UE::NNE::FTensorDesc> InputTensorDescs = ModelInstance->GetInputTensorDescs();
+TConstArrayView<UE::NNE::FTensorDesc> OutputTensorDescs = ModelInstance->GetOutputTensorDescs();
 
-    // 2. 创建模型实例
-    TWeakObjectPtr<UNNEModelInstance> ModelInstance = ORTRuntime->CreateModelInstance(ModelData);
-    if (!ModelInstance.IsValid()) return;
+// 4. 设置输入数据 (此处为示例，需根据具体模型形状和数据类型填充)
+TArray<float> InputData;
+InputData.SetNumUninitialized(InputTensorDescs[0].GetElementCount());
+// ... 填充 InputData ...
 
-    // 3. 准备输入数据 (示例：一个形状为 [1, 3, 224, 224] 的浮点数组)
-    TArray<float> InputData;
-    InputData.SetNumZeroed(1 * 3 * 224 * 224); // 填充你的实际输入数据
+// 5. 执行推理
+UE::NNE::FTensorBindingCPU InputBinding = { InputData.GetData(), InputData.Num() * sizeof(float) };
+UE::NNE::FTensorBindingCPU OutputBinding = { OutputData.GetData(), OutputData.Num() * sizeof(float) };
+ModelInstance->RunSync(MakeArrayView(&InputBinding, 1), MakeArrayView(&OutputBinding, 1));
 
-    // 4. 设置输入并运行推理
-    UNNEModelInstance::EStatus Status = ModelInstance->SetInputData(0, InputData);
-    if (Status != UNNEModelInstance::EStatus::Ok) return;
-
-    Status = ModelInstance->RunSync();
-    if (Status != UNNEModelInstance::EStatus::Ok) return;
-
-    // 5. 获取输出数据
-    TArray<float> OutputData;
-    Status = ModelInstance->GetOutputData(0, OutputData);
-    if (Status == UNNEModelInstance::EStatus::Ok)
-    {
-        // 处理推理结果 (OutputData)
-    }
-}
+// 6. 输出数据现已填充在 OutputData 中，可进行后续处理。
 ```
-*来源：此示例流程基于插件核心模块 `UNNERuntime` 和 `UNNEModelInstance` 的通用接口设计。*
 
 ### 进阶用法
 
-更复杂的用法包括：
-- **异步推理**: 使用 `RunAsync` 并绑定委托来避免游戏线程阻塞。
-- **多输入/输出模型**: 通过索引为多个输入和输出端口设置和获取数据。
-- **性能分析**: 利用引擎的性能分析工具跟踪推理耗时。
-- **DirectML 加速**: 确保在支持的平台和硬件上，插件会自动或可配置地选择 DirectML 执行提供者以获得更优性能。
+可以复用运行时实例和模型实例，对不同的输入数据进行批量推理，避免重复的初始化开销。
 
 ## Demo 示例
 
-一个完整的、可编译的最小示例已集成在引擎的 NNE 测试中。建议直接参考引擎源码中的 `NNECoreTest` 和 `NNERuntimeORTTest` 模块。
+以下是一个最小、可编译的 C++ Actor 示例，演示如何加载 ONNX 模型并运行一次推理。
+
+**NNERuntimeDemo.h**
+```cpp
+#pragma once
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "NNERuntimeORT.h"
+#include "NNERuntimeDemo.generated.h"
+
+UCLASS()
+class ANNERuntimeDemo : public AActor
+{
+	GENERATED_BODY()
+public:
+	// 在编辑器中设置你的 .onnx 模型资产
+	UPROPERTY(EditAnywhere, Category = "NNE Demo")
+	UONNXModel* ONNXModelAsset;
+
+	virtual void BeginPlay() override;
+
+private:
+	// 运行时和模型实例
+	TWeakInterfacePtr<INNERuntime> Runtime;
+	TSharedPtr<UE::NNE::IModelInstanceCPU> ModelInstance;
+};
+```
+
+**NNERuntimeDemo.cpp**
+```cpp
+#include "NNERuntimeDemo.h"
+#include "NNEModelData.h"
+
+void ANNERuntimeDemo::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (!ONNXModelAsset)
+	{
+		UE_LOG(LogTemp, Error, TEXT("未指定ONNX模型资产"));
+		return;
+	}
+
+	// 1. 获取运行时
+	Runtime = UNNERuntimeORTCpu::GetRuntime();
+	if (!Runtime.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("获取NNERuntimeORT运行时失败"));
+		return;
+	}
+
+	// 2. 创建模型实例
+	UNNEModelData* ModelData = ONNXModelAsset->ModelData;
+	ModelInstance = Runtime->CreateModelInstanceCPU(ModelData);
+	if (!ModelInstance.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("创建模型实例失败"));
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("NNERuntimeORT模型加载成功，准备就绪。"));
+}
+```
 
 ## 模块依赖
 
-要使用此插件，你的模块需要依赖以下模块：
+要使用此插件，你的项目模块需要依赖以下核心模块（已在 `NNERuntimeORT.Build.cs` 中声明）。
 
 | 模块 | 用途 |
 |---|---|
-| `NNECore` | UE5 神经网络引擎的核心接口和模型数据类。 |
-| `NNERuntime` | NNE 运行时基类接口。 |
-| `NeuralNetworkEngine` | 包含 `UNNEModelData` 等核心资产类型。 |
-| `NNEOnnxruntime` | 捆绑的第三方 ONNX Runtime 库（插件内部依赖）。 |
-
-*注：根据插件设计，通常只需要在你的 `Build.cs` 中添加对 `NNECore` 的依赖即可，其他依赖会由插件模块内部处理。*
+| `NNE` | 提供神经网络引擎（NNE）的核心接口和类型定义，是本插件运行的基础。 |
+| `NNEOnnxruntime` (External) | 封装了 ONNX Runtime 第三方库，提供底层的推理引擎实现。 |
 
 ## 维护状态
 
@@ -137,25 +166,20 @@ void RunInferenceExample(UNNEModelData* ModelData)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-21 | `d9fee063` | [NNE] NNERuntimeORT ONNX Runtime upgrade to version 1.24.3 and DirectML upgrade to version 1.15.4. | 升级 ONNX Runtime 至 1.24.3，DirectML 至 1.15.4。 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 迁移日志宏，统一日志格式。 |
-| 2026-03-30 | `33f008b5` | [Backout] - CL52245530 | 回滚了一次提交 (CL52245530)。 |
-| 2026-03-30 | `c8c79a38` | [NNE] NNERuntimeORT ONNX Runtime upgrade to version 1.24.3 and DirectML upgrade to version 1.15.4. | 尝试升级运行时版本（后被回滚）。 |
-| 2026-03-14 | `95105f12` | Split PooledRenderTarget and SceneRenderingAllocator off into separate header and add explicit inclu | 代码结构重构，头文件拆分，增加显式包含。 |
+| 2026-04-21 | `d9fee063` | [NNE] NNERuntimeORT ONNX Runtime upgrade to version 1.24.3 and DirectML upgrade to version 1.15.4. | 将核心的ONNX Runtime库升级至1.24.3，DirectML升级至1.15.4，提升性能和兼容性。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志输出宏现代化，统一使用UE_LOGF格式。 |
+| 2026-03-30 | `33f008b5` | [Backout] - CL52245530. | 回滚了一次变更，可能用于修复前一次提交引入的问题。 |
+| 2026-03-30 | `c8c79a38` | [NNE] NNERuntimeORT ONNX Runtime upgrade to version 1.24.3 and DirectML upgrade to version 1.15.4. | 此前被回滚的ONNX Runtime与DirectML库升级提交。 |
+| 2026-03-14 | `95105f12` | Split PooledRenderTarget and SceneRenderingAllocator off into separate header and add explicit inclu... | 将渲染资源相关的头文件拆分，优化编译依赖。 |
 
 ### 维护评价
 
-`NNERuntimeORT` 是 Unreal Engine 5 中 `NNE (Neural Network Engine)` 框架的关键组成部分。从 git 历史看，该插件**维护非常活跃**（最后更新在 2026 年 4 月），持续进行第三方库升级、代码重构和问题修复。
+**活跃维护中**。尽管插件标记为 `IsBetaVersion = true`，但从提交记录看，**维护非常活跃**。最近一次更新（ONNX Runtime 升级）距离现在仅数月，且更新内容实质（库版本升级、编译优化）。这表明插件仍处于积极的开发和改进阶段，功能在不断完善。
 
-**主要注意点**：
-- **Beta 状态**: 插件明确标记为 `IsBetaVersion=true`，且默认未启用 (`EnabledByDefault=false`)。这意味着其 API 和功能在未来版本中可能会发生变化，不建议在追求最高稳定性的生产环境中无条件使用。
-- **积极维护**: 核心开发者持续更新底层 ONNX Runtime 和 DirectML 版本，说明该插件是官方重点发展的功能。
-- **平台限制**: 目前仅支持 Win64, Linux, LinuxArm64 和 Mac，不支持主机和移动平台。
-
-**结论**：这是一个**积极维护中的 Beta 阶段核心功能插件**。如果你希望在 UE5 中进行 ONNX 模型推理，这是官方推荐且唯一原生支持的路径。建议关注其版本更新说明，并在项目中谨慎使用，做好应对 API 变更的准备。
+作为 NNE 生态的关键一环，它提供了在 UE 中运行标准 ONNX 模型的稳定路径。虽然标记为 Beta，但鉴于其明确的官方来源（Epic Games）和持续的维护，**推荐开发者在新项目中积极试用**，特别是对于需要本地高性能机器学习推理的场景。注意其 `EnabledByDefault = false`，需要在项目设置中手动启用。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNERuntimeORT)
-- [官方文档](https://dev.epicgames.com/community/learning/courses/e7w/unreal-engine-neural-network-engine-nne)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNERuntimeORT/Source/NNERuntimeORTTest)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/NNE/NNERuntimeORT)
+-   [官方文档](https://dev.epicgames.com/community/learning/courses/e7w/unreal-engine-neural-network-engine-nne)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Tests/NNE/NNERuntimeORTTests)

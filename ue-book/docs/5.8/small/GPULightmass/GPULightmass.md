@@ -4,181 +4,195 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | GPU 光照贴图 |
+| 中文名 | GPU 光照构建系统 |
 | 分类 | Editor |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
+| 包含内容 | ✅ 有（蓝图资产、设置面板） |
 | 模块 | `GPULightmass` (UncookedOnly), `GPULightmassEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2020-06-23 |
-| 年龄标签 | 🆕（约 6 年） |
+| 年龄标签 | 👴 老古董（约 5 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/GPULightmass) | |
 
 ## 用途
 
-GPU Lightmass 是 UE5 中基于 DXR（DirectX 光线追踪）的**实时/交互式光照贴图烘焙系统**，用于替代传统 CPU 端的 Lightmass。
+GPU Lightmass 是一个使用 DXR（DirectX Raytracing）技术进行静态光照构建和实时预览的系统。它的核心目的是**利用现代 GPU 的光线追踪能力来加速静态光照贴图（Lightmap）的生成**，以替代传统的基于 CPU 的 Lightmass 系统。传统 CPU Lightmass 在处理大型复杂场景时构建速度较慢，而 GPULightmass 通过 GPU 并行计算大幅提升了光照构建效率，特别适合需要快速迭代光照效果的关卡设计和美术工作流。
 
-传统 Lightmass 通过 CPU 进行光线追踪计算，场景越大、分辨率越高，烘焙时间越长（可能数小时）。GPU Lightmass 利用显卡的硬件光线追踪单元（需要支持 DXR 的 GPU）进行路径追踪，大幅提升烘焙速度，同时支持**交互式预览**——移动摄像机时能实时看到光照效果。
-
-核心能力：
-- **路径追踪全局光照**（GI）：通过多跳路径追踪计算间接光照
-- **辐照度缓存**（Irradiance Caching）：对室内场景优化 GI 强度准确性
-- **首次反弹光线引导**（First Bounce Ray Guiding）：针对窗户等主要光源方向优化采样
-- **固定光阴影**（Stationary Light Shadows）：分离计算并存储
-- **体积光照贴图**（Volumetric Lightmap）：3D 体素化采样
-- **降噪**：支持 Intel OIDN 和简易萤火虫滤除两种方案
-- **虚拟纹理预览**：通过虚拟纹理系统实现渐进式渲染预览
-- **两种烘焙模式**：Full Bake（完整烘焙）和 Bake What You See（所见即所烤）
-
-⚠️ **仅支持 Win64 + SM5 + DXR 硬件**。
+该插件主要解决以下问题：
+1.  **快速迭代**：在编辑器中实现接近实时的“烘焙”预览，允许开发者快速调整灯光和材质并看到结果。
+2.  **高质量GI**：通过路径追踪（Path Tracing）计算全局光照（GI），支持辐照度缓存（Irradiance Caching）和首光线引导（First Bounce Ray Guiding）以优化质量和性能。
+3.  **功能完整**：支持完整的静态光照特性，包括光照贴图、体积光照贴图（Volumetric Lightmap）、静态阴影深度贴图（Static Shadow Depth Maps）等。
 
 ## 使用场景
 
-- 你有一个室内/室外场景，需要快速迭代光照效果 → 用 GPU Lightmass 的交互式预览
-- 你的美术团队需要频繁调整灯光参数并即时看到结果 → 使用 "Bake What You See" 模式
-- 你需要比传统 Lightmass 更快的烘焙速度 → GPU 并行路径追踪
-- 你的场景包含大量静态光照的固定光（Stationary Light）→ GPU Lightmass 支持单独的阴影通道计算
-- 你需要体素级的体积光照贴图来照亮粒子/动态物体 → 体积光照贴图功能
+-   **大型开放世界或复杂室内场景开发**：传统 CPU Lightmass 构建一次可能需要数小时，GPULightmass 能将其缩短至分钟级别，极大提升迭代速度。
+-   **需要实时预览光照效果的关卡设计**：设计师可以使用“Bake What You See”模式，在移动相机时逐步生成所见区域的光照贴图，实现交互式光照调整。
+-   **使用静态光源（Stationary Lights）的场景**：GPULightmass 能够高效地计算静态阴影通道。
+-   **对最终烘焙质量有要求，同时希望利用GPU加速的项目**：虽然主要面向编辑器预览，但其计算方法基于物理，结果可作为最终烘焙的基础。
 
 ## 蓝图用法
 
-GPU Lightmass 通过 `UGPULightmassSubsystem`（世界子系统）暴露控制接口，以及 `UGPULightmassSettings` 暴露所有烘焙参数。
+主要通过 `UGPULightmassSubsystem` 子系统在蓝图中控制烘焙过程。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Launch` | 启动光照贴图烘焙 | `UGPULightmassSubsystem` |
-| `Stop` | 停止正在运行的烘焙 | `UGPULightmassSubsystem` |
-| `IsRunning` | 查询烘焙是否正在运行 | `UGPULightmassSubsystem` |
-| `GetPercentage` | 获取当前烘焙进度百分比（0-100） | `UGPULightmassSubsystem` |
-| `GetSettings` | 获取当前世界的 GPU Lightmass 设置对象 | `UGPULightmassSubsystem` |
-| `SetRealtime` | 设置是否以实时模式运行（影响烘焙速度） | `UGPULightmassSubsystem` |
-| `Save` | 保存当前烘焙结果 | `UGPULightmassSubsystem` |
-| `StartRecordingVisibleTiles` | 开始录制可见的虚拟纹理瓦片 | `UGPULightmassSubsystem` |
-| `EndRecordingVisibleTiles` | 结束录制可见瓦片 | `UGPULightmassSubsystem` |
-
-### 设置参数（UGPULightmassSettings）
-
-| 参数 | 类型 | 默认值 | 说明 |
-|---|---|---|---|
-| `Mode` | `EGPULightmassMode` | FullBake | FullBake（全场景）或 BakeWhatYouSee（仅可视区域） |
-| `GISamples` | int | 512 | 每纹素的 GI 采样数（32-65536） |
-| `StationaryLightShadowSamples` | int | 128 | 固定光阴影采样数 |
-| `bUseIrradianceCaching` | bool | true | 是否启用辐照度缓存（室内场景推荐开启） |
-| `bUseFirstBounceRayGuiding` | bool | false | 首次反弹光线引导（室内+窗户场景推荐） |
-| `DenoisingOptions` | enum | OnCompletion | 降噪时机：None/OnCompletion/DuringInteractivePreview |
-| `Denoiser` | enum | IntelOIDN | 降噪器：IntelOIDN 或 SimpleFireflyRemover |
-| `bCompressLightmaps` | bool | true | 是否压缩光照贴图纹理（关闭可减少伪影但增加 4x 内存） |
-| `VolumetricLightmapDetailCellSize` | int | 200 | 体积光照贴图最密体素的世界单位大小 |
-| `LightmapTilePoolSize` | int | 55 | GPU 瓦片池大小（影响 GPU 内存） |
-| `bShowProgressBars` | bool | true | 是否在瓦片内显示绿色进度条 |
-| `TilePassesInSlowMode` | int | 1 | 实时查看器模式的速度倍率 |
-| `TilePassesInFullSpeedMode` | int | 8 | 非实时模式的速度倍率 |
+| `Get Settings` | 获取 GPULightmass 的设置对象，用于配置烘焙参数。 | `UGPULightmassSubsystem` |
+| `Launch` | 启动光照构建过程。 | `UGPULightmassSubsystem` |
+| `Stop` | 停止正在运行的光照构建。 | `UGPULightmassSubsystem` |
+| `Is Running` | 查询当前光照构建是否正在运行。 | `UGPULightmassSubsystem` |
+| `Get Percentage` | 获取当前构建进度（百分比）。 | `UGPULightmassSubsystem` |
+| `Set Realtime` | 设置是否以实时模式运行构建（影响性能分配）。 | `UGPULightmassSubsystem` |
+| `Save` | 保存当前烘焙完成的光照贴图结果。 | `UGPULightmassSubsystem` |
+| `Start Recording Visible Tiles` | 开始录制可见的虚拟纹理瓦片（用于“Bake What You See”模式）。 | `UGPULightmassSubsystem` |
+| `End Recording Visible Tiles` | 结束录制可见瓦片。 | `UGPULightmassSubsystem` |
 
 ### 使用示例（蓝图描述）
-
-**启动烘焙：**
-1. 从世界上下文获取 `UGPULightmassSubsystem` 子系统
-2. 调用 `GetSettings` 获取设置对象
-3. 根据需要修改 `GISamples`、`Mode` 等参数
-4. 调用 `Launch` 开始烘焙
-
-**监控进度：**
-1. 每帧调用 `GetPercentage` 获取进度
-2. 调用 `IsRunning` 检查是否完成
-3. 监听子系统的 `OnLightBuildEnded` 委托
-
-**Bake What You See 流程：**
-1. 设置 `Mode` 为 `BakeWhatYouSee`
-2. 调用 `Launch`
-3. 移动摄像机查看不同区域
-4. 完成后调用 `Save` 保存结果
+1.  在关卡蓝图中，通过 `Get World Subsystem` 节点获取 `GPULightmass Subsystem`。
+2.  调用 `Get Settings` 节点获取设置对象，可修改如 `GI Samples`（采样数）、`Mode`（模式）等属性。
+3.  调用 `Launch` 节点启动烘焙。可以连接一个计时器或事件，定期调用 `Get Percentage` 来更新 UI 进度条。
+4.  烘焙完成后，`On Light Build Ended` 委托会触发，此时可以调用 `Save` 保存结果。
+5.  若要在移动相机时实时预览，可设置 `Mode` 为 “Bake What You See”，并配合 `Start/End Recording Visible Tiles` 使用。
 
 ## C++ 用法
 
-GPU Lightmass 主要通过世界子系统 API 和编辑器集成使用。以下示例展示如何通过 C++ 控制烘焙流程。
-
 ### 头文件引入
-
 ```cpp
-#include "GPULightmassSettings.h"
 #include "GPULightmassModule.h"
+#include "GPULightmassSettings.h"
 ```
 
 ### 基本用法
+GPULightmass 的核心交互通过模块和子系统进行。
 
 ```cpp
-// 从 FGPULightmassModule 获取当前世界的静态光照系统
-// 来源: Public/GPULightmassModule.h
+// 1. 获取模块实例
+FGPULightmassModule* GPULightmassModule = FModuleManager::GetModulePtr<FGPULightmassModule>(TEXT("GPULightmass"));
 
-#include "GPULightmassModule.h"
-
-// 获取模块实例
-FGPULightmassModule& GPULightmassModule = FModuleManager::GetModuleChecked<FGPULightmassModule>("GPULightmass");
-
-// 检查系统是否正在运行
-bool bRunning = GPULightmassModule.IsStaticLightingSystemRunning();
-```
-
-### 通过子系统控制烘焙
-
-```cpp
-// 来源: Public/GPULightmassSettings.h - UGPULightmassSubsystem
-
-UGPULightmassSubsystem* Subsystem = World->GetSubsystem<UGPULightmassSubsystem>();
-
-// 获取并配置设置
-UGPULightmassSettings* Settings = Subsystem->GetSettings();
-Settings->Mode = EGPULightmassMode::BakeWhatYouSee;
-Settings->GISamples = 1024;
-Settings->DenoisingOptions = EGPULightmassDenoisingOptions::OnCompletion;
-
-// 启动烘焙
-Subsystem->Launch();
-
-// 监听完成事件
-Subsystem->OnLightBuildEnded().AddLambda([]()
+if (GPULightmassModule)
 {
-    UE_LOG(LogTemp, Log, TEXT("GPU Lightmass bake completed!"));
-});
+    // 2. 为特定世界创建或获取 GPULightmass 实例
+    UWorld* MyWorld = GEditor->GetEditorWorldContext().World();
+    UGPULightmassSettings* Settings = NewObject<UGPULightmassSettings>();
+    Settings->GISamples = 1024; // 自定义设置
+
+    FGPULightmass* LightmassSystem = GPULightmassModule->CreateGPULightmassForWorld(MyWorld, Settings);
+}
+
+// 3. 通过子系统控制烘焙（更常用）
+if (UWorld* World = GEditor->GetEditorWorldContext().World())
+{
+    if (UGPULightmassSubsystem* Subsystem = World->GetSubsystem<UGPULightmassSubsystem>())
+    {
+        // 配置并启动
+        UGPULightmassSettings* Settings = Subsystem->GetSettings();
+        Settings->Mode = EGPULightmassMode::FullBake;
+        Settings->GISamples = 256;
+        Subsystem->Launch();
+
+        // 监听完成事件
+        Subsystem->OnLightBuildEnded().AddLambda([]()
+        {
+            UE_LOG(LogTemp, Log, TEXT("GPU Lightmass baking finished!"));
+        });
+    }
+}
 ```
 
 ### 进阶用法
+监听世界事件以自动管理光照构建状态：
+```cpp
+// 在某个编辑器工具或自定义Actor中
+void AMyEditorTool::BeginPlay()
+{
+    Super::BeginPlay();
+
+    // 监听组件注册/注销，以自动更新场景表示
+    FGPULightmassModule* Module = FModuleManager::GetModulePtr<FGPULightmassModule>(TEXT("GPULightmass"));
+    if (Module && Module->StaticLightingSystems.Contains(GetWorld()))
+    {
+        FGPULightmass* Lightmass = Module->StaticLightingSystems[GetWorld()];
+        // 可以访问 Lightmass->Scene 来获取光照构建场景的高级信息
+        // 注意：直接操作场景对象需要对插件内部结构有深入了解
+    }
+}
+```
+
+## Demo 示例
+
+以下是一个最小化的 C++ 示例，展示如何在编辑器工具按钮点击后配置并启动 GPULightmass 烘焙。
 
 ```cpp
-// 录制可见瓦片以用于 Bake What You See 模式
-// 来源: Private/GPULightmass.h
+// MyLightBakeTool.h
+#pragma once
 
-UGPULightmassSubsystem* Subsystem = World->GetSubsystem<UGPULightmassSubsystem>();
+#include "CoreMinimal.h"
+#include "EditorUtilityWidget.h"
+#include "MyLightBakeTool.generated.h"
 
-// 开始录制可见瓦片
-Subsystem->StartRecordingVisibleTiles();
+class UGPULightmassSettings;
 
-// ... 移动摄像机浏览场景 ...
+UCLASS()
+class UMyLightBakeTool : public UEditorUtilityWidget
+{
+    GENERATED_BODY()
 
-// 停止录制
-Subsystem->EndRecordingVisibleTiles();
+public:
+    UFUNCTION(BlueprintCallable, Category="LightBake")
+    void StartQuickBake();
 
-// 切换实时模式影响烘焙速度
-Subsystem->SetRealtime(true);  // 慢速，不阻塞编辑器
-Subsystem->SetRealtime(false); // 全速烘焙
+private:
+    TWeakObjectPtr<UGPULightmassSettings> CachedSettings;
+};
+```
 
-// 保存结果
-Subsystem->Save();
+```cpp
+// MyLightBakeTool.cpp
+#include "MyLightBakeTool.h"
+#include "GPULightmassSettings.h"
+#include "GPULightmassModule.h"
+
+void UMyLightBakeTool::StartQuickBake()
+{
+    UWorld* World = GEditor->GetEditorWorldContext().World();
+    if (!World) return;
+
+    UGPULightmassSubsystem* Subsystem = World->GetSubsystem<UGPULightmassSubsystem>();
+    if (!Subsystem) return;
+
+    // 获取并配置设置
+    UGPULightmassSettings* Settings = Subsystem->GetSettings();
+    Settings->GISamples = 128; // 使用较少采样快速预览
+    Settings->DenoisingOptions = EGPULightmassDenoisingOptions::DuringInteractivePreview;
+    Settings->bUseIrradianceCaching = false; // 关闭IC以简化计算
+    Settings->Mode = EGPULightmassMode::BakeWhatYouSee;
+    CachedSettings = Settings;
+
+    // 启动
+    Subsystem->Launch();
+
+    UE_LOG(LogTemp, Log, TEXT("Started quick GPU Lightmass bake for preview."));
+}
 ```
 
 ## 模块依赖
 
-GPU Lightmass 的核心独特依赖是光线追踪渲染和虚拟纹理系统：
+从源码分析，GPULightmass 插件深度集成于 UE 的渲染核心，其构建系统和运行时模块依赖以下**独特或不常见**的模块：
 
 | 模块 | 用途 |
 |---|---|
-| `RenderRayTracing` | DXR 硬件光线追踪支持 |
-| `VirtualTexturing` | 虚拟纹理系统，用于渐进式光照贴图预览 |
-| `IntelOIDN` | Intel Open Image Denoise 降噪库（可选） |
-| `RenderCore` | RDG 渲染依赖图、Shader 编译 |
-| `MeshDescription` | 网格数据处理 |
+| `Renderer` | 提供核心渲染功能、材质系统、网格处理（MeshPassProcessor）。 |
+| `RenderCore` | 提供渲染资源管理、Shader参数、渲染图（RDG）支持。 |
+| `RHI` | 底层渲染硬件接口，用于创建和访问 GPU 资源。 |
+| `RayTracing` | 提供光线追踪场景（TLAS）、Shader Binding Table (SBT) 等 DXR 基础设施。 |
+| `D3D12RHI` | 特定于 D3D12 的 RHI 实现，用于访问 DXR 核心特性。 |
+| `VirtualTexture` | 提供虚拟纹理系统框架，用于管理光照贴图的虚拟页表和生产者。 |
+| `VirtualTexturing` | 虚拟纹理运行时，用于页面请求、生产和纹理采样。 |
+| `MeshDescription` | 可能用于从 UStaticMesh 获取网格数据以构建光追几何体。 |
+| `Landscape` | 提供地形组件的渲染支持，插件中有专门的地形光追处理。 |
+
+**注意**：该插件严格限制为 **Win64** 平台，并且要求支持 DXR（DirectX Raytracing）的 GPU 和驱动。
 
 ## 维护状态
 
@@ -186,29 +200,19 @@ GPU Lightmass 的核心独特依赖是光线追踪渲染和虚拟纹理系统：
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `78d4e656` | [GPULM] Flush deferred SBT static-range frees on cached scene teardown | 修复缓存场景销毁时 SBT 静态范围延迟释放的刷新问题 |
-| 2026-05-12 | `98b3c0ef` | [HWRT] Add MeshBatchesView to FRayTracingDynamicGeometryUpdateParams and unify mesh batch ownership | HWRT 重构：统一网格批次所有权管理 |
-| 2026-04-21 | `a437915f` | [HWRT] Refactored shared vertex buffer management in FRayTracingDynamicGeometryUpdateManager | HWRT 重构动态几何体顶点缓冲区管理 |
-| 2026-04-15 | `2a295e97` | - Removed BlockUntilGPUIdle and SubmitCommandsAndFlushGPU in place of SubmitAndBlockUntilGPUIdle | 统一 GPU 同步 API，替换旧调用 |
-| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF | 迁移日志宏到 UE_LOGF 格式 |
+| 2026-05-26 | `78d4e656` | [GPULM] Flush deferred SBT static-range frees on cached scene teardown | 在缓存场景拆除时刷新延迟的 SBT 静态范围释放，防止资源泄漏。 |
+| 2026-05-12 | `98b3c0ef` | [HWRT] Add MeshBatchesView to FRayTracingDynamicGeometryUpdateParams and unify mesh batch ownership. | 为光线追踪动态几何更新参数添加网格批次视图，统一网格批次所有权。 |
+| 2026-04-21 | `a437915f` | [HWRT] Refactored shared vertex buffer management in FRayTracingDynamicGeometryUpdateManager. | 重构光线追踪动态几何更新管理器中的共享顶点缓冲区管理。 |
+| 2026-04-15 | `2a295e97` | - Removed BlockUntilGPUIdle and SubmitCommandsAndFlushGPU in place of SubmitAndBlockUntilGPUIdle | 移除旧接口，统一使用新的 `SubmitAndBlockUntilGPUIdle` 方法。 |
+| 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 将日志宏从 UE_LOG 迁移到 UE_LOGF。 |
 
 ### 维护评价
-
-GPU Lightmass 自 2020 年创建以来**持续活跃维护**，近几个月仍有多次实质性更新（2026 年 4-5 月），主要集中在：
-- 光线追踪底层架构优化（SBT 管理、动态几何体缓冲区）
-- API 现代化（UE_LOG 迁移、GPU 同步调用统一）
-- Bug 修复
-
-该插件仍标记为 **Beta + Experimental**，`EnabledByDefault=false`，需要手动启用。虽然核心功能已经相当完善，但 Epic 尚未将其提升为正式功能，表明可能仍有已知的限制或稳定性问题。
-
-**推荐使用**：如果你的项目需要快速迭代静态光照且有 DXR 兼容 GPU，GPU Lightmass 是一个优秀的选择。但需注意：
-- 仅支持 Win64 平台
-- 需要支持 DXR 的 GPU（RTX 2060+ 或同等）
-- 仍在 Beta 阶段，某些场景可能出现渲染伪影
-- 不建议用于最终发布版本的光照烘焙，除非经过充分验证
+-   **实验性状态**：插件明确标记为 `IsBetaVersion = true`，且默认未启用 (`EnabledByDefault = false`)。这表明它仍被视为实验性功能。
+-   **活跃维护**：从最近的提交历史看，该插件在 2026 年 5 月仍有维护性更新。这些更新主要集中在与底层硬件光线追踪（HWRT）系统的兼容性和资源管理优化上，表明 Epic Games 仍在维护和改进此系统。
+-   **平台限制**：仅支持 Win64 平台，依赖于特定的 DXR 功能。
+-   **使用建议**：对于需要快速光照迭代、愿意接受实验性功能限制的 Win64 项目，GPULightmass 是一个强大的工具。由于其 Beta 状态，在生产环境中作为最终烘焙方案需谨慎评估稳定性。它非常适合用于编辑器内的预览和迭代，最终导出可能仍需使用传统 Lightmass 或其他经过验证的解决方案。
 
 ## 相关链接
-
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/GPULightmass)
-- 官方文档：无
-- [设置类源码](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Experimental/GPULightmass/Source/GPULightmass/Public/GPULightmassSettings.h)
+- 官方文档（插件内 DocsURL 为空）：暂无官方文档链接。
+- 测试用例：根据源码结构分析，该插件的集成测试可能位于 `Engine/Tests/` 目录下或与主引擎渲染测试结合，未在插件目录内发现独立的单元测试文件。

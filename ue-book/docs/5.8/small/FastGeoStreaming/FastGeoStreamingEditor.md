@@ -4,160 +4,138 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 快速几何体流送 |
+| 中文名 | 快速几何流送 |
 | 分类 | World Building |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（资产定义，工厂） |
+| 包含内容 | ✅ 有（运行时代码） |
 | 模块 | `FastGeoStreaming` (Runtime), `FastGeoStreamingEditor` (Editor) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-03-20 |
-| 年龄标签 | 🆕（约 1 年） |
+| 年龄标签 | 🆕（约 0 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/FastGeoStreaming) | |
 
 ## 用途
 
-FastGeoStreaming 是一个用于优化大型开放世界（特别是采用 World Partition 管理的场景）中静态几何体流送性能的实验性系统。它解决了传统流送方式在处理海量静态网格体（Static Meshes）和实例化静态网格体（Instanced Static Meshes）时可能出现的性能瓶颈问题。
+该插件旨在优化大型开放世界中静态几何体的流送性能。其核心思想是将世界分区（World Partition）中不可变的静态几何体（StaticMeshes 和 InstanceStaticMeshes，包括带/不带碰撞的）从常规的UObject资产中“提取”出来，并转换为一种极其轻量级的非UObject数据结构。
 
-其核心机制是：在编辑器阶段，系统提取世界分区单元格中的不可变静态几何体，并将其转换为一种轻量级的非UObject数据结构。在运行时，这些数据被异步地流式加载和卸载，大部分处理过程不在游戏线程上进行，从而减轻主线程负担并提升流送效率。该系统与 World Partition 的数据层（Data Layers）和 HLOD 等功能兼容，是关卡流送流程的增强补充。
+在运行时，系统会异步地管理这些几何体数据的加载（Streaming-in）和卸载（Streaming-out），大部分计算工作不在游戏线程（GameThread）上执行。这使得它成为UE5标准关卡流送（Level Streaming）流程的一部分，并兼容数据层（Data Layers）和HLOD等世界分区功能。
+
+**存在原因**：为了解决在超大规模世界中，频繁地创建和销毁大量StaticMesh组件及其关联UObject所带来的性能瓶颈（如内存、CPU开销和线程阻塞）。它将几何体数据与对象生命周期解耦，以实现更高效的流送。
 
 ## 使用场景
 
-- 你正在开发一个使用 **World Partition** 管理的大型开放世界游戏，场景中包含大量静态几何体。
-- 你观察到关卡流送过程中，因加载/卸载静态网格体导致主线程卡顿或性能下降。
-- 你需要一个能够利用多线程异步处理，且与 HLOD、数据层等高级功能兼容的几何体流送方案。
-- 你希望探索 Epic 官方提供的、用于优化几何体流送的实验性底层解决方案。
+- **大型开放世界游戏开发**：当玩家在广袤的地图中移动时，需要快速加载和卸载地形、建筑物等静态场景元素，以维持流畅的帧率和内存使用。
+- **复杂HLOD环境**：与HLOD系统结合，在极远距离提供优化的几何体表示。
+- **需要快速流送性能的原型或技术验证**：用于测试和验证在海量静态几何体场景下的世界流送性能优化方案。
+
+**注意**：该插件需要启用 `p.Chaos.EnableAsyncInitBody` 控制台变量才能正常工作。
 
 ## 蓝图用法
 
-根据提供的代码片段，该插件的编辑器部分主要提供资产类型定义和自定义面板，未发现直接暴露给蓝图的 `BlueprintCallable` 函数。主要交互可能通过资产配置和编辑器工具完成。
-
-### 核心节点
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `FastGeoTransformerSettings` 资产 | 配置几何体转换器的行为参数。 | `UFastGeoTransformerSettings` (UObject) |
-
-### 使用示例（蓝图描述）
-
-由于该插件主要处理底层数据转换与异步流送，通常不直接在游戏逻辑蓝图中使用。其工作流程主要通过编辑器内的资产和配置触发：
-1.  **创建或编辑** `FastGeoTransformerSettings` 资产，以定义转换规则（例如，哪些几何体需要被提取和转换）。
-2.  作为世界分区工作流的一部分，该插件会自动或由特定工具触发，**将匹配的几何体从世界中提取并转换**为优化格式。
-3.  在游戏运行时，系统根据世界分区的流送策略，**异步加载/卸载**这些预转换的几何体数据。
+根据提供的源码分析，`FastGeoStreaming` 和 `FastGeoStreamingEditor` 模块中主要包含运行时核心逻辑和编辑器集成工具（如资产工厂、属性自定义），并未发现标记为 `BlueprintCallable` 或 `BlueprintReadWrite` 的公共蓝图API。其工作流程可能主要集成在引擎的关卡流送和世界分区管理管线内部。
 
 ## C++ 用法
 
-**注意**：由于该插件为实验性且默认未启用，使用前需在项目设置中启用插件，并需满足前提条件（如启用 `p.Chaos.EnableAsyncInitBody`）。
+该插件的使用涉及编辑器资产创建和运行时配置，但其核心流送逻辑对使用者通常是透明的。
 
 ### 头文件引入
 
+若需与插件提供的编辑器类型交互（如创建设置资产），需包含相应头文件。
 ```cpp
-// 核心运行时模块
-#include "FastGeoStreaming.h"
-
-// 如果需要在编辑器扩展中使用（如自定义资产类型）
-#include "FastGeoStreamingEditorModule.h"
+#include "FastGeoTransformerSettings.h"
 ```
 
 ### 基本用法
 
-该插件的运行时核心（`FastGeoStreaming`模块）主要由内部系统驱动，对外部代码的直接API暴露可能有限。其主要工作是集成到引擎的关卡流送管线中。
-根据创建描述，关键配置项是启用物理异步初始化的控制台变量。
+主要的C++交互点在于创建和配置 `UFastGeoTransformerSettings` 资产，该资产控制几何体提取和转换的行为。
+（来源：`FastGeoFactory.h` 及资产定义）
 
 ```cpp
-// 确保启用物理体的异步初始化，这是插件正常工作的前提条件之一
-// 可以通过代码或配置文件设置
-IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("p.Chaos.EnableAsyncInitBody"));
-if (CVar)
-{
-    CVar->Set(1, EConsoleVariableFlags::ECVF_SetByCode);
-}
-
-// 注意：实际的几何体提取和转换逻辑由引擎内部的世界分区单元转换器（WorldPartitionCellTransformer）驱动，
-// 开发者通常不直接调用底层API，而是通过配置和世界分区设置来影响其行为。
+// 创建 FastGeoTransformerSettings 资产的实例 (通常在编辑器扩展或工具代码中)
+UFastGeoTransformerSettings* Settings = NewObject<UFastGeoTransformerSettings>(GetTransientPackage(), UFastGeoTransformerSettings::StaticClass());
+// 根据需要配置 Settings 的属性...
 ```
-*来源参考：第一个提交信息中的前提条件说明。*
 
 ### 进阶用法
 
-在编辑器工具或自定义管线中，你可能需要与 `FastGeoStreamingEditor` 模块提供的资产定义交互。
-
-```cpp
-// 在编辑器扩展中，查询 FastGeoTransformerSettings 资产类型
-// 参考自: FastGeoAssetDefinitions.h
-UClass* SettingsClass = UFastGeoTransformerSettings::StaticClass();
-TArray<UObject*> FoundSettings;
-EditorAssetLibrary::ListAssetsByClass(SettingsClass, FoundSettings);
-
-// 可以通过工厂创建新的设置资产
-// 参考自: FastGeoFactory.h
-UFastGeoFactory* Factory = NewObject<UFastGeoFactory>();
-Factory->InitialSettings = /* ... 配置一个已有的或默认的设置对象 */;
-UObject* NewSettings = Factory->FactoryCreateNew(UFastGeoTransformerSettings::StaticClass(), GetTransientPackage(), TEXT("NewSettings"), RF_NoFlags, nullptr, GWarn);
-```
+该插件的核心高级功能（异步几何体提取、流送、渲染）由引擎在关卡流送时自动调用。开发者主要通过以下方式与之交互：
+1.  **配置转换器设置**：通过编辑器中的 `UFastGeoTransformerSettings` 资产。
+2.  **确保环境兼容性**：启用 `p.Chaos.EnableAsyncInitBody`。
+3.  **与世界分区系统协作**：正常使用世界分区、数据层和HLOD功能，插件会在后台自动优化相关几何体的流送。
 
 ## Demo 示例
 
-以下为一个最小示例，展示如何在C++中检查插件状态和基础配置。由于插件核心逻辑深度集成，完整演示需要完整的World Partition环境。
+一个最小的示例，展示如何通过C++创建 `UFastGeoTransformerSettings` 资产。
 
+**FastGeoDemo.h**
 ```cpp
-// MyGameFastGeoExample.h
 #pragma once
+
 #include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "FastGeoDemo.generated.h"
 
-class FMyGameFastGeoExample
+class UFastGeoTransformerSettings;
+
+UCLASS()
+class AFastGeoDemoActor : public AActor
 {
-public:
-    /** 检查FastGeoStreaming插件是否已加载并配置就绪 */
-    static bool IsPluginReady();
+	GENERATED_BODY()
 
-    /** 获取插件描述信息（用于调试） */
-    static FString GetPluginInfo();
+public:
+	AFastGeoDemoActor();
+
+	UPROPERTY(EditAnywhere, Category = "FastGeo Demo")
+	TObjectPtr<UFastGeoTransformerSettings> TransformerSettings;
+
+	virtual void BeginPlay() override;
+
+private:
+	void CreateDefaultSettingsIfNeeded();
 };
 ```
 
+**FastGeoDemo.cpp**
 ```cpp
-// MyGameFastGeoExample.cpp
-#include "MyGameFastGeoExample.h"
-#include "Modules/ModuleManager.h"
-#include "Engine/Engine.h"
+#include "FastGeoDemo.h"
+#include "FastGeoTransformerSettings.h" // 需要链接 FastGeoStreamingEditor 模块
+#include "UObject/ConstructorHelpers.h"
 
-bool FMyGameFastGeoExample::IsPluginReady()
+AFastGeoDemoActor::AFastGeoDemoActor()
 {
-    // 检查核心运行时模块是否加载
-    bool bRuntimeModuleLoaded = FModuleManager::Get().IsModuleLoaded(TEXT("FastGeoStreaming"));
-    // 检查必要的CVar（实际环境中应通过CVarManager获取）
-    const IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("p.Chaos.EnableAsyncInitBody"));
-    bool bCVarEnabled = CVar && CVar->GetInt() == 1;
-    
-    UE_LOG(LogTemp, Log, TEXT("FastGeoStreaming Runtime Module Loaded: %s"), bRuntimeModuleLoaded ? TEXT("Yes") : TEXT("No"));
-    UE_LOG(LogTemp, Log, TEXT("Async Physics Init Enabled: %s"), bCVarEnabled ? TEXT("Yes") : TEXT("No"));
-
-    return bRuntimeModuleLoaded && bCVarEnabled;
+	PrimaryActorTick.bCanEverTick = false;
+	// 在构造函数中尝试通过路径加载或直接创建设置资产
+	TransformerSettings = nullptr;
 }
 
-FString FMyGameFastGeoExample::GetPluginInfo()
+void AFastGeoDemoActor::BeginPlay()
 {
-    FModuleManager& ModuleManager = FModuleManager::Get();
-    bool bEditorModuleLoaded = ModuleManager.IsModuleLoaded(TEXT("FastGeoStreamingEditor"));
-    
-    return FString::Printf(
-        TEXT("FastGeoStreaming Plugin Status:\n")
-        TEXT("  Runtime Module: %s\n")
-        TEXT("  Editor Module: %s\n")
-        TEXT("  Purpose: Experimental world geometry streaming optimization."),
-        ModuleManager.IsModuleLoaded(TEXT("FastGeoStreaming")) ? TEXT("Loaded") : TEXT("Not Loaded"),
-        bEditorModuleLoaded ? TEXT("Loaded") : TEXT("Not Loaded")
-    );
+	Super::BeginPlay();
+	CreateDefaultSettingsIfNeeded();
+}
+
+void AFastGeoDemoActor::CreateDefaultSettingsIfNeeded()
+{
+	if (!TransformerSettings)
+	{
+		// 在运行时创建临时设置对象（通常用于编辑器工具或动态配置）
+		TransformerSettings = NewObject<UFastGeoTransformerSettings>(GetTransientPackage(), FName("DefaultFastGeoSettings"));
+		UE_LOG(LogTemp, Log, TEXT("Created temporary FastGeo Transformer Settings."));
+	}
 }
 ```
+
+**使用说明**：
+1.  在编辑器中，`FastGeoStreamingEditor` 模块会注册 `UFastGeoFactory`，允许用户在内容浏览器中通过右键菜单 -> “杂项” -> “Fast Geo Transformer Settings” 来创建 `.FastGeoTransformerSettings` 资产文件。
+2.  上述示例代码展示了如何在C++ Actor中引用或动态创建此类设置对象。
 
 ## 模块依赖
 
 | 模块 | 用途 |
 |---|---|
-| `UnrealEd` | `FastGeoStreaming`模块的依赖项，可能用于访问编辑器特定的世界操作或资产系统接口。 |
-
-**说明**：`FastGeoStreamingEditor`模块的依赖未在提供的信息中明确列出，通常作为Editor模块，它会依赖 `UnrealEd`, `Slate`, `SlateCore`, `PropertyEditor` 等标准编辑器模块。
+| `FastGeoStreaming` | 核心运行时模块，提供几何体提取、转换和异步流送的实现。 |
+| `FastGeoStreamingEditor` | 编辑器模块，提供 `UFastGeoTransformerSettings` 的工厂、资产定义和属性面板自定义。 |
+| `UnrealEd` | `FastGeoStreaming` 模块的依赖，用于访问编辑器特定功能（可能用于世界分区单元转换器）。 |
 
 ## 维护状态
 
@@ -165,20 +143,20 @@ FString FMyGameFastGeoExample::GetPluginInfo()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-14 | `d478e533` | [CodeClarity] CVar description and naming cleanup for FastGeo / SSAM / Async Physics | 清理FastGeo相关控制台变量的描述和命名规范。 |
-| 2026-05-12 | `8b5eabf3` | FastGeo: Support GPU animated instanced skinned meshes. | 新增对GPU驱动的动画实例化蒙皮网格体的支持。 |
-| 2026-05-12 | `10c54c93` | [FastGeo] Harden surrogate component physics queries | 加强了替代组件（surrogate component）物理查询的健壮性。 |
-| 2026-05-12 | `6fa3ba35` | [FastGeo] Fix world transform for unregistered components in runtime cell transformer | 修复了运行时单元转换器中未注册组件的的世界变换问题。 |
-| 2026-05-12 | `8ce6709d` | [FastGeo] Resolve WalkableSlopeOverride from BodySetup when building surrogate descriptor | 在构建替代描述符时，从BodySetup中解析WalkableSlopeOverride。 |
+| 2026-05-14 | `d478e533` | [CodeClarity] CVar description and naming cleanup for FastGeo / SSAM / Async Physics | 清理FastGeo、SSAM、异步物理相关的控制台变量描述和命名。 |
+| 2026-05-12 | `8b5eabf3` | FastGeo: Support GPU animated instanced skinned meshes. | 新增对GPU动画实例化蒙皮网格的支持。 |
+| 2026-05-12 | `10c54c93` | [FastGeo] Harden surrogate component physics queries | 加强代理组件物理查询的稳健性。 |
+| 2026-05-12 | `6fa3ba35` | [FastGeo] Fix world transform for unregistered components in runtime cell transformer | 修复运行时单元转换器中未注册组件的世界变换问题。 |
+| 2026-05-12 | `8ce6709d` | [FastGeo] Resolve WalkableSlopeOverride from BodySetup when building surrogate descriptor | 在构建代理描述符时，从BodySetup中解析WalkableSlopeOverride。 |
 
 ### 维护评价
 
-- **活跃维护**：插件创建于2025年3月，属于实验性阶段。从Git历史看，在**2026年5月仍有非常密集的更新**，包括新功能支持（GPU动画实例）、Bug修复、代码清理和健壮性增强。这表明该插件正处在**积极的开发和优化阶段**。
-- **状态**：**实验性（Experimental）且默认禁用**。这意味着API和功能可能不稳定，生产环境使用需谨慎。
-- **推荐度**：适用于项目前期技术调研、性能优化实验或作为未来大型项目储备技术。**不推荐在需要稳定性的正式项目当前版本中直接依赖**。建议持续关注其向稳定版本演进的情况。
+该插件创建于2025年3月，**非常年轻**，目前处于**活跃维护**状态。从最近的提交记录（2026年5月）可以看出，它仍在持续获得新功能（如支持GPU动画实例）和关键的错误修复（如物理查询、变换问题）。
+
+**注意**：由于该插件标记为 `IsExperimentalVersion=true` 且 `EnabledByDefault=false`，它仍处于实验阶段，API和功能可能会发生破坏性更改，不建议在需要长期稳定性的生产项目中直接使用。它更适合于技术预研、性能测试或作为内部工具链的一部分。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/FastGeoStreaming)
-- 官方文档（暂无）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/FastGeoStreaming/Tests)
+- [官方文档]（无）
+- [测试用例]（无公开测试用例路径）

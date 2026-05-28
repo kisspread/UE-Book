@@ -1,4 +1,4 @@
-# Field System
+# Field System Plugin
 
 > Analytic Field
 
@@ -7,7 +7,7 @@
 | 中文名 | 场系统编辑器 |
 | 分类 | Geometry |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（FieldSystem 资产、编辑器图标） |
+| 包含内容 | ✅ 有（图标资源） |
 | 模块 | `FieldSystemEditor` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2018-12-12 |
@@ -16,85 +16,87 @@
 
 ## 用途
 
-FieldSystemPlugin 提供了 **Field System（场系统）** 资产的编辑器支持，用于创建和管理分析场（Analytic Field）资产。Field System 是 Unreal Engine 物理系统的一部分，主要服务于 Chaos Destruction（混沌破碎）系统，允许开发者定义空间中的标量/向量场，用于控制破碎模拟中的力、速度、破碎程度等物理属性的空间分布。
+这是 **Field System（场系统）** 的**编辑器支持插件**，为引擎内置的 `UFieldSystem` 资产提供创建、编辑和管理的编辑器集成能力。
 
-该插件本身是一个纯编辑器插件（尽管模块类型标记为 Runtime），负责：
-- 注册 FieldSystem 资产类型及其在内容浏览器中的展示
-- 提供 FieldSystem 资产的创建工厂
-- 处理 FieldSystem Actor 的生成逻辑
-- 定义编辑器中使用的类图标和缩略图样式
+Field System 是一种用于定义空间中解析场（Analytic Field）数据的资产，通常配合 **Chaos Destruction（Chaos 破坏系统）** 使用，用于控制破坏效果中的力场分布。例如：
+- 在几何体破坏时施加径向力
+- 定义重力方向和强度的空间变化
+- 创建自定义力场来影响物理模拟
+
+> ⚠️ **注意**：此插件仅提供编辑器侧的资产管理和 UI 支持。`UFieldSystem` 类本身、场节点（Field Nodes）等运行时逻辑位于引擎核心模块中，不在此插件范围内。
 
 ## 使用场景
 
-- 你需要对 Chaos Destruction 破碎效果进行空间化控制 → 定义 Field System 来指定不同区域的破碎强度
-- 你需要创建受力场影响粒子、刚体等物理对象 → 使用 Field System 定义力的空间分布
-- 你需要在编辑器中可视化和编辑物理场 → 通过该插件提供的资产编辑器操作 Field System
+- 你正在使用 **Chaos Destruction** 系统并需要创建自定义力场资产 → 启用此插件
+- 你需要为破碎效果定义空间中的力分布（径向力、线性力、随机力等） → 创建 Field System 资产
+- 你在编辑器中需要一个可视化的场资产管理入口 → 此插件提供资产类型图标和缩略图
 
 ## 蓝图用法
 
-该插件主要提供编辑器资产类型支持，不直接暴露蓝图可调用函数。FieldSystem 资产在编辑器中创建后，通常由 Chaos Destruction 系统在运行时使用。
+此插件本身不暴露蓝图节点，它是一个纯编辑器集成插件，提供：
 
-### 核心资产操作
-
-| 操作 | 说明 |
+| 功能 | 说明 |
 |---|---|
-| 创建 Field System 资产 | 在内容浏览器中右键 → Physics → Field System |
-| 拖放到场景 | 自动创建 FieldSystem Actor |
+| 资产创建 | 通过 Content Browser 创建 `UFieldSystem` 资产 |
+| 资产编辑 | 双击资产打开专用编辑器 |
+| 资产分类 | 在 Content Browser 的 **Physics** 分类下显示 |
+| 拖放支持 | 将资产拖入关卡自动创建 `AFieldSystem` Actor |
 
 ## C++ 用法
 
-该插件是编辑器扩展，C++ 用法集中在资产类型注册和工厂模式。
+此插件主要面向引擎内部使用，不提供公开的 C++ API 供游戏模块调用。以下为内部用法说明：
 
 ### 头文件引入
 
 ```cpp
-#include "Field/FieldSystemEditorModule.h"
-#include "Field/FieldSystemFactory.h"
+#include "FieldSystemEditorModule.h"
 ```
 
 ### 基本用法
 
-检查 FieldSystemEditor 模块是否可用：
-
 ```cpp
-// Source: Source/FieldSyStemEditor/Public/Field/FieldSystemEditorModule.h
+// 检查 FieldSystem 编辑器模块是否可用
 if (IFieldSystemEditorModule::IsAvailable())
 {
     IFieldSystemEditorModule& EditorModule = IFieldSystemEditorModule::Get();
 }
 ```
 
-### 工厂创建
+> 来源：`Source/FieldSyStemEditor/Public/Field/FieldSystemEditorModule.h`
+
+### 进阶用法 — 自定义资产工厂
 
 ```cpp
-// Source: Source/FieldSyStemEditor/Public/Field/FieldSystemFactory.h
-// 通过工厂创建新的 FieldSystem 资产
-UFieldSystem* NewFieldSystem = Cast<UFieldSystem>(
-    UFieldSystemFactory::StaticFactoryCreateNew(
-        UFieldSystem::StaticClass(),
-        InPackage,
-        FName("MyFieldSystem"),
-        RF_Public | RF_Standalone,
-        nullptr,
-        GWarn
-    )
+// 创建 FieldSystem 资产（静态工厂方法）
+UFieldSystem* FieldSystem = UFieldSystemFactory::StaticFactoryCreateNew(
+    UFieldSystem::StaticClass(),
+    InParent,
+    FName("MyFieldSystem"),
+    RF_Transactional,
+    nullptr,
+    GWarn
 );
 ```
 
+> 来源：`Source/FieldSyStemEditor/Public/Field/FieldSystemFactory.h`
+
 ## Demo 示例
 
-该插件为编辑器扩展，不包含运行时示例代码。典型使用方式是：
+此插件为编辑器集成插件，无需编写代码。使用方式：
 
-1. 在编辑器中启用插件（Edit → Plugins → Field System）
-2. 在内容浏览器中右键 → 创建 Physics → Field System 资产
-3. 编辑 Field System 资产中的场定义
-4. 将 Field System 资产拖放到场景中或关联到 Chaos Destruction Actor
+1. 在插件设置中启用 **Field System** 插件
+2. 重启编辑器
+3. 在 Content Browser 中右键 → **Physics** → **Field System**
+4. 双击创建的资产进入编辑器
+5. 在场编辑器中添加场节点（Field Nodes）定义力场分布
 
 ## 模块依赖
 
 | 模块 | 用途 |
 |---|---|
 | 无特殊依赖（仅标准 Core/Engine/Slate 等） | |
+
+> 由于插件源码中未提供 Build.cs 详细内容，从代码分析仅使用了标准引擎模块（UFactory、FAssetTypeActions、UActorFactory 等均为引擎基础类）。
 
 ## 维护状态
 
@@ -103,24 +105,24 @@ UFieldSystem* NewFieldSystem = Cast<UFieldSystem>(
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
 | 2026-02-03 | `20825e79` | Fix duplicate symbol linker errors | 修复重复符号链接错误 |
-| 2023-11-15 | `b64f2e25` | [Deprecation Cleanup] Remove deprecated code in actor factory class | 清理 ActorFactory 中的废弃代码 |
-| 2023-02-17 | `73c74eaf` | Removing redundant include paths: | 移除冗余的 include 路径 |
-| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件批量更新 |
-| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新内置插件链接为安全协议 |
+| 2023-11-15 | `b64f2e25` | [Deprecation Cleanup] Remove deprecated code in actor factory class | 清理 ActorFactory 中已废弃的代码 |
+| 2023-02-17 | `73c74eaf` | Removing redundant include paths: | 移除冗余的头文件包含路径 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件批量重构/路径调整 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新内置插件的供应商链接为安全协议 |
 
 ### 维护评价
 
-⚠️ **该插件长期处于实验性状态，建议谨慎使用。**
-
-- **创建时间**：2018年12月，至今已约7年
-- **状态**：IsBetaVersion = true，EnabledByDefault = false，仍在 Experimental 目录
-- **更新频率**：近年来仅有零散的维护性提交（编译修复、废弃代码清理），无功能性更新
-- **源码规模**：极小（11个文件），功能有限，主要提供编辑器资产类型注册
-- **注意**：该插件是 Chaos Destruction 系统的编辑器侧支持的一部分，核心 FieldSystem 运行时功能可能在其他模块中实现
-
-**建议**：如果你只需要 FieldSystem 的运行时功能（如在 Chaos Destruction 中使用），该插件可能不是必需的。如果你需要在编辑器中创建和管理 FieldSystem 资产，需手动启用此插件。
+- **年龄**：约 7 年，属于实验性遗留插件
+- **更新频率**：最近几年的更新均为编译修复和代码清理，无功能性更新
+- **活跃度**：**不活跃**。插件功能极其精简（仅编辑器集成），已趋于稳定
+- **已知限制**：
+  - 标记为 `IsBetaVersion = true`，从未达到正式版
+  - `EnabledByDefault = false`，需手动启用
+  - 核心功能（FieldSystem 运行时）已集成到引擎主体中，此插件仅为编辑器壳
+- **推荐程度**：如果你使用 Chaos Destruction 系统，此插件是**必需的**（否则无法在编辑器中创建 FieldSystem 资产）。但无需关注其源码，它是纯基础设施。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/FieldSystemPlugin)
-- [官方文档]()（无）
+- 官方文档：无
+- 测试用例：无
