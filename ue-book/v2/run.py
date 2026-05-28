@@ -107,7 +107,8 @@ def main():
     # ── Check status & decide: complete or chain? ──
     if n_skip == 0:
         print("\n🎉 All plugins generated!")
-        _mark_complete(log_path, results=all_results, elapsed=elapsed)
+        _mark_complete(log_path, results=all_results,
+                       this_round=results, elapsed=elapsed)
     else:
         # Save intermediate state for debugging / resume (MUST come before commit)
         _save_progress(log_path, args,
@@ -249,6 +250,7 @@ def _save_progress(log_path: str, args,
 
 
 def _mark_complete(log_path: str, results: list[dict] | None = None,
+                   this_round: list[dict] | None = None,
                    elapsed: float = 0):
     """Mark the run as fully complete."""
     data: dict = {
@@ -260,6 +262,8 @@ def _mark_complete(log_path: str, results: list[dict] | None = None,
     }
     if results:
         data["results"] = results
+    if this_round:
+        data["this_round"] = this_round
     with open(log_path, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
