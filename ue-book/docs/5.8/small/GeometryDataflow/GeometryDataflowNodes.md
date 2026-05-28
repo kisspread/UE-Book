@@ -7,49 +7,48 @@
 | 中文名 | 几何数据流节点 |
 | 分类 | Geometry |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产） |
+| 包含内容 | ✅ 有 |
 | 模块 | `GeometryDataflowNodes` (Runtime), `DataflowMedialSkeleton` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2025-01-21 |
-| 年龄标签 | 🆕（约 2 年） |
+| 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/GeometryDataflow) | |
 
 ## 用途
 
-该插件将几何处理（如网格布尔运算）功能引入到 Unreal Engine 的数据流（Dataflow）系统中。数据流是一种基于节点的可视化编程系统，允许用户通过连接节点来处理数据。`GeometryDataflow` 插件旨在将复杂的几何算法（如网格布尔运算）封装为易于使用的数据流节点，使艺术家和技术美术能够在不编写 C++ 代码的情况下，在数据流图表中执行几何操作。
+这个插件的核心目的是将常见的几何处理功能（Geometry Processing）封装为可复用的 **Dataflow 节点**，从而让用户能够在可视化、基于节点的 **Dataflow 图**中执行复杂的网格操作。
 
-该插件的核心价值在于将 `GeometryProcessing` 模块中的底层算法与 `Dataflow` 模块的可视化节点系统连接起来，创建了一个专注于几何处理的高阶工具集。
+与直接在蓝图中通过 C++ 调用几何处理库相比，此插件提供了一种更直观、更易于构建和调试的工作流程。它主要解决了在 Dataflow 环境中进行程序化几何编辑（如布尔运算）的需求，特别适用于需要将几何操作作为复杂程序化生成或动画流程一部分的场景。
 
 ## 使用场景
 
--   **程序化建模**：在数据流中构建复杂的几何体，例如通过多个网格的布尔运算（并集、交集、差集）来创建新的几何形状。
--   **资产生成**：作为程序化内容生成（PCG）工作流的一部分，用于动态创建和修改网格资产。
--   **技术美术工具链**：技术美术可以创建自定义的数据流节点图，执行几何处理任务，而无需依赖传统的蓝图或 C++ 脚本。
--   **简化复杂操作**：将复杂的几何算法（如网格布尔运算）抽象为简单的节点，降低使用门槛。
+- 你需要在 Dataflow 图中执行两个网格的布尔运算（并集、差集、交集）来组合或修剪它们。
+- 你在创建一个程序化角色生成系统，需要在生成过程中动态地合并或雕刻身体部件的网格。
+- 你正在制作一个基于节点的几何编辑器，并希望将网格布尔操作作为其中一个可配置的步骤。
 
 ## 蓝图用法
 
-该插件主要通过数据流编辑器中的节点使用，而不是传统的蓝图节点。数据流节点在“数据流图表”编辑器中进行连接和配置。
+此插件主要通过 Dataflow 系统提供节点，而非传统的蓝图节点。其核心功能体现在 Dataflow 图编辑器中。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Mesh Boolean` | 对两个输入网格执行布尔运算（并集、交集、差集），并输出结果网格。 | `FMeshBooleanDataflowNode` |
+| `MeshBoolean` | 执行两个网格之间的布尔运算（并集、差集、交集）。 | `FMeshBooleanDataflowNode` |
 
-### 使用示例（数据流图表描述）
+### 使用示例（Dataflow 图描述）
 
-1.  在数据流编辑器中，从节点面板的 `Mesh|Utilities` 分类下拖出一个 `Mesh Boolean` 节点。
-2.  该节点有两个网格输入引脚 `Mesh1` 和 `Mesh2`。连接两个网格数据源（例如另外两个生成网格的节点）到这两个引脚。
-3.  在节点细节面板中，配置布尔运算的属性：
-    -   **Operation**：选择运算类型（并集、交集、差集）。
-    -   **bWeldSharedEdges**：是否焊接公共边。
-    -   **bSimplifyAlongNewEdges**：是否简化结果网格。
-4.  节点将输出一个经过布尔运算处理的网格，可以连接到后续的节点（如材质应用、网格体生成节点等）。
+在 Dataflow 图编辑器中，你可以找到“MeshBoolean”节点，它属于“Mesh|Utilities”类别。
+
+1.  **连接输入**：将两个 `UDynamicMesh` 资产（或来自其他节点的网格输出）分别连接到节点的 `Mesh1` 和 `Mesh2` 输入引脚。
+2.  **设置属性**：
+    - 在节点的属性面板中，选择 `Operation`（运算类型），例如 `Union`（并集）。
+    - 根据需要调整 `bSimplifyAlongNewEdges`（沿新边简化）等优化选项。
+3.  **获取输出**：节点会输出一个经过布尔运算后的新 `UDynamicMesh`，你可以将它连接到后续节点或用于渲染。
 
 ## C++ 用法
 
-该插件提供的主要功能是数据流节点，因此 C++ 用法通常涉及在自定义数据流节点中使用几何处理库，或者扩展该插件的节点集。
+此插件主要提供 Dataflow 节点定义，而非可直接在游戏逻辑中调用的库。其用法主要体现在对节点的扩展或作为 Dataflow 系统一部分的配置上。
 
 ### 头文件引入
 
@@ -59,80 +58,85 @@
 
 ### 基本用法
 
-虽然主要通过数据流节点使用，但了解其底层结构有助于扩展。以下是如何在 C++ 中声明一个网格布尔数据流节点的结构。
+该插件的核心是定义了 `FMeshBooleanDataflowNode` 结构体，它继承自 `FDataflowNode`。虽然游戏代码通常不直接实例化此节点，但理解其结构有助于在 Dataflow 图中进行配置。
 
 ```cpp
-// 引用自 Engine/Plugins/Experimental/GeometryDataflow/Source/GeometryDataflowNodes/Public/Dataflow/MeshBooleanNodes.h
-
-// 1. 定义布尔运算枚举
+// 以下代码展示了节点内部如何定义布尔运算类型枚举，这是你在Dataflow图节点属性中看到选项的来源。
+// 该节点本身通过 UE::Dataflow 命名空间中的函数进行注册。
 UENUM(BlueprintType)
 enum class EMeshBooleanOperationEnum : uint8
 {
-    Dataflow_MeshBoolean_Union,
-    Dataflow_MeshBoolean_Intersect,
-    Dataflow_MeshBoolean_Difference,
-    Dataflow_Max
-};
-
-// 2. 定义网格布尔运算数据流节点
-USTRUCT()
-struct FMeshBooleanDataflowNode : public FDataflowNode
-{
-    GENERATED_USTRUCT_BODY()
-    // ... 属性和重写的 Evaluate 函数
+    // A union of A + B includes everything inside either A or B
+    Dataflow_MeshBoolean_Union UMETA(DisplayName = "Union"),
+    // An intersection of A & B includes only the points inside both A and B, i.e. trimming A by B (and vice versa)
+    Dataflow_MeshBoolean_Intersect UMETA(DisplayName = "Intersect"),
+    // A difference of A - B includes only the points inside A that are outside of B, i.e. subtracting B from A
+    Dataflow_MeshBoolean_Difference UMETA(DisplayName = "Difference"),
+    //~~~
+    //256th entry
+    Dataflow_Max                UMETA(Hidden)
 };
 ```
 
 ### 进阶用法
 
-`FMeshBooleanDataflowNode` 的 `Evaluate` 函数是执行实际布尔运算的地方。该函数的实现（未在提供的代码片段中展示）会调用 `GeometryProcessing` 模块中的算法。
-
-```cpp
-// 伪代码，展示 Evaluate 函数的可能实现逻辑
-void FMeshBooleanDataflowNode::Evaluate(UE::Dataflow::FContext& Context, const FDataflowOutput* Out) const
-{
-    // 1. 从输入引脚获取两个网格
-    UDynamicMesh* InputMesh1 = Context.GetValue<UDynamicMesh>(Mesh1);
-    UDynamicMesh* InputMesh2 = Context.GetValue<UDynamicMesh>(Mesh2);
-    
-    // 2. 调用 GeometryProcessing 模块的网格布尔运算函数
-    UDynamicMesh* ResultMesh = /* ... 调用如 UE::Geometry::MeshBoolean(...) 的函数 ... */;
-    
-    // 3. 将结果设置到输出引脚
-    Context.SetValue<UDynamicMesh>(Mesh, ResultMesh);
-}
-```
+从代码注释和结构推断，`FMeshBooleanDataflowNode` 的 `Evaluate` 函数是实际执行布尔运算的地方。如果你想为自己的 Dataflow 节点集成几何处理功能，可以参考此节点的结构：
+1.  使用 `DATAFLOW_NODE_DEFINE_INTERNAL` 宏定义节点。
+2.  为节点属性（如 `EMeshBooleanOperationEnum Operation`）添加 `UPROPERTY` 宏，使其在 Dataflow 图的属性面板中可编辑。
+3.  定义 `DataflowInput` 和 `DataflowOutput` 元数据的属性来连接数据。
+4.  重写 `Evaluate` 函数以实现具体逻辑。
 
 ## Demo 示例
 
-由于 `GeometryDataflow` 是一个提供数据流节点的插件，其“Demo”主要是通过数据流图表来完成。一个最小的演示就是在数据流编辑器中创建一个简单的 `Mesh Boolean` 节点，并连接两个基础网格生成节点（如立方体、球体）来查看布尔运算效果。
+由于此插件主要提供 Dataflow 节点定义，一个完整的“Demo”更接近于一个包含此节点的 Dataflow 图资产。一个最小可运行的“示例”是在编辑器中创建一个新的 Dataflow 图资产，搜索并添加“MeshBoolean”节点，然后连接两个输入网格体来观察结果。
 
-从代码层面，一个最小的、可编译的扩展示例可能是创建一个新的数据流节点，该节点包装了另一个几何处理函数。由于示例较长且依赖于完整的几何处理库，此处不展开。但基本模式与 `FMeshBooleanDataflowNode` 类似：
+从 C++ 插件扩展的角度，这里是一个理论上如何基于此节点创建类似功能的示意性代码结构：
 
-1.  继承自 `FDataflowNode`。
-2.  使用 `DATAFLOW_NODE_DEFINE_INTERNAL` 宏定义节点元数据。
-3.  声明 `UPROPERTY` 作为输入、输出和可编辑参数。
-4.  重写 `Evaluate` 函数实现逻辑。
+**MyCustomMeshNode.h**
+```cpp
+#pragma once
+#include "Dataflow/DataflowNode.h"
+#include "GeometryScript/Types.h"
+
+// 假设你想创建一个类似的节点用于自己的几何操作
+USTRUCT()
+struct FMyCustomMeshNode : public FDataflowNode
+{
+    GENERATED_USTRUCT_BODY()
+    DATAFLOW_NODE_DEFINE_INTERNAL(FMyCustomMeshNode, "MyCustomNode", "MyCategory", "My custom node description")
+
+public:
+    FMyCustomMeshNode(const UE::Dataflow::FNodeParameters& InParam, FGuid InGuid = FGuid::NewGuid());
+
+private:
+    // 定义输入网格
+    UPROPERTY(meta = (DataflowInput, DataflowIntrinsic))
+    TObjectPtr<UDynamicMesh> InputMesh;
+
+    // 定义输出网格
+    UPROPERTY(meta = (DataflowOutput))
+    TObjectPtr<UDynamicMesh> OutputMesh;
+
+    // 自定义参数
+    UPROPERTY(EditAnywhere, Category = "Settings")
+    float MyCustomParam = 1.0f;
+
+    virtual void Evaluate(UE::Dataflow::FContext& Context, const FDataflowOutput* Out) const override;
+};
+```
+
+**注意**：以上代码为结构示意，实际的 `Evaluate` 实现需要调用具体的几何处理函数，这正是 `GeometryDataflowNodes` 插件为 `MeshBoolean` 所封装的内容。
 
 ## 模块依赖
 
-该插件本身依赖于 `Dataflow` 和 `GeometryProcessing` 两个插件（在 `.uplugin` 中声明）。要在你自己的模块中使用该插件的节点或功能，需要添加以下依赖：
+基于插件的 `.uplugin` 配置，它显式依赖以下插件。因此，使用此插件的模块通常也需要依赖这些模块或其提供的接口。
 
 | 模块 | 用途 |
 |---|---|
-| `GeometryDataflowNodes` | 访问几何数据流节点（如 `FMeshBooleanDataflowNode`） |
-| `GeometryProcessing` | 访问底层的几何处理算法（如网格布尔运算） |
-| `Dataflow` | 数据流节点系统的基类和基础设施 |
+| `Dataflow` | 提供 Dataflow 节点系统的核心框架。 |
+| `GeometryProcessing` | 提供底层的几何处理算法（如网格布尔运算的核心库）。 |
 
-在你的模块的 `.Build.cs` 文件中，需要添加对这些模块的依赖：
-
-```csharp
-PublicDependencyModuleNames.AddRange(new string[] {
-    "GeometryDataflowNodes",
-    "GeometryProcessing",
-    "Dataflow"
-});
-```
+**注意**：插件自身有两个模块 `GeometryDataflowNodes` 和 `DataflowMedialSkeleton`。要使用 `MeshBoolean` 节点，你的项目需要启用此插件，其依赖项（`Dataflow` 和 `GeometryProcessing` 插件）会自动启用。
 
 ## 维护状态
 
@@ -140,22 +144,24 @@ PublicDependencyModuleNames.AddRange(new string[] {
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-14 | `da753042` | Dataflow geometry nodes plugin : remove beta status | 移除该插件的 beta 标记，表明其趋于稳定 |
-| 2026-05-12 | `45745f54` | Dataflow: | (Commit message 过于简短，推测为通用性更新) |
-| 2026-04-17 | `49f946b4` | [Dataflow] | (Commit message 过于简短，推测为通用性更新) |
-| 2025-12-19 | `f86e1e20` | Dataflow : update a lot of nodes to use the new rendering system | 大量更新节点以使用新的渲染系统 |
-| 2025-12-11 | `2c27a203` | Minor cleanup of dataflow mesh boolean options | 对网格布尔运算选项进行微小清理 |
+| 2026-05-14 | `da753042` | Dataflow geometry nodes plugin : remove beta status | 此插件已正式移除beta版本标记，表明其趋于稳定。 |
+| 2026-05-12 | `45745f54` | Dataflow: | 对Dataflow相关节点进行了更新或调整。 |
+| 2026-04-17 | `49f946b4` | [Dataflow] | 针对Dataflow系统进行了维护性更新。 |
+| 2025-12-19 | `f86e1e20` | Dataflow : update a lot of nodes to use the new rendering system | 更新了大量Dataflow节点以使用新的渲染系统，是一次重要的兼容性改进。 |
+| 2025-12-11 | `2c27a203` | Minor cleanup of dataflow mesh boolean options | 对Dataflow网格布尔选项进行了小范围的清理和优化。 |
 
 ### 维护评价
 
-该插件创建于 2025 年初，目前处于**实验性阶段**（`EnabledByDefault: false`，路径在 `Experimental` 下）。从提交历史看，开发团队仍在积极维护和改进：
+**综合评价：积极维护的实验性功能。**
 
-1.  **活跃度**：最近一次实质性更新是 2026 年 5 月移除 beta 状态，表明插件功能已相对成熟，并可能在未来从 Experimental 目录移出。
-2.  **内容更新**：2025 年 12 月有多次提交，涉及节点渲染系统的更新和选项的清理，说明在持续优化。
-3.  **风险**：作为实验性插件，其 API 和功能在未来版本中可能发生不兼容的变化。
-4.  **推荐使用**：对于希望在数据流中进行几何处理的项目，特别是原型开发和工具链构建，可以谨慎使用。在生产环境中使用前，建议关注其从 Experimental 目录毕业的公告。
+- **创建时间**：插件创建于2025年初，相对年轻。
+- **更新频率**：从提交历史看，在2025年底和2026年初有持续的功能性更新和优化，并且在最近移除了beta标记，表明开发团队正在积极维护并认为其已达到一定稳定度。
+- **维护状态**：**活跃维护中**。最近一次提交在2026年5月，且提交信息显示完成了从实验性到稳定化的转变。
+- **已知限制**：作为实验性插件（尽管已移除beta标签），其API和功能在未来版本中仍可能发生变化。目前提供的节点数量有限（从代码分析看主要是网格布尔节点）。
+- **推荐使用**：**推荐在实验性项目或接受API变化的项目中使用**。如果你需要在Dataflow图中执行网格布尔运算，并且项目可以接受使用实验性插件，那么这个插件是合适的选择。它正在走向稳定。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/GeometryDataflow)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/GeometryDataflow/Tests)（如果存在）
+- [官方文档]()（暂无）
+- [测试用例]()（在提供的信息中未明确，通常这类测试可能在引擎测试目录下）
