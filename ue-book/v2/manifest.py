@@ -93,9 +93,11 @@ def resolve_targets(
     print(f"  Found {len(all_plugins)} plugins on {version}")
 
     if force_all:
-        # Re-generate everything
-        targets = all_plugins
-        print(f"  Force-all: will regenerate all {len(targets)} plugins")
+        # "Generate all" = ensure every plugin is in the manifest.
+        # Skip already-registered plugins — manifest is the resume checkpoint.
+        targets = compute_diff(all_plugins, manifest)
+        print(f"  Force-all: {len(targets)} plugins to generate "
+              f"(skipping {len(all_plugins) - len(targets)} already in manifest)")
     elif force:
         # Re-generate specific plugins
         force_set = set(force)
