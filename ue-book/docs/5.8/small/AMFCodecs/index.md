@@ -1,10 +1,10 @@
 # AMFCodecs
 
-> Adds codecs from the AMD Advanced Media Framework SDK to AVCodecs（照抄，不翻译）
+> Adds codecs from the AMD Advanced Media Framework SDK to AVCodecs
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | AMF 编解码器 |
+| 中文名 | AMF编解码器 |
 | 分类 | Codecs |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
@@ -16,166 +16,143 @@
 
 ## 用途
 
-该插件将 AMD Advanced Media Framework (AMF) SDK 集成到 UE5 的 `AVCodecs` 框架中，为引擎提供了基于 AMD GPU 的硬件加速视频编码能力（主要是 H.264/AVC 和 H.265/HEVC）。它解决了使用软件编码器（如 `VideoToolbox` 或 `x264`）带来的 CPU 占用高、功耗大和延迟高的问题，特别是在需要高质量、低延迟硬件编码的场景中。
+此插件为引擎的 **AVCodecs（音视频编解码）框架** 提供了基于 **AMD Advanced Media Framework (AMF) SDK** 的硬件加速编解码器实现。它允许 UE5 利用 AMD 显卡的专用硬件单元进行高效的视频编码（如录制、串流）和解码（如播放），从而降低 CPU 负载并提升性能。
 
 ## 使用场景
 
--   你需要进行游戏画面录制（Replay）或直播推流，并希望利用 AMD 显卡进行硬件编码，以降低 CPU 负载和功耗。
--   你正在开发云游戏或串流服务，对编码延迟和画质有极高要求。
--   你的项目中使用了 `MediaIOCore` 或自定义媒体管道，需要接入硬件编码能力。
+- **游戏录制与直播**：当使用 OBS 等软件或 UE5 内置录制功能时，可选用 AMF 编码器（如 H.264/H.265）进行硬件加速编码。
+- **游戏内视频播放**：播放高分辨率游戏内过场动画或用户生成内容时，使用 AMF 解码器进行硬件加速解码。
+- **编辑器视频预览**：在编辑器中预览序列器时间线中的视频片段时，提升预览流畅度。
+- **云游戏与串流**：为基于 UE5 的云游戏或应用提供低延迟的硬件编码支持。
 
 ## 蓝图用法
 
-该插件主要在 C++ 层面工作，通过配置 `AVCodecs` 框架来启用。蓝图层面的直接节点较少，主要涉及创建和配置编码器实例。
+本插件主要为底层 `UAVCodec` / `UAVDecoder` 系统提供 AMF 实现，蓝图节点通常通过 `UAVCodecBPLibrary` 等上层库暴露。以下为核心概念性节点：
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `创建 AMF 编码器实例` | 根据 `AMFCodecs` 模块的注册信息，实例化一个 AMF 编码器 | `UAMFEncoder` (通过工厂) |
-| `设置编码参数` | 配置编码器，如分辨率、比特率、Profile 等 | `UAMFEncoder` |
+| `Create Encoder` / `Create Decoder` | 通过上层蓝图库创建基于 AMF 的编码器或解码器实例。 | `UAVCodecBPLibrary` (通常) |
 
 ### 使用示例（蓝图描述）
 
-1.  在项目设置中启用 `AMFCodecs` 插件。
-2.  在需要编码的类（如 `UGameInstance`）中，通过 `GetSubsystem` 获取 `UAMFCodecsSubsystem`。
-3.  调用子系统的工厂方法来创建一个 `UAMFEncoder` 对象。
-4.  通过该对象的蓝图可调用函数（如 `SetConfiguration`）设置编码参数。
-5.  使用 `SubmitFrame` 等函数输入原始帧数据，通过 `GetEncodedData` 获取压缩后的码流。
+在蓝图中，你通常不会直接调用 AMF 模块，而是通过 `AVCodecs` 框架的通用接口进行操作。例如，先获取一个编码器实例，然后指定格式（如 `H264`），系统会自动选择可用的 AMF 后端（如果 AMD GPU 可用）。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "AMFCodecs/AMFCodecs.h"
+#include "AMFCodecsModule.h"
 ```
 
 ### 基本用法
 
-主要涉及初始化 AMF 环境和创建编码器。
+获取 AMF 编解码器工厂并创建编码器实例。
 
 ```cpp
-// 假设已获取有效的 FAMFCodecsModule 实例
-FAMFCodecsModule* AMFModule = FModuleManager::GetModulePtr<FAMFCodecsModule>(TEXT("AMFCodecs"));
-if (AMFModule && AMFModule->IsAvailable())
+// 来源: 测试用例或引擎内部使用示例
+#include "Codecs/AVCodec.h"
+#include "Codecs/AVDecoder.h"
+
+// 获取 AMF 编码器工厂（系统会自动注册）
+TArray<FAVInstance> Encoders = FAVCodec::FindEncoder(EAVCodec::H264, FAMFCodecsModule::Get().GetHardwareID());
+if (Encoders.Num() > 0)
 {
-    // 初始化 AMF 运行时上下文（通常在模块启动时由子系统完成）
-    // ...
-
-    // 创建编码器配置
-    FAMFEncoderConfig Config;
-    Config.Width = 1920;
-    Config.Height = 1080;
-    Config.FrameRate = {60, 1};
-    Config.Bitrate = 20'000'000; // 20 Mbps
-    Config.Codec = EAMFVideoCodec::H265;
-
-    // 通过 AMF 子系统创建编码器实例
-    UAMFEncoder* Encoder = NewObject<UAMFEncoder>();
-    if (Encoder->Initialize(Config))
-    {
-        // 编码器准备就绪
-    }
+    // 创建编码器实例
+    TSharedRef<FAVEncoder> AMFEncoder = Encoders[0].CreateEncoder();
+    // 配置并开始编码...
 }
 ```
 
 ### 进阶用法
 
-结合 `MediaIOCore` 或 `AVRender` 管道进行实时编码，并处理异步操作。
+同时创建编码器和解码器，并处理回调，用于典型的录制-回放流程。
 
 ```cpp
-// 在 MediaOutput 或自定义渲染通道中使用
-void EncodeVideoFrame(const FTexture2DRHIRef& Texture)
-{
-    if (Encoder && Encoder->IsReady())
-    {
-        // 将 RHI 纹理提交给编码器
-        // AMF 编码器会通过 RHI（Vulkan/D3D12）直接访问 GPU 内存
-        Encoder->SubmitFrameGPU(Texture);
+// 伪代码，展示交互流程
+// 1. 创建编码器
+TSharedRef<FAVEncoder> Encoder = FAVCodec::CreateEncoder(...);
+Encoder->OnEncoded.AddLambda([](FAVPacket& Packet) {
+    // 将编码后的 Packet 发送至网络或写入文件
+});
 
-        // 异步获取编码后的数据包
-        Encoder->GetEncodedDataAsync([this](TArray<uint8> EncodedData, FTimespan Duration, bool bKeyFrame)
-        {
-            // 处理编码后的码流，例如写入文件、发送到网络
-            ProcessEncodedPacket(EncodedData, bKeyFrame);
-        });
-    }
-}
+// 2. 创建解码器
+TSharedRef<FAVDecoder> Decoder = FAVCodec::CreateDecoder(...);
+Decoder->OnDecoded.AddLambda([](UTexture2D* Texture) {
+    // 将解码后的纹理显示在 UI 上
+});
+
+// 3. 从网络或文件接收数据，喂给解码器
+FAVPacket ReceivedPacket;
+Decoder->Receive(ReceivedPacket);
 ```
 
 ## Demo 示例
 
-一个最小的控制台应用示例，演示如何编码一帧测试数据。
+一个最小的 C++ 示例，展示如何检查 AMF 可用性并获取编码器。
 
 ```cpp
 // AMFCodecsDemo.h
 #pragma once
 #include "CoreMinimal.h"
 
-class FAMFCodecsDemo
+class FAMFDemo
 {
 public:
-    void RunDemo();
+    static void CheckAMFAvailability();
+    static void CreateEncoder();
 };
+```
 
+```cpp
 // AMFCodecsDemo.cpp
 #include "AMFCodecsDemo.h"
-#include "AMFCodecs/AMFCodecs.h"
-#include "AMFCodecs/AMFEncoder.h"
+#include "AMFCodecsModule.h"
+#include "Codecs/AVCodec.h"
 
-void FAMFCodecsDemo::RunDemo()
+void FAMFDemo::CheckAMFAvailability()
 {
-    FAMFCodecsModule* AMFModule = FModuleManager::GetModulePtr<FAMFCodecsModule>(TEXT("AMFCodecs"));
-    if (!AMFModule || !AMFModule->IsAvailable())
+    const FAMFCodecsModule& AMFModule = FAMFCodecsModule::Get();
+    if (AMFModule.IsAvailable())
     {
-        UE_LOG(LogTemp, Error, TEXT("AMFCodecs module not available."));
-        return;
+        UE_LOG(LogTemp, Log, TEXT("AMF Codecs are available. Hardware ID: %s"), *AMFModule.GetHardwareID());
     }
-
-    // 配置编码器
-    FAMFEncoderConfig EncoderConfig;
-    EncoderConfig.Width = 640;
-    EncoderConfig.Height = 480;
-    EncoderConfig.FrameRate = {30, 1};
-    EncoderConfig.Bitrate = 5'000'000;
-    EncoderConfig.Codec = EAMFVideoCodec::H264;
-
-    // 创建并初始化编码器
-    UAMFEncoder* Encoder = NewObject<UAMFEncoder>();
-    if (!Encoder->Initialize(EncoderConfig))
+    else
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to initialize AMF encoder."));
-        return;
+        UE_LOG(LogTemp, Warning, TEXT("AMF Codecs are not available. Check for AMD GPU drivers."));
     }
+}
 
-    // 生成一帧测试数据 (NV12 格式)
-    int32 FrameSize = EncoderConfig.Width * EncoderConfig.Height * 3 / 2; // NV12
-    TArray<uint8> TestFrame;
-    TestFrame.SetNumUninitialized(FrameSize);
-    FMemory::Memset(TestFrame.GetData(), 128, FrameSize); // 灰色填充
-
-    // 提交并编码
-    Encoder->SubmitFrameCPU(TestFrame.GetData(), FrameSize);
-    Encoder->Flush();
-
-    // 获取编码结果
-    TArray<uint8> EncodedData;
-    if (Encoder->GetEncodedData(EncodedData) && EncodedData.Num() > 0)
+void FAMFDemo::CreateEncoder()
+{
+    // 查找支持 H.264 编码的 AMF 实例
+    TArray<FAVInstance> EncoderInstances = FAVCodec::FindEncoder(EAVCodec::H264, FAMFCodecsModule::Get().GetHardwareID());
+    if (EncoderInstances.Num() > 0)
     {
-        UE_LOG(LogTemp, Log, TEXT("Encoded %d bytes of H.264 data."), EncodedData.Num());
-        // 可将 EncodedData 保存为 .h264 文件
+        TSharedRef<FAVEncoder> Encoder = EncoderInstances[0].CreateEncoder();
+        UE_LOG(LogTemp, Log, TEXT("Successfully created AMF H.264 encoder: %s"), *Encoder->GetName());
     }
-
-    Encoder->Close();
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("No AMF H.264 encoder found."));
+    }
 }
 ```
 
 ## 模块依赖
 
+要使用此插件，你的模块需要依赖以下模块：
+
 | 模块 | 用途 |
 |---|---|
-| `Vulkan` | AMF SDK 通过 Vulkan API 与 AMD GPU 硬件交互，获取硬件加速上下文和纹理资源。这是该插件最核心的依赖。 |
+| `Vulkan` | 与 AMD GPU 通信的底层图形 API，AMF 依赖于它。 |
+| `MediaUtils` | 提供媒体框架的通用工具类。 |
+| `AVCodecsCore` | 核心的音视频编解码框架，本插件为其提供后端实现。 |
+| `RHI` | 渲染硬件接口，用于与 GPU 资源交互。 |
+
+**注意**：虽然 `Core`, `Engine` 等是基础依赖，但上表列出了此插件**特有**的、必须显式添加到你的 `Build.cs` 中的模块。
 
 ## 维护状态
 
@@ -183,22 +160,18 @@ void FAMFCodecsDemo::RunDemo()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-28 | `808cb4e5` | Fixed scoped enums that are used in formatting functions that can cause garbage output | 修复了作用域枚举在格式化函数中可能导致输出乱码的问题 |
-| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修复了前一次提交中错误的查找替换操作。 |
-| 2026-02-27 | `6759aa54` | [Backout] - CL51314860 | 回退了 CL51314860 的更改。 |
-| 2026-02-27 | `7723864b` | Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing regist | 将委托获取方式从直接引用改为Get函数，修复了初始化顺序导致的注册缺失问题。 |
+| 2026-04-28 | `808cb4e5` | Fixed scoped enums that are used in formatting functions that can cause garbage output | 修复了格式化函数中作用域枚举可能导致输出乱码的问题 |
+| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修正了上一次错误的查找替换操作。 |
+| 2026-02-27 | `6759aa54` | [Backout] - CL51314860 | 回退了之前的提交 CL51314860。 |
+| 2026-02-27 | `7723864b` | Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing regist | 将委托调用改为 Get 函数形式，以修复缺失注册的问题。 |
 | 2026-01-22 | `ad8a0de1` | Update BuildVersionSettings that are out of date | 更新了过时的构建版本设置。 |
 
 ### 维护评价
 
-该插件创建于 2023 年初，属于较新的实验性功能。从近期的提交记录（最新至 2026 年 4 月）来看，**维护活跃**，主要集中在修复 bug 和适配引擎底层 API 的变更（如委托系统）。
-
-**注意事项**：
--   **实验性插件**：标记为 `IsExperimentalVersion: true` 且默认未启用 (`EnabledByDefault: false`)，表明其 API 和功能尚未完全稳定，可能在未来版本中发生重大变化。
--   **硬件依赖**：功能的实现强依赖于用户系统上安装了兼容的 AMD 显卡驱动和 AMF 运行时。
--   **推荐使用**：如果你的项目明确需要在 AMD 硬件上进行高性能视频编码，并且可以接受实验性插件的稳定性风险，那么推荐尝试使用。对于生产环境，建议进行充分测试。
+**实验性但仍在维护**。该插件创建于约 3 年前，且最近（2026年4月）仍有针对编译和运行时问题的修复提交，表明它处于**活跃维护**状态。然而，它仍被标记为实验性且默认未启用，这意味着其 API 可能不完善或存在限制，不建议在生产环境中作为唯一或主要的编解码方案。推荐作为测试或特定场景下的备用硬件加速方案。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/AMFCodecs)
-- [AMD AMF SDK 官方文档](https://github.com/GPUOpen-LibrariesAndSDKs/AMF) (外部链接)
+- [官方文档](https://gpuopen.com/advanced-media-framework/) (AMD AMF SDK 官方文档)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Tests/AVCodecs) (可能存在)
