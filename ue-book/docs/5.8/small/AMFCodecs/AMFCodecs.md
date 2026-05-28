@@ -4,237 +4,172 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | AMF编解码器 |
+| 中文名 | AMD AMF 编解码器 |
 | 分类 | Codecs |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `AMFCodecs` (Runtime), `AMFCodecsRHI` (Runtime) |
-| 实验性 | ⚠️ 是 |
+| 实验性 | ⚦️ 是 |
 | 创建时间 | 2023-01-25 |
-| 年龄标签 | 🆕（约 3 年） |
+| 年龄标签 | 👴 老古董（约 2 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/AMFCodecs) | |
 
 ## 用途
-
-AMFCodecs 插件是 Epic 的 AVCodecs 框架的一个具体实现，它将 AMD 的 Advanced Media Framework (AMF) SDK 集成到 UE5 中。其核心作用是为 UE5 的视频处理流水线提供基于 AMD GPU 的硬件加速编解码能力。
-
-该插件的主要目的是解决以下问题：
-1.  **利用 AMD GPU 硬件**：在支持的 AMD 显卡上，提供比纯 CPU 编解码（软件编解码）更高性能、更低功耗的 H.264/H.265 视频编码和解码。
-2.  **统一接口**：通过 AVCodecs 框架提供标准化的 `TVideoEncoder` 和 `TVideoDecoder` 接口，使得上层代码（如视频录制、直播推流、视频回放）可以透明地使用硬件加速，而无需关心底层是哪个厂商的实现。
-3.  **低延迟处理**：适用于需要实时或近实时视频处理的场景，如游戏内画面录制、视频会议、云渲染等。
+AMFCodecs 是 UE5 媒体框架 `AVCodecs` 的一个底层扩展插件，其主要作用是**集成 AMD 的 Advanced Media Framework (AMF) SDK**。它为 UE5 提供了一套利用 AMD GPU（VCE/VCN 引擎）进行硬件加速视频编码（H.264/H.265）和解码的能力。
+该插件本身不提供用户友好的高层功能，而是作为编解码器实现，供 `AVCodecs` 等更高层次的媒体插件调用。其存在意义在于让需要高性能、低延迟硬件编解码的项目（如云游戏、实时视频处理）能够充分利用 AMD 硬件资源。
 
 ## 使用场景
+- 你需要在使用 AMD GPU 的硬件上，对 H.264 或 H.265 视频流进行**硬件加速编码**，例如用于低延迟的游戏串流或视频录制。
+- 你需要**解码**来自硬件源（如摄像头、采集卡）或网络流的 H.264/H.265 视频，并希望利用 GPU 加速解码过程以降低 CPU 负担。
+- 你正在开发与 `AVCodecs` 媒体框架集成的自定义视频管线，并希望为 AMD 硬件用户提供优化的编解码器路径。
 
--   你的游戏或应用需要高质量、低性能损耗的**游戏画面录制或直播**，且目标用户主要使用 AMD 显卡。
--   你正在开发一个**视频处理或转码工具**，希望利用 AMD GPU 的硬件编解码单元来加速处理流程。
--   你在构建一个**云游戏或云渲染服务**，需要对来自 AMD GPU 的视频流进行高效的硬件编码。
--   你需要解码来自外部（如摄像头、网络流）的 H.264/H.265 视频流，并希望利用 AMD GPU 进行硬件解码以降低 CPU 负载。
+**重要提示**：此插件为**实验性**（`IsExperimentalVersion=true`），且**默认不启用**。主要用于开发者研究和实验，不建议直接在生产项目中使用。
 
 ## 蓝图用法
-
-此插件主要提供 C++ 层面的 API 集成，未在提供的头文件中发现暴露给蓝图的 `UFUNCTION(BlueprintCallable)` 或 `UPROPERTY(BlueprintReadWrite)`。使用此插件需要在 C++ 层面进行编程。
+经分析源码，本插件**没有暴露任何蓝图可调用的节点**（未发现 `UFUNCTION(BlueprintCallable)` 或 `BlueprintReadWrite` 的 `UPROPERTY`）。其所有功能均通过 C++ 模板类和结构体提供，属于底层编解码器实现。
 
 ## C++ 用法
+该插件的核心是 C++ 模板类 `TVideoEncoderAMF` 和 `TVideoDecoderAMF`，以及配置结构体 `FVideoEncoderConfigAMF` / `FVideoDecoderConfigAMF`。
 
 ### 头文件引入
-
 ```cpp
-#include "Video/Encoders/Configs/VideoEncoderConfigAMF.h"
-#include "Video/Encoders/VideoEncoderAMF.h"
-#include "Video/Decoders/Configs/VideoDecoderConfigAMF.h"
-#include "Video/Decoders/VideoDecoderAMF.h"
 #include "AMF.h"
+#include "Video/Encoders/VideoEncoderAMF.h"
+#include "Video/Encoders/Configs/VideoEncoderConfigAMF.h"
+#include "Video/Decoders/VideoDecoderAMF.h"
+#include "Video/Decoders/Configs/VideoDecoderConfigAMF.h"
 ```
 
-### 基本用法：配置编码器
-
-从 `Public/Video/Encoders/Configs/VideoEncoderConfigAMF.h` 提取。`FVideoEncoderConfigAMF` 是 AMF 编码器的核心配置类。
-
-```cpp
-// 来源: Engine/Plugins/Experimental/AVCodecs/AMFCodecs/Public/Video/Encoders/Configs/VideoEncoderConfigAMF.h
-
-// 创建一个 H.264 编码器配置
-FVideoEncoderConfigAMF EncoderConfig;
-EncoderConfig.CodecType = FVideoEncoderConfigAMF::CodecTypeH264;
-EncoderConfig.Width = 1920;
-EncoderConfig.Height = 1080;
-
-// 设置特定的 AMF 属性 (例如：设置目标码率)
-// 假设我们要设置 “AMF_VIDEO_ENCODER_TARGET_BITRATE” 属性
-int32 TargetBitrate = 5000000; // 5 Mbps
-EncoderConfig.SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, TargetBitrate);
-
-// 设置重复发送 SPS/PPS 头（对于某些流媒体场景是必要的）
-EncoderConfig.RepeatSPSPPS = true;
-```
-
-### 进阶用法：创建和使用编码器实例
-
-结合 `TVideoEncoderAMF` 模板类和 `FVideoEncoderConfigAMF` 使用。
+### 基本用法
+首先需要初始化 AMF 工厂（`FAMF`），这是整个插件的基础。
 
 ```cpp
-// 假设我们有一个用于渲染到纹理的 FVideoResourceVulkan 资源
-TSharedPtr<FVideoResourceVulkan> MyVideoResource = ...;
+// 来源: Public/AMF.h
+// 获取全局 AMF 工厂实例
+FAMF& AMFFactory = FAMF::Get();
 
-// 1. 创建编码器实例（模板参数是资源类型）
-TVideoEncoderAMF<FVideoResourceVulkan> MyEncoder;
-
-// 2. 打开编码器，传入设备和实例（通常来自 AVCodecs 框架）
-FAVResult OpenResult = MyEncoder.Open(MyAVDevice, MyAVInstance);
-if (!OpenResult.HasValue()) {
-    UE_LOG(LogTemp, Error, TEXT("Failed to open AMF encoder: %s"), *OpenResult.Message);
-    return;
-}
-
-// 3. 应用我们之前配置的设置
-MyEncoder.ApplyConfig(); // 内部会使用已设置的 FVideoEncoderConfigAMF
-
-// 4. 发送一帧进行编码
-FAVResult SendResult = MyEncoder.SendFrame(MyVideoResource, CurrentTimestamp);
-if (!SendResult.HasValue()) {
-    UE_LOG(LogTemp, Warning, TEXT("Error sending frame: %s"), *SendResult.Message);
-}
-
-// 5. 接收编码后的数据包（例如用于写入文件或发送网络流）
-FVideoPacket OutPacket;
-while (MyEncoder.ReceivePacket(OutPacket).HasValue())
+// 检查 AMF 是否初始化成功且系统有兼容的 GPU
+if (AMFFactory.IsValid())
 {
-    // 处理编码后的数据包 OutPacket
-    // OutPacket.Data 包含压缩后的视频数据
-    // OutPacket.Timestamp 为时间戳
+    // 可以获取底层的 AMFFactory 指针用于更高级的 AMF 操作
+    amf::AMFFactory* Factory = AMFFactory.GetFactory();
 }
+```
+
+### 进阶用法：视频编码
+以下示例展示了如何使用 `TVideoEncoderAMF` 模板类（以 `FVideoResourceVulkan` 为例）进行视频编码。
+
+```cpp
+// 假设已包含必要的头文件，并已定义 TResource 类型，例如 FVideoResourceVulkan
+using FMyEncoder = TVideoEncoderAMF<FVideoResourceVulkan>;
+
+// 1. 创建编码器实例
+TSharedRef<FMyEncoder> Encoder = MakeShared<FMyEncoder>();
+
+// 2. 打开编码器，关联到设备和实例
+TSharedRef<FAVDevice> Device = /* ... */;
+TSharedRef<FAVInstance> Instance = /* ... */;
+FAVResult OpenResult = Encoder->Open(Device, Instance);
+if (OpenResult.IsNotSuccess())
+{
+    // 处理错误
+}
+
+// 3. 配置编码参数
+FVideoEncoderConfigAMF Config;
+Config.CodecType = FVideoEncoderConfigAMF::CodecTypeH264; // 或 H265
+Config.Width = 1920;
+Config.Height = 1080;
+Config.SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED);
+
+// 应用配置
+Encoder->ApplyConfig();
+
+// 4. 发送视频帧进行编码
+TSharedPtr<FVideoResourceVulkan> InputResource = /* ... 获取或创建一帧 GPU 资源 ... */;
+uint32 Timestamp = /* ... */;
+bool bForceKeyframe = false;
+FAVResult SendResult = Encoder->SendFrame(InputResource, Timestamp, bForceKeyframe);
+
+// 5. 接收编码后的数据包（非阻塞）
+FVideoPacket Packet;
+FAVResult ReceiveResult = Encoder->ReceivePacket(Packet);
+if (ReceiveResult.IsSuccess())
+{
+    // Packet.Data 包含编码后的 H.264/H.265 NALUs
+    // Packet.Timestamp 包含时间戳
+}
+
+// 6. 完成后关闭编码器
+Encoder->Close();
 ```
 
 ## Demo 示例
+一个基于 Vulkan 资源的 H.264 编码器最小示例。
 
-以下是一个概念性的完整示例，展示了如何配置并使用 AMF H.264 编码器处理一帧。
-
-**MyVideoEncoderComponent.h**
+**MyAMFEncoder.h**
 ```cpp
-// MyVideoEncoderComponent.h
 #pragma once
 
-#include "Components/ActorComponent.h"
-#include "Video/Encoders/Configs/VideoEncoderConfigAMF.h"
-#include "Video/Encoders/VideoEncoderAMF.h"
-#include "AV/VideoResourceVulkan.h" // 假设使用 Vulkan 资源
+#include "CoreMinimal.h"
+#include "VideoResourceVulkan.h" // 假设资源类型已定义
 
-class UMyVideoEncoderComponent : public UActorComponent
+class FMyAMFExample
 {
-    GENERATED_BODY()
-
 public:
-    virtual void BeginPlay() override;
-    virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-private:
-    // 编码器实例
-    TVideoEncoderAMF<FVideoResourceVulkan> Encoder;
-    // 编码器配置
-    FVideoEncoderConfigAMF EncoderConfig;
-    // 上下文和设备（简化示例，实际需从 AVCodecs 框架获取）
-    TSharedPtr<FAVDevice> AVDevice;
-    TSharedPtr<FAVInstance> AVInstance;
-
-    bool bEncoderInitialized = false;
+    void RunEncodingExample();
 };
 ```
 
-**MyVideoEncoderComponent.cpp**
+**MyAMFEncoder.cpp**
 ```cpp
-// MyVideoEncoderComponent.cpp
-#include "MyVideoEncoderComponent.h"
-#include "AV/AVContext.h" // 示例包含，实际依赖 AVCodecs 模块
+#include "MyAMFEncoder.h"
+#include "AMF.h"
+#include "Video/Encoders/VideoEncoderAMF.h"
+#include "Video/Encoders/Configs/VideoEncoderConfigAMF.h"
 
-void UMyVideoEncoderComponent::BeginPlay()
+void FMyAMFExample::RunEncodingExample()
 {
-    Super::BeginPlay();
-
-    // 初始化 AMF 上下文和设备 (这里仅为伪代码，实际需要创建或获取有效的上下文)
-    AVDevice = MakeShared<FAVDevice>(); // 需要正确初始化
-    AVInstance = MakeShared<FAVInstance>(); // 需要正确初始化
-
-    // 配置编码器
-    EncoderConfig.CodecType = FVideoEncoderConfigAMF::CodecTypeH264;
-    EncoderConfig.Width = 1280;
-    EncoderConfig.Height = 720;
-    EncoderConfig.RepeatSPSPPS = true;
-    // 设置其他 AMF 属性...
-    // EncoderConfig.SetProperty(...);
-
-    // 打开编码器
-    FAVResult Result = Encoder.Open(AVDevice, AVInstance);
-    if (Result.HasValue())
+    // 1. 检查 AMF 可用性
+    FAMF& AMFFactory = FAMF::Get();
+    if (!AMFFactory.IsValid())
     {
-        bEncoderInitialized = true;
-        // 应用配置
-        Encoder.ApplyConfig();
-        UE_LOG(LogTemp, Log, TEXT("AMF H.264 Encoder Opened Successfully."));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to open AMF Encoder: %s"), *Result.Message);
-    }
-}
-
-void UMyVideoEncoderComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-    if (!bEncoderInitialized || !Encoder.IsOpen())
-    {
+        UE_LOG(LogTemp, Error, TEXT("AMF is not available or no compatible GPU found."));
         return;
     }
 
-    // 1. 在你的渲染代码中，将场景渲染到一个 FVideoResourceVulkan 纹理
-    // TSharedPtr<FVideoResourceVulkan> CurrentFrameResource = RenderSceneToVulkanTexture(...);
-    // （此部分代码省略，取决于你的渲染管线）
+    // 2. 定义编码器类型 (以 Vulkan 资源为例)
+    using FMyEncoder = TVideoEncoderAMF<FVideoResourceVulkan>;
 
-    // 2. 假设我们获得了当前帧的资源
-    // TSharedPtr<FVideoResourceVulkan> CurrentFrameResource = ...;
+    // 3. 创建并配置编码器
+    TSharedRef<FMyEncoder> Encoder = MakeShared<FMyEncoder>();
 
-    // 3. 将帧发送给编码器
-    /*
-    if (CurrentFrameResource)
-    {
-        FAVResult SendResult = Encoder.SendFrame(CurrentFrameResource, GetWorld()->GetTimeSeconds());
-        if (!SendResult.HasValue())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("AMF Encoder SendFrame failed: %s"), *SendResult.Message);
-        }
+    // 4. 准备设备和实例 (需要根据实际情况获取)
+    // TSharedRef<FAVDevice> Device = ...;
+    // TSharedRef<FAVInstance> Instance = ...;
+    // FAVResult Result = Encoder->Open(Device, Instance);
 
-        // 4. 尝试接收编码结果
-        FVideoPacket Packet;
-        while (Encoder.ReceivePacket(Packet).HasValue())
-        {
-            // 这里可以将 Packet.Data 保存到文件，或通过网络发送
-            // WriteToFile(Packet.Data, Packet.Timestamp);
-        }
-    }
-    */
-}
+    // 5. 设置 H.264 编码参数
+    FVideoEncoderConfigAMF Config;
+    Config.CodecType = FVideoEncoderConfigAMF::CodecTypeH264;
+    Config.Width = 1280;
+    Config.Height = 720;
+    // 使用 AMF SDK 的枚举设置参数
+    Config.SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
+    Config.SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED);
 
-void UMyVideoEncoderComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    // 关闭编码器，释放资源
-    if (Encoder.IsOpen())
-    {
-        Encoder.Close();
-    }
-    Super::EndPlay(EndPlayReason);
+    // ... (Open, ApplyConfig, SendFrame, ReceivePacket 循环) ...
+    // Encoder->Close();
 }
 ```
 
 ## 模块依赖
-
-从模块 `AMFCodecs` 的 `Build.cs` 文件分析，它依赖于：
+从 `AMFCodecs.Build.cs` 和 `AMFCodecsRHI.Build.cs` 分析，使用此插件需要以下**独特**依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `Vulkan` | 提供 Vulkan RHI 支持，用于在 AMD GPU 上创建和管理 AMF 上下文和表面资源。 |
-
-**说明**：此插件还依赖于隐含的 `AVCodecs` 模块（父插件），该模块提供了基础的编解码器框架（如 `TVideoEncoder`， `FVideoPacket` 等）。你的模块若要使用此插件，通常也需要依赖 `AVCodecs` 和 `AMFCodecs`。
+| `Vulkan` | 提供 Vulkan RHI 支持，用于在 Vulkan 后端上运行 AMF 编解码器 |
+| `AVCodecs` | 提供本插件所实现的编解码器基类和接口（如 `TVideoEncoder`， `FAVConfig`）。使用本插件的项目通常也需要引用此模块 |
 
 ## 维护状态
 
@@ -242,20 +177,19 @@ void UMyVideoEncoderComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-28 | `808cb4e5` | Fixed scoped enums that are used in formatting functions that can cause garbage output | 修复了在格式化函数中使用作用域枚举可能导致输出错误的 bug |
-| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修正了上一次错误查找替换后的第二次提交 |
-| 2026-02-27 | `6759aa54` | [Backout] - CL51314860 | 回退了变更列表 CL51314860 的修改 |
-| 2026-02-27 | `7723864b` | Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing regist | 将引擎初始化委托的调用方式改为函数获取，以修复注册缺失问题 |
+| 2026-04-28 | `808cb4e5` | Fixed scoped enums that are used in formatting functions that can cause garbage output | 修复了格式化函数中使用的 scoped enum 导致输出垃圾值的 bug |
+| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 继续修复上一次错误的查找替换操作 |
+| 2026-02-27 | `6759aa54` | [Backout] - CL51314860 | 回退了变更列表 51314860 的修改 |
+| 2026-02-27 | `7723864b` | Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing registry | 修复了因引擎初始化委托获取方式变更导致的注册缺失问题 |
 | 2026-01-22 | `ad8a0de1` | Update BuildVersionSettings that are out of date | 更新了过时的构建版本设置 |
 
 ### 维护评价
-
-**活跃维护**。虽然此插件标记为实验性（`IsExperimentalVersion: true`）且默认禁用，但从近期的 Git 历史看，它在过去两年内仍有持续的更新和维护（最近一次在2026年4月）。这些更新主要是编译修复和依赖项适配，表明它正在随着引擎核心的发展进行同步维护，以确保其作为实验性功能的基础可用性。
-
-**结论**：此插件适用于需要利用 AMD 硬件编解码能力且不介意其“实验性”状态的 C++ 开发者。它提供了一个相对底层的接口，需要使用者熟悉 AVCodecs 框架。对于生产环境，需要充分测试其在不同 AMD GPU 上的稳定性和性能。由于其活跃的维护状态，可以期待其未来随着引擎版本更新而持续改进。
+该插件创建于 2023 年初，**近期（2026 年）仍有维护活动**，主要集中在 bug 修复和引擎接口适配上。结合其 `IsExperimentalVersion=true` 和 `EnabledByDefault=false` 的特性，可以判断它目前处于**实验性维护阶段**。
+- **优点**：仍在被 Epic Games 工程师维护，以适应引擎内部 API 的变化。
+- **限制**：是实验性插件，API 可能不稳定，功能可能不完整（例如 H.265 编码支持在代码中被注释掉）。
+- **建议**：**不建议**用于生产项目。适用于想要研究 UE5 与 AMF SDK 集成、或为 AMD 硬件开发定制媒体管线的开发者。使用时应密切关注其 API 变更。
 
 ## 相关链接
-
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/AMFCodecs)
-- 官方文档：无
-- 测试用例：在提供的源码片段中未发现，可能位于 AVCodecs 父插件或引擎的测试目录中。
+- [官方文档](https://gpuopen.com/amf/) (AMD AMF SDK 文档)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/AMFCodecs/Tests) (如果存在，通常在此路径下)

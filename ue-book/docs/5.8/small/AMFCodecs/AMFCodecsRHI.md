@@ -16,150 +16,117 @@
 
 ## 用途
 
-本插件是 Unreal Engine 5 中 `AVCodecs` 插件的扩展后端之一。它的核心作用是将 AMD 的 Advanced Media Framework (AMF) SDK 集成到 UE5 的统一音视频编解码框架 (`AVCodecs`) 中，为使用 AMD 显卡（GPU）的用户和开发者提供**硬件加速**的视频编码（如 H.264/AVC, H.265/HEVC）和解码能力。它解决了 `AVCodecs` 框架最初缺少 AMF 支持的问题，使得依赖 AMD 硬件进行高效视频处理的应用（如游戏录制、视频编辑、视频通话）能够充分利用 GPU 资源，降低 CPU 开销。
+本插件将 **AMD Advanced Media Framework (AMF)** 的硬件编解码能力集成到 Unreal Engine 5 的 `AVCodecs` 框架中。其核心目的是为使用 AMD 显卡的开发者提供一个标准化的接口，以利用 GPU 硬件加速进行高性能的视频编码（例如 H.264， H.265/HEVC）和解码。它解决了在 UE 中直接调用特定厂商硬件加速编解码器 API 复杂且平台相关的问题，将其封装为引擎内统一的音视频处理管线的一部分。
 
 ## 使用场景
 
-- 你正在开发一款 PC 游戏或应用，目标用户主要使用 AMD Radeon 显卡，你需要进行游戏画面实时录制或推流。
-- 你的应用需要进行高质量的视频编辑或转码，并希望利用 AMD GPU 的专用媒体引擎来加速处理过程。
-- 你在开发涉及视频通话或视频会议的多人在线功能，并希望在 AMD 硬件上获得更低的延迟和 CPU 占用率。
+*   你的项目需要进行**高质量、低延迟的视频录制或推流**，并且目标用户的硬件以 AMD 显卡为主，希望利用其硬件编码器以降低 CPU 负载。
+*   你正在开发视频处理相关的工具或功能，需要在运行时对视频流进行**硬件加速的编码或解码**。
+*   你正在构建一个基于 `AVCodecs` 框架的跨平台媒体处理系统，并需要为 AMD 平台提供特定的高性能实现。
 
 ## 蓝图用法
 
-本插件作为 `AVCodecs` 框架的编解码器后端，**不直接暴露独立的蓝图节点**。其功能通过 `AVCodecs` 插件统一对外的蓝图 API 进行访问。开发者在蓝图中调用 `AVCodecs` 的编码器/解码器节点时，如果系统检测到兼容的 AMD GPU 并且 AMFCodecs 插件已启用，则会自动使用 AMD AMF 硬件加速后端。
-
-### 核心节点 (通过 AVCodecs 框架)
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `Create Video Encoder` | 创建视频编码器实例，AMF 后端会根据硬件自动选择 | `UAVCodecSubsystem` |
-| `Create Video Decoder` | 创建视频解码器实例，AMF 后端会根据硬件自动选择 | `UAVCodecSubsystem` |
-
-### 使用示例（蓝图描述）
-
-1.  **确保插件启用**：在项目设置的 “Plugins” 中搜索并启用 “AVCodecs” 和 “AMFCodecs”。
-2.  **创建编码器**：使用 `Create Video Encoder` 节点，在 “Codec” 选项中可能会出现如 “AMF H264 Encoder” 或 “AMF HEVC Encoder” 等选项。
-3.  **进行编码**：连接后续的编码、提交帧、获取数据包等节点完成视频编码流程。
+根据提供的源码文件分析，该插件主要为 C++ 层提供底层编解码器实现。它作为 `AVCodecs` 框架的后端，其核心功能通常由更上层的媒体框架（如 `MediaPlayer`、`MovieSceneCapture` 或自定义的 `AVContext`）在内部调用。**当前版本未发现提供额外的、可直接在蓝图中调用的公开函数或属性**。开发者主要通过配置和使用标准的 UE 媒体播放或捕获系统来间接受益于该插件提供的硬件加速能力。
 
 ## C++ 用法
 
 ### 头文件引入
 
+该插件提供了两个模块。要使用 AMF 的编解码器，主要引入 `AMFCodecs` 模块的头文件。
+
 ```cpp
-#include "AMFCodecsModule.h" // 主模块头文件
+#include "AMFCodecs/AMFCodec.h"
+// 或根据具体的编码器/解码器类型引入
+#include "AMFCodecs/AMFH264Encoder.h"
 ```
 
 ### 基本用法
 
-本插件的核心在于作为 `AVCodecs` 框架的模块化后端。典型的用法是**确保模块正确加载和初始化**，以便 `AVCodecs` 子系统能够发现并使用它。
-
-```cpp
-// 检查 AMFCodecs 模块是否已加载并可用
-// 来源：Engine/Plugins/Experimental/AVCodecs/AMFCodecs/Source/AMFCodecs/Private/AMFCodecsModule.cpp
-if (FModuleManager::Get().IsModuleLoaded(TEXT("AMFCodecs")))
-{
-    // 模块已加载，此时 AVCodecs 子系统应能通过工厂方法发现 AMF 编解码器。
-    UE_LOG(LogTemp, Log, TEXT("AMFCodecs module is loaded and ready."));
-}
-else
-{
-    // 尝试加载模块（通常不需要手动调用，插件系统会处理）
-    FModuleManager::Get().LoadModule(TEXT("AMFCodecs"));
-}
-```
+该插件的设计是作为 `AVCodecs` 框架的组成部分，通常不会被直接实例化和调用，而是由引擎的媒体子系统在后台使用。一个更可能的使用模式是通过 `FVideoEncoder` 或 `FVideoDecoder` 的工厂接口来请求一个特定格式（如 H.264）的编解码器实例，引擎会根据平台和硬件能力自动选择使用 AMF 还是其他后端。
 
 ### 进阶用法
 
-在编写直接操作 `AVCodec` 对象的代码时，可以通过查询编解码器特性来确认是否正在使用 AMF 硬件后端。
-
-```cpp
-#include "Video/VideoEncoder.h"
-#include "AVUtility.h"
-
-void UseEncoder()
-{
-    TSharedPtr<FVideoEncoder> Encoder = FVideoEncoder::Create({ECodecType::H264});
-    if (Encoder.IsValid())
-    {
-        // 查询编码器名称或供应商信息，以确认是否为 AMF
-        FString EncoderName;
-        Encoder->GetOption(AVOption::EncoderName, EncoderName);
-        
-        if (EncoderName.Contains(TEXT("AMF")))
-        {
-            UE_LOG(LogTemp, Log, TEXT("Using AMD AMF hardware encoder: %s"), *EncoderName);
-        }
-        
-        // ... 使用编码器进行编码
-    }
-}
-```
+对于深度定制，开发者可能需要直接与 AMF 的上下文和表面对象交互。这通常涉及：
+1.  获取或创建一个 `IAMFEncoder` 或 `IAMFDecoder` 接口。
+2.  配置编码/解码参数（如分辨率、比特率、帧率、Profile/Level）。
+3.  将 `FMediaTextureSample` 或 `FVideoBuffer` 提交给编码器，或从解码器中获取解码后的帧数据。
+4.  处理异步操作和回调。
 
 ## Demo 示例
 
-以下是一个展示如何查询 AMF 编解码器可用性的最小 C++ 示例。
+以下是一个概念性的示例，展示如何在 C++ 中可能通过 `AVCodecs` 框架请求一个使用 AMF 后端的 H.264 编码器。
 
-**MyVideoCodecManager.h**
+**MyAMFEncoderUser.h**
 ```cpp
 #pragma once
-
 #include "CoreMinimal.h"
-#include "Modules/ModuleManager.h"
 
-class FMyVideoCodecManager
+class FAMFEncoderWrapper;
+
+class FMyAMFEncoderUser
 {
 public:
-    static void CheckAMFAvailability();
+    void InitializeEncoder(int32 Width, int32 Height, int32 Bitrate);
+    void EncodeFrame(const void* FrameData, int32 FrameSize);
+    void Shutdown();
+
+private:
+    TUniquePtr<FAMFEncoderWrapper> Encoder;
 };
 ```
 
-**MyVideoCodecManager.cpp**
+**MyAMFEncoderUser.cpp**
 ```cpp
-#include "MyVideoCodecManager.h"
-#include "AMFCodecsModule.h"
-#include "Video/VideoEncoder.h"
-#include "AVUtility.h"
+#include "MyAMFEncoderUser.h"
+#include "Video/VideoEncoder.h" // 假设的AVCodecs视频编码器接口
+#include "HAL/PlatformMisc.h"
 
-void FMyVideoCodecManager::CheckAMFAvailability()
+// 注意：以下代码为基于框架设计的推断示例，具体API需参照UE5 AVCodecs最新文档。
+void FMyAMFEncoderUser::InitializeEncoder(int32 Width, int32 Height, int32 Bitrate)
 {
-    // 1. 检查模块
-    const bool bAMFModuleLoaded = FModuleManager::Get().IsModuleLoaded(TEXT("AMFCodecs"));
-    UE_LOG(LogTemp, Log, TEXT("AMFCodecs Module Loaded: %s"), bAMFModuleLoaded ? TEXT("YES") : TEXT("NO"));
+    // 通过AVCodecs框架请求一个H.264编码器实例，引擎可能会自动选择AMF后端（如果硬件支持）
+    // FVideoEncoderInfo EncoderInfo;
+    // EncoderInfo.Codec = EVideoCodec::H264;
+    // EncoderInfo.Width = Width;
+    // EncoderInfo.Height = Height;
+    // EncoderInfo.Bitrate = Bitrate;
+    //
+    // // 获取编码器工厂并创建实例
+    // IVideoEncoderFactory* EncoderFactory = GetVideoEncoderFactory();
+    // if (EncoderFactory)
+    // {
+    //     Encoder = EncoderFactory->CreateEncoder(EncoderInfo);
+    // }
+}
 
-    // 2. 尝试创建一个 H264 编码器，看它是否为 AMF 后端
-    TSharedPtr<FVideoEncoder> H264Encoder = FVideoEncoder::Create({ECodecType::H264});
-    if (H264Encoder)
+void FMyAMFEncoderUser::EncodeFrame(const void* FrameData, int32 FrameSize)
+{
+    if (Encoder)
     {
-        FString EncoderIdentifier;
-        H264Encoder->GetOption(AVOption::EncoderName, EncoderIdentifier);
-        
-        if (bAMFModuleLoaded && EncoderIdentifier.Contains(TEXT("AMF")))
-        {
-            UE_LOG(LogTemp, Log, TEXT("✅ AMF hardware encoder is active: %s"), *EncoderIdentifier);
-        }
-        else if (bAMFModuleLoaded)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("⚠️ AMF module loaded, but active encoder is not AMF: %s"), *EncoderIdentifier);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("❌ Using software encoder: %s"), *EncoderIdentifier);
-        }
+        // 创建帧数据描述
+        // FVideoFrame InputFrame;
+        // InputFrame.Data = FrameData;
+        // InputFrame.Size = FrameSize;
+        //
+        // // 提交编码
+        // Encoder->Encode(InputFrame);
     }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("❌ Failed to create any H264 encoder."));
-    }
+}
+
+void FMyAMFEncoderUser::Shutdown()
+{
+    Encoder.Reset();
 }
 ```
 
 ## 模块依赖
 
-从 `Build.cs` 分析，本插件依赖以下模块：
+该插件本身依赖关系相对简单，主要与图形和硬件抽象层相关。
 
 | 模块 | 用途 |
 |---|---|
-| `Vulkan` | 提供与 Vulkan RHI 的交互能力，AMF 在 UE 中通常通过 Vulkan 扩展与 GPU 通信 |
+| `Vulkan` | 提供底层图形和计算API，用于与AMD GPU的AMF硬件编解码器进行交互。 |
+| `AVCodecs` | 提供上层音视频编解码框架接口，本插件作为其硬件后端之一。 |
 
 ## 维护状态
 
@@ -167,22 +134,19 @@ void FMyVideoCodecManager::CheckAMFAvailability()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-28 | `808cb4e5` | Fixed scoped enums that are used in formatting functions that can cause garbage output | 修复了作用域枚举在格式化函数中使用导致输出乱码的问题 |
-| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 在修复了错误的查找替换后，进行了第二次提交（具体修复内容） |
-| 2026-02-27 | `6759aa54` | [Backout] - CL51314860 | 回退了变更列表 51314860 |
-| 2026-02-27 | `7723864b` | Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing regist... | 将引擎初始化后的委托获取方式从直接访问改为调用Get函数，以修复注册缺失的问题（因消息截断，推测完整内容） |
-| 2026-01-22 | `ad8a0de1` | Update BuildVersionSettings that are out of date | 更新了过时的构建版本设置 |
+| 2026-04-28 | `808cb4e5` | Fixed scoped enums that are used in formatting functions that can cause garbage output | 修复格式化函数中作用域枚举可能导致的输出错误 |
+| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修复前次错误的查找替换后的第二次提交 |
+| 2026-02-27 | `6759aa54` | [Backout] - CL51314860 | 回退了编号为51314860的改动 |
+| 2026-02-27 | `7723864b` | Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing regist | 将引擎初始化委托改为函数调用形式以修复注册问题 |
+| 2026-01-22 | `ad8a0de1` | Update BuildVersionSettings that are out of date | 更新过时的构建版本设置 |
 
 ### 维护评价
 
-AMFCodecs 插件自 2023 年初创建以来，持续有维护性更新，最近一次实质性修复在 2026 年 4 月，表明它仍处于**活跃维护**状态。作为 `AVCodecs` 生态的一部分，它随着引擎核心 AV 框架的演进而同步更新。
-
-需要注意的是，这是一个**实验性插件**（`IsExperimentalVersion: true`），并且**默认未启用**（`EnabledByDefault: false`）。这意味着它的 API 可能在未来版本中发生不兼容的变化，且可能存在未发现的稳定性问题。它主要面向希望使用最新 AMD 硬件加速功能并愿意承担一定风险的开发者。
-
-**结论**：**推荐在需要 AMD AMF 硬件加速支持的项目中使用，但务必注意其实验性状态。** 建议与主分支保持同步更新，以获取最新的 bug 修复和功能改进。
+*   **状态**: **实验性但活跃维护中**。
+*   **分析**: 插件创建于2023年，年龄尚浅。最近一次更新在2026年4月，修复了代码层面的问题，并且在过去三个月内有多次提交，表明仍在积极维护和适配引擎更新。其 `IsExperimentalVersion` 标志和 `EnabledByDefault=false` 的设置明确了其实验性质。
+*   **推荐**: **谨慎推荐用于实验和原型开发**。由于是实验性插件，API 和功能可能会发生变化，不建议直接用于最终发行版的生产环境。对于需要 AMD 硬件编码支持的项目，它是当前 UE5 内置的官方集成方案，值得关注和测试，但需准备好应对潜在的变动或限制。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/AMFCodecs)
-- [官方文档](https://docs.unrealengine.com) (需搜索 `AVCodecs` 或 `AMD AMF` 相关内容)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/AMFCodecs/Tests) (如果存在)
+- [官方文档](https://gpuopen.com/amf/) （AMD AMF SDK 官方站点，非UE文档）

@@ -38,9 +38,9 @@
       "doc_path": "docs/5.7/small/AITestSuite/"
     },
     "AMFCodecs": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AMFCodecs/"
+      "doc_path": "docs/5.8/small/AMFCodecs/"
     },
     "ARUtilities": {
       "generated_in": "5.7",
@@ -163,14 +163,14 @@
       "doc_path": "docs/5.7/small/ArchVisCharacter/"
     },
     "AssetReferenceRestrictions": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AssetReferenceRestrictions/"
+      "doc_path": "docs/5.8/small/AssetReferenceRestrictions/"
     },
     "AssetRegistryExport": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AssetRegistryExport/"
+      "doc_path": "docs/5.8/small/AssetRegistryExport/"
     },
     "AssetTags": {
       "generated_in": "5.7",
@@ -213,9 +213,9 @@
       "doc_path": "docs/5.7/small/AvalancheSequenceNavigator/"
     },
     "AxFImporter": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AxFImporter/"
+      "doc_path": "docs/5.8/small/AxFImporter/"
     },
     "BaseMaterial": {
       "generated_in": "5.7",
@@ -238,9 +238,9 @@
       "doc_path": "docs/5.7/small/BlueprintFileUtils/"
     },
     "BlueprintHeaderView": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/BlueprintHeaderView/"
+      "doc_path": "docs/5.8/small/BlueprintHeaderView/"
     },
     "BlueprintMaterialTextureNodes": {
       "generated_in": "5.7",
@@ -378,9 +378,9 @@
       "doc_path": "docs/5.7/small/CryptoKeys/"
     },
     "CustomMeshComponent": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/CustomMeshComponent/"
+      "doc_path": "docs/5.8/small/CustomMeshComponent/"
     },
     "CustomizableSequencerTracks": {
       "generated_in": "5.7",
@@ -418,9 +418,9 @@
       "doc_path": "docs/5.8/small/DatabaseSupport/"
     },
     "DatasmithC4DImporter": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/DatasmithC4DImporter/"
+      "doc_path": "docs/5.8/small/DatasmithC4DImporter/"
     },
     "DatasmithMVR": {
       "generated_in": "5.7",
@@ -443,9 +443,9 @@
       "doc_path": "docs/5.8/small/DisasterRecoveryClient/"
     },
     "DiscoveryBeaconReceiver": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/DiscoveryBeaconReceiver/"
+      "doc_path": "docs/5.8/small/DiscoveryBeaconReceiver/"
     },
     "DisplayClusterLaunch": {
       "generated_in": "5.8",
@@ -534,14 +534,14 @@
       "doc_path": "docs/5.8/small/GPUReshape/"
     },
     "GameInput": {
-      "generated_in": "5.7",
-      "size": "small",
-      "doc_path": "docs/5.7/small/GameInput/"
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/GameInput/"
     },
     "GameplayBehaviorSmartObjects": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/GameplayBehaviorSmartObjects/"
+      "doc_path": "docs/5.8/small/GameplayBehaviorSmartObjects/"
     },
     "GeForceNOWWrapper": {
       "generated_in": "5.7",
@@ -1250,14 +1250,14 @@
       "doc_path": "docs/5.7/small/VirtualScouting/"
     },
     "VisualStudioCodeSourceCodeAccess": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/VisualStudioCodeSourceCodeAccess/"
+      "doc_path": "docs/5.8/small/VisualStudioCodeSourceCodeAccess/"
     },
     "VisualStudioSourceCodeAccess": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/VisualStudioSourceCodeAccess/"
+      "doc_path": "docs/5.8/small/VisualStudioSourceCodeAccess/"
     },
     "VoiceChat": {
       "generated_in": "5.8",
@@ -1315,14 +1315,14 @@
       "doc_path": "docs/5.7/small/WindowsMoviePlayer/"
     },
     "WorldPartitionHLODUtilities": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/WorldPartitionHLODUtilities/"
+      "doc_path": "docs/5.8/small/WorldPartitionHLODUtilities/"
     },
     "XCodeSourceCodeAccess": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/XCodeSourceCodeAccess/"
+      "doc_path": "docs/5.8/small/XCodeSourceCodeAccess/"
     },
     "XGEController": {
       "generated_in": "5.7",
@@ -1345,9 +1345,9 @@
       "doc_path": "docs/5.7/small/XRVisualization/"
     },
     "XcodeGPUDebuggerPlugin": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/XcodeGPUDebuggerPlugin/"
+      "doc_path": "docs/5.8/small/XcodeGPUDebuggerPlugin/"
     },
     "ZoneGraphAnnotations": {
       "generated_in": "5.7",
@@ -1390,14 +1390,14 @@
       "doc_path": "docs/5.7/medium/AppleARKit/"
     },
     "AssetManagerEditor": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/AssetManagerEditor/"
+      "doc_path": "docs/5.8/medium/AssetManagerEditor/"
     },
     "AssetSearch": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/AssetSearch/"
+      "doc_path": "docs/5.8/medium/AssetSearch/"
     },
     "AsyncMessageSystem": {
       "generated_in": "5.7",
@@ -1495,9 +1495,9 @@
       "doc_path": "docs/5.7/medium/DataLinkOAuth/"
     },
     "DataRegistry": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/DataRegistry/"
+      "doc_path": "docs/5.8/medium/DataRegistry/"
     },
     "DataValidation": {
       "generated_in": "5.8",
@@ -1530,14 +1530,14 @@
       "doc_path": "docs/5.7/medium/EyeTracker/"
     },
     "GameplayInteractions": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/GameplayInteractions/"
+      "doc_path": "docs/5.8/medium/GameplayInteractions/"
     },
     "GameplayStateTree": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/GameplayStateTree/"
+      "doc_path": "docs/5.8/medium/GameplayStateTree/"
     },
     "GeometryMode": {
       "generated_in": "5.7",
@@ -1956,9 +1956,9 @@
       "doc_path": "docs/5.8/large/CurveEditorTools/"
     },
     "DatasmithContent": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/DatasmithContent/"
+      "doc_path": "docs/5.8/large/DatasmithContent/"
     },
     "DatasmithFBXImporter": {
       "generated_in": "5.8",
@@ -1971,14 +1971,14 @@
       "doc_path": "docs/5.8/large/EaseCurveTool/"
     },
     "EnhancedInput": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/EnhancedInput/"
+      "doc_path": "docs/5.8/large/EnhancedInput/"
     },
     "GameFeatures": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/GameFeatures/"
+      "doc_path": "docs/5.8/large/GameFeatures/"
     },
     "GameplayTagsEditor": {
       "generated_in": "5.8",
@@ -1986,9 +1986,9 @@
       "doc_path": "docs/5.8/large/GameplayTagsEditor/"
     },
     "GeoReferencing": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/GeoReferencing/"
+      "doc_path": "docs/5.8/large/GeoReferencing/"
     },
     "GeometryMask": {
       "generated_in": "5.7",
@@ -2131,9 +2131,9 @@
       "doc_path": "docs/5.7/large/VirtualCamera/"
     },
     "WaveformEditor": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/WaveformEditor/"
+      "doc_path": "docs/5.8/large/WaveformEditor/"
     },
     "ZoneGraph": {
       "generated_in": "5.7",
@@ -2261,9 +2261,9 @@
       "doc_path": "docs/5.7/xlarge/DataLink/"
     },
     "DataprepEditor": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/DataprepEditor/"
+      "doc_path": "docs/5.8/xlarge/DataprepEditor/"
     },
     "DatasmithCADImporter": {
       "generated_in": "5.7",
@@ -2296,9 +2296,9 @@
       "doc_path": "docs/5.8/xlarge/GLTFExporter/"
     },
     "GameplayAbilities": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/GameplayAbilities/"
+      "doc_path": "docs/5.8/xlarge/GameplayAbilities/"
     },
     "GameplayCameras": {
       "generated_in": "5.8",
@@ -3707,19 +3707,19 @@
       "doc_path": "docs/5.7/medium/PluginReferenceViewer/"
     },
     "PluginTemplateTool": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/PluginTemplateTool/"
+      "doc_path": "docs/5.8/small/PluginTemplateTool/"
     },
     "PostProcessMaterialChainGraph": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/PostProcessMaterialChainGraph/"
+      "doc_path": "docs/5.8/medium/PostProcessMaterialChainGraph/"
     },
     "ProceduralVegetationEditor": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/ProceduralVegetationEditor/"
+      "doc_path": "docs/5.8/xlarge/ProceduralVegetationEditor/"
     },
     "PythonFoundationPackages": {
       "generated_in": "5.8",
@@ -3787,34 +3787,34 @@
       "doc_path": "docs/5.8/small/RuntimeTelemetry/"
     },
     "ScreenReader": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ScreenReader/"
+      "doc_path": "docs/5.8/small/ScreenReader/"
     },
     "SecuritySandbox": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/SecuritySandbox/"
+      "doc_path": "docs/5.8/small/SecuritySandbox/"
     },
     "SequenceNavigator": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/SequenceNavigator/"
+      "doc_path": "docs/5.8/xlarge/SequenceNavigator/"
     },
     "SerializationUtils": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/SerializationUtils/"
+      "doc_path": "docs/5.8/small/SerializationUtils/"
     },
     "Shotgrid": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/Shotgrid/"
+      "doc_path": "docs/5.8/small/Shotgrid/"
     },
     "SimpleHMD": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/SimpleHMD/"
+      "doc_path": "docs/5.8/small/SimpleHMD/"
     },
     "SkeletalReduction": {
       "generated_in": "5.7",
@@ -4147,49 +4147,49 @@
       "doc_path": "docs/5.7/medium/IoStoreInsights/"
     },
     "JsonBlueprintUtilities": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/JsonBlueprintUtilities/"
+      "doc_path": "docs/5.8/small/JsonBlueprintUtilities/"
     },
     "LightWeightInstancesEditor": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/LightWeightInstancesEditor/"
+      "doc_path": "docs/5.8/small/LightWeightInstancesEditor/"
     },
     "MassInsights": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/MassInsights/"
+      "doc_path": "docs/5.8/medium/MassInsights/"
     },
     "AjaMedia": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/AjaMedia/"
+      "doc_path": "docs/5.8/xlarge/AjaMedia/"
     },
     "AndroidCamera": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AndroidCamera/"
+      "doc_path": "docs/5.8/small/AndroidCamera/"
     },
     "AndroidMedia": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AndroidMedia/"
+      "doc_path": "docs/5.8/small/AndroidMedia/"
     },
     "AppleProResDecoderElectra": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AppleProResDecoderElectra/"
+      "doc_path": "docs/5.8/small/AppleProResDecoderElectra/"
     },
     "AppleProResMedia": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/AppleProResMedia/"
+      "doc_path": "docs/5.8/medium/AppleProResMedia/"
     },
     "AudioCaptureTimecodeProvider": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AudioCaptureTimecodeProvider/"
+      "doc_path": "docs/5.8/small/AudioCaptureTimecodeProvider/"
     },
     "AvfMedia": {
       "generated_in": "5.7",
