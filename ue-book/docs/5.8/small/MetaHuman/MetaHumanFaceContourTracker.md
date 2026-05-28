@@ -1,49 +1,65 @@
 # MetaHuman Face Contour Tracker
 
-> MetaHuman 面部轮廓追踪器资产，用于存储和加载各类面部特征（如面部、眉毛、眼睛、嘴部等）的追踪模型。
+> MetaHuman Animator 插件的面部轮廓追踪子模块，基于 NNE（Neural Network Engine）运行多个深度学习模型，对人脸图像进行关键点检测与稠密特征追踪。
 
 | 属性 | 值 |
 |---|---|
 | 中文名 | 面部轮廓追踪器 |
 | 分类 | MetaHuman |
-| 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（追踪器资产、模型数据） |
+| 默认启用 | ❌ 否 |
+| 包含内容 | ✅ 有（NNE 模型数据） |
 | 模块 | `MetaHumanFaceContourTracker` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2025-11-03 |
-| 年龄标签 | 🆕（约 1 年） |
+| 创建时间 | 2022-04-01 |
+| 年龄标签 | 🆕（约 4 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceContourTracker) | |
 
 ## 用途
 
-`MetaHumanFaceContourTracker` 模块的核心是提供 `UMetaHumanFaceContourTrackerAsset` 资产类型。此资产是一个容器，用于存储和管理一组预训练的神经网络（NNE）模型，这些模型专门用于从图像或视频中检测和追踪人脸的不同面部特征点（例如面部轮廓、眉毛、眼睛、鼻子、嘴唇、下巴和牙齿）。它是 MetaHuman 工具链中的关键组件，为后续的“身份（Identity）”创建和“表演（Performance）”捕捉处理提供基础的面部几何信息。该资产会动态加载指定的 NNE 模型，并在需要时在 GPU 上运行它们以进行高效的推理。
+MetaHuman Face Contour Tracker 是 MetaHuman Animator 管线中的核心面部追踪模块。它封装了一组用于人脸关键点检测与稠密追踪的 NNE 模型，包括：
+
+- **FaceDetector**：人脸检测器，在画面中定位面部区域
+- **FullFaceTracker**：全脸追踪器，追踪完整面部轮廓
+- **BrowsDenseTracker**：眉毛稠密追踪
+- **EyesDenseTracker**：眼部稠密追踪
+- **NasioLabialsDenseTracker**：鼻唇沟稠密追踪
+- **MouthDenseTracker**：嘴部稠密追踪
+- **LipzipDenseTracker**：嘴唇闭合稠密追踪
+- **ChinDenseTracker**：下巴稠密追踪
+- **TeethDenseTracker / TeethConfidenceTracker**：牙齿追踪与置信度
+
+该模块解决了从视频/捕获画面中自动提取面部动画控制数据的问题。它是 MetaHuman Identity 创建和 Performance 捕获流程的底层依赖——后续的 `MetaHumanFaceFittingSolver` 和 `MetaHumanFaceAnimationSolver` 依赖本模块提供的追踪结果。
+
+> **注意**：5.8 版本中 GPU 推理接口（`IModelInstanceGPU`）已全部标记为 `UE_DEPRECATED`，迁移到同步推理接口（`IModelInstanceRunSync`）。
 
 ## 使用场景
 
-- **创建 MetaHuman 身份资产**：当你从扫描数据或照片创建 MetaHuman 角色时，需要此追踪器资产来精确地定位面部关键点，以便后续进行面部拟合（Fitting）。
-- **处理 MetaHuman 表演数据**：在将视频或深度摄像机数据转换为 MetaHuman 角色动画（Performance）时，追踪器用于从每一帧图像中提取面部特征运动轨迹。
-- **自定义或扩展追踪流程**：开发者可以通过替换或修改追踪器资产中的 NNE 模型数据，来尝试使用自定义的、针对特定场景优化的面部追踪模型。
+- 你在使用 MetaHuman Animator 从 iPhone 捕获的视频创建 MetaHuman Identity → 本模块负责检测面部关键点并追踪面部轮廓
+- 你正在从视频素材驱动 MetaHuman 面部动画（Performance 工作流）→ 本模块提供逐帧的面部特征追踪数据
+- 你需要配置或替换面部追踪使用的 NNE 模型后端（如切换 CPU/CUDA）→ 通过本模块的 `SetNNEBackend` API
 
 ## 蓝图用法
 
-该模块主要为底层运行时资产，其核心的 `UMetaHumanFaceContourTrackerAsset` 类提供的公开蓝图接口相对有限，更多功能通过编辑器或 C++ 驱动。
+`UMetaHumanFaceContourTrackerAsset` 声明为 `BlueprintType`，可作为蓝图变量引用。但其公开函数均为 C++ `UE_API`，未标记 `BlueprintCallable`，因此主要通过 **资产属性面板** 在编辑器中配置，而非蓝图节点调用。
 
-### 核心节点
+### 编辑器属性
 
-| 节点 | 说明 | 所在类 |
+| 属性 | 说明 | 类型 |
 |---|---|---|
-| `Load Default Tracker` | 加载默认的面部轮廓追踪器资产 | `UMetaHumanFaceContourTrackerAsset` |
-| `Load Trackers` | 异步加载追踪器资产中指定的 NNE 模型 | `UMetaHumanFaceContourTrackerAsset` |
-| `Can Process` | 检查追踪器是否已加载所有必需的模型并可以进行处理 | `UMetaHumanFaceContourTrackerAsset` |
+| `FaceDetectorModelData` | 人脸检测模型的 NNE 模型资产 | `TSoftObjectPtr<UNNEModelData>` |
+| `FullFaceTrackerModelData` | 全脸追踪模型资产 | `TSoftObjectPtr<UNNEModelData>` |
+| `BrowsDenseTrackerModelData` | 眉毛稠密追踪模型资产 | `TSoftObjectPtr<UNNEModelData>` |
+| `EyesDenseTrackerModelData` | 眼部稠密追踪模型资产 | `TSoftObjectPtr<UNNEModelData>` |
+| `NasioLabialsDenseTrackerModelData` | 鼻唇沟稠密追踪模型资产 | `TSoftObjectPtr<UNNEModelData>` |
+| `MouthDenseTrackerModelData` | 嘴部稠密追踪模型资产 | `TSoftObjectPtr<UNNEModelData>` |
+| `LipzipDenseTrackerModelData` | 嘴唇闭合追踪模型资产 | `TSoftObjectPtr<UNNEModelData>` |
+| `ChinDenseTrackerModelData` | 下巴稠密追踪模型资产 | `TSoftObjectPtr<UNNEModelData>` |
+| `TeethDenseTrackerModelData` | 牙齿稠密追踪模型资产 | `TSoftObjectPtr<UNNEModelData>` |
+| `TeethConfidenceTrackerModelData` | 牙齿置信度追踪模型资产 | `TSoftObjectPtr<UNNEModelData>` |
 
-### 使用示例（蓝图描述）
-
-1.  **获取默认追踪器**：在蓝图中，调用 `Load Default Tracker` 静态函数，它会返回一个 `UMetaHumanFaceContourTrackerAsset` 对象，这是最常用的入口点。
-2.  **检查并加载**：获取追踪器对象后，可以调用 `Can Process` 检查状态。如果未加载，可以调用 `Load Trackers` 来触发模型的异步加载，并传入一个回调函数在加载完成后执行后续逻辑（例如开始图像处理）。
+所有模型数据属性均为 `EditAnywhere`，可在编辑器详情面板中直接指定 NNE 模型资产。
 
 ## C++ 用法
-
-主要涉及 `UMetaHumanFaceContourTrackerAsset` 的创建、加载和使用。
 
 ### 头文件引入
 
@@ -53,153 +69,180 @@
 
 ### 基本用法
 
-加载默认追踪器资产并检查其状态。
-（来源: 核心资产类用法）
+加载默认追踪器资产并异步加载模型：
 
 ```cpp
-// 加载系统默认的面部轮廓追踪器
-TObjectPtr<UMetaHumanFaceContourTrackerAsset> Tracker = UMetaHumanFaceContourTrackerAsset::LoadDefaultTracker();
-if (Tracker && Tracker->CanProcess())
+// 加载引擎内置的默认面部追踪器资产
+TObjectPtr<UMetaHumanFaceContourTrackerAsset> Tracker = 
+    UMetaHumanFaceContourTrackerAsset::LoadDefaultTracker();
+
+if (Tracker)
 {
-    // 追踪器已就绪，可以用于处理图像
-    UE_LOG(LogTemp, Log, TEXT("Default face contour tracker is loaded and ready."));
-}
-else
-{
-    // 追踪器未加载或不可用
-    UE_LOG(LogTemp, Warning, TEXT("Face contour tracker is not ready."));
+    // 异步加载所有 NNE 模型，带进度通知
+    Tracker->LoadTrackers(true /*bInShowProgressNotification*/, 
+        [](bool bSuccess)
+        {
+            if (bSuccess)
+            {
+                UE_LOG(LogTemp, Log, TEXT("面部追踪模型加载完成"));
+            }
+        });
 }
 ```
 
 ### 进阶用法
 
-异步加载追踪器模型，并在完成后执行操作。
-（来源: 异步加载机制分析）
+同步加载并配置 NNE 后端，检查处理就绪状态：
 
 ```cpp
-UMetaHumanFaceContourTrackerAsset* MyTracker = /* 从某处获取或创建的追踪器资产 */;
-if (MyTracker && !MyTracker->IsLoadingTrackers() && !MyTracker->CanProcess())
+// 设置 NNE 推理后端（例如 "CUDA"、"CPU" 等）
+Tracker->SetNNEBackend(TEXT("CUDA"));
+FString CurrentBackend = Tracker->GetNNEBackend();
+UE_LOG(LogTemp, Log, TEXT("当前 NNE 后端: %s"), *CurrentBackend);
+
+// 同步加载模型（会阻塞当前线程）
+bool bLoaded = Tracker->LoadTrackersSynchronous();
+
+if (bLoaded && Tracker->CanProcess())
 {
-    MyTracker->LoadTrackers(true, [MyTracker](bool bSuccess)
-    {
-        if (bSuccess && MyTracker->CanProcess())
-        {
-            // 加载成功，可以开始使用 MyTracker 进行面部追踪
-            UE_LOG(LogTemp, Log, TEXT("Tracker models loaded asynchronously."));
-            // ... 执行实际的追踪逻辑
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("Failed to load tracker models."));
-        }
-    });
+    // 模型已就绪，可以进行面部追踪处理
+    // 后续由 MetaHumanFaceFittingSolver / FaceAnimationSolver 调用
 }
 
-// 可以在需要时取消加载
-if (MyTracker->IsLoadingTrackers())
+// 可在加载过程中取消
+Tracker->CancelLoadTrackers();
+
+// 检查是否正在加载中
+if (Tracker->IsLoadingTrackers())
 {
-    MyTracker->CancelLoadTrackers();
+    // 等待加载完成
 }
 ```
 
 ## Demo 示例
 
-一个最小化的示例，展示如何创建和初始化一个 `MetaHumanFaceContourTracker` 资产。
+一个最小化的 C++ 使用示例，演示如何加载追踪器并检查就绪状态：
 
 ```cpp
-// MyTrackerComponent.h
+// MetaHumanFaceTrackerExample.h
 #pragma once
-#include "Components/ActorComponent.h"
-#include "MetaHumanFaceContourTrackerAsset.h"
-#include "MyTrackerComponent.generated.h"
 
-UCLASS(ClassGroup=(MetaHuman), meta=(BlueprintSpawnableComponent))
-class UMyTrackerComponent : public UActorComponent
+#include "CoreMinimal.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "MetaHumanFaceTrackerExample.generated.h"
+
+class UMetaHumanFaceContourTrackerAsset;
+
+UCLASS()
+class UMetaHumanFaceTrackerExample : public UGameInstanceSubsystem
 {
     GENERATED_BODY()
 
 public:
-    UMyTrackerComponent();
+    virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+    virtual void Deinitialize() override;
 
-    virtual void BeginPlay() override;
+    /** 加载默认面部追踪器并开始异步初始化 */
+    void StartTrackerSetup();
 
-    UPROPERTY(EditAnywhere, Category = "Face Tracking")
-    TObjectPtr<UMetaHumanFaceContourTrackerAsset> ContourTracker;
+    /** 检查追踪器是否就绪 */
+    bool IsReady() const;
 
-    UFUNCTION(BlueprintCallable, Category = "Face Tracking")
-    void StartTrackerLoading();
-
-    UFUNCTION(BlueprintCallable, Category = "Face Tracking")
-    bool IsTrackerReady() const;
+private:
+    UPROPERTY()
+    TObjectPtr<UMetaHumanFaceContourTrackerAsset> TrackerAsset;
 };
 ```
 
 ```cpp
-// MyTrackerComponent.cpp
-#include "MyTrackerComponent.h"
+// MetaHumanFaceTrackerExample.cpp
+#include "MetaHumanFaceTrackerExample.h"
+#include "MetaHumanFaceContourTrackerAsset.h"
 
-UMyTrackerComponent::UMyTrackerComponent()
+void UMetaHumanFaceTrackerExample::Initialize(FSubsystemCollectionBase& Collection)
 {
-    PrimaryComponentTick.bCanEverTick = false;
+    Super::Initialize(Collection);
+    StartTrackerSetup();
 }
 
-void UMyTrackerComponent::BeginPlay()
+void UMetaHumanFaceTrackerExample::Deinitialize()
 {
-    Super::BeginPlay();
-
-    // 如果没有指定追踪器资产，则使用默认的
-    if (!ContourTracker)
+    if (TrackerAsset)
     {
-        ContourTracker = UMetaHumanFaceContourTrackerAsset::LoadDefaultTracker();
+        TrackerAsset->CancelLoadTrackers();
     }
+    Super::Deinitialize();
 }
 
-void UMyTrackerComponent::StartTrackerLoading()
+void UMetaHumanFaceTrackerExample::StartTrackerSetup()
 {
-    if (ContourTracker && !ContourTracker->IsLoadingTrackers())
+    // 加载引擎内置的默认追踪器
+    TrackerAsset = UMetaHumanFaceContourTrackerAsset::LoadDefaultTracker();
+
+    if (!TrackerAsset)
     {
-        ContourTracker->LoadTrackers(false, [this](bool bSuccess)
+        UE_LOG(LogTemp, Error, TEXT("无法加载默认面部追踪器资产"));
+        return;
+    }
+
+    // 设置推理后端
+    TrackerAsset->SetNNEBackend(TEXT("CPU"));
+
+    // 异步加载所有追踪模型，完成后回调
+    TrackerAsset->LoadTrackers(true, [WeakTracker = MakeWeakObjectPtr(TrackerAsset)](bool bSuccess)
+    {
+        if (bSuccess)
         {
-            if (bSuccess)
-            {
-                UE_LOG(LogTemp, Log, TEXT("Face Contour Tracker loaded for component."));
-            }
-        });
-    }
+            UE_LOG(LogTemp, Log, TEXT("面部追踪模型全部加载完成，已就绪"));
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("部分或全部面部追踪模型加载失败"));
+        }
+    });
 }
 
-bool UMyTrackerComponent::IsTrackerReady() const
+bool UMetaHumanFaceTrackerExample::IsReady() const
 {
-    return ContourTracker && ContourTracker->CanProcess();
+    return TrackerAsset && TrackerAsset->CanProcess();
 }
 ```
 
 ## 模块依赖
 
-从 `MetaHumanFaceContourTracker.Build.cs` 分析，该模块依赖 MetaHuman 的核心技术库。
+本模块的 Build.cs 依赖中，除标准 Core/Engine/Slate 外，需要以下特殊模块：
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCoreTechLib` | 提供 MetaHuman 底层核心算法和库支持 |
+| `NNE` | Neural Network Engine，用于加载和运行面部追踪深度学习模型 |
+| `MetaHumanCoreTechLib` | MetaHuman 核心技术库（推测，该插件多个模块均依赖此库） |
+
+> 注：本模块实际 Build.cs 依赖未在输入中完整提供，上述基于头文件分析推断。如需精确依赖，请查看 `Source/MetaHumanFaceContourTracker/MetaHumanFaceContourTracker.Build.cs`。
 
 ## 维护状态
 
 ### 近期更新
 
+以下为 MetaHuman Animator 插件整体的近期提交（本模块所在插件目录）：
+
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 修复了启用身体追踪时关卡序列导出的错误 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复了 MetaHuman 上的渲染伪影问题 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 改进了身体追踪时的可视化对象过滤 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 新增为现有网格体导出动画序列的功能 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复了定序器的缓存问题 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 渲染瑕疵 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为已有网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
 
 ### 维护评价
 
-该模块是 MetaHuman 工具链的核心运行时组件之一。从 git 记录看，它在近期（2026年5月）有非常密集的更新，主要集中在**修复渲染问题、改进功能（如动画序列导出）和优化身体追踪集成**。这表明它正处于**活跃维护**状态，并且随着 MetaHuman 工具的整体迭代而不断优化。由于其所属的 MetaHuman 插件是 Epic Games 的重点产品，预计将持续获得长期支持。推荐在涉及 MetaHuman 面部追踪或处理工作流的项目中使用此模块。
+- **活跃维护**：最近一次提交距今仅数天（2026-05-22），更新频率高
+- **功能持续迭代**：近期提交包含新功能（动画序列导出）和 bug 修复（渲染瑕疵、缓存问题），表明插件处于活跃开发状态
+- **API 迁移中**：5.8 版本将 GPU 推理接口迁移到同步推理接口（`IModelInstanceRunSync`），旧接口已标记 `UE_DEPRECATED`
+- **推荐使用**：作为 MetaHuman 官方工具链的核心组件，由 Epic Games 直接维护，推荐在 MetaHuman 工作流中使用
+- **注意**：本模块仅提供底层追踪能力，不建议绕过 MetaHuman Identity/Performance 工作流直接使用
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceContourTracker)
-- [官方文档]() (无官方文档链接)
-- [测试用例]() (未提供)
+- [MetaHuman Animator 插件根目录](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/metahuman-animator-in-unreal-engine/)（MetaHuman Animator 概述）

@@ -1,95 +1,3 @@
-我需要先获取一些 git 信息来完成文档。
-
-```bash
-# 获取创建时间
-cd /mnt/x/UnrealEngine && git log --diff-filter=A --format='%ai' -- 'Engine/Plugins/MetaHuman/MetaHumanAnimator/MetaHumanAnimator.uplugin' | tail -1
-cd /mnt/x/UnrealEngine && git log --diff-filter=A --format='%ai' -- 'Engine/Plugins/Experimental/MetaHumanAnimator/MetaHumanAnimator.uplugin' | tail -1
-
-# 获取最近 5 次 commit
-cd /mnt/x/UnrealEngine && git log --format='%h|%ai|%s' -5 -- 'Engine/Plugins/MetaHuman/MetaHumanAnimator/'
-```
-
-```bash
-# 获取 MetaHumanFaceFittingSolver 的完整头文件列表
-cd /mnt/x/UnrealEngine && find Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceFittingSolver -name "*.h" -o -name "*.cpp" | head -30
-
-# 获取 Build.cs 看依赖
-cd /mnt/x/UnrealEngine && cat Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceFittingSolver/MetaHumanFaceFittingSolver.Build.cs
-```
-
-```bash
-# 搜索 BlueprintCallable 函数
-cd /mnt/x/UnrealEngine && grep -rn "BlueprintCallable\|BlueprintReadWrite" Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceFittingSolver/Public/ --include="*.h"
-
-# 搜索 UFUNCTION
-cd /mnt/x/UnrealEngine && grep -rn "UFUNCTION\|UPROPERTY" Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceFittingSolver/Public/MetaHumanFaceFittingSolver.h
-```
-
-```bash
-# 搜索测试用例
-cd /mnt/x/UnrealEngine && find Engine/Plugins/MetaHuman/MetaHumanAnimator -name "*Test*" -o -name "*test*" | head -20
-```
-
-```bash
-# 查看 .uplugin 完整内容
-cd /mnt/x/UnrealEngine && cat Engine/Plugins/MetaHuman/MetaHumanAnimator/MetaHumanAnimator.uplugin
-```
-
-```bash
-# 搜索所有 BlueprintCallable 在整个 MetaHumanAnimator 插件中
-cd /mnt/x/UnrealEngine && grep -rn "BlueprintCallable" Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/ --include="*.h" | grep "FaceFitting" | head -20
-
-# 获取 FaceFittingSolver 的所有源文件
-cd /mnt/x/UnrealEngine && find Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceFittingSolver -type f \( -name "*.h" -o -name "*.cpp" \) | wc -l
-```
-
-```bash
-# 查看 FaceFittingSolver Editor 模块的用法
-cd /mnt/x/UnrealEngine && grep -rn "FaceFittingSolver" Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/ --include="*.h" --include="*.cpp" | grep -i "LoadFitting\|GetFitting\|CanProcess\|Process" | head -30
-```
-
-```bash
-# 查看编辑器模块如何使用 Solver
-cd /mnt/x/UnrealEngine && find Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceFittingSolverEditor -type f \( -name "*.h" -o -name "*.cpp" \) | head -20
-```
-
-```bash
-# 搜索核心技术库依赖
-cd /mnt/x/UnrealEngine && cat Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceFittingSolver/MetaHumanFaceFittingSolver.Build.cs
-```
-
-```bash
-# 获取 Performance 模块中对 FaceFittingSolver 的调用
-cd /mnt/x/UnrealEngine && grep -rn "FaceFittingSolver\|LoadFaceFitting\|LoadPredictive" Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/ --include="*.cpp" | head -30
-```
-
-```bash
-# 查看 MetaHumanPerformance 如何使用 Solver
-cd /mnt/x/UnrealEngine && grep -rn "UMetaHumanFaceFittingSolver" Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/ --include="*.h" | head -20
-```
-
-```bash
-# 获取 MetaHumanConfig 的信息（Solver 依赖它）
-cd /mnt/x/UnrealEngine && cat Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanConfig/Public/MetaHumanConfig.h | head -80
-```
-
-```bash
-# 查看完整的 .uplugin 文件
-cd /mnt/x/UnrealEngine && cat Engine/Plugins/MetaHuman/MetaHumanAnimator/MetaHumanAnimator.uplugin
-```
-
-```bash
-# 确认创建时间
-cd /mnt/x/UnrealEngine && git log --diff-filter=A --format='%ai %s' -- 'Engine/Plugins/MetaHuman/MetaHumanAnimator/' | tail -1
-```
-
-```bash
-# 用通配符找创建时间
-cd /mnt/x/UnrealEngine && git log --all --diff-filter=A --format='%ai' -- 'Engine/Plugins/MetaHuman/MetaHumanAnimator/MetaHumanAnimator.uplugin' | tail -1
-```
-
-根据收集到的信息，我现在生成完整文档。
-
 # MetaHuman Animator
 
 > The official MetaHuman Unreal Engine toolkit
@@ -98,67 +6,63 @@ cd /mnt/x/UnrealEngine && git log --all --diff-filter=A --format='%ai' -- 'Engin
 |---|---|
 | 中文名 | MetaHuman 动画师 |
 | 分类 | MetaHuman |
-| 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（蓝图资产、配置数据、材质模板） |
-| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
+| 默认启用 | ❌ 否 |
+| 包含内容 | ✅ 有（蓝图资产、配置、求解器） |
+| 模块 | `MetaHumanAnimator` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanPerformance` (Runtime) 等 (共29个) |
 | 实验性 | 否 |
-| 创建时间 | 2022-09-08 |
-| 年龄标签 | 🆕（约 4 年） |
+| 创建时间 | 未知 |
+| 年龄标签 | 🆕（年龄未知） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是 Epic Games 官方的 MetaHuman 角色动画制作工具链，解决的核心问题是：**将真实世界的面部捕捉数据高效转换为 MetaHuman 角色的面部动画**。
+MetaHuman Animator 是 Epic Games 官方提供的用于创建和驱动 MetaHuman 角色的完整工具链。它不仅是一个插件，更是一个庞大的**生产管线 (Pipeline)** 集成方案。其核心目的是将 MetaHuman 的完整工作流——从**捕获真实演员表演数据**（通过 iPhone 或专业摄像机）、**重建数字身份 (Identity)**、**驱动面部/身体动画**，到**最终在 Unreal Engine 中实时渲染**——无缝地整合到引擎中。
 
-该插件提供了一套完整的面部动画制作管线（Pipeline），包括：
-
-1. **面部身份（Identity）创建**：从照片或视频中提取面部特征，生成 MetaHuman 身份资产
-2. **面部拟合求解器（Face Fitting Solver）**：将捕捉数据拟合到 MetaHuman 骨骼和控制点上
-3. **面部动画求解器（Face Animation Solver）**：将面部追踪数据转换为动画控制信号
-4. **面部轮廓追踪器（Face Contour Tracker）**：从视频帧中检测和追踪面部关键点
-5. **深度图生成器（Depth Generator）**：从单目视频生成深度信息
-6. **语音驱动动画（Speech2Face）**：仅通过音频驱动面部动画
-7. **批量处理（Batch Processor）**：批量处理多个表演数据
-8. **Sequencer 集成**：将生成的动画序列直接输出到 Sequencer
-
-整个插件由 28 个模块组成（544 个源文件），是一个大型专业级动画工具。
+它解决了独立艺术家或工作室在将真实世界表演转换为高保真数字人类时面临的复杂流程、多软件切换和性能优化问题，提供了一个统一的 UE 内解决方案。
 
 ## 使用场景
 
-- 你有一个 MetaHuman 角色，想用 iPhone/专业设备捕捉面部表演并驱动它 → 使用 **Face Fitting + Face Animation Solver**
-- 你有一段面部视频，想自动提取面部动画数据 → 使用 **Face Contour Tracker + Depth Generator**
-- 你只有音频文件，想生成口型同步动画 → 使用 **Speech2Face**
-- 你需要从照片创建 MetaHuman 身份 → 使用 **MetaHumanIdentity**
-- 你有大量表演数据需要批量处理 → 使用 **MetaHumanBatchProcessor**
-- 你想在 Sequencer 中直接编辑面部动画轨道 → 使用 **MetaHumanSequencer**
+-   **数字人内容创作**：你使用 iPhone (通过 MetaHuman Capture 应用) 或专业面部捕捉设备拍摄了演员的表演，需要将其转换为可用于 MetaHuman 角色的高质量面部动画。
+-   **音频驱动动画**：你有一段音频文件，希望快速生成对应的 MetaHuman 面部动画（Speech2Face）。
+-   **表演驱动**：你希望直接将演员的实时表演数据流驱动到 MetaHuman 角色上，用于虚拟制片或实时演示。
+-   **批量处理**：你拥有多个 MetaHuman 角色，需要批量应用或调整动画、配置求解器参数。
 
 ## 蓝图用法
 
-MetaHuman Animator 主要面向编辑器工作流，其大部分核心逻辑通过编辑器 UI（Toolkit Panel）驱动，而非蓝图节点。以下是从公开头文件中提取的可用接口：
-
-### 核心节点
+### 配置相关
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `LoadFaceFittingSolvers` | 加载面部拟合求解器配置 | `UMetaHumanFaceFittingSolver` |
-| `LoadPredictiveSolver` | 加载预测性求解器（用于性能准备阶段的训练） | `UMetaHumanFaceFittingSolver` |
-| `CanProcess` | 检查当前配置是否满足处理条件 | `UMetaHumanFaceFittingSolver` |
-| `GetFittingTemplateData` | 获取拟合模板数据的 JSON 字符串 | `UMetaHumanFaceFittingSolver` |
-| `GetFittingConfigData` | 获取拟合配置数据 | `UMetaHumanFaceFittingSolver` |
-| `GetFittingIdentityModelData` | 获取身份模型数据 | `UMetaHumanFaceFittingSolver` |
-| `GetFittingControlsData` | 获取控制点数据 | `UMetaHumanFaceFittingSolver` |
-| `GetPredictiveTrainingData` | 获取预测性训练数据（字节数组） | `UMetaHumanFaceFittingSolver` |
+| `bOverrideDeviceConfig` | 是否覆盖默认设备配置。勾选后可指定 `DeviceConfig` | `UMetaHumanFaceFittingSolver` |
+| `DeviceConfig` | 指定用于面部拟合的设备特定配置资源 | `UMetaHumanFaceFittingSolver` |
+| `PredictiveSolver` | 用于为表演准备 (Prepare Identity) 阶段训练的预测求解器配置 | `UMetaHumanFaceFittingSolver` |
 
-> **注意**：以上函数均为 C++ API（`UE_API`），需要在 C++ 模块中调用。MetaHuman Animator 的主要用户交互通过编辑器面板完成。
+### 流程控制
 
-### 使用示例（编辑器工作流描述）
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `LoadFaceFittingSolvers` | 加载面部拟合所需的求解器模型 | `UMetaHumanFaceFittingSolver` |
+| `LoadPredictiveSolver` | 加载用于身份准备阶段的预测求解器 | `UMetaHumanFaceFittingSolver` |
+| `CanProcess` | 检查当前配置和数据是否满足开始处理的条件 | `UMetaHumanFaceFittingSolver` |
+| `GetConfigDisplayName` | 根据捕获数据获取当前有效配置的显示名称 | `UMetaHumanFaceFittingSolver` |
 
-1. 在 **Content Browser** 中右键创建 **MetaHuman Identity** 资产
-2. 导入面部照片或视频捕捉数据
-3. 在 Identity 编辑器中配置面部追踪
-4. 运行 **Face Fitting** 将捕捉数据拟合到 MetaHuman 骨骼
-5. 使用 **Performance** 资产将动画数据应用到 MetaHuman 角色
-6. 通过 **Sequencer** 导出最终动画序列
+### 数据获取（内部使用，可用于调试或高级操作）
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GetFittingTemplateData` | 获取用于拟合的模板网格体数据（JSON字符串） | `UMetaHumanFaceFittingSolver` |
+| `GetFittingConfigData` | 获取拟合求解器的配置数据（JSON字符串） | `UMetaHumanFaceFittingSolver` |
+| `GetFittingConfigTeethData` | 获取牙齿部分的拟合配置数据 | `UMetaHumanFaceFittingSolver` |
+| `GetFittingIdentityModelData` | 获取身份模型数据（JSON字符串） | `UMetaHumanFaceFittingSolver` |
+| `GetFittingControlsData` | 获取面部控制器数据（JSON字符串） | `UMetaHumanFaceFittingSolver` |
+| `GetPredictiveTrainingData` | 获取用于训练预测求解器的完整训练数据（二进制数组） | `UMetaHumanFaceFittingSolver` |
+
+### 使用示例（蓝图描述）
+
+1.  **在编辑器中配置**：创建一个 `MetaHumanFaceFittingSolver` 资产，在其细节面板中，根据需要勾选“Override Device Config”并选择对应的设备配置，或指定 `PredictiveSolver`。
+2.  **蓝图中初始化**：在需要执行面部拟合的蓝图中，获取对该 `FaceFittingSolver` 资产的引用。
+3.  **检查与加载**：调用 `CanProcess` 节点检查是否可执行。若返回 `true`，则调用 `LoadFaceFittingSolvers` 节点加载求解器模型。
+4.  **绑定事件**：使用 `OnInternalsChanged` 事件委托来监听求解器内部数据的变化，并做出响应（例如更新UI或日志）。
 
 ## C++ 用法
 
@@ -171,114 +75,129 @@ MetaHuman Animator 主要面向编辑器工作流，其大部分核心逻辑通�
 ### 基本用法
 
 ```cpp
-// 创建并配置面部拟合求解器
-UMetaHumanFaceFittingSolver* FittingSolver = NewObject<UMetaHumanFaceFittingSolver>();
+// 来源：MetaHumanFaceFittingSolver/Public/MetaHumanFaceFittingSolver.h
+// 创建一个 Face Fitting Solver 实例
+UMetaHumanFaceFittingSolver* FaceFittingSolver = NewObject<UMetaHumanFaceFittingSolver>();
 
-// 加载求解器所需的配置和模型
-FittingSolver->LoadFaceFittingSolvers();
-
-// 检查是否可以开始处理
-if (FittingSolver->CanProcess())
+// 检查是否满足处理条件
+if (FaceFittingSolver->CanProcess())
 {
-    // 获取拟合配置数据（JSON 格式）
-    FString TemplateData = FittingSolver->GetFittingTemplateData(CaptureData);
-    FString ConfigData = FittingSolver->GetFittingConfigData(CaptureData);
-    FString IdentityModelData = FittingSolver->GetFittingIdentityModelData(CaptureData);
-    FString ControlsData = FittingSolver->GetFittingControlsData(CaptureData);
+    // 加载面部拟合所需的求解器
+    FaceFittingSolver->LoadFaceFittingSolvers();
+
+    // 绑定数据变化回调
+    FaceFittingSolver->OnInternalsChanged().AddLambda([]()
+    {
+        UE_LOG(LogTemp, Log, TEXT("Face Fitting Solver internals have changed!"));
+    });
 }
 ```
-
-来源：`Source/MetaHumanFaceFittingSolver/Public/MetaHumanFaceFittingSolver.h`
 
 ### 进阶用法
 
 ```cpp
-// 加载预测性求解器（用于 Performance 准备阶段）
-FittingSolver->LoadPredictiveSolver();
+// 假设已有有效的 CaptureData 对象 (UCaptureData* MyCaptureData)
+UMetaHumanFaceFittingSolver* Solver = ... // 获取或创建求解器实例
 
-// 获取预测性训练数据
-TArray<uint8> GlobalTeethData = FittingSolver->GetPredictiveGlobalTeethTrainingData();
-TArray<uint8> TrainingData = FittingSolver->GetPredictiveTrainingData();
-
-// 监听求解器内部配置变更
-FittingSolver->OnInternalsChanged().AddLambda([]()
+FString ConfigName;
+if (Solver->GetConfigDisplayName(MyCaptureData, ConfigName))
 {
-    UE_LOG(LogMetaHuman, Log, TEXT("Face Fitting Solver configuration changed, reloading..."));
-});
+    UE_LOG(LogTemp, Log, TEXT("Using fitting config: %s"), *ConfigName);
+}
 
-// 覆盖设备配置（bOverrideDeviceConfig = true 时生效）
-FittingSolver->bOverrideDeviceConfig = true;
-FittingSolver->DeviceConfig = CustomConfig;
+// 获取不同阶段的拟合数据（通常用于引擎内部管线调用）
+FString TemplateDataJson = Solver->GetFittingTemplateData(MyCaptureData);
+FString ConfigDataJson = Solver->GetFittingConfigData(MyCaptureData);
+// ... 这些数据会传递给底层的拟合算法
 ```
-
-来源：`Source/MetaHumanFaceFittingSolver/Public/MetaHumanFaceFittingSolver.h`
 
 ## Demo 示例
 
+**MetaHumanFaceFittingSolver_BasicUsage.h**
 ```cpp
-// MetaHumanFittingProcessor.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MetaHumanFaceFittingSolver.h"
+#include "GameFramework/Actor.h"
+#include "MetaHumanFaceFittingSolver_BasicUsage.generated.h"
 
-class FMetaHumanFittingProcessor
+UCLASS()
+class AMyMetaHumanActor : public AActor
 {
+    GENERATED_BODY()
+
 public:
-    void Initialize();
-    void ProcessCaptureData(UCaptureData* InCaptureData);
+    AMyMetaHumanActor();
+
+protected:
+    virtual void BeginPlay() override;
 
 private:
-    UPROPERTY()
-    TObjectPtr<UMetaHumanFaceFittingSolver> Solver;
+    UPROPERTY(Transient)
+    TObjectPtr<class UMetaHumanFaceFittingSolver> MyFaceFittingSolver;
+
+    void OnSolverDataChanged();
 };
 ```
 
+**MetaHumanFaceFittingSolver_BasicUsage.cpp**
 ```cpp
-// MetaHumanFittingProcessor.cpp
-#include "MetaHumanFittingProcessor.h"
-#include "MetaHumanFaceFittingSolver.h"
+#include "MetaHumanFaceFittingSolver_BasicUsage.h"
+#include "MetaHumanFaceFittingSolver.h" // 关键头文件
 
-void FMetaHumanFittingProcessor::Initialize()
+AMyMetaHumanActor::AMyMetaHumanActor()
 {
-    Solver = NewObject<UMetaHumanFaceFittingSolver>();
-    Solver->LoadFaceFittingSolvers();
-    Solver->LoadPredictiveSolver();
+    PrimaryActorTick.bCanEverTick = false;
 }
 
-void FMetaHumanFittingProcessor::ProcessCaptureData(UCaptureData* InCaptureData)
+void AMyMetaHumanActor::BeginPlay()
 {
-    if (!Solver || !InCaptureData)
+    Super::BeginPlay();
+
+    // 1. 创建或加载求解器实例（通常从磁盘加载资产更常见）
+    MyFaceFittingSolver = NewObject<UMetaHumanFaceFittingSolver>(this);
+
+    // 2. 配置（可选，编辑器中操作更方便）
+    // MyFaceFittingSolver->DeviceConfig = LoadObject<UMetaHumanConfig>(nullptr, TEXT("/Path/To/Your/Config"));
+
+    // 3. 检查就绪状态
+    if (MyFaceFittingSolver && MyFaceFittingSolver->CanProcess())
     {
-        return;
-    }
+        UE_LOG(LogTemp, Log, TEXT("Face Fitting Solver is ready. Loading models..."));
+        // 4. 加载求解器模型
+        MyFaceFittingSolver->LoadFaceFittingSolvers();
+        MyFaceFittingSolver->LoadPredictiveSolver();
 
-    if (!Solver->CanProcess())
+        // 5. 监听变化
+        MyFaceFittingSolver->OnInternalsChanged().AddUObject(this, &AMyMetaHumanActor::OnSolverDataChanged);
+    }
+    else
     {
-        UE_LOG(LogTemp, Warning, TEXT("Solver cannot process: missing configuration"));
-        return;
+        UE_LOG(LogTemp, Warning, TEXT("Face Fitting Solver is not ready. Check configuration and capture data."));
     }
+}
 
-    // 获取拟合所需的各类配置数据
-    FString Template = Solver->GetFittingTemplateData(InCaptureData);
-    FString Config = Solver->GetFittingConfigData(InCaptureData);
-    FString Identity = Solver->GetFittingIdentityModelData(InCaptureData);
-    FString Controls = Solver->GetFittingControlsData(InCaptureData);
-
-    UE_LOG(LogTemp, Log, TEXT("Fitting data retrieved for capture: %s"), *InCaptureData->GetName());
+void AMyMetaHumanActor::OnSolverDataChanged()
+{
+    UE_LOG(LogTemp, Log, TEXT("Internal solver data updated. Ready for next processing step."));
 }
 ```
 
 ## 模块依赖
 
-MetaHuman Animator 是一个大型插件，其模块间存在复杂的依赖关系。以下是该插件的**外部独有依赖**（已省略 Core/Engine/Slate 等标准依赖）：
+该插件集成了大量内部模块，使用者通常不需要直接依赖大部分模块。以下列出的是可能与用户开发相关或提供重要功能的独特依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCoreTechLib` | MetaHuman 核心技术库（面部拟合/追踪算法底层实现） |
-| `MetaHumanSDKEditor` | MetaHuman SDK 编辑器接口 |
-| `ControlRigDeveloper` | Control Rig 开发者模块（面部骨骼控制） |
-| `SkeletalMeshUtilitiesCommon` | 骨骼网格工具（面部网格处理） |
+| `MetaHumanSDKEditor` | 提供与 MetaHuman SDK 相关的编辑器集成和资产类型 |
+| `SkeletalMeshUtilitiesCommon` | 提供用于骨骼网格体操作的通用工具函数 |
+| `ControlRigDeveloper` | 用于创建和编辑控制 MetaHuman 面部动画的 Control Rig |
+| `MeshDescription` | 提供用于表示和操作网格体数据（如面部模板）的低级数据结构 |
+| `NeuralNetworkInference` | (可能) 用于运行机器学习模型推理，如驱动求解器或 Speech2Face |
+| `MediaCompositing` | 用于处理视频媒体数据，可能用于原始捕获视频的预览或合成 |
+| `Niagara` | 用于高级粒子和效果，可能在捕获数据可视化或调试中使用 |
+| `MeshTrackerInterface` | 提供与外部网格体跟踪系统（如深度摄像头）的接口 |
+| `SequencerCore` | 为 MetaHuman 动画与 Sequencer 的深度集成提供基础 |
 
 ## 维护状态
 
@@ -286,22 +205,20 @@ MetaHuman Animator 是一个大型插件，其模块间存在复杂的依赖关�
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 渲染伪影问题 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持对已有网格导出动画序列 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体跟踪时，禁用关卡序列导出功能，避免冲突 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色上的渲染伪影问题 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体跟踪时过滤掉不必要的可视化对象，提升清晰度 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持将动画序列导出到已存在的网格体上 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复与 Sequencer 集成时的缓存问题 |
 
 ### 维护评价
 
-- **创建时间**：约 2022 年 9 月，跟随 MetaHuman 技术推出
-- **维护频率**：非常活跃，最近几天内有多次实质性更新
-- **更新内容**：包含功能增强（动画导出扩展）和 Bug 修复（渲染伪影、缓存问题）
-- **维护状态**：🟢 **活跃维护中** — 这是 Epic Games 的旗舰 MetaHuman 工具，持续获得新功能和修复
-- **推荐使用**：✅ 强烈推荐。作为官方 MetaHuman 工具链的核心组件，它是制作高保真数字人面部动画的首选方案
+MetaHuman Animator 是一个**处于活跃维护状态**的官方核心插件。从近期提交记录来看，更新非常频繁（2026年5月有多次提交），内容聚焦于**功能完善**（如身体跟踪支持）、**问题修复**（渲染、缓存、导出）以及**工作流优化**。作为 Epic Games 的战略产品工具，它拥有长期稳定的维护承诺。**强烈推荐**所有使用 MetaHuman 进行内容创作的项目使用此插件，它是目前引擎内最完整、最权威的解决方案。
+
+**注意**：由于其巨大的规模和复杂的依赖关系，建议在集成时关注官方版本说明和兼容性信息。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- 官方文档：无（DocsURL 为空，参考 Epic Games MetaHuman 官方文档站）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanControlsConversionTest)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/metahuman-animator-in-unreal-engine/) (预计链接，文档通常会发布在官方文档站)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Tests/MetaHuman)

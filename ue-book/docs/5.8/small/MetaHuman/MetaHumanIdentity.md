@@ -1,284 +1,220 @@
-# MetaHuman Identity
+# MetaHuman Animator
 
 > The official MetaHuman Unreal Engine toolkit
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 数字人身份 |
+| 中文名 | MetaHuman 动画师 |
 | 分类 | MetaHuman |
-| 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（数字人资产、蓝图逻辑、编辑器工具） |
-| 模块 | `MetaHumanIdentity` (Runtime) |
+| 默认启用 | ❌ 否 |
+| 包含内容 | ✅ 有（蓝图资产、材质、配置） |
+| 模块 | `MetaHumanIdentity` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanSpeech2Face` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2026-05-20 |
-| 年龄标签 | 🆕（约 1 年） |
+| 创建时间 | 2020-10-07 |
+| 年龄标签 | 👴 老古董（约 6 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
-
-MetaHuman Identity 模块是 MetaHuman Animator 插件的核心运行时模块。它解决的核心问题是：**如何从真实的影像捕获数据（如 3D 扫描网格或视频素材）中创建出一个带有完整绑定的、可驱动的 MetaHuman 数字人资产**。
-
-该模块不仅仅是一个简单的资产类型，它封装了创建 MetaHuman 的完整数据处理管线，包括：
-1.  **特征追踪**：从捕获数据中检测和追踪人脸特征曲线（轮廓、关键点）。
-2.  **模板网格拟合**：将一个具有标准 MetaHuman 拓扑的模板网格拟合到追踪到的特征曲线上，生成一个与输入数据相匹配的“符合形网格”。
-3.  **自动绑定**：调用 Epic 的 AutoRig 云端服务，将符合形网格发送以生成一个带有标准 MetaHuman 骨架和绑定的 `USkeletalMesh`。
-4.  **DNA 管理**：处理最终生成的 DNA（数字人动画）数据，包括牙齿拟合、混合形状权重生成、预测求解器训练等高级功能。
-5.  **诊断与验证**：在处理流程的各个阶段提供诊断信息，帮助用户排查数据质量或处理错误。
-
-简单来说，`UMetaHumanIdentity` 资产是创建可驱动 MetaHuman 的**起点和数据容器**。它是连接原始捕获数据、几何处理算法、云端绑定服务以及后续动画性能（Performance）资产的桥梁。
+MetaHuman Animator 是一套完整的工具集，用于从面部捕捉数据（网格或视频片段）创建、编辑并驱动 MetaHuman 数字人角色的动画。它提供了一个端到端的解决方案：从导入和处理捕捉数据（如网格扫描或视频片段），到跟踪面部特征点、将模板网格适配到追踪曲线上，再到将结果网格发送到云端自动绑骨服务，最终生成可用于动画制作的骨骼网格体（SkeletalMesh）。此外，该插件还能将视频片段转化为面部动画序列（Performance），或用于在 MetaHuman Creator 中生成完整的 MetaHuman 角色。
 
 ## 使用场景
-
-- **创建数字替身**：你从电影级摄像机或移动设备拍摄了演员的面部表演，需要创建一个与之匹配的、可动画的 MetaHuman 数字替身。
-- **从扫描数据制作角色**：你使用 3D 扫描设备获得了一个人脸的网格模型，希望将其转换为一个可交互、可驱动的 UE5 角色。
-- **批量生产数字人**：你需要一个标准化的流程，将不同来源的捕获数据（网格或视频）批量转化为可用于游戏或虚拟制片的 MetaHuman 角色。
-- **自定义绑定资产**：你希望对 MetaHuman 的绑定进行微调，例如调整预测求解器（Predictive Solver）来获得更符合预期的面部动画驱动效果。
+- 你拥有一组面部捕捉的视频片段（如 iPhone 的深感摄像头数据），想要为其创建一个逼真的数字人面部动画 → 使用 MetaHuman Animator 的 Footage to MetaHuman (F2MH) 工作流。
+- 你已经有了一个 3D 扫描的头部网格模型，希望将其转化为一个完全绑好骨的 MetaHuman 角色 → 使用 MetaHuman Animator 的 Mesh to MetaHuman (M2MH) 工作流。
+- 你想要为已有的 MetaHuman 角色，从一段新的表演视频中驱动出面部动画 → 使用 MetaHuman Performance 功能。
+- 你需要根据音频文件自动生成对应的口型动画 → 使用 MetaHuman Speech2Face 功能。
+- 你正在构建一个虚拟制片流程，需要快速将真实演员的表演捕捉数据应用到数字角色上。
 
 ## 蓝图用法
-
-核心的 `UMetaHumanIdentity` 类提供了丰富的蓝图可调用函数，用于驱动整个处理流程。
+蓝图 API 主要集中在 `UMetaHumanIdentity` 和相关类上，用于控制身份创建和动画生成流程。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `FindPartOfClass` / `GetOrCreatePartOfClass` | 在身份资产中查找或创建特定类型的组成部分（如 Face, Body）。 | `UMetaHumanIdentity` |
-| `CanAddPartOfClass` / `CanAddPoseOfClass` | 检查是否可以向当前身份资产添加特定类型的部分或姿态。 | `UMetaHumanIdentity` |
-| `StartFrameTrackingPipeline` | **启动核心处理流程**。输入图像数据和相关参数，对指定姿态和提升帧进行特征追踪。 | `UMetaHumanIdentity` |
-| `IsFrameTrackingPipelineProcessing` | 查询当前是否有追踪处理正在运行。 | `UMetaHumanIdentity` |
-| `SetBlockingProcessing` | 设置是否启用阻塞式处理。 | `UMetaHumanIdentity` |
-| `LogInToAutoRigService` | 触发登录到 Epic 的 AutoRig 云端绑定服务。 | `UMetaHumanIdentity` |
-| `IsLoggedInToService` | 检查是否已登录到 AutoRig 服务（仅检查本地会话）。 | `UMetaHumanIdentity` |
-| `CreateDNAForIdentity` | **提交身份数据以生成 DNA**。这是最终将符合形网格发送到云端进行绑定的关键步骤。 | `UMetaHumanIdentity` |
-| `IsAutoRiggingInProgress` | 查询当前是否有自动绑定任务正在进行。 | `UMetaHumanIdentity` |
-| `HandleError` | （静态）处理身份处理过程中产生的错误码，记录日志并可选择是否向用户显示对话框。 | `UMetaHumanIdentity` |
+| `FindPartOfClass` | 在身份资产中查找指定类型的部件（如 Face, Body）。 | `UMetaHumanIdentity` |
+| `GetOrCreatePartOfClass` | 查找或创建指定类型的身份部件。 | `UMetaHumanIdentity` |
+| `StartFrameTrackingPipeline` | 对提供的图像数据启动面部特征点跟踪流程。 | `UMetaHumanIdentity` |
+| `LogInToAutoRigService` | 登录到 MetaHuman 自动绑骨服务。 | `UMetaHumanIdentity` |
+| `IsLoggedInToService` | 检查当前是否已登录到服务（仅检查本地会话）。 | `UMetaHumanIdentity` |
+| `CreateDNAForIdentity` | 为当前身份资产发起自动绑骨（DNA创建）请求。 | `UMetaHumanIdentity` |
+| `Conform` | 对身份中的面部部件执行“适配”（Solve）或“复制”（Copy）操作，将输入数据与模板网格对齐。 | `UMetaHumanIdentityFace` |
+| `FindPoseByType` | 根据类型（中性、牙齿、自定义）查找姿态。 | `UMetaHumanIdentityFace` |
+| `AddPoseOfType` | 向面部部件添加指定类型的新姿态。 | `UMetaHumanIdentityFace` |
+| `SetCaptureData` | 为姿态设置用于分析的捕捉数据（网格或视频）。 | `UMetaHumanIdentityPose` |
+| `AddNewPromotedFrame` | 为当前姿态创建一个新的“提升帧”，用于关键帧选择和标记。 | `UMetaHumanIdentityPose` |
+| `InitializeContourDataForFootageFrame` | 为视频帧初始化轮廓数据。 | `UPromotedFrameUtils` |
+| `HandleError` | 处理身份处理过程中产生的错误代码，记录日志并可选择显示用户对话框。 | `UMetaHumanIdentity` |
 
 ### 使用示例（蓝图描述）
-
-1.  **登录与检查状态**：
-    *   创建一个 `UMetaHumanIdentity` 资产。
-    *   首先调用 `LogInToAutoRigService` 节点，触发登录流程。
-    *   使用 `IsLoggedInToService` 节点轮询，直到返回 `true`。
-
-2.  **配置身份并处理捕获数据**：
-    *   使用 `GetOrCreatePartOfClass` 获取 `UMetaHumanIdentityFace` 部分。
-    *   为面部部分添加姿态（Neutral， Teeth），并为每个姿态设置 `UCaptureData`（可以是网格或视频片段数据）。
-    *   为每个姿态添加“提升帧”（Promoted Frame），这些帧将被用于追踪。
-
-3.  **启动追踪与生成 DNA**：
-    *   当所有姿态和帧都准备好后，调用 `StartFrameTrackingPipeline` 节点，传入帧的图像数据、尺寸以及相关的深度数据路径。
-    *   监听 `OnAutoRigServiceFinishedDynamicDelegate` 事件。
-    *   当追踪完成后，检查面部部分是否 `CanSubmitToAutorigging`。
-    *   如果可以，调用 `CreateDNAForIdentity` 节点。该节点成功返回后，一个带有绑定的 `USkeletalMesh` 将被附加到面部部分的 `RigComponent` 属性上。
-
-4.  **导出与使用**：
-    *   从面部部分的 `RigComponent` 获取生成的骨骼网格体，即可用于角色蓝图或动画系统。
-    *   可以使用 `ExportDNADataToFiles` 节点将最终的 DNA 和眉毛数据导出为文件，以便在外部工具中使用或备份。
+1.  **创建身份**：在内容浏览器中右键，选择 `Animation` -> `MetaHuman` -> `MetaHuman Identity` 创建资产。双击打开编辑器。
+2.  **添加面部部件**：在编辑器详情面板中，点击 `Parts` 区域的 `+` 号，选择 `MetaHuman Identity Face` 并添加。
+3.  **设置捕捉数据**：在 `Face` -> `Poses` -> `Neutral` 下的 `Target` 属性中，设置你的捕捉数据资产（`FootageCaptureData` 或 `MeshCaptureData`）。
+4.  **选择提升帧**：在姿态的 `Promoted Frames` 中，添加或选择一个清晰的正面帧，用于后续处理。
+5.  **跟踪与适配**：使用 `Start Frame Tracking Pipeline` 节点或编辑器工具栏按钮跟踪特征点，然后使用 `Conform` 节点将模板网格适配到跟踪结果。
+6.  **自动绑骨**：确保已登录服务（`Log In To Auto Rig Service`），然后调用 `Create DNA For Identity` 发起自动绑骨请求。成功后，`RigComponent` 将包含可用的骨骼网格体。
 
 ## C++ 用法
-
-在 C++ 中，`MetaHumanIdentity` 模块提供了更底层和可编程的接口来控制整个流程。
+核心的 C++ API 用于在编辑器工具或自动化流程中操作 MetaHuman Identity 资产。
 
 ### 头文件引入
-
 ```cpp
-#include "MetaHumanIdentity.h"
-#include "MetaHumanIdentityParts.h"
-#include "MetaHumanIdentityPose.h"
+#include “MetaHumanIdentity/Public/MetaHumanIdentity.h”
+#include “MetaHumanIdentity/Public/MetaHumanIdentityParts.h”
 ```
 
 ### 基本用法
-
-以下代码展示了如何以编程方式初始化一个 MetaHuman Identity 资产并启动部分处理流程。
+以下代码演示如何以编程方式创建并操作一个 MetaHuman Identity。
+（来源：基于 `Public/MetaHumanIdentity.h` 和 `Public/MetaHumanIdentityParts.h` 中的类定义）
 
 ```cpp
-// 假设我们已经有了一个 UMetaHumanIdentity* Identity 对象（例如，从资产加载或新建）
-
-// 1. 获取或创建面部部分
-if (UMetaHumanIdentityFace* FacePart = Identity->GetOrCreatePartOfClass<UMetaHumanIdentityFace>())
+// 假设我们有一个 UMetaHumanIdentity* Identity 资产
+if (Identity)
 {
-    // 2. 为中性表情添加一个姿态
-    if (UMetaHumanIdentityPose* NeutralPose = FacePart->FindPoseByType(EIdentityPoseType::Neutral))
+    // 1. 查找或创建面部部件
+    UMetaHumanIdentityFace* FacePart = Identity->GetOrCreatePartOfClass<UMetaHumanIdentityFace>();
+    if (FacePart)
     {
-        // 设置捕获数据（示例）
-        // NeutralPose->SetCaptureData(MyCaptureData);
-        
-        // 3. 为该姿态添加一个“提升帧”（以视频帧为例）
-        int32 NewFrameIndex;
-        if (UMetaHumanIdentityFootageFrame* FootageFrame = Cast<UMetaHumanIdentityFootageFrame>(NeutralPose->AddNewPromotedFrame(NewFrameIndex)))
+        // 2. 为中性姿态设置捕捉数据
+        UMetaHumanIdentityPose* NeutralPose = FacePart->FindPoseByType(EIdentityPoseType::Neutral);
+        if (NeutralPose)
         {
-            FootageFrame->FrameNumber = 100; // 设置要处理的帧号
-            FootageFrame->FrameName = FText::FromString(TEXT("Frontal"));
-            FootageFrame->bIsFrontView = true; // 标记为正视图
-            
-            // 4. 初始化该帧的轮廓数据（通常由编辑器工具或配置自动完成）
-            // UPromotedFrameUtils::InitializeContourDataForFootageFrame(NeutralPose, FootageFrame);
-            
-            // 5. 启动单帧追踪（实际项目中通常会为多帧调用）
-            TArray<FColor> ImageData; // 需要从文件或视频中加载此帧的像素数据
-            int32 Width = 1920, Height = 1080;
-            FString DepthFramePath = TEXT("/Game/Path/To/Depth/Frame100.exr");
-            
-            // 注意：此函数是异步的
-            Identity->StartFrameTrackingPipeline(
-                ImageData, Width, Height, DepthFramePath,
-                NeutralPose, FootageFrame, true /* bShowProgress */
-            );
+            // 假设 FootageData 是一个 UFootageCaptureData* 或 UMeshCaptureData*
+            NeutralPose->SetCaptureData(MyCaptureData);
+        }
+
+        // 3. 执行适配操作
+        EIdentityErrorCode ErrorCode = FacePart->Conform(EConformType::Solve);
+        if (ErrorCode == EIdentityErrorCode::Success)
+        {
+            // 4. 检查是否可以提交给自动绑骨服务
+            if (FacePart->CanSubmitToAutorigging())
+            {
+                // 5. 触发自动绑骨（需要在已登录服务的上下文中调用）
+                Identity->CreateDNAForIdentity(false);
+            }
         }
     }
 }
 ```
 
 ### 进阶用法
-
-**监控处理状态与提交绑定：**
+监控自动绑骨流程的异步完成状态。
+（来源：基于 `UMetaHumanIdentity` 中的委托声明）
 
 ```cpp
-// 在启动追踪前，绑定完成委托
-Identity->OnAutoRigServiceFinishedDelegate.AddLambda([](bool bSuccess)
+// 在某个 UObject 类中绑定委托
+void AMyActor::BeginPlay()
+{
+    Super::BeginPlay();
+    if (MyIdentityAsset)
+    {
+        // 绑定动态多播委托，用于蓝图通知
+        MyIdentityAsset->OnAutoRigServiceFinishedDynamicDelegate.AddDynamic(this, &AMyActor::OnAutoRigFinished);
+        // 绑定普通多播委托，用于 C++ 通知
+        MyIdentityAsset->OnAutoRigServiceFinishedDelegate.AddUObject(this, &AMyActor::OnAutoRigFinishedNative);
+    }
+}
+
+UFUNCTION()
+void AMyActor::OnAutoRigFinished(bool bSuccess)
 {
     if (bSuccess)
     {
-        UE_LOG(LogTemp, Log, TEXT("AutoRigging process completed successfully!"));
-        // 在此处获取生成的骨骼网格体
-        // UMetaHumanIdentityFace* Face = ...;
-        // USkeletalMeshComponent* RigComp = Face->RigComponent;
-        // RigComp->GetSkeletalMeshAsset(); // 获取生成的网格资产
+        UE_LOG(LogTemp, Log, TEXT(“MetaHuman auto-rigging succeeded.”));
+        // 可以在这里获取生成的骨骼网格体
+        USkeletalMeshComponent* RigComp = /* 从 Identity 中获取 */;
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("AutoRigging process failed."));
+        UE_LOG(LogTemp, Error, TEXT(“MetaHuman auto-rigging failed.”));
     }
-});
-
-// 启动异步追踪后，在合适的时机（例如所有必要的帧都已追踪完成）提交到AutoRig服务
-// 通常在检查了 FacePart->CanSubmitToAutorigging() 之后调用
-Identity->CreateDNAForIdentity(false /* bLogOnly */);
-```
-
-**管理 DNA 数据：**
-
-```cpp
-// 从面部部分获取原始 DNA 缓冲区
-if (FacePart->HasRawDNABuffer())
-{
-    TArray<uint8> RawDNA = FacePart->GetRawDNABuffer();
-    // 对 RawDNA 进行自定义处理或保存到文件...
 }
 
-// 应用一个新的 DNA 到绑定组件
-TSharedPtr<IDNAReader> MyDNAReader = /* ... */;
-EIdentityErrorCode ErrorCode = FacePart->ApplyDNAToRig(MyDNAReader, true, true);
-if (ErrorCode == EIdentityErrorCode::Success)
+void AMyActor::OnAutoRigFinishedNative(bool bSuccess)
 {
-    UE_LOG(LogTemp, Log, TEXT("DNA applied to rig successfully."));
+    // C++ 原生回调处理
+    // ...
+}
+
+void AMyActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (MyIdentityAsset)
+    {
+        MyIdentityAsset->OnAutoRigServiceFinishedDynamicDelegate.RemoveDynamic(this, &AMyActor::OnAutoRigFinished);
+        MyIdentityAsset->OnAutoRigServiceFinishedDelegate.RemoveAll(this);
+    }
+    Super::EndPlay(EndPlayReason);
 }
 ```
 
 ## Demo 示例
-
-一个完整的最小示例，展示如何在编辑器工具中创建并初始化一个 MetaHuman Identity。
-
-**MyMetaHumanCreator.h**
+一个最小化的示例，展示如何创建并初始化一个 MetaHuman Identity 资产。
 ```cpp
+// MyMetaHumanGenerator.h
 #pragma once
-
-#include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "MyMetaHumanCreator.generated.h"
-
-class UMetaHumanIdentity;
-class UMetaHumanIdentityFace;
-class UMetaHumanIdentityPose;
+#include “CoreMinimal.h”
+#include “UObject/NoExportTypes.h”
+#include “MyMetaHumanGenerator.generated.h”
 
 UCLASS(BlueprintType)
-class UMyMetaHumanCreator : public UObject
+class MYPROJECT_API UMyMetaHumanGenerator : public UObject
 {
     GENERATED_BODY()
-
 public:
-    /** 创建并初始化一个基础的 MetaHuman Identity 资产 */
-    UFUNCTION(BlueprintCallable, Category = "MetaHuman Creator")
-    UMetaHumanIdentity* CreateAndInitializeIdentity(const FString& AssetName, const FString& PackagePath);
-
-private:
-    /** 为面部部分添加默认姿态 */
-    void AddDefaultPosesToFace(UMetaHumanIdentityFace* InFacePart);
+    UFUNCTION(BlueprintCallable, Category = “MetaHuman”)
+    static UMetaHumanIdentity* CreateAndInitializeIdentityFromDNA(const FString& InDNAPath);
 };
-```
 
-**MyMetaHumanCreator.cpp**
-```cpp
-#include "MyMetaHumanCreator.h"
-#include "MetaHumanIdentity.h"
-#include "MetaHumanIdentityParts.h"
-#include "MetaHumanIdentityPose.h"
-#include "AssetToolsModule.h"
-#include "IAssetTools.h"
+// MyMetaHumanGenerator.cpp
+#include “MyMetaHumanGenerator.h”
+#include “MetaHumanIdentity.h”
 
-UMetaHumanIdentity* UMyMetaHumanCreator::CreateAndInitializeIdentity(const FString& AssetName, const FString& PackagePath)
+UMetaHumanIdentity* UMyMetaHumanGenerator::CreateAndInitializeIdentityFromDNA(const FString& InDNAPath)
 {
-    // 使用资产工具创建一个新的 UMetaHumanIdentity 资产
-    IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
-    UObject* NewAsset = AssetTools.CreateAsset(AssetName, PackagePath, UMetaHumanIdentity::StaticClass(), nullptr);
-    
-    UMetaHumanIdentity* NewIdentity = Cast<UMetaHumanIdentity>(NewAsset);
-    if (!NewIdentity)
+    // 1. 创建一个空的 MetaHuman Identity 资产
+    UMetaHumanIdentity* NewIdentity = NewObject<UMetaHumanIdentity>();
+
+    // 2. 获取或创建面部部件
+    UMetaHumanIdentityFace* FacePart = NewIdentity->GetOrCreatePartOfClass<UMetaHumanIdentityFace>();
+    if (!FacePart) return nullptr;
+
+    // 3. 确保中性姿态存在
+    UMetaHumanIdentityPose* NeutralPose = FacePart->FindPoseByType(EIdentityPoseType::Neutral);
+    if (!NeutralPose)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create MetaHuman Identity asset."));
+        NeutralPose = NewObject<UMetaHumanIdentityPose>();
+        NeutralPose->PoseType = EIdentityPoseType::Neutral;
+        FacePart->AddPoseOfType(EIdentityPoseType::Neutral, NeutralPose);
+    }
+
+    // 4. 导入 DNA 文件（这是一个编辑器操作，需要 WITH_EDITOR）
+#if WITH_EDITOR
+    EIdentityErrorCode ErrorCode = NewIdentity->ImportDNAFile(InDNAPath, EDNADataLayer::LOD0, TEXT(“”));
+    if (ErrorCode != EIdentityErrorCode::Success)
+    {
+        UMetaHumanIdentity::HandleError(ErrorCode);
         return nullptr;
     }
+#endif
 
-    // 获取或创建面部部分
-    UMetaHumanIdentityFace* FacePart = NewIdentity->GetOrCreatePartOfClass<UMetaHumanIdentityFace>();
-    if (FacePart)
-    {
-        AddDefaultPosesToFace(FacePart);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Identity created but failed to initialize Face part."));
-    }
-
-    UE_LOG(LogTemp, Log, TEXT("Successfully created MetaHuman Identity: %s"), *NewIdentity->GetName());
     return NewIdentity;
-}
-
-void UMyMetaHumanCreator::AddDefaultPosesToFace(UMetaHumanIdentityFace* InFacePart)
-{
-    // 添加中性表情姿态
-    if (!InFacePart->FindPoseByType(EIdentityPoseType::Neutral))
-    {
-        UMetaHumanIdentityPose* NeutralPose = NewObject<UMetaHumanIdentityPose>(InFacePart);
-        NeutralPose->PoseType = EIdentityPoseType::Neutral;
-        NeutralPose->PoseName = FText::FromString(TEXT("Neutral"));
-        NeutralPose->bFitEyes = true; // 默认使用数据驱动的眼睛拟合
-        InFacePart->AddPoseOfType(EIdentityPoseType::Neutral, NeutralPose);
-    }
-
-    // 添加牙齿姿态
-    if (!InFacePart->FindPoseByType(EIdentityPoseType::Teeth))
-    {
-        UMetaHumanIdentityPose* TeethPose = NewObject<UMetaHumanIdentityPose>(InFacePart);
-        TeethPose->PoseType = EIdentityPoseType::Teeth;
-        TeethPose->PoseName = FText::FromString(TEXT("Teeth"));
-        InFacePart->AddPoseOfType(EIdentityPoseType::Teeth, TeethPose);
-    }
 }
 ```
 
 ## 模块依赖
-
-要使用 `MetaHumanIdentity` 模块，你的模块（例如，包含上述 `MyMetaHumanCreator` 的模块）需要在 `.Build.cs` 文件中添加以下依赖。
+使用此插件（特别是 `MetaHumanIdentity` 模块）需要依赖以下非标准模块：
 
 | 模块 | 用途 |
 |---|---|
-| `ControlRigDeveloper` | 用于操作和应用 MetaHuman 的 Control Rig。 |
-| `MetaHumanSDKEditor` | MetaHuman 编辑器 SDK，提供与 MetaHuman 创作工具集成的接口。 |
-| `SkeletalMeshUtilitiesCommon` | 提供骨骼网格体相关的实用工具函数。 |
-| `MetaHumanCaptureDataEditor` | 提供对捕获数据资产的编辑器支持。 |
-
-*注意：模块还依赖 `UnrealEd`, `Slate` 等，但这些属于编辑器和通用模块依赖，未在上表列出。*
+| `MetaHumanCoreTechLib` | 提供核心的 MetaHuman 技术库，如面部适配器（FMetaHumanConformer）。 |
+| `MetaHumanCaptureDataEditor` | 用于处理和编辑捕捉数据资产。 |
+| `MetaHumanSDKEditor` | MetaHuman SDK 的编辑器工具。 |
+| `SkeletalMeshUtilitiesCommon` | 提供骨骼网格体相关的通用工具函数。 |
+| `ControlRigDeveloper` | 用于与 Control Rig（控制绑定）系统交互。 |
+| `MeshTrackerInterface` | 面部网格追踪器的抽象接口。 |
+| `MetaHumanFaceFittingSolver` | 面部网格适配求解器。 |
+| `MetaHumanFaceContourTracker` | 面部轮廓特征点追踪器。 |
+| `MetaHumanPipeline` | 处理数据流（Pipeline）的系统。 |
 
 ## 维护状态
 
@@ -286,18 +222,16 @@ void UMyMetaHumanCreator::AddDefaultPosesToFace(UMetaHumanIdentityFace* InFacePa
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能。 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵问题。 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 当进行身体追踪时，过滤掉不必要的可视化对象。 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为现有的 MetaHuman 网格导出动画序列。 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复了 Sequencer 中的缓存问题。 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时禁用关卡序列导出 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色上的渲染瑕疵 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MHA] 为现有网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
 
 ### 维护评价
-
-**活跃维护**。该模块作为 MetaHuman 工具链的核心，近期（2026年5月）有频繁的功能更新和 Bug 修复。更新内容集中在渲染质量改进、与身体追踪功能的集成、以及动画导出功能的增强。创建时间很新，且 Epic Games 作为创建者持续投入开发。模块功能稳定，是 MetaHuman 工作流中推荐使用的标准组件。
+**活跃维护**。MetaHuman Animator 是 Epic Games 官方维护的核心数字人工具，从 2020 年创建至今持续获得重大更新和功能增强。近期的 git 历史（截至 2026 年 5 月）显示其更新频率非常高，几乎每天都有提交，内容涵盖新功能（如导出动画序列）、渲染质量改进（修复瑕疵）、与新系统（身体追踪）的集成以及稳定性修复（缓存问题）。该插件不存在已知的废弃风险，是构建高保真数字人角色的推荐官方方案。
 
 ## 相关链接
-
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档](https://docs.unrealengine.com/en-US/Engine/Characters/MetaHuman/)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanIdentity/Tests)
+- [官方文档](https://docs.unrealengine.com/5.0/en-US/working-with-the-metahuman-animator-in-unreal-engine/) （注意：链接为通用指南，最新信息请参考引擎版本内置文档）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanControlsConversionTest)

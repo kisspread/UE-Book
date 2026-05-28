@@ -4,169 +4,210 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman动画师 |
+| 中文名 | MetaHuman 动画工具包 |
 | 分类 | MetaHuman |
-| 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（动画资产、蓝图、配置文件） |
+| 默认启用 | ❌ 否 |
+| 包含内容 | ✅ 有（蓝图资产、动画资产、音频处理资产等） |
 | 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2021-02-23 |
-| 年龄标签 | 🆕（约 4 年） |
+| 创建时间 | 未知 |
+| 年龄标签 | 未知 |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是一套完整的工具链，核心目的是将音频驱动（Speech-to-Face）和视频/单目摄像头驱动（Performance Capture）的动画数据，高效地转化为可在 MetaHuman 角色上播放的高质量面部动画。它解决的是从原始媒体（音频、视频）到最终可用游戏/影视资产的自动化流水线问题，特别是针对 MetaHuman 角色的复杂面部绑定和动画系统。
+MetaHuman Animator 是 Epic Games 为 MetaHuman 角色提供的官方动画工具包。它提供了一套完整的解决方案，用于从音频驱动（Speech-to-Face）或手动关键帧为 MetaHuman 角色生成逼真的面部动画。该插件支持从音频文件（如 SoundWave 资产）批量生成动画性能（Performance），并可以将处理后的动画导出为 AnimSequence 或 LevelSequence。
 
-其价值在于：
-1.  **音频驱动动画**：通过 AI 模型将音频文件转换为对应的面部 BlendShape 动画数据。
-2.  **批量处理**：提供批量处理工具，允许一次性处理大量音频文件，显著提升资产生产效率。
-3.  **端到端工具**：提供从数据采集（通过 `MetaHumanCaptureProtocolStack`）、处理、求解到最终在 Sequencer 中预览和导出的完整工作流。
+其核心价值在于将复杂且耗时的面部动画制作流程自动化，允许艺术家和开发者快速为 MetaHuman 角色创建基于语音的口型同步动画，并支持批量处理，极大地提升了制作效率。
 
 ## 使用场景
 
--   你正在开发一个拥有大量对话的 RPG 或叙事游戏 → 使用 **MetaHuman Batch Processor** 批量将数千条语音对话转换为面部动画序列。
--   你是一名虚拟主播技术开发者，需要为你的虚拟形象生成实时口型同步动画 → 利用其核心的 **Speech-to-Face** 算法。
--   你有一段演员的表演视频，希望为其 MetaHuman 角色制作动画 → 使用 **Performance Capture** 相关模块进行面部追踪和动画求解。
--   你正在构建一个影视预览管线，需要将分镜音频快速转化为带表情的角色动画预览。
+- 你正在为 MetaHuman 角色制作对话场景 → 使用 Speech-to-Face 功能从配音音频自动生成面部动画。
+- 你需要为大量 MetaHuman 对话生成口型同步动画 → 使用批量处理器（Batch Processor）一次性处理多个音频文件。
+- 你希望将生成的动画导出为通用的动画序列资产，以便在其他项目或动画蓝图中使用 → 使用导出功能生成 AnimSequence 或 LevelSequence。
+- 你需要自定义面部动画的细节，如眨眼、头部运动等 → 在处理设置中调整各项参数。
 
 ## 蓝图用法
 
-此插件的核心是后端处理管线和数据资产，大部分关键函数（如批量处理的 `RunProcess`）是 C++ 的 `UObject` 方法，而非直接暴露给蓝图的节点。但插件定义了大量 `BlueprintType` 的设置结构体和枚举，用于在蓝图中配置处理参数。
+本插件主要提供编辑器内工具和批处理功能，蓝图节点主要用于配置和触发批处理流程。
 
-### 核心设置类型
+### 核心节点
 
-| 类型/节点 | 说明 | 所在类/结构体 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `FMetaHumanSpeechProcessingSettings` | 音频处理核心设置，如是否生成眨眼、音频通道、动画掩码等。 | `FMetaHumanSpeechProcessingSettings` |
-| `FExportAnimSequenceSettings` | 导出动画序列的设置，如目标骨架、曲线插值、是否覆盖资产。 | `FExportAnimSequenceSettings` |
-| `FExportLevelSequenceSettings` | 导出关卡序列的设置，如目标MetaHuman蓝图、是否导出音轨和摄像机。 | `FExportLevelSequenceSettings` |
-| `EBatchOperationStepsFlags` | 批量操作步骤的标志枚举，定义了从“创建性能资产”到“导出关卡序列”的完整流程。 | `EBatchOperationStepsFlags` |
+| `RunProcess` | 根据提供的上下文执行从音频到动画的完整批处理流程 | `UMetaHumanBatchOperation` |
 
 ### 使用示例（蓝图描述）
 
-你无法在蓝图中直接调用批量处理函数。通常的做法是：
-1.  在蓝图中定义 `FMetaHumanSpeechProcessingSettings` 和 `FExportAnimSequenceSettings` 类型的变量。
-2.  通过蓝图节点（如 `Make Literal Struct` 或直接设置成员）来配置这些变量。
-3.  这些变量可以被用作某些自定义蓝图节点（如果插件提供了）或被用来初始化一个 `UMetaHumanSpeechToAnimSequenceProcessingSettings` 对象，该对象可以被传递给 C++ 侧的处理逻辑。
+1.  **创建批处理上下文**：在蓝图中创建一个 `FMetaHumanBatchOperationContext` 结构体变量。设置 `AssetsToProcess`（要处理的音频资产数组）、`BatchStepsFlags`（要执行的步骤，如 `SoundWaveToPerformance | ProcessPerformance`）、`ProcessingSettings`（如是否生成眨眼、音频通道混合设置）以及 `ExportSettings`（如导出目标骨骼、曲线插值模式）。
+2.  **配置导出路径**：使用 `SMetaHumanBatchExportPathDialog` 控件（通常通过编辑器扩展调用）或直接设置上下文中的 `PerformanceNameRule` 和 `ExportedAssetNameRule` 来定义输出资产的命名和路径规则。
+3.  **执行批处理**：创建一个 `UMetaHumanBatchOperation` 对象，并调用其 `RunProcess` 函数，传入配置好的上下文。该操作会在编辑器中运行，处理所有指定的音频资产，并根据设置生成性能资产、处理动画，最终导出动画序列。
+4.  **监控进度与结果**：批处理过程会显示进度条，并在完成后通过通知报告成功或失败的结果。如果处理被取消，已创建的临时资产会被自动清理。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-// 引入批量处理操作的核心定义
 #include "MetaHumanBatchOperation.h"
-// 引入设置结构体
 #include "MetaHumanSpeechProcessingSettings.h"
 ```
 
-### 基本用法（来自批量处理逻辑）
+### 基本用法
 
-以下代码展示了如何构建一个上下文并执行批量音频转动画操作。
+以下示例展示了如何在 C++ 中配置并运行一个基本的批量处理任务。
+**来源文件**: `Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanBatchProcessor/Private/MetaHumanBatchOperation.cpp` (推断逻辑)
 
 ```cpp
-// 来源于 MetaHumanBatchProcessor 模块内部的典型用法逻辑
-void ExampleBatchProcess()
-{
-    // 1. 准备源资产（例如，从内容浏览器获取的 USoundWave 数组）
-    TArray<TWeakObjectPtr<UObject>> SoundWaves; // ... 填充你的音频资产
+// 创建批处理操作对象
+UMetaHumanBatchOperation* BatchOperation = NewObject<UMetaHumanBatchOperation>();
 
-    // 2. 构建批量处理上下文
-    FMetaHumanBatchOperationContext Context;
-    Context.AssetsToProcess = SoundWaves;
-    Context.BatchStepsFlags = EBatchOperationStepsFlags::SoundWaveToPerformance | 
-                              EBatchOperationStepsFlags::ProcessPerformance |
-                              EBatchOperationStepsFlags::ExportAnimSequence;
-    // 配置处理参数
-    Context.bGenerateBlinks = true;
-    Context.bMixAudioChannels = true;
-    Context.OutputControls = EAudioDrivenAnimationOutputControls::FullFace;
-    // 配置导出参数
-    Context.bOverwriteAssets = false; // 生成唯一资产名
-    Context.TargetSkeletonOrSkeletalMesh = /* 设置你的目标骨架/网格体 TSoftObjectPtr */;
-    Context.CurveInterpolation = ERichCurveInterpMode::RCIM_Linear;
+// 配置上下文
+FMetaHumanBatchOperationContext Context;
+// 1. 设置要处理的音频资产（假设已经获取了资产引用）
+TArray<TWeakObjectPtr<UObject>> AudioAssets;
+AudioAssets.Add(MakeWeakObjectPtr(SoundWaveAsset1));
+AudioAssets.Add(MakeWeakObjectPtr(SoundWaveAsset2));
+Context.AssetsToProcess = AudioAssets;
 
-    // 3. 创建批量操作对象并执行
-    UMetaHumanBatchOperation* BatchOp = NewObject<UMetaHumanBatchOperation>();
-    BatchOp->RunProcess(Context);
-}
+// 2. 设置要执行的步骤：创建性能 -> 处理性能 -> 导出动画序列
+Context.BatchStepsFlags = EBatchOperationStepsFlags::SoundWaveToPerformance |
+                          EBatchOperationStepsFlags::ProcessPerformance |
+                          EBatchOperationStepsFlags::ExportAnimSequence;
+
+// 3. 配置处理选项
+Context.bGenerateBlinks = true;
+Context.bMixAudioChannels = true;
+Context.AudioDrivenAnimationOutputControls = EAudioDrivenAnimationOutputControls::FullFace;
+
+// 4. 配置导出选项
+Context.bOverwriteAssets = false; // 不覆盖现有资产，自动生成新名称
+Context.TargetSkeletonOrSkeletalMesh = MakeSoftObjectPtr(TargetSkeletalMesh);
+Context.CurveInterpolation = ERichCurveInterpMode::RCIM_Cubic;
+Context.bRemoveRedundantKeys = true;
+
+// 5. 配置命名规则（简化示例，通常需要用户交互设置）
+Context.PerformanceNameRule.BaseName = TEXT("Perf_");
+Context.ExportedAssetNameRule.BaseName = TEXT("Anim_");
+Context.ExportedAssetNameRule.Suffix = TEXT("_Facial");
+
+// 执行处理
+BatchOperation->RunProcess(Context);
 ```
 
 ### 进阶用法
 
-更复杂的用法可能涉及单独使用管线中的其他模块，例如 `MetaHumanFaceAnimationSolver` 或 `MetaHumanPipeline`，但 `MetaHumanBatchProcessor` 模块本身已经封装了从音频到动画序列导出的完整逻辑，是最高层级的批处理接口。
+可以更精细地控制处理流程，例如仅为音频创建性能资产，但不立即处理或导出，或者只导出为关卡序列。
+**组合逻辑来源**: `Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanBatchProcessor/Public/MetaHumanBatchOperation.h`
+
+```cpp
+// 示例：仅从音频创建性能资产，不进行处理和导出
+FMetaHumanBatchOperationContext ContextOnlyCreate;
+ContextOnlyCreate.AssetsToProcess = AudioAssets;
+ContextOnlyCreate.BatchStepsFlags = EBatchOperationStepsFlags::SoundWaveToPerformance; // 仅创建
+// ... 其他命名设置 ...
+
+UMetaHumanBatchOperation::Get()->RunProcess(ContextOnlyCreate);
+
+// 示例：从音频创建性能、处理，并导出为关卡序列
+FMetaHumanBatchOperationContext ContextToLevelSequence;
+ContextToLevelSequence.AssetsToProcess = AudioAssets;
+ContextToLevelSequence.BatchStepsFlags = EBatchOperationStepsFlags::SoundWaveToPerformance |
+                                         EBatchOperationStepsFlags::ProcessPerformance |
+                                         EBatchOperationStepsFlags::ExportLevelSequence;
+// ... 配置 LevelSequence 导出选项 ...
+ContextToLevelSequence.bExportAudioTrack = true;
+ContextToLevelSequence.bExportCamera = true;
+ContextToLevelSequence.TargetMetaHuman = MakeSoftObjectPtr(MetaHumanBlueprint);
+
+UMetaHumanBatchOperation::Get()->RunProcess(ContextToLevelSequence);
+```
 
 ## Demo 示例
 
-一个展示如何配置并触发批量处理的最小 C++ 示例。
+一个最小的可编译示例，展示如何使用 MetaHumanBatchProcessor 模块从单个音频资产创建动画。
 
+**MetaHumanBatchProcessorDemo.h**
 ```cpp
-// MetaHumanBatchDemo.h
 #pragma once
-
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "MetaHumanBatchDemo.generated.h"
+#include "Subsystems/EditorSubsystem.h"
+#include "MetaHumanBatchProcessorDemo.generated.h"
 
 UCLASS()
-class AMetaHumanBatchDemo : public AActor
+class UMetaHumanBatchProcessorDemo : public UEditorSubsystem
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
+
 public:
-    // 在编辑器中选中此Actor，然后在细节面板中点击“运行批量处理”按钮
-    UFUNCTION(CallInEditor, Category = "Demo")
-    void RunBatchProcessing();
+	/** 从指定的SoundWave资产创建并处理面部动画 */
+	UFUNCTION(BlueprintCallable, Category = "MetaHuman Demo")
+	void ProcessSingleAudioToAnimation(USoundWave* InSoundWave);
 };
 ```
 
+**MetaHumanBatchProcessorDemo.cpp**
 ```cpp
-// MetaHumanBatchDemo.cpp
-#include "MetaHumanBatchDemo.h"
+#include "MetaHumanBatchProcessorDemo.h"
 #include "MetaHumanBatchOperation.h"
 #include "MetaHumanSpeechProcessingSettings.h"
+#include "Engine/SkeletalMesh.h"
 
-void AMetaHumanBatchDemo::RunBatchProcessing()
+void UMetaHumanBatchProcessorDemo::ProcessSingleAudioToAnimation(USoundWave* InSoundWave)
 {
-    // 假设你已经在某个地方收集了音频资产指针
-    TArray<TWeakObjectPtr<UObject>> MyAudioAssets;
-    // ... 例如从资产注册表中查找所有 SoundWave
+	if (!InSoundWave)
+	{
+		return;
+	}
 
-    if (MyAudioAssets.Num() == 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No audio assets found to process."));
-        return;
-    }
+	// 创建批处理操作对象
+	UMetaHumanBatchOperation* BatchOp = NewObject<UMetaHumanBatchOperation>();
 
-    // 构建上下文
-    FMetaHumanBatchOperationContext BatchContext;
-    BatchContext.AssetsToProcess = MyAudioAssets;
-    BatchContext.BatchStepsFlags = EBatchOperationStepsFlags::SoundWaveToPerformance | 
-                                  EBatchOperationStepsFlags::ProcessPerformance;
-    // 关闭导出，仅生成性能资产（Performance Asset）用于预览
-    BatchContext.bGenerateBlinks = true;
-    BatchContext.bOverwriteAssets = true; // 覆盖已有的临时资产
+	// 配置上下文
+	FMetaHumanBatchOperationContext Context;
+	Context.AssetsToProcess.Add(MakeWeakObjectPtr(InSoundWave));
 
-    // 创建并运行批处理操作
-    UMetaHumanBatchOperation* BatchOp = NewObject<UMetaHumanBatchOperation>();
-    BatchOp->RunProcess(BatchContext);
+	// 设置处理步骤：创建性能 -> 处理 -> 导出动画序列
+	Context.BatchStepsFlags = EBatchOperationStepsFlags::SoundWaveToPerformance |
+	                          EBatchOperationStepsFlags::ProcessPerformance |
+	                          EBatchOperationStepsFlags::ExportAnimSequence;
 
-    UE_LOG(LogTemp, Log, TEXT("Batch processing initiated for %d audio assets."), MyAudioAssets.Num());
+	// 配置处理设置
+	Context.bGenerateBlinks = true;
+	Context.bMixAudioChannels = true; // 混合音频通道
+
+	// 配置导出设置
+	Context.bOverwriteAssets = true; // 如果存在同名资产则覆盖
+	// 假设已经有一个目标骨骼网格体资产
+	// Context.TargetSkeletonOrSkeletalMesh = YourSkeletalMeshAsset;
+	Context.CurveInterpolation = ERichCurveInterpMode::RCIM_Linear;
+	Context.bRemoveRedundantKeys = true;
+
+	// 配置命名规则（使用简单名称）
+	Context.PerformanceNameRule.BaseName = InSoundWave->GetName() + TEXT("_Perf");
+	Context.PerformanceNameRule.bAutoName = true; // 使用资产名生成
+	Context.ExportedAssetNameRule.BaseName = InSoundWave->GetName() + TEXT("_Anim");
+	Context.ExportedAssetNameRule.bAutoName = true;
+
+	// 执行处理
+	BatchOp->RunProcess(Context);
 }
 ```
 
 ## 模块依赖
 
-使用 `MetaHumanBatchProcessor` 模块，你的项目需要依赖以下插件或模块：
+以下模块是 MetaHumanBatchProcessor 模块运行所依赖的**特有**或**不常见**模块。要使用此模块，你的模块需要在 `.Build.cs` 文件中添加这些依赖。
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCore` | 提供 MetaHuman 系统的核心类型、工具和蓝图接口。 |
-| `MetaHumanPerformance` | 提供 `UMetaHumanPerformance` 资产类型，用于存储音频驱动的动画数据。 |
-| `MetaHumanPipeline` | 处理管线框架，可能用于编排更复杂的数据处理步骤。 |
-| `MetaHumanSpeech2Face` | 包含从音频生成面部动画的核心 AI 模型和算法。 |
-| `MetaHumanSequencer` | 用于在 Sequencer 中预览和导出最终动画序列。 |
-| `MetaHumanSDKEditor` | 为 MetaHuman 提供编辑器扩展和资产处理工具。 |
+| `MetaHumanPerformance` | 处理 MetaHuman 性能资产（Performance）的核心逻辑 |
+| `MetaHumanSpeech2Face` | 实现从音频（语音）驱动面部动画的核心算法 |
+| `MetaHumanCaptureDataEditor` | 提供捕获数据编辑器的基础设施 |
+| `MetaHumanImageViewerEditor` | 提供图像查看器编辑器组件 |
+| `EditorAnimUtils` | 提供编辑器动画工具函数（如资产重命名规则） |
+| `AssetTools` | 编辑器内资产创建、重命名、移动等操作 |
+
+**注意**：此插件整体还依赖其他 MetaHuman 相关模块（如 MetaHumanCore, MetaHumanIdentity 等），但上述列表是 MetaHumanBatchProcessor 模块直接或间接依赖的关键特有模块。
 
 ## 维护状态
 
@@ -174,19 +215,20 @@ void AMetaHumanBatchDemo::RunBatchProcessing()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能。 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复MetaHuman的渲染瑕疵。 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在身体追踪时过滤可视化对象。 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 为现有网格体导出动画序列的功能。 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题。 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色上的渲染瑕疵 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 当进行身体追踪时，过滤可视化对象 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MHA] 为现有网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
 
 ### 维护评价
 
-**活跃维护**。
-`MetaHuman Animator` 是 Epic Games 的核心产品之一，用于支撑其 MetaHuman 技术生态。从近期的提交记录看，开发团队在持续进行功能增强（如身体追踪集成、网格体导出支持）、Bug 修复（渲染瑕疵、Sequencer 问题）和优化。创建时间约为 4 年，属于较新的、仍在快速迭代的插件。虽然其 `Installed` 字段为 `false`，但这通常意味着它需要从 Epic Games Launcher 或源码编译获取，而非免费内置。**强烈推荐**用于任何涉及 MetaHuman 角色动画生产的专业项目。
+根据提供的 git 历史，MetaHuman Animator 插件在**2026年5月**仍有密集的更新（5次提交），这些更新主要集中在功能修复（渲染瑕疵、缓存问题）、功能增强（为现有网格导出动画）以及工作流优化（身体追踪相关）上。这表明该插件处于**活跃维护**状态，并且是 MetaHuman 工作流的核心部分，由 Epic Games 持续投入开发。
+
+**推荐使用**：对于任何涉及 MetaHuman 角色动画制作的项目，该插件都是官方推荐的核心工具。它自动化了繁琐的面部动画流程，特别是口型同步，能显著提升生产效率。需要注意的是，它是一个功能强大且复杂的工具，需要一定的学习成本。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/metahuman-animator-for-unreal-engine/)（MetaHuman Animator官方文档链接，需根据最新版本核实）
-- 测试用例：未在给定信息中明确提供路径。
+- [官方文档]() (待补充)
+- [测试用例]() (测试用例路径待确认)

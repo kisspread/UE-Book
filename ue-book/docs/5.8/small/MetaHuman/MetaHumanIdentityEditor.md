@@ -4,217 +4,173 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman 身份编辑器 |
+| 中文名 | MetaHuman 动画师 |
 | 分类 | MetaHuman |
-| 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（编辑器资产、UI控件、缩略图渲染器） |
-| 模块 | `MetaHumanIdentityEditor` (Runtime) |
+| 默认启用 | ✅ 是 |
+| 包含内容 | ✅ 有（数字人资产、配置模板等） |
+| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2022-09-29 |
+| 创建时间 | 2022-04-01 |
 | 年龄标签 | 🆕（约 4 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanIdentityEditor) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-`MetaHumanIdentityEditor` 是 MetaHuman Animator 插件的核心编辑器模块，专门用于 **管理、创建和编辑 MetaHuman 数字人的身份资产（`UMetaHumanIdentity`）**。它不是一个面向运行时的 API 模块，而是一个完整的编辑器扩展，提供了从视频或网格资产创建数字人、跟踪面部特征、拟合网格到标准模板，最终生成可动画数字人的完整工作流。其存在的根本目的是将复杂的 MetaHuman 数字人生成过程封装成一个统一的、可视化的编辑器工具。
+MetaHuman Animator 是一个用于创建、定制和动画化逼真 MetaHuman 数字角色的综合性工具包。它不仅仅是模型导入工具，而是一个端到端的工作流系统，核心功能是将真人表演（来自 iPhone 深度摄像头或其他动捕设备）转换为高质量的 MetaHuman 面部动画。它解决了从真人表演到数字角色驱动过程中的技术难题，包括面部追踪、表情解算、骨骼适配（Conforming）、动画生成等，让开发者能够在 Unreal Engine 内高效地制作影视级别的数字人内容。
 
 ## 使用场景
 
-- **您正在为游戏角色创建超写实数字人**：需要从演员表演视频中捕捉并生成面部动画和外观，然后将其适配到 MetaHuman 的标准骨骼和面部绑定上。
-- **您需要为虚拟主播或数字孪生应用创建可驱动的数字形象**：通过导入已有的 3D 网格或使用实时捕捉的视频流，将其转换为支持 ControlRig 和 MetaHuman Animator 的标准数字人资产。
-- **您正在构建影视或虚拟制片流程**：需要一个集成的工具来管理数字角色的“身份”部分，包括中性表情、牙齿等不同姿态的网格和跟踪数据。
+- **游戏开发**：你需要为游戏角色创建逼真的面部动画，例如使用 iPhone 捕捉演员表演并驱动游戏内的 MetaHuman 角色。
+- **虚拟制片**：你在制作影视作品，需要将演员的实时或录制表演无缝地映射到数字替身上。
+- **语音驱动动画**：你希望仅通过音频文件就能生成对应的口型和面部动画，用于快速原型或本地化工作。
+- **数字人定制**：你需要从现有的 3D 模型或照片扫描数据创建自定义的 MetaHuman 角色，并确保其具有可动画化的骨骼绑定。
 
 ## 蓝图用法
 
-此模块主要提供编辑器界面和资产操作，大部分核心逻辑由 C++ 实现并封装在 Slate UI 控件中。可供蓝图直接调用的公开节点较少，主要集中在资产操作和状态查询。
+本插件的编辑器功能主要通过编辑器工具栏和资产编辑器访问，蓝图可直接调用的节点较少。主要交互通过 `UMetaHumanIdentity`、`UMetaHumanPerformance` 等资产对象和相关的编辑器工具链完成。
 
-### 核心节点
+### 核心资产操作
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `AddPartsFromAsset` | 根据一个资产（如 StaticMesh、SkeletalMesh 或 FootageCaptureData）创建 Identity 的组成部分（Face/Body/Neutral Pose 等） | `SMetaHumanIdentityPartsEditor` |
-| `GetSelectedPromotedFrame` | 返回当前在“提升帧”面板中选中的 `UMetaHumanIdentityPromotedFrame` 对象 | `SMetaHumanIdentityPromotedFramesEditor` |
-| `SetIdentityPose` | 为 Promoted Frames 编辑器设置要编辑的 `UMetaHumanIdentityPose` | `SMetaHumanIdentityPromotedFramesEditor` |
-| `GetIdentityPose` | 返回当前正在编辑的 `UMetaHumanIdentityPose` | `SMetaHumanIdentityPromotedFramesEditor` |
-| `GetIdentity` | 返回正在编辑的 `UMetaHumanIdentity` 对象 | `SMetaHumanIdentityPartsEditor` |
+在蓝图中，你主要操作的是 `UMetaHumanIdentity` 资产。创建、修改和提交到自动绑骨服务等操作，通常在专门的 `MetaHuman Identity Editor` 编辑器界面中完成，该界面提供了丰富的交互式工具。
 
-### 使用示例（蓝图描述）
+### 数据导入
 
-由于此模块主要在编辑器内通过 UI 操作，蓝图直接调用其内部 UI 函数的场景不多。一个可能的蓝图使用场景是通过编辑器工具脚本（Editor Utility Widget 或 Editor Utility Blueprint）来自动化资产处理流程：
-1.  创建一个 `UMetaHumanIdentityAssetEditor` 对象。
-2.  调用 `SetObjectToEdit` 指定要编辑的 `UMetaHumanIdentity` 资产。
-3.  调用 `OpenEditor` 打开该资产的专用编辑器窗口。
-4.  （更高级）通过获取 `FMetaHumanIdentityAssetEditorToolkit` 实例，可能访问更底层的编辑器状态和操作，但这通常需要 C++ 扩展。
+你可以通过 C++ 或编辑器 UI，将 `UCaptureData`（捕捉数据，如深度视频或静态网格体）设置到 `UMetaHumanIdentityPose` 上，这是驱动后续流程的基础。
 
 ## C++ 用法
-
-此模块主要提供编辑器扩展类，用于在编辑器中处理 MetaHuman 身份资产。
 
 ### 头文件引入
 
 ```cpp
-// 引入身份编辑器工具包
-#include "MetaHumanIdentityAssetEditorToolkit.h"
-
-// 引入 Parts 编辑器 UI
-#include "UI/SMetaHumanIdentityPartsEditor.h"
-
-// 引入 Promoted Frames 编辑器 UI
-#include "UI/SMetaHumanIdentityPromotedFramesEditor.h"
-```
-
-### 基本用法
-
-以下示例展示了如何以编程方式打开一个 `UMetaHumanIdentity` 资产进行编辑。这通常在编辑器工具或插件中扩展 MetaHuman 工作流时使用。
-
-```cpp
-// 文件路径: 假设的自动化脚本或插件代码
-#include "MetaHumanIdentityAssetEditor.h"
 #include "MetaHumanIdentity.h"
-
-void OpenMetaHumanIdentityForEditing(UMetaHumanIdentity* InIdentity)
-{
-    if (!InIdentity) return;
-
-    // 创建资产编辑器实例
-    UMetaHumanIdentityAssetEditor* AssetEditor = NewObject<UMetaHumanIdentityAssetEditor>();
-    AssetEditor->SetObjectToEdit(InIdentity);
-
-    // 这会触发创建 FMetaHumanIdentityAssetEditorToolkit 并打开编辑器窗口
-    AssetEditor->OpenEditor(InIdentity);
-}
+#include "MetaHumanIdentityPose.h"
+#include "MetaHumanIdentityPromotedFrame.h"
 ```
 
-### 进阶用法
+### 基本用法 (编程式身份创建)
 
-更复杂的用法涉及直接操作或扩展身份编辑器 UI。以下示例展示了如何监听 `SMetaHumanIdentityPartsEditor` 中身份部分（Part）的变化。
+在 C++ 中，你可以通过 `UMetaHumanIdentityFactoryNew` 工厂类来创建一个新的身份资产。
 
 ```cpp
-// 文件路径: 假设的自定义编辑器工具代码
-#include "UI/SMetaHumanIdentityPartsEditor.h"
-#include "MetaHumanIdentityPart.h"
-
-class FMyIdentityPartsMonitor
+// 引用自：Private/MetaHumanIdentityFactoryNew.h
+UCLASS(MinimalAPI, hidecategories = Object)
+class UMetaHumanIdentityFactoryNew : public UFactory
 {
+    GENERATED_BODY()
 public:
-    void StartMonitoring(const TSharedRef<SMetaHumanIdentityPartsEditor>& InPartsEditor)
-    {
-        // 绑定部分被添加的委托
-        InPartsEditor->OnIdentityPartAddedDelegate.BindRaw(this, &FMyIdentityPartsMonitor::OnPartAdded);
-        // 绑定部分被移除的委托
-        InPartsEditor->OnIdentityPartRemovedDelegate.BindRaw(this, &FMyIdentityPartsMonitor::OnPartRemoved);
-    }
-
-private:
-    void OnPartAdded(UMetaHumanIdentityPart* InAddedPart)
-    {
-        UE_LOG(LogTemp, Log, TEXT("新部分被添加到身份中: %s"), *InAddedPart->GetName());
-        // 执行自定义逻辑，如验证、记录或触发其他处理
-    }
-
-    void OnPartRemoved(UMetaHumanIdentityPart* InRemovedPart)
-    {
-        UE_LOG(LogTemp, Log, TEXT("部分被从身份中移除: %s"), *InRemovedPart->GetName());
-    }
+    UMetaHumanIdentityFactoryNew();
+    virtual UObject* FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* Context, FFeedbackContext* Warn) override;
+    virtual FText GetToolTip() const override;
 };
 ```
+
+### 进阶用法 (访问编辑器工具)
+
+当需要在编辑器工具上下文中操作身份时，可以使用 `UMetaHumanIdentityAssetEditorContext`。
+
+```cpp
+// 引用自：Private/MetaHumanIdentityAssetEditorContext.h
+UCLASS()
+class UMetaHumanIdentityAssetEditorContext : public UObject
+{
+    GENERATED_BODY()
+public:
+    TWeakPtr<FMetaHumanIdentityAssetEditorToolkit> MetaHumanIdentityAssetEditor;
+};
+```
+这个上下文对象在编辑器扩展中可以被获取，用于与正在编辑的身份资产进行交互。
 
 ## Demo 示例
 
-以下是一个最小化的 C++ 示例，演示了如何创建一个自定义编辑器工具，它继承自 MetaHuman 身份编辑器工具包，并尝试在初始化后执行一个自定义操作（仅作为演示框架）。
+以下示例展示了如何通过 C++ 代码创建一个新的 `UMetaHumanIdentity` 对象。这通常在编辑器工具或资产工厂内部使用。
 
 ```cpp
-// MyCustomIdentityEditorToolkit.h
+// MyMetaHumanIdentityHelper.h
 #pragma once
-
 #include "CoreMinimal.h"
-#include "MetaHumanIdentityAssetEditorToolkit.h"
+#include "UObject/NoExportTypes.h"
+#include "MyMetaHumanIdentityHelper.generated.h"
 
-class FMyCustomIdentityEditorToolkit : public FMetaHumanIdentityAssetEditorToolkit
+UCLASS()
+class UMyMetaHumanIdentityHelper : public UObject
 {
+    GENERATED_BODY()
+
 public:
-    FMyCustomIdentityEditorToolkit(UAssetEditor* InOwningAssetEditor);
-    virtual ~FMyCustomIdentityEditorToolkit();
+    /** 创建一个新的MetaHuman身份对象 */
+    UFUNCTION(BlueprintCallable, Category = "MetaHuman")
+    static UMetaHumanIdentity* CreateNewIdentityObject(UObject* InOuter, FName InName);
 
-    // 重写初始化，在编辑器完全加载后执行自定义逻辑
-    virtual void PostInitAssetEditor() override;
-
-    // 添加一个自定义菜单项到工具栏
-    virtual void ExtendToolBar() override;
-
-private:
-    // 自定义命令处理函数
-    void HandleMyCustomAction();
-
-    // 自定义命令信息
-    TSharedPtr<FUICommandInfo> MyCustomCommand;
+    /** 将网格体资产设置到身份的中性姿态上 */
+    UFUNCTION(BlueprintCallable, Category = "MetaHuman")
+    static bool SetMeshAssetToNeutralPose(UMetaHumanIdentity* InIdentity, UStaticMesh* InMesh);
 };
 ```
 
 ```cpp
-// MyCustomIdentityEditorToolkit.cpp
-#include "MyCustomIdentityEditorToolkit.h"
+// MyMetaHumanIdentityHelper.cpp
+#include "MyMetaHumanIdentityHelper.h"
 #include "MetaHumanIdentity.h"
-#include "Framework/Commands/UICommandList.h"
+#include "MetaHumanIdentityPose.h"
+#include "MetaHumanIdentityFactoryNew.h"
+#include "Engine/StaticMesh.h"
 
-FMyCustomIdentityEditorToolkit::FMyCustomIdentityEditorToolkit(UAssetEditor* InOwningAssetEditor)
-    : FMetaHumanIdentityAssetEditorToolkit(InOwningAssetEditor)
+UMetaHumanIdentity* UMyMetaHumanIdentityHelper::CreateNewIdentityObject(UObject* InOuter, FName InName)
 {
-    // 注册自定义命令
-    MyCustomCommand = FMyCustomIdentityEditorToolkit::GetCommands().AddCommand(/* ... */);
+    if (!InOuter) return nullptr;
+    
+    // 使用引擎提供的工厂类来创建资产，这会正确处理事务和资产注册
+    UMetaHumanIdentityFactoryNew* Factory = NewObject<UMetaHumanIdentityFactoryNew>();
+    return Cast<UMetaHumanIdentity>(Factory->FactoryCreateNew(UMetaHumanIdentity::StaticClass(), InOuter, InName, RF_NoFlags, nullptr, GWarn));
 }
 
-FMyCustomIdentityEditorToolkit::~FMyCustomIdentityEditorToolkit()
+bool UMyMetaHumanIdentityHelper::SetMeshAssetToNeutralPose(UMetaHumanIdentity* InIdentity, UStaticMesh* InMesh)
 {
-}
+    if (!InIdentity || !InMesh) return false;
 
-void FMyCustomIdentityEditorToolkit::PostInitAssetEditor()
-{
-    // 首先调用父类初始化
-    FMetaHumanIdentityAssetEditorToolkit::PostInitAssetEditor();
-
-    // 自定义初始化：例如，检查身份资产状态并给出提示
-    if (Identity && !Identity->HasFacePart())
+    // 获取或创建身份的面部部分（Part），然后获取其中性姿态
+    // 注意：实际代码中需要处理更复杂的部件（Part）和姿态（Pose）层级关系
+    UMetaHumanIdentityFace* FacePart = InIdentity->FindPart<UMetaHumanIdentityFace>();
+    if (!FacePart)
     {
-        UE_LOG(LogTemp, Warning, TEXT("当前身份资产缺少 Face 部分，请先添加。"));
+        // 创建一个新的面部部件
+        FacePart = NewObject<UMetaHumanIdentityFace>(InIdentity);
+        InIdentity->AddPart(FacePart);
     }
-}
 
-void FMyCustomIdentityEditorToolkit::ExtendToolBar()
-{
-    // 在调用父类添加工具栏后，我们可以继续添加更多项
-    FMetaHumanIdentityAssetEditorToolkit::ExtendToolBar();
+    UMetaHumanIdentityPose* NeutralPose = FacePart->FindPose(EIdentityPoseType::Neutral);
+    if (!NeutralPose)
+    {
+        // 创建一个新的中性姿态
+        NeutralPose = NewObject<UMetaHumanIdentityPose>(FacePart, UMetaHumanIdentityPose::StaticClass(), NAME_None, RF_NoFlags);
+        NeutralPose->SetPoseType(EIdentityPoseType::Neutral);
+        FacePart->AddPose(NeutralPose);
+    }
 
-    // 获取扩展后的工具栏构建器，并添加我们的自定义按钮
-    // UToolMenus::Get()->ExtendMenu("MetaHumanIdentityEditor.MainToolBar");
-    // ... 添加绑定到 HandleMyCustomAction 的按钮
-}
+    // 将静态网格体资产设置为该姿态的捕捉数据源
+    UStaticMeshCaptureData* CaptureData = NewObject<UStaticMeshCaptureData>(NeutralPose);
+    CaptureData->StaticMesh = InMesh;
+    NeutralPose->SetCaptureData(CaptureData);
 
-void FMyCustomIdentityEditorToolkit::HandleMyCustomAction()
-{
-    // 这里实现你的自定义逻辑
-    UE_LOG(LogTemp, Log, TEXT("执行自定义 MetaHuman 身份编辑器操作！"));
-    // 可以访问 Identity, SelectedIdentityPose 等成员变量
+    return true;
 }
 ```
 
 ## 模块依赖
 
-使用 `MetaHumanIdentityEditor` 模块，你的项目需要依赖以下非通用模块。常见依赖如 Core, Engine, Slate 等已省略。
+本插件包含大量模块，彼此依赖关系复杂。对于你的项目模块，如果仅需使用核心的身份资产和基本功能，主要依赖以下模块：
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanIdentity` | 提供核心运行时数据结构，如 `UMetaHumanIdentity`, `UMetaHumanIdentityPart`, `UMetaHumanIdentityPose` 等 |
-| `MetaHumanCaptureDataEditor` | 提供处理和可视化捕捉数据（如 FootageCaptureData）的编辑器工具 |
-| `MetaHumanImageViewerEditor` | 提供图像查看和标记功能的编辑器 UI |
-| `MetaHumanCore` | 提供 MetaHuman 核心技术和库的集成接口 |
-| `MetaHumanToolkit` | 提供通用的 MetaHuman 编辑器工具基类（如 `FMetaHumanToolkitBase`） |
-| `MetaHumanFaceContourTracker` | 提供面部轮廓跟踪的运行时算法 |
-| `MetaHumanFaceFittingSolver` | 提供将跟踪结果拟合到标准模板网格的求解器 |
-| `MetaHumanPipeline` | 提供用于构建处理管道的框架 |
-| `UnrealEd` | 编辑器框架，用于资产编辑器、细节面板自定义等 |
-| `ControlRigDeveloper` | 用于支持 ControlRig 的扩展开发和集成 |
-| `SkeletalMeshUtilitiesCommon` | 提供骨骼网格相关的通用工具函数 |
+| `MetaHumanIdentity` | 核心的身份（Identity）数据资产及其子部件（Face, Body等）的定义 |
+| `MetaHumanCore` | MetaHuman 核心库，提供基础数据结构、工具和蓝图库 |
+| `MetaHumanToolkit` | 共享的编辑器工具包基础类和UI组件 |
+| `MetaHumanCaptureDataEditor` | 捕捉数据（如镜头、网格体）的编辑器支持 |
+| `MetaHumanSDKEditor` | MetaHuman SDK 的编辑器集成（用于自动绑骨等服务） |
+| `SkeletalMeshUtilitiesCommon` | 骨骼网格体通用工具，用于骨骼适配和蒙皮 |
+| `ControlRigDeveloper` | Control Rig 开发支持，用于面部动画解算器 |
+
+**注意**：根据你的具体工作流（如使用面部动画解算、身体追踪、语音驱动等），可能需要额外的模块依赖。
 
 ## 维护状态
 
@@ -222,22 +178,22 @@ void FMyCustomIdentityEditorToolkit::HandleMyCustomAction()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体跟踪时，禁用关卡序列导出功能 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体跟踪时过滤可视化对象 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | (MetaHuman Animator) 为现有网格导出动画序列 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 身体追踪启用时，禁用关卡序列导出功能 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色的渲染瑕疵问题 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时，过滤可视化的辅助对象 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MHA] 支持为现有网格体导出动画序列 |
 | 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 的缓存问题 |
 
 ### 维护评价
 
-该模块作为 MetaHuman 工作流的核心编辑器部分，处于**活跃维护**状态。
-- **创建时间**：约 4 年前，与 UE5 的 MetaHuman 工具集一同推出。
-- **近期更新频率**：最近一周内有多次提交，主要集中在功能增强（如身体跟踪支持、动画导出）、Bug 修复（渲染瑕疵、缓存问题）和稳定性改进。
-- **维护状态**：持续由 Epic Games 团队维护，更新内容紧跟 MetaHuman 产品线的发展（如集成新的身体跟踪功能）。
-- **推荐使用**：**强烈推荐**。这是使用 Unreal Engine 进行专业级 MetaHuman 数字人创建和编辑的官方且唯一完整工具链。尽管模块默认不启用（需在项目设置中手动启用 MetaHuman Animator 插件），但其功能不可或缺。
+**活跃维护**。
+- **创建时间**：约 4 年前（2022年），作为 Epic 官方数字人技术的核心套件，属于较新的旗舰功能。
+- **近期更新**：最近一周内有多次提交，内容涉及功能增强（动画序列导出）、问题修复（渲染瑕疵、Sequencer缓存）和体验优化（追踪时过滤对象），表明该插件处于**非常活跃的开发和维护**阶段。
+- **状态**：作为 Epic 主推的 MetaHuman 工作流核心，预计将持续获得长期投入。
+- **推荐**：**强烈推荐**用于任何涉及创建和动画化 MetaHuman 角色的项目。它是官方解决方案，工作流成熟，并且仍在快速迭代中。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanIdentityEditor)
-- 官方文档：暂无（`.uplugin` 中 `DocsURL` 为空）。相关工作流和教程可在 Epic Games 官方 MetaHuman 文档和社区资源中找到。
-- 测试用例：（此模块的测试用例通常位于 Engine/Tests/ 目录或插件内部的 Private/Tests 文件夹中，具体路径需根据源码搜索确定）
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+- [官方文档](https://docs.unrealengine.com/5.0/en-US/metahuman-animator-in-unreal-engine/) (Epic 官方文档站点)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Tests/MetaHuman) (相关测试可能位于引擎测试目录)

@@ -53,9 +53,9 @@
       "doc_path": "docs/5.8/small/AbilitySystemGameFeatureActions/"
     },
     "ActorLayerUtilities": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ActorLayerUtilities/"
+      "doc_path": "docs/5.8/small/ActorLayerUtilities/"
     },
     "ActorPalette": {
       "generated_in": "5.8",
@@ -68,9 +68,9 @@
       "doc_path": "docs/5.7/small/ActorSequence/"
     },
     "Adjust": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/Adjust/"
+      "doc_path": "docs/5.8/small/Adjust/"
     },
     "AnalyticsBlueprintLibrary": {
       "generated_in": "5.7",
@@ -343,9 +343,9 @@
       "doc_path": "docs/5.8/small/ConcertInsightsServer/"
     },
     "ContentBrowserAliasDataSource": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ContentBrowserAliasDataSource/"
+      "doc_path": "docs/5.8/small/ContentBrowserAliasDataSource/"
     },
     "ContentBrowserAssetDataSource": {
       "generated_in": "5.7",
@@ -619,9 +619,9 @@
       "doc_path": "docs/5.7/small/IOSReplayKit/"
     },
     "IOSTapJoy": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/IOSTapJoy/"
+      "doc_path": "docs/5.8/small/IOSTapJoy/"
     },
     "InputDebugging": {
       "generated_in": "5.7",
@@ -950,9 +950,9 @@
       "doc_path": "docs/5.7/small/PackedAttributes/"
     },
     "PerformanceCaptureCore": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/PerformanceCaptureCore/"
+      "doc_path": "docs/5.8/small/PerformanceCaptureCore/"
     },
     "PerformanceMonitor": {
       "generated_in": "5.8",
@@ -1230,9 +1230,9 @@
       "doc_path": "docs/5.7/small/TrajectoryTools/"
     },
     "UObjectPlugin": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/UObjectPlugin/"
+      "doc_path": "docs/5.8/small/UObjectPlugin/"
     },
     "UbaController": {
       "generated_in": "5.7",
@@ -1385,9 +1385,9 @@
       "doc_path": "docs/5.7/medium/ApexDestruction/"
     },
     "AppleARKit": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/AppleARKit/"
+      "doc_path": "docs/5.8/medium/AppleARKit/"
     },
     "AssetManagerEditor": {
       "generated_in": "5.8",
@@ -1601,9 +1601,9 @@
       "doc_path": "docs/5.7/medium/ModelingToolsEditorMode/"
     },
     "MotionWarping": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/MotionWarping/"
+      "doc_path": "docs/5.8/medium/MotionWarping/"
     },
     "MultiServerReplication": {
       "generated_in": "5.7",
@@ -1836,9 +1836,9 @@
       "doc_path": "docs/5.7/medium/TweeningUtils/"
     },
     "UMGWidgetPreview": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/UMGWidgetPreview/"
+      "doc_path": "docs/5.8/medium/UMGWidgetPreview/"
     },
     "UdpMessaging": {
       "generated_in": "5.8",
@@ -1941,9 +1941,9 @@
       "doc_path": "docs/5.8/large/ConcertSyncTest/"
     },
     "ConsoleVariables": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/ConsoleVariables/"
+      "doc_path": "docs/5.8/large/ConsoleVariables/"
     },
     "ContextualAnimation": {
       "generated_in": "5.8",
@@ -2036,9 +2036,9 @@
       "doc_path": "docs/5.7/large/MLAdapter/"
     },
     "MetaHumanSDK": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/MetaHumanSDK/"
+      "doc_path": "docs/5.8/large/MetaHumanSDK/"
     },
     "NNEDenoiser": {
       "generated_in": "5.8",
@@ -2106,9 +2106,9 @@
       "doc_path": "docs/5.7/large/ScriptableToolsFramework/"
     },
     "StylusInput": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/StylusInput/"
+      "doc_path": "docs/5.8/large/StylusInput/"
     },
     "TemplateSequence": {
       "generated_in": "5.8",
@@ -2116,9 +2116,9 @@
       "doc_path": "docs/5.8/large/TemplateSequence/"
     },
     "TraceSourceFilters": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/TraceSourceFilters/"
+      "doc_path": "docs/5.8/large/TraceSourceFilters/"
     },
     "VariantManager": {
       "generated_in": "5.8",
@@ -2396,9 +2396,9 @@
       "doc_path": "docs/5.8/xlarge/MetaHumanCoreTech/"
     },
     "MetaHumanLiveLink": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/MetaHumanLiveLink/"
+      "doc_path": "docs/5.8/xlarge/MetaHumanLiveLink/"
     },
     "Metasound": {
       "generated_in": "5.7",
@@ -2456,9 +2456,9 @@
       "doc_path": "docs/5.7/xlarge/Paper2D/"
     },
     "PoseSearch": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/PoseSearch/"
+      "doc_path": "docs/5.8/xlarge/PoseSearch/"
     },
     "PropertyAnimatorCore": {
       "generated_in": "5.7",
@@ -2486,9 +2486,9 @@
       "doc_path": "docs/5.7/xlarge/ResonanceAudio/"
     },
     "RigLogic": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/RigLogic/"
+      "doc_path": "docs/5.8/xlarge/RigLogic/"
     },
     "RigVM": {
       "generated_in": "5.7",
@@ -2546,9 +2546,9 @@
       "doc_path": "docs/5.7/xlarge/USDCore/"
     },
     "UVEditor": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/UVEditor/"
+      "doc_path": "docs/5.8/xlarge/UVEditor/"
     },
     "VirtualCameraCore": {
       "generated_in": "5.7",
@@ -3362,24 +3362,24 @@
       "doc_path": "docs/5.8/small/GlobalConfigurationData/"
     },
     "HairCardGenerator": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/HairCardGenerator/"
+      "doc_path": "docs/5.8/medium/HairCardGenerator/"
     },
     "HairModelingToolset": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/HairModelingToolset/"
+      "doc_path": "docs/5.8/small/HairModelingToolset/"
     },
     "HairStrandsMutable": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/HairStrandsMutable/"
+      "doc_path": "docs/5.8/small/HairStrandsMutable/"
     },
     "ImagePlate": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ImagePlate/"
+      "doc_path": "docs/5.8/small/ImagePlate/"
     },
     "ImageWidgets": {
       "generated_in": "5.8",
@@ -3602,24 +3602,24 @@
       "doc_path": "docs/5.7/small/NeuralRendering/"
     },
     "OpenImageDenoise": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/OpenImageDenoise/"
+      "doc_path": "docs/5.8/small/OpenImageDenoise/"
     },
     "OptiXDenoise": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/OptiXDenoise/"
+      "doc_path": "docs/5.8/small/OptiXDenoise/"
     },
     "PCGBiomeCore": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/PCGBiomeCore/"
+      "doc_path": "docs/5.8/small/PCGBiomeCore/"
     },
     "PCGBiomeSample": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/PCGBiomeSample/"
+      "doc_path": "docs/5.8/small/PCGBiomeSample/"
     },
     "PCGFastGeoInterop": {
       "generated_in": "5.7",
@@ -3662,9 +3662,9 @@
       "doc_path": "docs/5.8/small/PanoramicCapture/"
     },
     "PhysicsControl": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/PhysicsControl/"
+      "doc_path": "docs/5.8/large/PhysicsControl/"
     },
     "PixelStreamingPlayer": {
       "generated_in": "5.8",
@@ -3962,9 +3962,9 @@
       "doc_path": "docs/5.7/medium/VirtualHeightfieldMesh/"
     },
     "LedWallCalibration": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/LedWallCalibration/"
+      "doc_path": "docs/5.8/small/LedWallCalibration/"
     },
     "VPRoles": {
       "generated_in": "5.8",
@@ -3982,19 +3982,19 @@
       "doc_path": "docs/5.8/large/VirtualProductionUtilities/"
     },
     "Volumetrics": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/Volumetrics/"
+      "doc_path": "docs/5.8/small/Volumetrics/"
     },
     "Water": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/Water/"
+      "doc_path": "docs/5.8/xlarge/Water/"
     },
     "WaterAdvanced": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/WaterAdvanced/"
+      "doc_path": "docs/5.8/small/WaterAdvanced/"
     },
     "WaterExtras": {
       "generated_in": "5.7",
@@ -4262,9 +4262,9 @@
       "doc_path": "docs/5.7/small/HAPMedia/"
     },
     "HardwareEncoders": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/HardwareEncoders/"
+      "doc_path": "docs/5.8/small/HardwareEncoders/"
     },
     "ImgMedia": {
       "generated_in": "5.8",

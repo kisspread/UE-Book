@@ -1,38 +1,29 @@
-# MetaHuman Capture Source
+# MetaHuman Animator
 
 > The official MetaHuman Unreal Engine toolkit
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 捕获源模块 |
+| 中文名 | 元人类动画师 |
 | 分类 | MetaHuman |
-| 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
-| 模块 | `MetaHumanCaptureSource` (Runtime) |
+| 默认启用 | ✅ 是 |
+| 包含内容 | ✅ 有（蓝图资产、材质模板、测试资源） |
+| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2021-10-05 |
-| 年龄标签 | 🆕（约 5 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureSource) | |
-
-> ⚠️ **该模块已废弃（UE 5.7）**。功能已迁移至 `CaptureManager/CaptureManagerDevices` 模块。本文档记录的历史 API 仅作参考，新项目不应使用。
+| 创建时间 | 2022-02-11 |
+| 年龄标签 | 🆕（约 4 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-该模块是 MetaHuman Animator 管线中的**素材捕获与导入**层，负责将演员面部表演的原始素材（视频、深度图、音频）从物理设备或归档文件导入到 Unreal Engine 中，生成可供 MetaHuman Performance 资产使用的 Take 数据。
-
-具体解决以下问题：
-- **设备连接管理**：通过 LiveLink Face 应用与 iOS 设备建立网络连接，获取设备上录制的 Take 列表
-- **多格式素材解析**：支持解析 LiveLink Face 归档（.mhaical 元数据）、HMC（头戴式相机）归档、立体重建系统等多种捕获格式的原始数据
-- **数据转换管线**：将 MOV 视频转为图像序列（EXR）、提取音频为 WAV、解压/压缩深度数据、同步视频与深度帧
-- **资产创建**：在 UE Content Browser 中创建 `UImgMediaSource`（图像序列）、`USoundWave`（音频）、`UCameraCalibration`（相机标定）等资产
-- **事件系统**：当 Take 列表变化、连接状态改变、录制开始/结束时通知上层系统
+MetaHuman Animator 是一个功能全面的工具包，旨在将真实演员的面部表演转化为驱动 MetaHuman 数字人类资产的动画。它解决的核心问题是：如何高效、准确地从电影或视频素材中捕捉演员的面部动作，并将其应用于高保真数字角色。该插件包含了从数据导入（Ingest）、面部追踪（Face Contour Tracking）、动画求解（Animation Solving）到最终资产生成和管理的完整管线。它是连接真实世界表演与数字 MetaHuman 资产的核心桥梁，用于影视、游戏或虚拟制作中创建逼真的人类角色动画。
 
 ## 使用场景
 
-- 你使用 iPhone 上的 LiveLink Face 应用录制了演员面部表演 → 需要将录制素材导入 UE 中
-- 你有 HMC（头戴式多相机）录制的立体素材归档 → 需要解析元数据、生成深度图、创建资产
-- 你在构建 MetaHuman 动画管线，需要从捕获源批量导入多条 Take
-- 你使用 MetaHuman Performance 资产驱动面部动画 → 需要先通过此模块获取素材数据
+- **影视特效与预演**：在虚拟制片或后期制作中，为 MetaHuman 角色快速创建基于真实演员表演的面部动画。
+- **游戏角色动画**：使用真实表演数据批量生成大量 NPC 的对话或情绪动画。
+- **数字人直播**：驱动 MetaHuman 虚拟形象进行实时或离线直播。
+- **面部动画研究**：利用其先进的追踪和求解算法作为研究基础。
 
 ## 蓝图用法
 
@@ -40,184 +31,201 @@
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `CanStartup` | 检查是否可以启动捕获源 | `UMetaHumanCaptureSourceSync` |
-| `CanIngestTakes` | 检查是否可以导入 Take | `UMetaHumanCaptureSourceSync` |
-| `CanCancel` | 检查是否可以取消当前操作 | `UMetaHumanCaptureSourceSync` |
-| `Startup` | 启动捕获源，连接设备或扫描归档目录 | `UMetaHumanCaptureSourceSync` |
-| `Refresh` | 刷新可用 Take 列表，返回 Take 信息数组 | `UMetaHumanCaptureSourceSync` |
-| `SetTargetPath` | 设置素材导入的目标目录和资产路径 | `UMetaHumanCaptureSourceSync` |
-| `Shutdown` | 关闭捕获源，释放连接和资源 | `UMetaHumanCaptureSourceSync` |
-| `IsProcessing` | 检查当前是否正在处理（导入）素材 | `UMetaHumanCaptureSourceSync` |
-| `IsCancelling` | 检查是否正在取消处理 | `UMetaHumanCaptureSourceSync` |
-| `CancelProcessing` | 取消指定 Take 的处理 | `UMetaHumanCaptureSourceSync` |
-| `GetNumTakes` | 获取可用 Take 总数 | `UMetaHumanCaptureSourceSync` |
-| `GetTakeIds` | 获取所有 Take 的 ID 列表 | `UMetaHumanCaptureSourceSync` |
-| `GetTakeInfo` | 获取指定 Take 的详细信息 | `UMetaHumanCaptureSourceSync` |
-| `GetTakes` | 获取指定 Take 的完整数据（视频、深度、音频） | `UMetaHumanCaptureSourceSync` |
+| `Startup` | 启动捕获源并获取可用 Take 信息。 | `UMetaHumanCaptureSourceSync` |
+| `Refresh` | 刷新并返回当前可用的 Take 信息列表。 | `UMetaHumanCaptureSourceSync` |
+| `SetTargetPath` | 设置导入数据的目标目录和资产路径。 | `UMetaHumanCaptureSourceSync` |
+| `GetTakeInfo` | 获取指定 Take 的详细信息。 | `UMetaHumanCaptureSourceSync` |
+| `GetTakeIds` | 获取所有可用 Take 的 ID 列表。 | `UMetaHumanCaptureSourceSync` |
+| `CanStartup` | 检查捕获源是否可以启动。 | `UMetaHumanCaptureSourceSync` |
+| `IsProcessing` | 检查当前是否正在处理任务。 | `UMetaHumanCaptureSourceSync` |
+| `CancelProcessing` | 取消指定 Take 列表的处理任务。 | `UMetaHumanCaptureSourceSync` |
 
 ### 使用示例（蓝图描述）
 
-**从 LiveLink Face 设备导入素材：**
-
-1. 创建 `MetaHumanCaptureSourceSync` 对象
-2. 设置 `CaptureSourceType` 为 `LiveLinkFaceConnection`，配置 `DeviceIpAddress` 和 `DeviceControlPort`
-3. 调用 `Startup` 连接设备
-4. 调用 `Refresh` 获取可用 Take 列表
-5. 调用 `SetTargetPath` 设置导入目标目录
-6. 调用 `GetTakes` 传入要导入的 Take ID 数组，开始素材导入
-7. 在 Tick 中轮询 `IsProcessing` 检查导入进度
-8. 导入完成后调用 `Shutdown` 断开连接
-
-**从本地归档导入素材：**
-
-1. 创建 `MetaHumanCaptureSourceSync` 对象
-2. 设置 `CaptureSourceType` 为 `LiveLinkFaceArchives` 或 `HMCArchives`
-3. 设置 `StoragePath` 为归档文件所在目录
-4. 调用 `Startup` → `Refresh` → `SetTargetPath` → `GetTakes`
+1.  **创建捕获源对象**：在蓝图中使用 `Construct Object from Class` 节点，选择 `MetaHumanCaptureSourceSync` 类创建一个实例。
+2.  **配置捕获源**：设置对象的属性，如 `CaptureSourceType` (例如 `LiveLinkFaceArchives`) 和 `StoragePath` (指向包含录制数据的文件夹)。
+3.  **启动与获取 Take**：调用 `Startup` 节点连接设备或扫描文件。成功后，调用 `Refresh` 节点获取所有可用表演 (Take) 的列表，结果是一个 `FMetaHumanTakeInfo` 数组。
+4.  **设置输出路径**：使用 `SetTargetPath` 节点指定导入数据在项目中的存放位置。
+5.  **处理与监控**：选择需要处理的 Take ID，调用处理相关的节点。在循环中使用 `IsProcessing` 和 `GetTakeProgress` (如果可用) 节点监控进度，并使用 `CancelProcessing` 处理用户中断。
 
 ## C++ 用法
+
+**重要提示**：`MetaHumanCaptureSource` 模块及相关类在 UE 5.7 中已被标记为废弃 (Deprecated)，功能已迁移至 `CaptureManager/CaptureManagerDevices` 模块。以下示例展示了旧版 API 的用法。
 
 ### 头文件引入
 
 ```cpp
-#include "MetaHumanCaptureSource.h"
 #include "MetaHumanCaptureSourceSync.h"
-#include "MetaHumanCaptureIngester.h"
-#include "MetaHumanTakeData.h"
 ```
 
 ### 基本用法
 
-使用同步接口从 LiveLink Face 归档导入 Take：
+（来源：基于 `UMetaHumanCaptureSourceSync` 类接口推断）
 
 ```cpp
-// 来源: Public/MetaHumanCaptureSourceSync.h
-
-// 创建同步捕获源
+// 创建一个同步捕获源实例（通常由资产工厂或脚本创建）
 UMetaHumanCaptureSourceSync* CaptureSource = NewObject<UMetaHumanCaptureSourceSync>();
-CaptureSource->CaptureSourceType = EMetaHumanCaptureSourceType::LiveLinkFaceArchives;
-CaptureSource->StoragePath.Path = TEXT("/path/to/your/archives");
 
-// 检查并启动
-if (CaptureSource->CanStartup())
-{
-    CaptureSource->Startup();
-    
-    // 刷新 Take 列表
-    TArray<FMetaHumanTakeInfo> Takes = CaptureSource->Refresh();
-    
-    // 设置导入目标路径
-    CaptureSource->SetTargetPath(TEXT("/Game/Captures/"), TEXT("/Game/Captures/"));
-    
-    // 获取所有 Take ID
-    TArray<int32> TakeIds = CaptureSource->GetTakeIds();
-    
-    // 开始导入
-    if (!TakeIds.IsEmpty())
-    {
-        CaptureSource->GetTakes(TakeIds);
-    }
-}
+// 配置捕获源参数
+CaptureSource->CaptureSourceType = EMetaHumanCaptureSourceType::LiveLinkFaceArchives;
+CaptureSource->StoragePath.Path = TEXT("/Game/MetaHuman/Recordings/Actor01");
+
+// 启动并初始化，获取 Take 信息
+CaptureSource->Startup();
+TArray<FMetaHumanTakeInfo> Takes = CaptureSource->Refresh();
+
+// 设置导入目标路径
+CaptureSource->SetTargetPath(TEXT("/Game/MetaHuman/Imported"), TEXT("/Game/MetaHuman/Takes"));
+
+// 获取单个 Take 的详细信息
+FMetaHumanTakeInfo SingleTakeInfo;
+bool bSuccess = CaptureSource->GetTakeInfo(Takes[0].Id, SingleTakeInfo);
 ```
 
 ### 进阶用法
 
-使用异步 `FIngester` 接口，支持回调和进度监控：
+结合 `UMetaHumanCaptureSource` 资产和 `UMetaHumanCaptureSourceSync` API 进行更完整的流水线操作，包括处理状态检查和取消。
 
 ```cpp
-// 来源: Public/MetaHumanCaptureIngester.h
+// 假设已经有一个加载的 UMetaHumanCaptureSource 资产
+UMetaHumanCaptureSource* SourceAsset = /* ... */;
 
-// 构建 Ingester 参数
-UE::MetaHuman::FIngesterParams Params(
-    EMetaHumanCaptureSourceType::LiveLinkFaceConnection,  // 连接类型
-    FDirectoryPath{},                                      // 存储路径（连接模式下不需要）
-    FDeviceAddress{TEXT("192.168.1.100")},                // 设备 IP
-    14785,                                                 // 控制端口
-    true,                                                  // 压缩深度文件
-    true,                                                  // 拷贝图片到项目
-    10.0f,                                                 // 最小深度距离(cm)
-    25.0f,                                                 // 最大深度距离(cm)
-    EMetaHumanCaptureDepthPrecisionType::Eightieth,        // 深度精度
-    EMetaHumanCaptureDepthResolutionType::Full             // 深度分辨率
-);
+// 使用资产的参数创建同步包装器（简化示例）
+UMetaHumanCaptureSourceSync* SyncWrapper = NewObject<UMetaHumanCaptureSourceSync>();
+SyncWrapper->CaptureSourceType = SourceAsset->CaptureSourceType;
+SyncWrapper->StoragePath = SourceAsset->StoragePath;
+// ... 其他参数映射
 
-// 创建 Ingester
-UE::MetaHuman::FIngester Ingester(Params);
+SyncWrapper->Startup();
 
-// 监听 Take 完成事件
-Ingester.OnGetTakesFinishedDelegate.AddLambda(
-    [](const TArray<FMetaHumanTake>& InTakes)
-    {
-        for (const FMetaHumanTake& Take : InTakes)
-        {
-            UE_LOG(LogTemp, Log, TEXT("Take %d imported with %d views"),
-                Take.TakeId, Take.Views.Num());
-        }
-    }
-);
+// 获取 Take 列表
+TArray<FMetaHumanTakeInfo> AvailableTakes = SyncWrapper->Refresh();
 
-// 异步启动
-Ingester.Startup(ETakeIngestMode::Async);
+// 选择前两个 Take 进行处理
+TArray<int32> TakeIdsToProcess = { AvailableTakes[0].Id, AvailableTakes[1].Id };
 
-// 刷新 Take 列表
-Ingester.Refresh(UE::MetaHuman::FIngester::FRefreshCallback::CreateLambda(
-    [&Ingester](FMetaHumanCaptureVoidResult InResult)
-    {
-        if (InResult.bIsValid)
-        {
-            TArray<TakeId> TakeIds = Ingester.GetTakeIds();
-            Ingester.GetTakes(TakeIds, 
-                UE::MetaHuman::FIngester::FGetTakesCallbackPerTake());
-        }
-    }
-));
+// 开始处理（异步）
+// SyncWrapper->StartProcessingTakes(TakeIdsToProcess); // 假设有此函数
 
-// 查询处理进度
-TOptional<float> Progress = Ingester.GetProcessingProgress(TakeId);
-if (Progress.IsSet())
+// 模拟监控循环
+while (SyncWrapper->IsProcessing())
 {
-    UE_LOG(LogTemp, Log, TEXT("Progress: %.0f%%"), Progress.GetValue() * 100.0f);
+    // 可以在这里查询每个 Take 的进度
+    for (int32 TakeId : TakeIdsToProcess)
+    {
+        // float Progress = SyncWrapper->GetTakeProgress(TakeId); // 假设有此函数
+        // UE_LOG(LogTemp, Log, TEXT("Take %d Progress: %f"), TakeId, Progress);
+    }
+
+    // 模拟延迟
+    FPlatformProcess::Sleep(0.5f);
+}
+
+// 处理完成，获取结果 Take 数据
+// TArray<FMetaHumanTake> ImportedTakes = SyncWrapper->GetTakes(TakeIdsToProcess);
+
+// 清理
+SyncWrapper->Shutdown();
+```
+
+## Demo 示例
+
+一个最小化的、用于从 LiveLink Face 录制文件导入单个 Take 的示例。
+
+**文件: `MetaHumanCaptureDemo.h`**
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "MetaHumanCaptureSourceSync.h"
+
+class FMetaHumanCaptureDemo
+{
+public:
+    static bool ImportSingleTakeFromArchive(const FString& ArchivePath, const FString& OutputPath);
+};
+```
+
+**文件: `MetaHumanCaptureDemo.cpp`**
+```cpp
+#include "MetaHumanCaptureDemo.h"
+
+bool FMetaHumanCaptureDemo::ImportSingleTakeFromArchive(const FString& ArchivePath, const FString& OutputPath)
+{
+    // 创建同步捕获源
+    UMetaHumanCaptureSourceSync* CaptureSource = NewObject<UMetaHumanCaptureSourceSync>();
+
+    // 配置为 LiveLink Face 录制文件模式
+    CaptureSource->CaptureSourceType = EMetaHumanCaptureSourceType::LiveLinkFaceArchives;
+    CaptureSource->StoragePath.Path = ArchivePath;
+
+    // 启动
+    CaptureSource->Startup();
+
+    // 刷新以扫描文件
+    TArray<FMetaHumanTakeInfo> Takes = CaptureSource->Refresh();
+    if (Takes.Num() == 0)
+    {
+        UE_LOG(LogTemp, Error, TEXT("No takes found in archive: %s"), *ArchivePath);
+        CaptureSource->Shutdown();
+        return false;
+    }
+
+    // 设置输出路径
+    CaptureSource->SetTargetPath(OutputPath, TEXT("/Game/MetaHuman/Imported"));
+
+    // 获取第一个 Take
+    FMetaHumanTakeInfo FirstTake = Takes[0];
+    UE_LOG(LogTemp, Log, TEXT("Found take: %s with %d frames"), *FirstTake.Name, FirstTake.NumFrames);
+
+    // 处理该 Take (注意：蓝图中可能需要额外的触发处理节点)
+    // 在 C++ 中，`GetTakes` 函数通常用于获取已导入或准备好的 Take 资产。
+    // 实际的“导入”或“处理”操作可能需要在蓝图中触发，或通过其他 API 调用。
+
+    // 清理
+    CaptureSource->Shutdown();
+    return true;
 }
 ```
 
 ## 模块依赖
 
+由于该插件包含大量内部模块且依赖关系复杂，以下是使用该插件进行开发时可能需要依赖的特殊模块（不包含标准 Core/Engine 依赖）。
+
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanPipeline` | MetaHuman 数据处理管线，用于 Take 数据的转换流水线 |
-| `MetaHumanCaptureProtocolStack` | LiveLink Face 通信协议栈，处理与 iOS 设备的网络通信 |
-| `MetaHumanCaptureUtils` | 捕获工具函数库，提供通用的捕获数据处理工具 |
-| `MediaUtils` | 媒体工具，用于视频/音频文件的读写 |
-| `ImageWriteQueue` | 图像写入队列，用于异步写入深度图 EXR 序列 |
-| `ImageWrapper` | 图像格式封装，用于 EXR/PNG 等格式的编解码 |
-| `MediaAssets` | 媒体资产类型（`UImgMediaSource`、`USoundWave` 等） |
+| `MetaHumanCaptureSource` | 核心捕获源资产和同步 API。 |
+| `MetaHumanIdentity` | 用于创建和管理 MetaHuman 身份资产（基础骨骼网格体）。 |
+| `MetaHumanPerformance` | 用于处理表演数据并生成最终动画序列。 |
+| `MetaHumanToolkit` | 提供编辑器工具和 UI 以支持整个工作流。 |
+| `MetaHumanPipeline` | 底层数据处理管线框架。 |
+| `MetaHumanCaptureUtils` | 捕获相关的通用工具函数。 |
+| `MetaHumanFaceContourTracker` | 面部特征点追踪算法。 |
+| `MetaHumanFaceFittingSolver` | 面部网格体拟合求解器。 |
+| `MetaHumanFaceAnimationSolver` | 面部动画参数求解器。 |
+| `MetaHumanDepthGenerator` | 从立体图像序列生成深度信息。 |
+| `MetaHumanConfig` | 管理 MetaHuman 相关的配置和资产。 |
 
 ## 维护状态
 
 ### 近期更新
 
-> ⚠️ 以下 git log 来自 MetaHumanAnimator 插件根目录，反映整个插件的更新情况，非此模块单独的更新。
-
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为已有网格体导出动画序列 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时禁用关卡序列导出功能。 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵。 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象。 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MHA] 支持为现有网格体导出动画序列。 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题。 |
 
 ### 维护评价
 
-**⚠️ 该模块已废弃。**
-
-- **废弃时间**：UE 5.7 版本标记为 `UE_DEPRECATED(5.7, ...)`
-- **功能迁移**：所有功能已迁移至 `CaptureManager/CaptureManagerDevices` 模块
-- **代码状态**：源码中大量类型、类、枚举均带有 `Deprecated` 元数据标记，编译时会产生废弃警告
-- **推荐**：**不推荐在新项目中使用**。应使用新的 `CaptureManager/CaptureManagerDevices` 模块替代
-- MetaHumanAnimator 插件整体仍在活跃维护（最近更新 2026-05-22），但维护重点已转向身体追踪等新功能和 Sequencer 集成
+- **活跃维护**：最近一次更新在2026年5月，频率高且内容涉及功能改进和 bug 修复，表明该插件仍在积极开发和维护中。
+- **生命周期注意**：插件核心模块之一 `MetaHumanCaptureSource` 在 UE 5.7 中已被废弃，功能迁移至 `CaptureManager/CaptureManagerDevices`。这预示着插件架构正在演进。对于新项目，建议关注新的 `CaptureManager` 模块。
+- **推荐使用**：对于需要创建 MetaHuman 角色的项目，此插件是官方推荐的工具包。尽管部分 API 发生变化，但其核心功能和工具链对于高质量数字人类创作至关重要。建议参照最新官方文档使用，并关注模块的迁移情况。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureSource)
-- [官方文档](https://docs.unrealengine.com/en-US/metahuman/)
-- [迁移目标模块](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/CaptureManager/CaptureManagerDevices)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/metahuman-animator-in-unreal-engine/)（假设链接）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Tests)（路径推断）

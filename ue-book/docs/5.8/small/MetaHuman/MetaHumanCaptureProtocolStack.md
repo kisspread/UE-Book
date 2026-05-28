@@ -1,199 +1,210 @@
-# MetaHuman Animator
+# MetaHuman Capture Protocol Stack
 
 > The official MetaHuman Unreal Engine toolkit
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 元人类动画师 |
+| 中文名 | 捕获协议栈 |
 | 分类 | MetaHuman |
-| 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（蓝图资产、材质模板、测试资源） |
-| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
+| 默认启用 | ❌ 否 |
+| 包含内容 | ❌ 无 |
+| 模块 | `MetaHumanCaptureProtocolStack` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2021-09-21 |
-| 年龄标签 | 🆕（约 5 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
+| 创建时间 | 未知 |
+| 年龄标签 | 🆕（约 N 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureProtocolStack) | |
 
 ## 用途
 
-MetaHuman Animator 是一套完整的工具包，旨在将外部捕获的面部表演数据（如 iPhone 的 TrueDepth 摄像头录制的视频）转换为 MetaHuman 角色的动画。它解决了从数据捕获、处理、解算到最终驱动角色的全流程问题。核心价值在于提供了一套标准化的工作流和算法（如面部轮廓追踪、动画解算、面部拟合），使用户能够高效地创建逼真、高质量的数字人类面部动画。该插件是 Epic Games 官方维护的 MetaHuman 生态系统的核心组件之一。
+该模块实现了 **Capture Protocol Stack (CPS)** 协议。这是一个网络通信协议栈，专门用于**发现、连接和控制**外部的捕获设备（例如运行在 iPhone 上的 Live Link Face 应用）。
+
+它的核心职责是：
+1.  **设备发现**：通过 UDP 多播在网络上发现可用的 CPS 服务器。
+2.  **控制会话**：通过 TCP 建立稳定的控制连接，用于管理捕获会话（开始/停止会话、开始/停止/中止录制、查询录制状态、获取 Take 列表和元数据）。
+3.  **数据导出**：通过另一个 TCP 连接，将设备上录制的 Take 数据（视频、音频等）安全地传输到 UE 编辑器中。
+
+它是 **MetaHuman Animator** 工作流中，连接外部物理捕获设备与 Unreal Engine 的关键基础设施。
 
 ## 使用场景
 
--   **影视与游戏制作**：为影视角色或游戏角色创建基于真人表演的高保真面部动画。
--   **数字人驱动**：实时或离线地驱动 MetaHuman 角色的面部表情，用于虚拟主播、客户服务机器人等场景。
--   **资产创建**：基于扫描数据或照片，创建并调整 MetaHuman 角色的面部形态和动画蓝图。
+-   你在使用 **MetaHuman Animator** 工作流，需要从 **iPhone** 上的 **Live Link Face** 应用实时获取面部动画捕获数据。
+-   你需要**批量管理**多个捕获设备的录制会话，例如开始录制、查询设备状态、获取录制好的 Take 列表。
+-   你需要将设备上录制的高质量视频和音频文件**自动化地导出**到 UE 项目中，用于后续的 MetaHuman 面部动画解算。
+-   你正在开发一个**自定义的捕获设备应用**，并希望它能够与 Unreal Engine 的 MetaHuman 工具链无缝集成。
 
 ## 蓝图用法
 
-该插件的核心功能主要通过编辑器工具和数据资产来配置与驱动，直接暴露给蓝图的公开运行时节点相对较少。其工作流通常涉及在编辑器中配置身份、导入捕获数据、设置动画解算参数，最终生成可在运行时播放的动画序列或驱动蓝图。
+**注意：** `MetaHumanCaptureProtocolStack` 主要是一个**运行时 C++ 模块**，为上层编辑器工具（如 `MetaHumanCaptureSource`、`MetaHumanCaptureDataEditor`）提供底层通信能力。它本身暴露给蓝图的 API 非常有限。
 
-### 核心资产与工具
-
-| 资产/工具 | 说明 | 所在模块 |
-|---|---|---|
-| `UMetaHumanIdentity` | 用于定义和存储一个 MetaHuman 角色的面部身份、骨架和网格体。是整个工作流的起点。 | `MetaHumanIdentity` |
-| `UMetaHumanPerformance` | 存储并管理从捕获数据（如视频）中提取的表演数据（动画曲线）。 | `MetaHumanPerformance` |
-| `MetaHuman Animator 面板` | 编辑器中的主要工作界面，用于执行面部追踪、动画解算、预览和导出等操作。 | `MetaHumanCoreEditor`, `MetaHumanToolkit` |
+其核心功能（如 `FControlMessenger`、`FExportClient`）在 C++ 层面使用，用于构建上层编辑器 UI 和工作流。蓝图开发者通常通过 MetaHuman Animator 的编辑器窗口间接使用其功能，而非直接调用此模块的蓝图节点。
 
 ## C++ 用法
 
-**注意**：该插件的大部分核心算法和流程控制通过编辑器工具暴露，直接在运行时 C++ 代码中调用其高级功能（如创建完整身份、执行解算）的场景相对较少。以下示例展示了其底层数据结构的访问方式。
+本模块提供了底层的 C++ 类来实现 CPS 协议。以下是基于源码的典型使用模式。
 
 ### 头文件引入
 
 ```cpp
-#include "MetaHumanIdentity.h"
-#include "MetaHumanPerformance.h"
-#include "MetaHumanPipeline.h"
+#include "MetaHumanCaptureProtocolStack.h"
+// 通常还需要包含具体的子模块头文件，例如：
+#include "Control/Messages/Constants.h"
+#include "Control/ControlMessenger.h"
+#include "ExportClient/ExportClient.h"
 ```
 
 ### 基本用法
 
-**获取和检查一个已存在的 MetaHuman 身份资产。**
-
-*来源: 模块 `MetaHumanIdentity` 的测试与工具代码*
+连接设备并查询服务器信息。
 
 ```cpp
-// 加载一个已有的 MetaHumanIdentity 资产
-UMetaHumanIdentity* Identity = LoadObject<UMetaHumanIdentity>(nullptr, TEXT("/Game/MetaHumans/MyMH/MH_Identity"));
+// 1. 创建并初始化控制通信器 (FControlMessenger)
+UE::CPS::FControlMessenger ControlMessenger;
 
-if (Identity)
-{
-    // 访问其面部参数
-    const FMetaHumanFaceParameters& FaceParams = Identity->GetFaceParameters();
-    UE_LOG(LogTemp, Log, TEXT("Identity Face Asset: %s"), *FaceParams.FaceMesh.GetAssetName());
+// 2. 注册更新消息处理器（可选，用于接收设备状态变化通知）
+ControlMessenger.RegisterUpdateHandler(UE::CPS::AddressPaths::GRecordingStatus,
+    [](TSharedPtr<UE::CPS::FControlUpdate> InUpdate) {
+        // 处理录制状态更新...
+    });
+
+// 3. 启动连接（IP和端口通常从设备发现阶段获得）
+const FString ServerIP = TEXT("192.168.1.100");
+const uint16 ControlPort = 14567;
+auto Result = ControlMessenger.Start(ServerIP, ControlPort);
+if (Result.IsError()) {
+    UE_LOG(LogTemp, Error, TEXT("Failed to start control messenger: %s"), *Result.ClaimError().GetMessage());
+    return;
 }
+
+// 4. 开始会话
+auto SessionResult = ControlMessenger.StartSession();
+if (SessionResult.IsError()) {
+    // 处理错误
+}
+
+// 5. 发送请求并获取服务器信息
+auto ServerInfoResult = ControlMessenger.GetServerInformation();
+if (ServerInfoResult.IsValid()) {
+    const auto& ServerInfo = ServerInfoResult.GetResult();
+    UE_LOG(LogTemp, Log, TEXT("Connected to: %s (%s)"), *ServerInfo.GetName(), *ServerInfo.GetPlatformName());
+}
+
+// 6. 完成后停止
+ControlMessenger.Stop();
 ```
 
 ### 进阶用法
 
-**通过 Pipeline 模块处理捕获数据。**
-
-*来源: 模块 `MetaHumanPipeline` 的公开接口与示例*
+异步发送控制请求并处理响应。
 
 ```cpp
-#include "MetaHumanPipeline.h"
-#include "MetaHumanCaptureSource.h"
+// 创建一个录制 Take 的请求
+UE::CPS::FStartRecordingTakeRequest RecordTakeRequest(
+    TEXT("MySlate"),     // Slate名称
+    1,                   // Take编号
+    TEXT("MySubject"),   // 主体（可选）
+    TEXT("MyScenario"),  // 场景（可选）
+    TArray<FString>{TEXT("TestTag")} // 标签（可选）
+);
 
-// 假设我们有一个视频文件路径和对应的 MetaHuman 身份
-FString VideoPath = TEXT("C:/Capture/Take001.mov");
-UMetaHumanIdentity* TargetIdentity = ...;
-
-// 创建一个 Pipeline 实例来驱动捕获处理流程
-UMetaHumanPipeline* Pipeline = NewObject<UMetaHumanPipeline>();
-
-// 配置 Pipeline 的输入（捕获源）和输出（性能数据）
-// 注意：以下为概念性代码，具体 API 需查阅最新的模块头文件。
-Pipeline->SetCaptureSource(VideoPath);
-Pipeline->SetTargetIdentity(TargetIdentity);
-
-// 异步执行 Pipeline
-Pipeline->ExecutePipeline(FOnPipelineCompleted::CreateLambda([](bool bSuccess)
-{
-    if (bSuccess)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Pipeline completed successfully. Performance data generated."));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Pipeline failed."));
-    }
-}));
+// 异步发送请求，并在回调中处理结果
+ControlMessenger.SendAsyncRequest(RecordTakeRequest,
+    UE::CPS::FControlMessenger::FOnControlResponse<UE::CPS::FStartRecordingTakeRequest>::CreateLambda(
+        [](TProtocolResult<UE::CPS::FStartRecordingTakeResponse> InResult) {
+            if (InResult.IsValid()) {
+                UE_LOG(LogTemp, Log, TEXT("Recording started successfully."));
+            } else {
+                UE_LOG(LogTemp, Error, TEXT("Failed to start recording: %s"), *InResult.ClaimError().GetMessage());
+            }
+        })
+);
 ```
 
 ## Demo 示例
 
-一个演示如何使用 `MetaHumanIdentity` 和 `MetaHumanPerformance` 类型的最小示例。
+一个最小的示例，展示如何初始化捕获协议栈并进行设备发现。
 
-*MetaHumanAnimatorDemo.h*
 ```cpp
+// MyCaptureDemo.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "MetaHumanAnimatorDemo.generated.h"
+#include "Discovery/DiscoveryMessenger.h"
 
-class UMetaHumanIdentity;
-class UMetaHumanPerformance;
-
-UCLASS()
-class YOURPROJECT_API AMetaHumanAnimatorDemo : public AActor
+class FMyCaptureDemo
 {
-    GENERATED_BODY()
-
 public:
-    AMetaHumanAnimatorDemo();
+    void StartDiscovery();
+    void StopDiscovery();
 
-    // 要操作的 MetaHuman 身份资产引用
-    UPROPERTY(EditAnywhere, Category = "MetaHuman")
-    UMetaHumanIdentity* TargetIdentity;
+private:
+    void OnServerDiscovered(UE::CPS::FDiscoveryResponse InResponse);
+    void OnServerNotify(UE::CPS::FDiscoveryNotify InNotify);
 
-    // 要使用的表演数据资产引用
-    UPROPERTY(EditAnywhere, Category = "MetaHuman")
-    UMetaHumanPerformance* PerformanceData;
-
-    // 在蓝图或编辑器中调用，模拟一个加载和检查的过程
-    UFUNCTION(BlueprintCallable, Category = "MetaHuman")
-    void LoadAndInspect();
-
-    // 用于运行时播放的骨骼网格体组件
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MetaHuman")
-    USkeletalMeshComponent* CharacterMesh;
+    TUniquePtr<UE::CPS::FDiscoveryMessenger> DiscoveryMessenger;
 };
 ```
 
-*MetaHumanAnimatorDemo.cpp*
 ```cpp
-#include "MetaHumanAnimatorDemo.h"
-#include "MetaHumanIdentity.h"
-#include "MetaHumanPerformance.h"
-#include "Components/SkeletalMeshComponent.h"
+// MyCaptureDemo.cpp
+#include "MyCaptureDemo.h"
+#include "Discovery/Messages/DiscoveryResponse.h"
+#include "Discovery/Messages/DiscoveryNotify.h"
 
-AMetaHumanAnimatorDemo::AMetaHumanAnimatorDemo()
+void FMyCaptureDemo::StartDiscovery()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    DiscoveryMessenger = MakeUnique<UE::CPS::FDiscoveryMessenger>();
 
-    CharacterMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh"));
-    RootComponent = CharacterMesh;
+    // 注册设备响应和通知处理器
+    DiscoveryMessenger->SetResponseHandler(
+        UE::CPS::FDiscoveryMessenger::FOnResponseArrived::CreateRaw(
+            this, &FMyCaptureDemo::OnServerDiscovered));
+    DiscoveryMessenger->SetNotifyHandler(
+        UE::CPS::FDiscoveryMessenger::FOnNotifyArrived::CreateRaw(
+            this, &FMyCaptureDemo::OnServerNotify));
+
+    // 启动发现服务
+    auto Result = DiscoveryMessenger->Start();
+    if (Result.IsError()) {
+        UE_LOG(LogTemp, Error, TEXT("Failed to start discovery: %s"), *Result.ClaimError().GetMessage());
+        return;
+    }
+
+    // 发送多播请求
+    Result = DiscoveryMessenger->SendMulticastRequest();
+    if (Result.IsError()) {
+        UE_LOG(LogTemp, Error, TEXT("Failed to send discovery request: %s"), *Result.ClaimError().GetMessage());
+    }
 }
 
-void AMetaHumanAnimatorDemo::LoadAndInspect()
+void FMyCaptureDemo::StopDiscovery()
 {
-    if (TargetIdentity)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Inspecting Identity: %s"), *TargetIdentity->GetName());
+    if (DiscoveryMessenger.IsValid()) {
+        DiscoveryMessenger->Stop();
+        DiscoveryMessenger.Reset();
+    }
+}
 
-        // 在此处可以进一步访问 Identity 的详细参数，例如：
-        // const FMetaHumanFaceParameters& FaceParams = TargetIdentity->GetFaceParameters();
-        // UE_LOG(LogTemp, Log, TEXT("Face Asset: %s"), *FaceParams.FaceMesh.GetAssetName());
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("TargetIdentity is null. Please assign a MetaHumanIdentity asset."));
-    }
+void FMyCaptureDemo::OnServerDiscovered(UE::CPS::FDiscoveryResponse InResponse)
+{
+    // 收到服务器对发现请求的响应
+    UE_LOG(LogTemp, Log, TEXT("Discovered server on port: %d"), InResponse.GetControlPort());
+    // 通常在此处记录服务器的IP和ControlPort，用于后续的FControlMessenger连接
+}
 
-    if (PerformanceData)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Performance data loaded: %s"), *PerformanceData->GetName());
-        // 通常，Performance 数据会被用来驱动动画蓝图或动画序列。
-        // 此处仅为示例，实际应用需要将 Performance 数据应用到角色的动画蓝图或动画实例中。
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("PerformanceData is null. Please assign a MetaHumanPerformance asset."));
+void FMyCaptureDemo::OnServerNotify(UE::CPS::FDiscoveryNotify InNotify)
+{
+    // 收到服务器的主动通知（例如上线/下线状态变更）
+    if (InNotify.GetConnectionState() == UE::CPS::FDiscoveryNotify::EConnectionState::Online) {
+        UE_LOG(LogTemp, Log, TEXT("Server came online."));
+    } else {
+        UE_LOG(LogTemp, Log, TEXT("Server went offline."));
     }
 }
 ```
 
 ## 模块依赖
 
-| 模块 | 用途 |
-|---|---|
-| `MetaHumanCoreTechLib` | 提供底层的面部追踪、解算和网格体操作的核心算法库。 |
-| `ControlRigDeveloper` | 用于编辑和操作 Control Rig 资产，这是驱动 MetaHuman 骨骼的关键技术。 |
-| `SkeletalMeshUtilitiesCommon` | 提供骨骼网格体相关的通用工具函数。 |
-| `MetaHumanSDKEditor` | 提供编辑器集成和工具的基础设施。 |
+无特殊依赖（仅标准 Core/Engine/Slate 等）。
 
 ## 维护状态
 
@@ -201,18 +212,22 @@ void AMetaHumanAnimatorDemo::LoadAndInspect()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 禁用关卡序列导出，当启用身体追踪时 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复元人类角色的渲染瑕疵 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体跟踪时禁用关卡序列导出功能 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体跟踪时过滤可视化对象 |
 | 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 为现有网格体导出动画序列 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复序列器缓存问题 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
 
 ### 维护评价
 
-该插件创建于 2021 年，距今约 5 年，属于较新的功能插件。从近期（2026 年 5 月）的 Git 提交记录来看，该插件仍在被 **积极维护和迭代**。更新内容包括功能新增（身体追踪支持、网格体导出）、问题修复（渲染瑕疵、缓存问题）和工作流优化（可视化过滤）。考虑到 Epic Games 将 MetaHuman 作为其长期战略的重要组成部分，此插件是其核心工具链，预计将持续获得支持和更新。**强烈推荐**在涉及数字人类创作的项目中使用。
+-   **活跃维护**：最近（2026年5月）有连续的功能更新和 Bug 修复，表明该模块正处于**活跃开发和维护**阶段。
+-   **功能演进**：更新内容涉及身体跟踪支持、数据导出优化和渲染修复，显示其功能在不断扩展和优化。
+-   **重要性**：作为 MetaHuman Animator 工作流的核心通信层，它被 Epic Games 官方持续维护。
+-   **已知限制**：所有公开 API 均标记为 `UE_DEPRECATED(5.7, ...)`，表明该模块的功能已被迁移到新的 `CaptureManagerCore/CaptureProtocolStack` 模块中。**在 UE 5.7 及以后版本中，应使用新模块**。当前版本（5.8）仍可使用，但属于维护状态。
+-   **推荐**：对于 UE 5.6 及以下版本的项目，如果需要完整的 MetaHuman Animator 捕获工作流，**推荐使用**此模块。对于 UE 5.7+ 的新项目，建议查找并使用新的 `CaptureManagerCore/CaptureProtocolStack` 模块。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档](https://docs.unrealengine.com/en-US/metahuman-animator/)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/Tests)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureProtocolStack)
+-   [官方文档]() (暂无)
+-   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureProtocolStack/Private/Tests)

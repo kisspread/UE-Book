@@ -4,45 +4,47 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman动画器 |
+| 中文名 | MetaHuman动画师 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产、蓝图资产、测试资源） |
-| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
+| 包含内容 | ✅ 有（配置数据资产） |
+| 模块 | `MetaHumanCore` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanConfig` (Runtime) 等众多子模块 |
 | 实验性 | 否 |
-| 创建时间 | unknown |
-| 年龄标签 | 🆕（约 N 年） |
+| 创建时间 | 未知 |
+| 年龄标签 | 🆕（年龄未知） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是一套完整的工具链，用于从视频或深度数据驱动 MetaHuman 角色面部动画。它解决了从原始面部捕捉数据（如 iPhone 原深感摄像头的深度数据或标准视频）到最终动画的自动化流程问题。其核心流程包括：捕捉数据管理、面部轮廓追踪、面部拟合求解器、面部动画求解器、预测性求解器（用于从音频生成面部动画）以及性能数据管理。
-
-本模块 `MetaHumanConfig` 是该工具链的配置核心。它负责管理和存储MetaHuman Animator流程中各组件（如Fitting、Solver）所需的加密配置数据模板和参数。这些配置数据定义了求解器如何工作、使用哪些模型和参数，是保证动画质量和流程一致性的关键。
+MetaHuman Animator 是一个完整的、专业级的 MetaHuman 动画制作工具链。它提供从面部视频捕捉、面部追踪、动画解算到最终动画序列生成的端到端工作流程。该插件旨在解决使用真实演员表演为 MetaHuman 数字人创建高保真、可驱动面部动画的核心需求。它不是一个简单的转换工具，而是一个集成在引擎内的复杂解算和追踪系统，用于制作电影级或高品质的实时数字人内容。
 
 ## 使用场景
 
-- 你需要从 iPhone 原深感摄像头拍摄的深度数据创建面部动画 → 使用 MetaHuman Animator 的 `MetaHumanPerformance` 和 `MetaHumanDepthGenerator` 模块。
-- 你想要基于音频文件自动驱动一个 MetaHuman 角色说话 → 使用 `MetaHumanSpeech2Face` 模块。
-- 你是 MetaHuman 工具链的开发者或高级用户，需要自定义或更新面部拟合、动画求解器的参数和模型 → 需要理解并可能修改 `MetaHumanConfig` 中加载的配置数据。
-- 你在开发一个自动化处理大量MetaHuman动画资产的流水线 → 使用 `MetaHumanBatchProcessor` 模块。
+- 你在制作虚拟制片或电影项目，需要基于演员表演为 MetaHuman 角色生成逼真的面部动画。
+- 你是一名技术美术或动画师，拥有演员的面部捕捉视频（如 iPhone 录制），并希望将其应用到你的 UE5 项目中的 MetaHuman 角色上。
+- 你需要批量处理大量表演数据，将其转化为可用的动画资产。
+- 你需要精确控制面部动画解算的参数，或者对特定面部区域进行手动调整。
+- 你的项目需要支持实时或离线的高保真数字人驱动。
 
 ## 蓝图用法
+
+由于插件模块众多且复杂，蓝图 API 主要集中在资产管理和工作流启动。核心的 `UMetaHumanConfig` 类提供了一组蓝图节点用于读取和管理解算器所需的配置数据。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `ReadFromDirectory` | 从指定目录读取并加载MetaHuman配置资产文件。这是初始化配置资产的主要蓝图节点。 | `UMetaHumanConfig` |
+| `ReadFromDirectory` | 从指定目录路径读取加密的配置数据文件，并更新资产状态。 | `UMetaHumanConfig` |
+| `GetSolverTemplateData` | 获取用于面部动画解算的模板数据。 | `UMetaHumanConfig` |
+| `GetSolverConfigData` | 获取解算器的配置参数。 | `UMetaHumanConfig` |
+| `GetFittingTemplateData` | 获取用于网格拟合的模板数据。 | `UMetaHumanConfig` |
+| `GetPredictiveTrainingData` | 获取用于预测性解算器的训练数据。 | `UMetaHumanConfig` |
 
 ### 使用示例（蓝图描述）
 
-1.  **创建配置资产**：在内容浏览器中右键 → `Miscellaneous` → `Data Asset` → 选择 `MetaHumanConfig` 类型。
-2.  **蓝图中加载配置**：
-    *   使用 `ReadFromDirectory` 节点，将配置资产的变量连接到 `Target` 引脚。
-    *   在 `InPath` 引脚输入包含配置文件（如 `.json`, `.bin`）的目录路径。
-    *   调用该节点后，配置资产会从该目录读取并解析所有配置数据。
-3.  **查询配置数据**：配置加载后，虽然蓝图公开的函数有限，但内部流程（如拟合、求解）会自动使用这些数据。
+1.  **创建配置资产**：在内容浏览器中右键 -> Animation -> MetaHuman Config，创建一个新的 `UMetaHumanConfig` 资产。
+2.  **加载配置**：在蓝图中，获取该资产的引用，调用 `ReadFromDirectory` 节点。将存放有 `solver_template.json`、`fitting_template.json` 等数据的目录路径作为输入。成功后，`Type` 属性会根据加载的数据自动设置（如 `Solver`, `Fitting`）。
+3.  **使用配置数据**：在需要使用解算器或拟合器的其他 MetaHuman 工具蓝图节点（如面部追踪或动画解算节点）中，将此 `UMetaHumanConfig` 资产作为输入参数传入。
 
 ## C++ 用法
 
@@ -54,131 +56,131 @@ MetaHuman Animator 是一套完整的工具链，用于从视频或深度数据�
 
 ### 基本用法
 
+`UMetaHumanConfig` 是管理 MetaHuman 解算器和拟合器所需加密配置数据的核心资产类。它内部使用 `FByteBulkData` 存储加密后的 JSON 或二进制配置数据，并提供透明的加解密接口。
+
+**来源文件：** `Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanConfig/Public/MetaHumanConfig.h`
+
 ```cpp
 // 加载或创建一个 MetaHumanConfig 资产
 UMetaHumanConfig* Config = NewObject<UMetaHumanConfig>();
 
-// 从目录读取配置数据
-FString ConfigPath = TEXT("/Game/MetaHuman/Config/MySolverConfig");
-bool bSuccess = Config->ReadFromDirectory(ConfigPath);
-
-if (bSuccess)
+// 从指定目录加载所有关联的配置文件
+const FString ConfigDir = FPaths::ProjectContentDir() / TEXT("MetaHuman/Config");
+if (Config->ReadFromDirectory(ConfigDir))
 {
-    // 检查配置类型
+    UE_LOG(LogMetaHumanConfig, Log, TEXT("成功加载配置，类型: %s"), *UEnum::GetValueAsString(Config->Type));
+
+    // 根据配置类型，获取相应的解算数据（自动解密）
     if (Config->Type == EMetaHumanConfigType::Solver)
     {
-        // 获取求解器模板数据（已解密的JSON字符串）
-        FString SolverTemplate = Config->GetSolverTemplateData();
-        UE_LOG(LogMetaHumanConfig, Log, TEXT("Solver Template Loaded: %s"), *SolverTemplate.Left(100));
+        FString SolverConfigJson = Config->GetSolverConfigData();
+        // 将 SolverConfigJson 解析后用于面部动画解算器...
     }
+    else if (Config->Type == EMetaHumanConfigType::Fitting)
+    {
+        FString FittingTemplateJson = Config->GetFittingTemplateData();
+        // 将 FittingTemplateJson 用于网格拟合过程...
+    }
+}
+else
+{
+    UE_LOG(LogMetaHumanConfig, Error, TEXT("从目录加载配置失败: %s"), *ConfigDir);
 }
 ```
 
 ### 进阶用法
 
-在自定义的MetaHuman流程组件中，验证和使用特定的配置数据：
+配置数据在加载时经过验证和加密存储。开发者通常不直接与底层的 `FByteBulkData` 加密字段交互，而是通过 `ReadFromDirectory` 一次性加载所有数据，并通过 `Get...Data()` 系列函数获取解密后的字符串或字节数组。这些数据随后被传递给 `MetaHumanFaceAnimationSolver`、`MetaHumanFaceFittingSolver` 等模块进行计算。
 
 ```cpp
-// 假设在某个自定义求解器类中
-void UMyCustomSolver::InitializeSolver()
-{
-    UMetaHumanConfig* SolverConfig = LoadObject<UMetaHumanConfig>(nullptr, TEXT("/Game/MetaHuman/Config/AdvancedSolver"));
-    if (!SolverConfig)
-    {
-        UE_LOG(LogMySolver, Error, TEXT("Failed to load solver config."));
-        return;
-    }
+// 在一个更完整的上下文中，配置数据可能被传递给 Pipeline 进行处理
+FMetaHumanPipelineContext Context;
+Context.Config = Config;
 
-    // 获取所有求解器相关数据进行内部验证或初始化
-    FString TemplateData = SolverConfig->GetSolverTemplateData();
-    FString ConfigData = SolverConfig->GetSolverConfigData();
-    FString Definitions = SolverConfig->GetSolverDefinitionsData();
-    // ... 使用这些数据进行自定义逻辑 ...
-}
+// ... 管道中某个节点需要解算器配置
+FString SolverDefinitions = Context.Config->GetSolverDefinitionsData();
+// 使用 SolverDefinitions 初始化或配置解算器实例
 ```
-**来源**: 基于 `Public/MetaHumanConfig.h` 中的 `UMetaHumanConfig` 类接口推导。
 
 ## Demo 示例
 
-**MetaHumanConfigLoader.h**
+以下是一个最小示例，演示如何在 C++ 中创建并加载一个 `MetaHumanConfig` 资产。
+
+**MyCharacter.h**
 ```cpp
-// 版权所有 Epic Games, Inc. 保留所有权利。
-
 #pragma once
-
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "MetaHumanConfigLoader.generated.h"
+#include "GameFramework/Character.h"
+#include "MyCharacter.generated.h"
 
 class UMetaHumanConfig;
 
 UCLASS()
-class AMetaHumanConfigLoader : public AActor
+class AMyCharacter : public ACharacter
 {
-	GENERATED_BODY()
-	
-public:	
-	AMetaHumanConfigLoader();
+    GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MetaHuman")
-	FString ConfigDirectoryPath;
+public:
+    AMyCharacter();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MetaHuman")
-	UMetaHumanConfig* LoadedConfig;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MetaHuman")
+    UMetaHumanConfig* LoadedConfig;
 
-	UFUNCTION(BlueprintCallable, Category = "MetaHuman")
-	bool LoadConfig();
-
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "MetaHuman")
-	FString GetSolverConfigJson() const;
+    UFUNCTION(BlueprintCallable, Category = "MetaHuman")
+    void LoadMyMetaHumanConfig(const FString& DirectoryPath);
 };
 ```
 
-**MetaHumanConfigLoader.cpp**
+**MyCharacter.cpp**
 ```cpp
-// 版权所有 Epic Games, Inc. 保留所有权利。
-
-#include "MetaHumanConfigLoader.h"
+#include "MyCharacter.h"
 #include "MetaHumanConfig.h"
 
-AMetaHumanConfigLoader::AMetaHumanConfigLoader()
+AMyCharacter::AMyCharacter()
 {
-	PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = false;
 }
 
-bool AMetaHumanConfigLoader::LoadConfig()
+void AMyCharacter::LoadMyMetaHumanConfig(const FString& DirectoryPath)
 {
-	if (ConfigDirectoryPath.IsEmpty())
-	{
-		return false;
-	}
+    // 如果已有资产，先清空
+    if (LoadedConfig)
+    {
+        LoadedConfig->ConditionalBeginDestroy();
+        LoadedConfig = nullptr;
+    }
 
-	// 如果已有配置，重新加载；否则创建新实例
-	if (!LoadedConfig)
-	{
-		LoadedConfig = NewObject<UMetaHumanConfig>(this, UMetaHumanConfig::StaticClass(), TEXT("DemoConfig"));
-	}
+    // 创建一个新的内存中的配置资产
+    LoadedConfig = NewObject<UMetaHumanConfig>(this, UMetaHumanConfig::StaticClass(), NAME_None, RF_Transient);
 
-	return LoadedConfig->ReadFromDirectory(ConfigDirectoryPath);
-}
+    // 尝试从指定目录加载配置文件
+    if (!LoadedConfig->ReadFromDirectory(DirectoryPath))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("加载 MetaHuman 配置失败。"));
+        LoadedConfig = nullptr;
+        return;
+    }
 
-FString AMetaHumanConfigLoader::GetSolverConfigJson() const
-{
-	if (LoadedConfig && LoadedConfig->Type == EMetaHumanConfigType::Solver)
-	{
-		return LoadedConfig->GetSolverConfigData();
-	}
-	return TEXT("");
+    UE_LOG(LogTemp, Log, TEXT("成功加载 MetaHuman 配置。类型: %s"), *UEnum::GetValueAsString(LoadedConfig->Type));
 }
 ```
 
 ## 模块依赖
 
-从 `MetaHumanConfig.Build.cs` 分析，使用者需要以下独特依赖：
+该插件包含大量子模块，彼此间依赖关系复杂。以下是 `MetaHumanConfig` 模块及其所依赖的插件特有模块：
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCoreTechLib` | 提供MetaHuman核心算法和技术库，用于配置数据的加密、解密以及与底层技术栈的交互。 |
+| `MetaHumanCoreTechLib` | MetaHuman 核心技术库，提供底层算法和工具函数。 |
+| `MetaHumanFaceAnimationSolver` | 面部动画解算器，将追踪数据转化为面部骨骼驱动。 |
+| `MetaHumanFaceFittingSolver` | 面部网格拟合解算器，将通用网格适配到特定面型。 |
+| `MetaHumanFaceContourTracker` | 面部轮廓追踪器，从视频中提取面部特征点轨迹。 |
+| `MetaHumanCaptureSource` | 捕获源管理，处理来自不同设备的输入数据。 |
+| `MetaHumanPipeline` | 数据处理管道，编排从原始数据到最终动画的流程。 |
+| `MetaHumanPerformance` | 表演数据资产，封装一次完整的面部捕捉表演。 |
+| `MetaHumanIdentity` | 数字身份资产，管理单个 MetaHuman 的基础网格和拓扑。 |
+| `MetaHumanSequencer` | 集成 Unreal Sequencer，用于编辑和播放生成的动画。 |
+| `MetaHumanSpeech2Face` | 语音驱动面部动画模块。 |
 
 ## 维护状态
 
@@ -186,18 +188,17 @@ FString AMetaHumanConfigLoader::GetSolverConfigJson() const
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能。 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复MetaHuman角色的渲染伪影问题。 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在身体追踪时，过滤可视化对象以优化性能或显示。 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为现有网格体导出动画序列。 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复序列器的缓存问题。 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 在启用身体追踪时，禁用关卡序列导出功能。 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵问题。 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在身体追踪时过滤可视化对象，优化性能。 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 为现有网格体导出动画序列，增强了工作流灵活性。 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复与 Sequencer 缓存相关的问题。 |
 
 ### 维护评价
 
-**活跃维护**。MetaHuman Animator是一个大型、活跃维护的Epic Games官方工具包。从最近的提交记录（2026年5月）可以看出，开发团队仍在持续修复bug、增加功能（如身体追踪支持）并优化性能。`MetaHumanConfig`模块作为核心配置模块，其内部依赖和加密机制很可能随着主插件一起更新。该插件是Epic的旗舰内容创作工具，推荐在MetaHuman相关项目中使用。
+**活跃维护**。该插件是 Epic Games 的官方核心产品，受到持续的积极维护和更新。从近期提交记录看（截至2026年5月），开发团队仍在密集地修复问题（如渲染瑕疵、缓存问题）和增加功能（如新的导出选项、身体追踪支持）。这是一个稳定且推荐用于生产环境的关键插件。然而，由于其复杂性和对特定硬件/软件管道（如 MetaHuman Animator 应用）的依赖，学习曲线和集成难度较高。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档]() (未在 .uplugin 中提供)
-- [测试用例]() (待定位)
+- [官方文档](https://docs.unrealengine.com/5.0/en-US/meta-humans-in-unreal-engine/) （官方 MetaHuman 总览页，包含 Animator 工作流链接）

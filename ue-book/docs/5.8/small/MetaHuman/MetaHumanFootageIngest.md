@@ -4,165 +4,151 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman动画师工具包 |
+| 中文名 | 元人动画师 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、材质模板、动画资产、配置文件） |
+| 包含内容 | ✅ 有（蓝图资产、编辑器工具、模型资产） |
 | 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2014-03-14 |
-| 年龄标签 | 🏛️ 文物（约 11 年） |
+| 创建时间 | 2023-01-27 |
+| 年龄标签 | 🆕（约 3 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是 Epic Games 官方为 Unreal Engine 开发的 MetaHuman 工作流核心工具包。它并非一个单一功能的插件，而是一个庞大的工具集，旨在提供从真实世界捕获面部表演，到将其应用于 MetaHuman 数字人角色，再到在引擎中进行精细动画编辑和优化的完整解决方案。**当前文档重点描述的 `MetaHumanFootageIngest` 模块**是该工具链的起始环节，负责管理捕获设备、连接手机或专业摄像头进行面部捕捉，并将捕捉到的视频素材（Footage）导入到 Unreal Engine 项目中，供后续的面部追踪、动画求解等流程使用。
+MetaHuman Animator 是一个功能齐全的工具集，旨在支持从多种来源（如 iPhone 捕获、专业摄像设备、音频文件等）创建高保真度 MetaHuman 角色的完整工作流。它不仅仅是一个简单的导入工具，而是覆盖了捕获、追踪、求解、配置和最终导出的整个管线。其核心目标是简化从现实世界表演数据到可用于游戏或影视的实时数字人资产的创建过程，解决了专业级数字人制作中数据复杂、步骤繁多、技术门槛高的问题。
 
-**重要提示**：根据源码中的 `UE_DEPRECATED(5.7)` 标记，`MetaHumanFootageIngest` 模块的功能自 5.7 版本起已迁移至 `CaptureManager` 模块。本文档描述的功能可能在未来版本中不再适用。
+该插件是一个大型、模块化的架构，每个模块专注于管线中的一个特定阶段（如面部轮廓追踪、深度生成、动画求解等），并通过“管线” (`MetaHumanPipeline`) 模块进行编排。其中 `MetaHumanFootageIngest` 模块已经于 5.7 版本被标记为废弃，其功能已被整合到独立的 `CaptureManager` 模块中。
 
 ## 使用场景
 
-- **专业影视与游戏制作**：使用 iPhone LiDAR 或其他深度传感器捕获演员的面部表演，通过此插件导入引擎，快速生成高质量的数字人动画。
-- **实时数字人驱动**：结合 Live Link，在虚拟制片或直播场景中，实时将真实面部表情映射到 MetaHuman 角色上。
-- **批量内容生产**：在需要处理大量面部捕捉数据的项目中，利用批处理工具高效管理素材导入和处理流程。
-- **自定义面部动画工作流**：开发者可以基于此插件提供的核心模块（如 FaceFittingSolver, FaceAnimationSolver）构建自己的面部动画管线。
+-   **游戏开发**：为游戏创建基于真实演员表演的、具有电影级质感的主要角色。
+-   **影视预览与虚拟制片**：快速生成用于预览的数字人替身，或用于虚拟制片中的实时数字人演员。
+-   **虚拟直播与VTuber**：创建用于实时驱动的高保真虚拟形象。
+-   **快速原型制作**：利用 iPhone 等消费级设备快速验证角色动画设计。
 
 ## 蓝图用法
 
-`MetaHumanFootageIngest` 模块主要提供编辑器界面（Editor UI）功能，其核心类（如 `SCaptureManagerWidget`, `FCaptureManager`）均为 Slate UI 组件或 C++ 单例，并未暴露大量直接可用的蓝图节点。其功能通过编辑器内的 `Capture Manager` 面板和相关资产（如 `UMetaHumanCaptureSource`）访问。
+由于该插件的大部分功能是通过编辑器工具和自定义资产（如 `UMetaHumanIdentity`）实现的，纯粹的运行时蓝图节点较少。其核心工作流主要在编辑器 UI 内完成。
 
-### 核心节点
+### 核心资产与类
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `FCaptureManager::Get()` | 获取捕获管理器的单例实例（C++ 中使用）。 | `FCaptureManager` |
-| `FCaptureManager::Show()` | 显示“捕获管理器”编辑器窗口。 | `FCaptureManager` |
-| `FCaptureManager::ShowMonitoringTab()` | 显示指定捕获源的监控标签页。 | `FCaptureManager` |
+| 资产/类 | 说明 |
+|---|---|
+| `UMetaHumanIdentity` | 核心资产，用于存储一个 MetaHuman 角色从捕获数据到最终配置的整个创建过程数据。 |
+| `UMetaHumanCaptureSource` | 代表一个捕获数据源（如特定的 iPhone 录制会话）。 |
+| `UMetaHumanPerformance` | 存储单个表演录制的元数据，与 `UMetaHumanCaptureSource` 关联。 |
+| `FCaptureManager` (已废弃) | 用于打开和控制捕获管理器的单例接口。 |
 
 ### 使用示例（蓝图描述）
 
-在蓝图中直接调用此模块的底层功能较为有限。典型的工作流程是在 C++ 代码或编辑器扩展插件中，通过 `FCaptureManager::Get()->Show()` 来以编程方式打开捕获管理器界面，供用户操作。
+虽然主要工作流在编辑器中，但可以在蓝图中触发特定动作：
+1.  通过 `FCaptureManager::Get()->Show()` 蓝图节点，可以以编程方式打开捕获管理器窗口。
+2.  可以使用 `FCaptureManager::Get()->ShowMonitoringTab(UMetaHumanCaptureSource*)` 节点，为指定的捕获源打开实时监控标签页。
 
 ## C++ 用法
 
+该插件提供了丰富的 C++ API 用于程序化控制管线。以下示例基于公开的头文件和典型用法。
+
 ### 头文件引入
 
-要使用捕获管理器的核心功能，需要包含其模块头文件。
+根据你要使用的具体功能，需要包含相应模块的头文件。例如，要操作核心身份资产：
 ```cpp
-#include "CaptureManager.h"
-```
-（注意：此头文件位于 `MetaHumanFootageIngest` 模块中，该模块已被标记为废弃。）
-
-### 基本用法
-
-以下示例展示了如何在编辑器插件或工具代码中初始化并显示捕获管理器。
-
-```cpp
-// 来源：Source/MetaHumanFootageIngest/Private/MetaHumanFootageIngestModule.cpp 与 Public/CaptureManager.h
-// 在模块启动时初始化捕获管理器单例
-void FMyEditorToolsModule::StartupModule()
-{
-    // 获取捕获管理器实例并初始化
-    FCaptureManager::Initialize();
-    // 通常不会立即显示，而是等待用户触发
-}
-
-// 当需要显示捕获管理器时调用
-void FMyEditorToolsModule::OpenCaptureManager()
-{
-    if (FCaptureManager* CaptureManager = FCaptureManager::Get())
-    {
-        CaptureManager->Show();
-    }
-}
+#include "MetaHumanIdentity/Public/MetaHumanIdentity.h"
 ```
 
-### 进阶用法
+### 基本用法（程序化创建身份）
 
-结合 `UMetaHumanCaptureSource` 资产，可以编程方式启动和管理特定的捕获源。
+以下代码展示了如何以编程方式创建一个新的 `UMetaHumanIdentity` 资产。
+*（基于公开头文件和引擎资产创建惯例推断）*
 
 ```cpp
-// 假设已有一个有效的 UMetaHumanCaptureSource* CaptureSource 资产指针
-// 来源：源码推断自 Public/CaptureSourcesWidget.h 中的委托
-void FMyTool::StartCaptureOnSource(UMetaHumanCaptureSource* CaptureSource)
-{
-    if (CaptureSource)
-    {
-        // 调用捕获源的接口开始捕获 (具体接口需查看 UMetaHumanCaptureSource 定义)
-        // CaptureSource->StartCapture();
+// 创建一个新的 MetaHuman 身份资产
+UPackage* Package = CreatePackage(TEXT("/Game/MyMetaHumans/BP_NewCharacter"));
+UMetaHumanIdentity* NewIdentity = NewObject<UMetaHumanIdentity>(Package, TEXT("MHI_NewCharacter"), RF_Public | RF_Standalone);
+// 然后可以调用 NewIdentity 的方法来导入捕获数据、配置头部、应用预设等
+FAssetRegistryModule::AssetCreated(NewIdentity);
+Package->FullyLoad();
+Package->SetDirtyFlag(true);
+```
 
-        // 可以通过捕获管理器显示其监控界面
-        if (FCaptureManager* CaptureManager = FCaptureManager::Get())
-        {
-            CaptureManager->ShowMonitoringTab(CaptureSource);
-        }
+### 进阶用法（操作捕获管理器 - 已废弃 API）
+
+注意：以下 API 已在 5.7 废弃，仅供理解历史逻辑。
+*（基于 `CaptureManager.h`）*
+
+```cpp
+#include "MetaHumanFootageIngest/Public/CaptureManager.h"
+
+// 获取捕获管理器单例并显示窗口
+if (FCaptureManager* CaptureManager = FCaptureManager::Get())
+{
+    CaptureManager->Show();
+    
+    // 假设我们有一个 UMetaHumanCaptureSource 对象指针 (MyCaptureSource)
+    // 为它打开一个监控标签页
+    if (UMetaHumanCaptureSource* MyCaptureSource = /* ... */)
+    {
+        TWeakPtr<SDockTab> MonitoringTab = CaptureManager->ShowMonitoringTab(MyCaptureSource);
     }
 }
 ```
 
 ## Demo 示例
 
-一个最小的、仅用于显示捕获管理器窗口的编辑器工具模块。
-
-**MyCaptureTool.h**
+一个最小示例，演示如何检查 MetaHuman Animator 插件是否已加载，并尝试打开已废弃的捕获管理器（仅作演示，实际开发应使用新的 CaptureManager 模块）。
+*`MetaHumanAnimatorDemo.h`*
 ```cpp
 #pragma once
+#include "CoreMinimal.h"
 
-#include "Modules/ModuleManager.h"
-
-class FMyCaptureToolModule : public IModuleInterface
+class FMetaHumanAnimatorDemo
 {
 public:
-    virtual void StartupModule() override;
-    virtual void ShutdownModule() override;
-
-    void OpenCaptureManagerWindow();
+    static void TryOpenLegacyCaptureManager();
 };
 ```
-
-**MyCaptureTool.cpp**
+*`MetaHumanAnimatorDemo.cpp`*
 ```cpp
-#include "MyCaptureTool.h"
-#include "CaptureManager.h" // 来自 MetaHumanFootageIngest 模块
+#include "MetaHumanAnimatorDemo.h"
+#include "Modules/ModuleManager.h"
 
-#define LOCTEXT_NAMESPACE "FMyCaptureToolModule"
+// 包含已废弃头文件，编译器会发出警告
+PRAGMA_DISABLE_DEPRECATION_WARNINGS
+#include "MetaHumanFootageIngest/Public/CaptureManager.h"
+PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
-void FMyCaptureToolModule::StartupModule()
+void FMetaHumanAnimatorDemo::TryOpenLegacyCaptureManager()
 {
-    // 初始化捕获管理器
-    FCaptureManager::Initialize();
-}
-
-void FMyCaptureToolModule::ShutdownModule()
-{
-    FCaptureManager::Terminate();
-}
-
-void FMyCaptureToolModule::OpenCaptureManagerWindow()
-{
-    if (FCaptureManager* CM = FCaptureManager::Get())
+    // 检查插件模块是否加载
+    if (FModuleManager::Get().IsModuleLoaded(TEXT("MetaHumanFootageIngest")))
     {
-        CM->Show();
+        UE_LOG(LogTemp, Warning, TEXT("MetaHumanFootageIngest module is loaded (deprecated). Opening legacy Capture Manager..."));
+        if (FCaptureManager* CaptureMgr = FCaptureManager::Get())
+        {
+            CaptureMgr->Show();
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("MetaHumanFootageIngest module is not loaded. Please check plugin installation."));
     }
 }
-
-#undef LOCTEXT_NAMESPACE
-
-IMPLEMENT_MODULE(FMyCaptureToolModule, MyCaptureTool)
 ```
 
 ## 模块依赖
 
-`MetaHumanFootageIngest` 模块本身的 `Build.cs` 文件未在提供信息中完整列出，但根据其公共头文件引用的类型，可以推断其依赖。
+MetaHuman Animator 是一个庞大的插件，依赖众多内部和外部模块。以下列出一些**独特且关键**的依赖，使用你的模块时可能需要引用。
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCaptureSource` | 核心捕获源资产 (`UMetaHumanCaptureSource`) 的定义。 |
-| `MetaHumanCaptureProtocolStack` | 捕获设备通信协议栈。 |
-| `MetaHumanCaptureUtils` | 捕获相关的通用工具函数。 |
-| `MetaHumanImageViewerEditor` | 用于预览捕获图像的编辑器组件。 |
-| `Slate`, `SlateCore`, `UMG` | 构成捕获管理器复杂的用户界面。 |
-| `ToolMenus` | 用于构建编辑器工具栏和菜单。 |
+| `MetaHumanSDK` / `MetaHumanSDKEditor` | 核心 MetaHuman SDK，提供基础类型和接口。 |
+| `ControlRig` / `ControlRigDeveloper` | 用于驱动 MetaHuman 角色的控制系统。 |
+| `MeshTrackerInterface` | 用于集成外部设备（如深度摄像头）的追踪接口。 |
+| `MetaHumanCoreTechLib` | Epic 提供的底层面部拟合、求解等核心算法库。 |
+| `HairStrands` | 用于处理 MetaHuman 的高精度头发系统。 |
+
+*（注意：由于模块众多，且依赖关系复杂，实际使用特定功能时需参考其对应模块的 Build.cs 文件。）*
 
 ## 维护状态
 
@@ -170,20 +156,20 @@ IMPLEMENT_MODULE(FMyCaptureToolModule, MyCaptureTool)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能，以避免冲突。 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复了 MetaHuman 上的渲染瑕疵（伪影）。 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 当进行身体追踪时，过滤掉相关的可视化对象，使界面更清晰。 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 为已有的网格体导出动画序列，完善了动画导出工作流。 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复了 Sequencer（序列器）的缓存问题，提升了编辑器稳定性。 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出，可能为修复功能冲突。 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵。 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 启用身体追踪时过滤可视化对象，优化性能或显示。 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MetaHuman Animator] 新增为现有网格体导出动画序列的功能。 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 的缓存问题。 |
 
 ### 维护评价
 
-- **活跃维护**：从 Git 历史看，MetaHuman Animator 插件集在近期（2026年5月）仍有频繁的功能更新和 Bug 修复，表明 Epic Games 正在积极维护。
-- **模块状态**：**存在关键警告**。当前文档重点描述的 `MetaHumanFootageIngest` 模块已被**明确标记为废弃（Deprecated since 5.7）**。其功能已迁移至新的 `CaptureManager` 模块。这意味着在新版引擎中使用本文档描述的类和接口可能会导致编译警告或功能失效。
-- **推荐建议**：对于新项目或引擎版本 >= 5.7 的情况，**强烈不推荐**使用 `MetaHumanFootageIngest` 模块。应转向使用官方提供的最新 `CaptureManager` 模块或相关工具。对于维护旧版（5.6及以下）项目的开发者，此模块仍是有效的捕获入口。
+-   **状态**：**活跃维护中**。插件于 2023 年初引入，近期更新（2026年）非常频繁，主要集中在功能增强（如身体追踪、序列导出）和 bug 修复。
+-   **发展趋势**：插件正在积极演进，部分旧模块（如 `MetaHumanFootageIngest`）已被重构或废弃，新功能（如 `CaptureManager`）正在集成，表明其架构在持续优化。
+-   **推荐度**：**强烈推荐**。作为 Epic 官方推出的 MetaHuman 创建工具链，它是 UE5 中制作高保真数字人的首选且最完整的解决方案。尽管部分 API 可能随版本更新而变动，但核心功能和工作流已趋于稳定。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/metahuman-in-unreal-engine/) （MetaHuman 总体文档，非特指此模块）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFootageIngest) （`MetaHumanFootageIngest` 模块源码目录）
+- 官方文档（暂无特定URL，请参考 Epic 官方 MetaHuman 文档页面）
+- 测试用例（插件内部分模块有 `Test` 后缀的模块，如 `MetaHumanControlsConversionTest`，通常位于各模块的 `Tests` 目录下）
