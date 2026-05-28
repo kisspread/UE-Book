@@ -33,17 +33,22 @@ def get_version_plugins(manifest: dict, version: str) -> set[str]:
     }
 
 
-def compute_diff(ue_plugins: list[dict], manifest: dict) -> list[dict]:
-    """Compute which plugins need generation.
+def compute_diff(ue_plugins: list[dict], manifest: dict,
+                 version: str = "") -> list[dict]:
+    """Compute which plugins need generation for a specific version.
 
     Args:
         ue_plugins: list of {name, path, category} from GitHub API
         manifest: current manifest
+        version: UE version — plugins generated for OTHER versions don't count
 
     Returns:
-        list of plugins NOT in manifest (need generation)
+        list of plugins NOT yet generated for this version
     """
-    generated = get_generated_names(manifest)
+    if version:
+        generated = get_version_plugins(manifest, version)
+    else:
+        generated = get_generated_names(manifest)
     return [p for p in ue_plugins if p["name"] not in generated]
 
 
@@ -95,7 +100,7 @@ def resolve_targets(
     if force_all:
         # "Generate all" = ensure every plugin is in the manifest.
         # Skip already-registered plugins — manifest is the resume checkpoint.
-        targets = compute_diff(all_plugins, manifest)
+        targets = compute_diff(all_plugins, manifest, version=version)
         print(f"  Force-all: {len(targets)} plugins to generate "
               f"(skipping {len(all_plugins) - len(targets)} already in manifest)")
     elif force:
@@ -109,7 +114,7 @@ def resolve_targets(
         print(f"  Force: will regenerate {len(targets)} plugins")
     else:
         # Incremental: only new plugins
-        targets = compute_diff(all_plugins, manifest)
+        targets = compute_diff(all_plugins, manifest, version=version)
         print(f"  Incremental: {len(targets)} new plugins to generate")
 
     return targets, manifest
