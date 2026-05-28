@@ -7,229 +7,253 @@
 | 中文名 | MetaHuman 动画师 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、工具、配置） |
+| 包含内容 | ✅ 有（配置资产、蓝图资产） |
 | 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 未知 |
-| 年龄标签 | 未知 |
+| 创建时间 | 2023（估计） |
+| 年龄标签 | 🆕（约 3 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
+
+> ⚠️ 本插件默认未启用（`Installed: false`），需在插件管理器中手动启用。
 
 ## 用途
 
-MetaHuman Animator 是 Epic Games 官方推出的 MetaHuman 资产创建与动画工具包。它并非一个单一的功能模块，而是一个庞大的插件生态系统，旨在将高保真数字人（MetaHuman）的创建、面部动画捕捉、实时解算和编辑工作流集成到虚幻引擎编辑器中。
+MetaHuman Animator 是 Epic Games 官方提供的 MetaHuman 面部动画工具套件。它并非简单的"MetaHuman 资产管理器"，而是一个**完整的面部表演捕获与动画生成管线**。
 
-该插件解决的核心问题是：如何将复杂的 MetaHuman 数字人资产创建、面部动画数据采集与处理（例如从 iPhone 或其他设备捕捉的表演数据）无缝地转换为可在引擎中实时驱动的、高质量的面部动画。它提供了从原始视频素材导入、面部关键点追踪、动画解算、到在编辑器中进行精细化编辑和导出的完整流水线。
+该插件解决的核心问题是：**如何将真实演员的面部表演（视频/音频）转化为高保真的 MetaHuman 角色动画**。它覆盖了从数据捕获到最终动画输出的完整工作流：
+
+- **捕获层**（Capture）：从 iPhone TrueDepth 摄像头或专业面部捕获设备获取原始表演数据
+- **追踪层**（Tracking）：面部轮廓追踪、深度图生成、面部拟合求解
+- **动画层**（Animation）：面部动画求解器、语音驱动面部动画（Speech2Face）、身体追踪集成
+- **管线层**（Pipeline）：批量处理、序列器集成、动画序列导出
+- **平台层**（Platform）：系统最低配置检测、GPU 能力验证
+
+插件需要**手动启用**（`EnabledByDefault: false`），因为它依赖特定的硬件能力（支持 GPU 推理的显卡）和额外的 MetaHuman 服务配置。
 
 ## 使用场景
 
-- 你需要将 iPhone 或其他专业设备捕捉的面部表演视频，转换为驱动 MetaHuman 角色的高质量动画数据 → 使用 `MetaHumanFaceAnimationSolver` 和 `MetaHumanFaceContourTracker` 模块。
-- 你正在开发一款需要大量逼真数字人对话的游戏或应用，并希望通过音频直接生成对应的面部动画 → 探索 `MetaHumanSpeech2Face` 模块。
-- 你的项目需要批量处理大量 MetaHuman 角色的配置或资产 → 使用 `MetaHumanBatchProcessor`。
-- 你需要为 MetaHuman 角色创建或修改基于控制绑定的动画蓝图 → 依赖 `MetaHumanIdentity` 模块（它集成了 ControlRig 开发工具）。
-- 你需要在运行时检查玩家的硬件是否满足流畅运行 MetaHuman 角色的最低规格 → 使用 `MetaHumanPlatform` 模块提供的硬件查询功能。
+- 你使用 iPhone（LiDAR 或 TrueDepth）捕获了演员的面部表演 → 通过 **MetaHumanCaptureSource** 导入并生成面部动画
+- 你有一个视频文件需要转换为 MetaHuman 面部动画 → 使用 **MetaHumanFaceContourTracker** + **MetaHumanFaceFittingSolver** 管线处理
+- 你只有音频文件，想生成对口型的面部动画 → 使用 **MetaHumanSpeech2Face** 模块
+- 你需要批量处理大量表演数据 → 使用 **MetaHumanBatchProcessor** 自动化处理
+- 你想确认用户的 GPU 是否能运行 MetaHuman 动画生成 → 使用 **MetaHumanPlatform** 模块检测最低配置
+- 你需要将动画结果与 Sequencer 集成进行后期编辑 → 使用 **MetaHumanSequencer** 模块
 
-## 蓝图用法
+## 模块架构概览
 
-由于 `MetaHumanPlatform` 模块主要提供运行时系统规格检查功能，其公共接口均为 C++ 静态函数，没有标记为 `BlueprintCallable`。因此，此模块主要为 C++ 开发者提供底层支持，不直接暴露蓝图节点。
+本插件共包含 28 个模块，按功能可分为以下几组：
 
-其他模块（如 `MetaHumanToolkit`、`MetaHumanIdentityEditor`）会提供丰富的蓝图和编辑器工具，但不在 `MetaHumanPlatform` 模块的范畴内。
-
-### 核心节点
-
-| 节点 | 说明 | 所在类 |
+| 功能组 | 模块 | 说明 |
 |---|---|---|
-| 无 | 本模块无直接蓝图可调用节点 | - |
+| **核心** | `MetaHumanCore`, `MetaHumanCoreEditor` | 基础设施和编辑器扩展 |
+| **捕获** | `MetaHumanCaptureSource`, `MetaHumanCaptureProtocolStack`, `MetaHumanCaptureUtils`, `MetaHumanCaptureDataEditor` | 从设备/文件捕获表演数据 |
+| **追踪与拟合** | `MetaHumanFaceContourTracker`, `MetaHumanFaceFittingSolver`, `MetaHumanDepthGenerator` | 面部轮廓追踪、拟合、深度图生成 |
+| **动画** | `MetaHumanFaceAnimationSolver`, `MetaHumanSpeech2Face`, `MetaHumanPerformance` | 动画求解器、语音驱动动画 |
+| **身份** | `MetaHumanIdentity`, `MetaHumanIdentityEditor` | MetaHuman 身份管理与编辑 |
+| **管线** | `MetaHumanPipeline`, `MetaHumanBatchProcessor` | 数据处理管线与批量处理 |
+| **平台** | `MetaHumanPlatform` | GPU/系统能力检测 |
+| **集成** | `MetaHumanSequencer`, `MetaHumanToolkit`, `MetaHumanFootageIngest`, `MetaHumanImageViewerEditor` | Sequencer 集成、工具集、素材导入 |
+| **其他** | `MeshTrackerInterface`, `MetaHumanConfig`, `MetaHumanConfigEditor`, `MetaHumanControlsConversionTest` | 网格追踪接口、配置管理 |
 
-### 使用示例（蓝图描述）
+## MetaHumanPlatform 模块详解
 
-本模块不提供蓝图节点。硬件检测功能通常在 C++ 代码中调用，用于决定是否启用高精度渲染或显示警告信息。
+`MetaHumanPlatform` 是一个轻量级运行时模块，负责**系统能力检测**——判断当前硬件是否满足运行 MetaHuman 动画管线的最低要求。
 
-## C++ 用法
+### 核心类
 
-`MetaHumanPlatform` 模块提供静态工具类，用于查询运行系统的硬件信息，以判断是否满足 MetaHuman 角色渲染的最低要求。
+#### FMetaHumanMinSpec
 
-### 头文件引入
+最低配置检测类，用于判断当前系统是否支持 MetaHuman 动画处理。
 
-```cpp
-#include "MetaHumanMinSpec.h"
-#include "MetaHumanPhysicalDeviceProvider.h"
-```
+| 方法 | 说明 |
+|---|---|
+| `IsSupported()` | 返回当前系统是否满足 MetaHuman 最低硬件要求 |
+| `GetMinSpec()` | 返回最低配置要求的文本描述 |
+| `Reset()` | 重置检测缓存状态，下次调用 `IsSupported()` 时重新检测 |
 
-### 基本用法
+#### FMetaHumanPhysicalDeviceProvider
 
-查询当前系统是否支持 MetaHuman 角色的最低规格渲染。
+GPU 物理设备信息查询类，用于获取显卡标识和显存信息。
 
-```cpp
-// 来自 MetaHumanMinSpec.h
-// 检查系统是否支持 MetaHuman 的最低规格
-bool bIsSystemSupported = FMetaHumanMinSpec::IsSupported();
+| 方法 | 说明 |
+|---|---|
+| `GetLUIDs(OutUEPhysicalDeviceLUID, OutAllPhysicalDeviceLUIDs)` | 获取当前 UE 使用的 GPU LUID 和系统中所有 GPU 的 LUID 列表 |
+| `GetVRAMInMB()` | 获取当前 GPU 的显存大小（MB） |
 
-if (!bIsSystemSupported)
-{
-    FText MinSpecText = FMetaHumanMinSpec::GetMinSpec();
-    UE_LOG(LogTemp, Warning, TEXT("当前系统不满足 MetaHuman 的最低规格要求: %s"), *MinSpecText.ToString());
-    // 可以选择降级画质或提示用户
-}
-```
+### 蓝图用法
 
-获取显卡的详细信息，例如用于特定优化或信息展示。
+本模块的所有 API 均为 C++ 静态函数（非 UObject 方法），不直接暴露到蓝图。如需在蓝图中检查平台支持，需要通过自定义蓝图函数库包装调用。
 
-```cpp
-// 来自 MetaHumanPhysicalDeviceProvider.h
-FString EngineGpuLUID;
-TArray<FString> AllGpuLUIDs;
-if (FMetaHumanPhysicalDeviceProvider::GetLUIDs(EngineGpuLUID, AllGpuLUIDs))
-{
-    UE_LOG(LogTemp, Log, TEXT("引擎使用的物理设备 LUID: %s"), *EngineGpuLUID);
-    for (const FString& Luid : AllGpuLUIDs)
-    {
-        UE_LOG(LogTemp, Log, TEXT("系统中发现物理设备 LUID: %s"), *Luid);
-    }
-}
+### C++ 用法
 
-int32 VRAMInMB = FMetaHumanPhysicalDeviceProvider::GetVRAMInMB();
-UE_LOG(LogTemp, Log, TEXT("主显示适配器显存大小: %d MB"), VRAMInMB);
-```
-
-### 进阶用法
-
-结合硬件信息，在项目启动或加载 MetaHuman 角色时动态调整渲染质量或功能开关。
+#### 头文件引入
 
 ```cpp
 #include "MetaHumanMinSpec.h"
 #include "MetaHumanPhysicalDeviceProvider.h"
+```
 
-void AMyGameMode::CheckMetaHumanSupport()
+#### 基本用法：检查系统是否支持 MetaHuman
+
+```cpp
+#include "MetaHumanMinSpec.h"
+
+void CheckMetaHumanSupport()
 {
-    // 第一步：进行最低规格检查
-    if (!FMetaHumanMinSpec::IsSupported())
+    if (FMetaHumanMinSpec::IsSupported())
     {
-        // 系统不支持，禁用高质量 MetaHuman 渲染或采取降级方案
-        bEnableHighQualityMetaHuman = false;
-        UE_LOG(LogTemp, Warning, TEXT("已禁用高质量 MetaHuman 渲染。"));
-        return;
-    }
-
-    // 第二步：进行更精细的显存检查
-    const int32 MinimumRequiredVRAM_MB = 4000; // 假设需要 4GB 显存
-    int32 AvailableVRAM = FMetaHumanPhysicalDeviceProvider::GetVRAMInMB();
-
-    if (AvailableVRAM < MinimumRequiredVRAM_MB)
-    {
-        bEnableHighQualityMetaHuman = false;
-        UE_LOG(LogTemp, Warning, TEXT("显存不足 (%d MB < %d MB)，已降低 MetaHuman 渲染质量。"), AvailableVRAM, MinimumRequiredVRAM_MB);
+        UE_LOG(LogTemp, Log, TEXT("系统满足 MetaHuman 最低要求"));
     }
     else
     {
-        bEnableHighQualityMetaHuman = true;
-        UE_LOG(LogTemp, Log, TEXT("系统满足 MetaHuman 渲染要求。"));
+        FText MinSpecText = FMetaHumanMinSpec::GetMinSpec();
+        UE_LOG(LogTemp, Warning, TEXT("系统不满足要求: %s"), *MinSpecText.ToString());
     }
-
-    // 根据结果应用配置
-    ApplyMetaHumanQualitySettings();
 }
 ```
 
-## Demo 示例
-
-一个最小化的示例，展示如何在项目中集成 `MetaHumanPlatform` 模块进行硬件检测。
+#### 进阶用法：查询 GPU 信息并判断显存
 
 ```cpp
-// MyGameModule.h
+#include "MetaHumanMinSpec.h"
+#include "MetaHumanPhysicalDeviceProvider.h"
+
+void DiagnoseMetaHumanPlatform()
+{
+    // 1. 检查最低配置
+    if (!FMetaHumanMinSpec::IsSupported())
+    {
+        UE_LOG(LogMetaHumanPlatform, Warning, TEXT("系统不满足 MetaHuman 最低要求"));
+        FText Spec = FMetaHumanMinSpec::GetMinSpec();
+        UE_LOG(LogMetaHumanPlatform, Warning, TEXT("最低要求: %s"), *Spec.ToString());
+        return;
+    }
+
+    // 2. 获取 GPU 详细信息
+    FString UELUID;
+    TArray<FString> AllLUIDs;
+    if (FMetaHumanPhysicalDeviceProvider::GetLUIDs(UELUID, AllLUIDs))
+    {
+        UE_LOG(LogMetaHumanPlatform, Log, TEXT("UE 使用的 GPU LUID: %s"), *UELUID);
+        for (const FString& LUID : AllLUIDs)
+        {
+            UE_LOG(LogMetaHumanPlatform, Log, TEXT("可用 GPU: %s"), *LUID);
+        }
+    }
+
+    // 3. 检查显存
+    int32 VRAMInMB = FMetaHumanPhysicalDeviceProvider::GetVRAMInMB();
+    UE_LOG(LogMetaHumanPlatform, Log, TEXT("GPU 显存: %d MB"), VRAMInMB);
+
+    // 4. 如需重新检测（例如切换了 GPU），可重置缓存
+    FMetaHumanMinSpec::Reset();
+}
+```
+
+### Demo 示例
+
+以下示例展示如何在编辑器工具中集成 MetaHuman 平台检测：
+
+```cpp
+// MetaHumanPlatformCheck.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Modules/ModuleManager.h"
 
-class FMyGameModule : public IModuleInterface
+class FMetaHumanPlatformCheck
 {
 public:
-    virtual void StartupModule() override;
-    virtual void ShutdownModule() override;
+    /** 返回平台检测结果的摘要字符串 */
+    static FString GetPlatformSummary();
 
-    /** 检查并应用 MetaHuman 硬件配置 */
-    void CheckAndApplyMetaHumanHardwareConfig();
-
-private:
-    bool bMetaHumanHardwareSupported;
+    /** 尝试重置并重新检测平台能力 */
+    static bool RefreshAndCheck();
 };
 ```
 
 ```cpp
-// MyGameModule.cpp
-#include "MyGameModule.h"
+// MetaHumanPlatformCheck.cpp
+#include "MetaHumanPlatformCheck.h"
 #include "MetaHumanMinSpec.h"
 #include "MetaHumanPhysicalDeviceProvider.h"
 
-#define LOCTEXT_NAMESPACE "FMyGameModule"
-
-void FMyGameModule::StartupModule()
+FString FMetaHumanPlatformCheck::GetPlatformSummary()
 {
-    CheckAndApplyMetaHumanHardwareConfig();
-}
+    FString Result;
 
-void FMyGameModule::ShutdownModule()
-{
-    // 清理
-}
-
-void FMyGameModule::CheckAndApplyMetaHumanHardwareConfig()
-{
-    // 1. 检查最低规格
-    bMetaHumanHardwareSupported = FMetaHumanMinSpec::IsSupported();
-
-    if (!bMetaHumanHardwareSupported)
+    if (FMetaHumanMinSpec::IsSupported())
     {
-        FText MinSpecInfo = FMetaHumanMinSpec::GetMinSpec();
-        UE_LOG(LogTemp, Error, TEXT("系统未达到运行 MetaHuman 的最低硬件要求: %s"), *MinSpecInfo.ToString());
-        // 在此处可以设置全局标志，禁用游戏中的 MetaHuman 生成或触发警告 UI
-        return;
+        Result += TEXT("✅ 系统满足 MetaHuman 要求\n");
+    }
+    else
+    {
+        Result += TEXT("❌ 系统不满足要求\n");
+        Result += FString::Printf(TEXT("  最低要求: %s\n"), *FMetaHumanMinSpec::GetMinSpec().ToString());
     }
 
-    // 2. 获取硬件详情以备后用
     int32 VRAM = FMetaHumanPhysicalDeviceProvider::GetVRAMInMB();
-    UE_LOG(LogTemp, Log, TEXT("MetaHuman 硬件支持已启用。检测到显存: %d MB"), VRAM);
+    Result += FString::Printf(TEXT("  GPU 显存: %d MB\n"), VRAM);
 
-    // 3. 根据更详细的硬件信息调整资源加载策略（示例）
-    // 例如，VRAM > 6GB 时加载 4K 材质，否则加载 2K 材质
+    FString UELUID;
+    TArray<FString> AllLUIDs;
+    if (FMetaHumanPhysicalDeviceProvider::GetLUIDs(UELUID, AllLUIDs))
+    {
+        Result += FString::Printf(TEXT("  活动 GPU LUID: %s\n"), *UELUID);
+        Result += FString::Printf(TEXT("  可用 GPU 数量: %d\n"), AllLUIDs.Num());
+    }
+
+    return Result;
 }
 
-#undef LOCTEXT_NAMESPACE
-
-IMPLEMENT_MODULE(FMyGameModule, MyGame)
+bool FMetaHumanPlatformCheck::RefreshAndCheck()
+{
+    FMetaHumanMinSpec::Reset();
+    return FMetaHumanMinSpec::IsSupported();
+}
 ```
 
 ## 模块依赖
 
-根据 `MetaHumanPlatform` 模块自身的构建文件，它没有列出对外部插件模块的独特依赖。其功能是基础的系统查询。
+以下是 `MetaHumanPlatform` 模块的依赖（基于同类平台检测模块推断）：
 
 | 模块 | 用途 |
 |---|---|
-| 无特殊依赖（仅标准 Core/Engine 等） | 该模块仅封装了基础的平台硬件查询功能 |
+| `RHI` | 访问 GPU 设备信息、LUID、显存等渲染硬件接口 |
+
+其余模块的依赖参见各自 Build.cs，主要涉及：
+
+| 依赖模块 | 被依赖的模块 |
+|---|---|
+| `MetaHumanCoreTechLib` | `MetaHumanConfig` |
+| `ControlRigDeveloper` | `MetaHumanIdentity` |
+| `MetaHumanSDKEditor` | `MetaHumanIdentity` |
+| `SkeletalMeshUtilitiesCommon` | `MetaHumanIdentity` |
+| `MetaHumanImageViewerEditor` | `MetaHumanCaptureDataEditor` |
 
 ## 维护状态
-
-`MetaHumanPlatform` 是 MetaHuman Animator 巨型插件的一部分。根据提供的最近 git 提交记录，插件整体仍处于**活跃开发**中。提交主要集中在动画导出、渲染瑕疵修复和身体追踪支持方面。
 
 ### 近期更新
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出，避免功能冲突。 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色上的渲染瑕疵。 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 进行身体追踪时过滤掉某些可视化对象，优化视图。 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MetaHuman Animator] 支持为已有的网格体导出动画序列。 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复了 Sequencer（序列器）相关的缓存问题。 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 身体追踪启用时禁用关卡序列导出 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 渲染伪影 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为现有网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复序列器缓存问题 |
 
 ### 维护评价
 
-- **活跃度**：插件整体处于**积极维护**状态，近期有多次针对功能改进和问题修复的提交。
-- **模块性质**：`MetaHumanPlatform` 作为基础支撑模块，代码稳定，不常需要频繁修改。其更新频率不直接反映其健康状况。
-- **推荐使用**：作为 Epic 官方提供的核心 MetaHuman 工具链的一部分，**强烈推荐**使用。它代表了数字人技术的最佳实践和官方支持路径。对于任何需要高保真数字人或面部动画的项目，都应将其视为首选工具。
-- **注意事项**：这是一个功能庞杂的大型插件，需要较陡峭的学习曲线和一定的硬件资源（特别是用于面部捕捉数据解算时）。建议仔细阅读官方文档并从示例项目开始。
+**活跃维护** — 最近更新集中于 2026 年 5 月 20-22 日，一周内有 5 次提交，覆盖功能增强（动画序列导出、身体追踪集成）和 bug 修复（渲染伪影、序列器缓存）。
+
+- ✅ 最近更新非常频繁，开发处于活跃期
+- ✅ 功能持续迭代，身体追踪和序列器集成是近期重点
+- ⚠️ 插件规模庞大（28 个模块、544 个源文件），复杂度较高
+- ⚠️ 默认未启用（`Installed: false`），需要用户主动开启
+- ✅ 推荐使用：这是 Epic 官方维护的 MetaHuman 动画核心工具，功能完整且持续更新
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档]() （.uplugin 中 DocsURL 为空，请访问 Unreal Engine 官方文档站搜索 “MetaHuman”）
-- [测试用例]() （测试用例通常位于插件内部或引擎的 `Tests` 目录下，此处未直接提供路径）
+- 官方文档（.uplugin 中未提供 DocsURL）
+- MetaHuman 官网：https://www.unrealengine.com/en-US/metahuman

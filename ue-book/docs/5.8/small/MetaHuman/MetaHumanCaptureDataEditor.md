@@ -7,197 +7,169 @@
 | 中文名 | MetaHuman 动画师 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、工具、配置） |
-| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
+| 包含内容 | ✅ 有（蓝图资产、材质、测试资源） |
+| 模块 | `MetaHumanCore` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanCaptureDataEditor` (Runtime) 等 |
 | 实验性 | 否 |
 | 创建时间 | 未知 |
-| 年龄标签 | 🆕（约 < 5 年） |
+| 年龄标签 | 未知 |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是 Epic Games 官方提供的 MetaHuman 工具套件。它不仅仅是一个插件，而是一个完整的管线，旨在将真实的面部表演数据（如来自 iPhone 或专业动捕设备的视频）转化为可驱动 MetaHuman 角色的动画资产。该插件解决了从原始捕获数据到高质量面部动画的端到端处理问题，涵盖了数据导入、特征点追踪、动画求解、资产编辑和最终输出等各个环节。
+MetaHuman Animator 是 Epic Games 官方为 MetaHuman 角色提供的完整动画制作工具链。它解决的核心问题是：**如何将真实的人脸表演（如视频、音频、深度数据）高效、高质量地转换为 MetaHuman 角色的面部动画**。
 
-核心价值在于它提供了自动化工具链，极大地简化了创建逼真数字人动画的技术门槛和工作流程，使艺术家和开发者能够高效地将真实世界的表演赋予虚拟角色。
+该插件不是单一功能，而是一个集成的生态系统，包含：
+1. **捕获数据处理**：从 iPhone、专业摄像头等设备导入和处理视频、音频、深度数据。
+2. **面部追踪与拟合**：分析视频中的面部特征点，追踪面部轮廓。
+3. **动画求解**：将追踪到的数据转换为 MetaHuman 角色的骨骼动画（ControlRig）。
+4. **动画合成**：管理、编辑、预览和导出动画序列。
+5. **批处理流水线**：支持自动化处理大量捕获数据。
+
+它存在的意义是**大幅简化从真实表演到数字角色动画的制作流程**，使非专业人士也能制作出电影级的面部动画。
 
 ## 使用场景
 
-- **影视与游戏过场动画制作**：你需要为一个逼真的数字人角色创建基于演员真实表演的面部动画。
-- **虚拟直播与实时应用**：你希望使用 iPhone 或其他摄像头，实时或离线驱动 MetaHuman 角色进行直播或交互。
-- **大规模内容生产**：你需要批量处理大量的面部表演数据，生成对应的动画序列。
-- **角色定制与资产创建**：你需要从多张照片或视频中创建一个基础的 MetaHuman 角色身份（Identity）。
+- **独立开发者/小型团队**：想用一部 iPhone 快速为自己的 MetaHuman 角色制作对话动画。
+- **影视/游戏工作室**：需要批量处理大量演员表演数据，用于制作游戏过场或影视内容。
+- **虚拟人直播/内容创作**：需要实时或准实时驱动数字人进行直播或视频创作。
+- **研究/教育**：学习面部动画、计算机视觉在游戏开发中的应用。
 
 ## 蓝图用法
-
-`MetaHumanCaptureDataEditor` 模块提供了一些用于在编辑器中处理捕获数据的UI工具和实用函数。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `HandleSourceDataChanged` | 当源捕获数据（如影片或音频）发生更改时，更新相关UI控件（如下拉框选项、时间范围）。 | `SMetaHumanCameraCombo` |
-| `OnSelectionChanged` | 当用户在相机选择下拉框中选择一个新选项时触发的回调。 | `SMetaHumanCameraCombo` |
-| `CreatePreviewComponent` | 为指定的捕获数据资产（`UCaptureData`）创建并返回一个用于在编辑器中预览的场景组件。 | `MetaHumanCaptureDataUtils` |
+| `CreatePreviewComponent` | 为捕获数据创建用于在场景中预览的组件 | `MetaHumanCaptureDataUtils` |
+| `HandleSourceDataChanged` | 当捕获数据源（如视频、音频）发生变化时调用，用于更新UI和处理逻辑 | `SMetaHumanCameraCombo` |
+| `OnSelectionChanged` | 当下拉框选项改变时触发的事件 | `SMetaHumanCameraCombo` |
 
 ### 使用示例（蓝图描述）
 
-1.  **创建相机选择下拉框**：在编辑器工具控件（Editor Utility Widget）中，可以使用 `SMetaHumanCameraCombo` 来构建一个允许用户从 `UFootageCaptureData` 资产中选择特定摄像机的下拉列表。
-2.  **预览捕获数据**：通过调用 `MetaHumanCaptureDataUtils::CreatePreviewComponent` 并传入一个 `UCaptureData` 对象，可以在编辑器视口中生成一个预览该捕获数据内容的组件（例如显示深度图或影片帧），方便检查数据质量。
+1.  **数据导入与预览**：
+    -   创建一个 `UCaptureData` 资产（如 `UFootageCaptureData`）。
+    -   使用 `MetaHumanCaptureDataUtils::CreatePreviewComponent` 节点，将该资产连接，即可在场景中生成一个预览组件，显示捕获的视频帧。
+    -   使用 `SMetaHumanCameraCombo` 控件，可以提供一个摄像头选择下拉框，并在数据源改变时（如选中不同摄像头）通过 `HandleSourceDataChanged` 更新相关属性。
+
+2.  **动画制作流水线**：
+    -   蓝图中调用 `MetaHumanPipeline` 模块的功能，配置一个处理流水线，输入捕获数据，输出为 `UAnimSequence`。
+    -   使用 `MetaHumanPerformance` 模块管理动画表现，可以预览、编辑时间线，并最终导出到 Sequencer。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
+#include "MetaHumanCaptureDataEditorModule.h"
 #include "CaptureDataUtils.h"
-#include "SMetaHumanCameraCombo.h"
 ```
 
 ### 基本用法
 
-**来源文件**: `Source/MetaHumanCaptureDataEditor/Public/CaptureDataUtils.h`
-
+从 `CaptureDataUtils.h` 提取的示例：
 ```cpp
-// 假设在某个编辑器工具的代码中
-#include "CaptureDataUtils.h"
-#include "CaptureData/CaptureData.h" // UCaptureData 基类
-
-void AMyEditorTool::ShowCaptureDataPreview(UCaptureData* CaptureDataAsset)
+// 假设 InCaptureData 是一个有效的捕获数据资产
+// 假设 InObject 是拥有此预览组件的对象（如某个 Actor）
+USceneComponent* PreviewComponent = MetaHumanCaptureDataUtils::CreatePreviewComponent(InCaptureData, InObject);
+if (PreviewComponent)
 {
-    if (CaptureDataAsset)
-    {
-        // 为捕获数据资产创建一个预览组件，并将其附加到某个对象（如当前Actor）上
-        USceneComponent* PreviewComp = MetaHumanCaptureDataUtils::CreatePreviewComponent(CaptureDataAsset, this);
-        if (PreviewComp)
-        {
-            // 例如，将其附加到根组件
-            PreviewComp->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-        }
-    }
+    // 将预览组件附加到对象上
+    PreviewComponent->AttachToComponent(InObject->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 }
 ```
+*来源文件：Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureDataEditor/Public/CaptureDataUtils.h*
 
 ### 进阶用法
 
-结合 `SMetaHumanCameraCombo` 和 `CaptureDataUtils` 来构建一个完整的编辑器面板。当用户在下拉框中选择不同的相机时，更新场景中的预览组件。
-
+结合 `MetaHumanCaptureDataEditor` 模块的类 `SMetaHumanCameraCombo`，可以在自定义编辑器面板中集成摄像头选择功能：
 ```cpp
-// 在 Slate 控件中
-void SMyPanel::Construct()
-{
-    // ... 初始化相机选项列表
-    TArray<TSharedPtr<FString>> CameraOptions;
+// 创建一个摄像头下拉框控件
+TSharedPtr<SMetaHumanCameraCombo> CameraCombo;
+SAssignNew(CameraCombo, SMetaHumanCameraCombo, &CameraOptions, &CurrentCameraName, PropertyOwner, PropertyHandle)
+    .IsEnabled_Lambda([this]() { return bIsDataLoaded; });
 
-    ChildSlot
-    [
-        SNew(SVerticalBox)
-        + SVerticalBox::Slot()
-        [
-            // 创建一个 MetaHuman 相机选择下拉框
-            SAssignNew(CameraCombo, SMetaHumanCameraCombo, &CameraOptions, &CurrentCameraName, PropertyOwner, PropertyHandle)
-        ]
-        // ... 其他控件
-    ];
-
-    // 绑定下拉框的更改事件
-    CameraCombo->OnSelectionChangedDelegate = [this](TSharedPtr<FString> NewCamera) {
-        UpdatePreviewForCamera(*NewCamera);
-    };
-}
-
-void SMyPanel::UpdatePreviewForCamera(const FString& CameraName)
-{
-    if (CurrentFootageData)
-    {
-        // 根据用户选择的相机名称，可能需要在FootageCaptureData中查找对应的数据源
-        // 然后创建或更新预览
-        USceneComponent* Preview = MetaHumanCaptureDataUtils::CreatePreviewComponent(CurrentFootageData, PreviewOwner);
-        // ... 更新UI或场景
-    }
-}
+// 当外部捕获数据源变化时，通知控件更新
+CameraCombo->HandleSourceDataChanged(FootageCaptureData, AudioWave, true);
 ```
 
 ## Demo 示例
 
-一个最小化的示例，展示如何在编辑器工具中集成 `MetaHumanCaptureDataEditor` 的功能。
-
 ```cpp
-// MyMetaHumanTool.h
+// MetaHumanPreviewActor.h
 #pragma once
+#include "GameFramework/Actor.h"
+#include "MetaHumanPreviewActor.generated.h"
 
-#include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "CaptureDataUtils.h"
-#include "SMetaHumanCameraCombo.h"
-
-class UFootageCaptureData;
+class UCaptureData;
 class USceneComponent;
 
-UCLASS(BlueprintType)
-class UMyMetaHumanTool : public UObject
+UCLASS()
+class AMetaHumanPreviewActor : public AActor
 {
     GENERATED_BODY()
-
 public:
+    AMetaHumanPreviewActor();
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MetaHuman")
-    TObjectPtr<UFootageCaptureData> FootageData;
+    TObjectPtr<UCaptureData> CaptureDataAsset;
 
     UFUNCTION(BlueprintCallable, Category = "MetaHuman")
-    void CreateDataPreview();
+    void UpdatePreview();
 
-    UFUNCTION(BlueprintCallable, Category = "MetaHuman")
-    void UpdateCameraSelection(const FString& SelectedCamera);
+protected:
+    virtual void OnConstruction(const FTransform& Transform) override;
 
 private:
     UPROPERTY()
-    TObjectPtr<USceneComponent> CurrentPreviewComponent;
-    FString CurrentCamera;
+    TObjectPtr<USceneComponent> PreviewRoot;
 };
-```
 
-```cpp
-// MyMetaHumanTool.cpp
-#include "MyMetaHumanTool.h"
-#include "CaptureData/FootageCaptureData.h"
+// MetaHumanPreviewActor.cpp
+#include "MetaHumanPreviewActor.h"
+#include "CaptureDataUtils.h"
+#include "Engine/CaptureData.h"
 
-void UMyMetaHumanTool::CreateDataPreview()
+AMetaHumanPreviewActor::AMetaHumanPreviewActor()
 {
-    if (FootageData)
-    {
-        // 销毁旧的预览组件（如果存在）
-        if (CurrentPreviewComponent)
-        {
-            CurrentPreviewComponent->DestroyComponent();
-            CurrentPreviewComponent = nullptr;
-        }
-
-        // 使用工具模块创建新的预览组件
-        // 注意：此处需要一个合适的UObject作为Outer，这里使用this示例。
-        // 在实际编辑器工具中，Outer可能是工具窗口的宿主对象。
-        CurrentPreviewComponent = MetaHumanCaptureDataUtils::CreatePreviewComponent(FootageData, this);
-        if (CurrentPreviewComponent)
-        {
-            // 设置位置等...
-            UE_LOG(LogTemp, Log, TEXT("Preview component created for camera: %s"), *CurrentCamera);
-        }
-    }
+    PrimaryActorTick.bCanEverTick = false;
+    PreviewRoot = CreateDefaultSubobject<USceneComponent>(TEXT("PreviewRoot"));
+    RootComponent = PreviewRoot;
 }
 
-void UMyMetaHumanTool::UpdateCameraSelection(const FString& SelectedCamera)
+void AMetaHumanPreviewActor::OnConstruction(const FTransform& Transform)
 {
-    CurrentCamera = SelectedCamera;
-    // 通常，相机选择更改后，需要重新生成预览以显示对应相机的数据
-    CreateDataPreview();
+    Super::OnConstruction(Transform);
+    UpdatePreview();
+}
+
+void AMetaHumanPreviewActor::UpdatePreview()
+{
+    // 清除旧的预览组件
+    if (PreviewRoot->GetNumChildrenComponents() > 0)
+    {
+        PreviewRoot->DestroyChildren();
+    }
+
+    if (CaptureDataAsset)
+    {
+        // 使用工具函数创建新的预览组件
+        USceneComponent* NewPreviewComp = MetaHumanCaptureDataUtils::CreatePreviewComponent(CaptureDataAsset, this);
+        if (NewPreviewComp)
+        {
+            NewPreviewComp->AttachToComponent(PreviewRoot, FAttachmentTransformRules::KeepRelativeTransform);
+        }
+    }
 }
 ```
 
 ## 模块依赖
 
-使用 `MetaHumanCaptureDataEditor` 模块，你的 `Build.cs` 文件需要声明对以下模块的依赖：
-
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanImageViewerEditor` | 提供图像查看相关的编辑器功能，是本模块的直接依赖。 |
+| `MetaHumanCoreTechLib` | MetaHuman 核心技术库，包含底层算法和数据结构 |
+| `MetaHumanSDKEditor` | MetaHuman SDK 的编辑器部分，提供资产编辑和管理功能 |
+| `ControlRigDeveloper` | ControlRig 开发工具，用于面部骨骼动画的求解和驱动 |
+| `MetaHumanImageViewerEditor` | 提供图像查看器的编辑器功能，用于预览捕获的视频帧 |
 
 ## 维护状态
 
@@ -205,19 +177,21 @@ void UMyMetaHumanTool::UpdateCameraSelection(const FString& SelectedCamera)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能，以避免冲突。 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵。 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 当进行身体追踪时，过滤掉特定的可视化对象。 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 允许为已有的网格体导出动画序列。 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 的缓存相关问题。 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能，避免冲突 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色上的渲染伪影问题 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在身体追踪时过滤可视化对象，提升性能或清晰度 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为现有网格体导出动画序列，增强工作流灵活性 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题，提升编辑器稳定性 |
 
 ### 维护评价
 
-该插件由 Epic Games 官方维护，从其近期的 Git 历史（尽管提供的日期在2026年，可能为示例或特定分支）来看，它处于**活跃维护**状态。更新频繁，且集中于功能完善（如身体追踪支持）和缺陷修复（渲染瑕疵、缓存问题），表明这是一个正在持续开发和改进的核心工具链。
-
-作为 MetaHuman 生态的关键组成部分，它被强烈推荐用于所有涉及高质量面部动画制作的项目。需要注意的是，该插件可能依赖于额外的 MetaHuman 资产或外部服务（如用于处理深度数据的服务），使用时请参照 Epic 官方的完整指南。
+-   **活跃维护**：从最近的提交记录看，该插件在 2026 年 5 月仍有频繁的功能更新和 Bug 修复（涉及动画导出、渲染、追踪等核心功能）。
+-   **重要性高**：作为 Epic 官方 MetaHuman 工具链的核心组成部分，其维护优先级很高。
+-   **推荐使用**：如果你的项目使用了 MetaHuman 角色并需要制作面部动画，这是官方推荐且持续维护的首选工具。
+-   **注意**：该插件规模庞大（544个源文件），学习曲线较陡，且可能依赖于特定的 MetaHuman 资产格式和工作流。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureDataEditor)
-- [官方文档](https://docs.unrealengine.com/en-US/working-with-media/eye-tracked-morph-targets-in-unreal-engine/) (MetaHuman 相关，非此模块专用，仅供参考)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+-   官方文档：无（DocsURL 为空）
+-   测试用例：未在分析中提供路径，通常位于插件源码的 `Tests` 目录下。

@@ -4,65 +4,113 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 元人类动画师 |
+| 中文名 | MetaHuman 动画器 |
 | 分类 | MetaHuman |
 | 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（工具、资产） |
+| 包含内容 | ✅ 有（蓝图资产、动画资源） |
 | 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2021-06-01 |
-| 年龄标签 | 🆕（约 5 年） |
+| 创建时间 | unknown |
+| 年龄标签 |  |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是一个综合性的工具集，旨在将真实世界的视频素材（如智能手机录制的短视频）转化为驱动虚幻引擎中高保真MetaHuman角色面部动画的关键数据。其核心功能并非简单的“换脸”，而是通过复杂的计算机视觉和机器学习算法，从单目视频中提取面部运动信息，并将其精确地映射到MetaHuman的控制绑定（Control Rig）上，从而生成可直接在虚幻引擎中编辑和使用的动画数据。它解决了从表演捕捉到高质量数字人动画制作管线中的关键一环，大幅降低了创建逼真数字人角色的成本和难度。
+MetaHuman Animator 是一个集成的工具包，旨在将真实的演员面部表演数据转化为超逼真数字人（MetaHuman）的动画。它不仅仅是一个工具集合，而是一套完整的工作流程，涵盖了从捕捉原始表演数据（如视频）、进行面部追踪与拟合、求解面部动画，到最终在引擎中应用这些动画的全过程。其核心目标是降低创建高质量、个性化数字人面部动画的门槛，使其可用于影视、游戏、虚拟直播等领域。
 
 ## 使用场景
 
-- **数字人内容创作**：使用智能手机为MetaHuman角色录制面部表演，并快速生成动画，用于虚拟主播、短视频或广告。
-- **游戏开发**：为游戏中的过场动画或对话系统，批量生成高质量的面部动画序列。
-- **影视虚拟制片**：将现场演员的表演实时或离线地应用到虚拟角色上，用于预演或最终渲染。
-- **快速原型与迭代**：快速验证角色动画方案，无需昂贵的动作捕捉设备。
-- **基于音频的动画生成**：结合`MetaHumanSpeech2Face`模块，可以从语音音频直接生成对应的面部动画。
+-   **影视与虚拟制作**：使用 iPhone 或其他深度摄像机捕捉演员面部表演，快速生成与演员高度相似的数字替身动画。
+-   **游戏开发**：为游戏角色创建基于真实表演的面部动画，提升过场动画的叙事真实感。
+-   **虚拟主播/偶像**：驱动 MetaHuman 角色进行实时的面部表情表演。
 
-## 模块列表
+## 蓝图用法
 
-以下为插件包含的主要模块及其功能概述：
+此插件主要通过编辑器中的工具栏、资产编辑器和上下文菜单提供蓝图/编辑器工作流。核心功能被封装为独立的子模块。
 
-| 模块 | 说明 |
+### 核心工作流节点（推测）
+
+| 工具/功能 | 说明 | 可能所在模块 |
+|---|---|---|
+| **创建 MetaHuman 身份** | 从照片或扫描数据创建数字人身份模板 | `MetaHumanIdentity`, `MetaHumanIdentityEditor` |
+| **导入表演数据** | 导入 iPhone 深度视频、音频或其他捕捉数据 | `MetaHumanCaptureSource`, `MetaHumanFootageIngest` |
+| **面部追踪与拟合** | 对导入的视频数据进行面部关键点追踪和网格拟合 | `MetaHumanFaceContourTracker`, `MetaHumanFaceFittingSolver` |
+| **动画求解** | 将追踪到的面部数据转换为 MetaHuman 骨骼的动画控制数据 | `MetaHumanFaceAnimationSolver` |
+| **应用动画** | 将生成的动画应用到场景中的 MetaHuman 角色 | `MetaHumanPerformance`, `MetaHumanSequencer` |
+
+### 使用示例（编辑器操作描述）
+
+1.  **创建身份**：在 Content Browser 中右键，选择 `Create MetaHuman Identity`。
+2.  **捕捉数据**：使用 `MetaHuman Capture` 工具捕获 iPhone 的 TrueDepth 相机视频。
+3.  **处理数据**：在 MetaHuman Editor 窗口中，依次执行 `Track Contours` -> `Fit Face` -> `Solve Animation`。
+4.  **导出与应用**：将求解出的动画资产（如 `Level Sequence`）拖拽到场景中已放置的 MetaHuman 角色上。
+
+## C++ 用法
+
+对于开发者，此插件提供了一系列 C++ 接口用于深度定制或集成到自动化管线中。
+
+### 头文件引入
+
+根据你的需求，引入对应子模块的头文件，例如：
+```cpp
+// 引入核心动画求解接口
+#include "MetaHumanFaceAnimationSolver/Public/IMetaHumanFaceAnimationSolverModule.h"
+// 引入性能数据处理
+#include "MetaHumanPerformance/Public/MetaHumanPerformance.h"
+```
+
+### 基本用法
+
+由于插件规模庞大，具体的 API 用法需参考各子模块文档。通用模式如下：
+```cpp
+// 示例：获取 MetaHuman 面部动画求解模块的接口
+// 路径：Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceAnimationSolver/...
+IMetaHumanFaceAnimationSolverModule* SolverModule = FModuleManager::GetModulePtr<IMetaHumanFaceAnimationSolverModule>(TEXT("MetaHumanFaceAnimationSolver"));
+if (SolverModule)
+{
+    // 使用模块接口进行操作
+    // ...
+}
+```
+
+## Demo 示例
+
+由于此插件包含庞大的编辑器工具和资产流程，提供一个可编译的最小 C++ 示例不切实际且可能无意义。建议：
+1.  使用 Epic Games 提供的官方 MetaHuman 示例项目。
+2.  参考插件内各个子模块的测试用例（如果存在）。
+3.  在编辑器中按照上述“蓝图/编辑器用法”流程进行操作实践。
+
+## 模块依赖
+
+要使用此插件或在你的模块中依赖其功能，除了标准的 Core/Engine 模块外，你可能需要依赖以下独特模块：
+
+| 模块 | 用途 |
 |---|---|
-| **MetaHumanCore** | 核心功能模块，提供基础工具、类型定义和运行时支持。 |
-| **MetaHumanPipeline** | 定义并处理捕捉到渲染的整个数据处理管线。 |
-| **MetaHumanCaptureSource** | 集成各种视频/深度数据源，提供统一的输入接口。 |
-| **MetaHumanCaptureProtocolStack** | 实现与外部设备（如iPhone LiDAR）进行数据通信的协议栈。 |
-| **MetaHumanFaceContourTracker** | 核心算法模块，负责从视频帧中检测和追踪面部关键点轮廓。 |
-| **MetaHumanFaceAnimationSolver** | 基于追踪数据，求解驱动MetaHuman面部的动画参数（Blendshapes）。 |
-| **MetaHumanFaceFittingSolver** | 负责将MetaHuman的头部网格与追踪到的面部拓扑进行精确拟合对齐。 |
-| **MetaHumanDepthGenerator** | 从单目RGB视频生成或估算深度信息，辅助3D重建。 |
-| **MetaHumanIdentity** | 管理MetaHuman数字身份资产，包括头部拓扑、材质和绑定信息。 |
-| **MetaHumanPerformance** | 存储和管理一次完整的捕捉会话（Performance）数据，包含原始和最终动画数据。 |
-| **MetaHumanFootageIngest** | 处理和导入原始视频素材（Footage）数据。 |
-| **MetaHumanSpeech2Face** | 利用语音音频生成对应面部动画的AI模型接口。 |
-| **MetaHumanBatchProcessor** | 提供批量处理多个捕捉任务或动画的功能。 |
-| **MetaHumanPlatform** | 处理平台相关的特定功能（如特定设备支持）。 |
-| **MetaHumanConfig** | 管理插件的全局配置、参数和预设。 |
-| **MetaHumanSequencer** | 集成虚幻引擎的定序器，支持在时间轴上编辑和预览捕捉的动画。 |
-| **MeshTrackerInterface** | 定义网格追踪器的抽象接口，用于不同追踪后端的实现。 |
-| **MetaHumanCaptureUtils** | 提供通用的捕捉和数据处理工具函数。 |
-| **MetaHumanCoreEditor** | 编辑器专用核心功能，包含UI、资产编辑等。 |
-| **MetaHumanConfigEditor** | 配置资产的编辑器界面和逻辑。 |
-| **MetaHumanIdentityEditor** | MetaHuman Identity资产的编辑器工具和资产工厂。 |
-| **MetaHumanPerformanceEditor** | Performance资产的编辑器工具，用于预览和微调动画。 |
-| **MetaHumanFaceContourTrackerEditor** | 轮廓追踪器的编辑器设置和调试工具。 |
-| **MetaHumanFaceFittingSolverEditor** | 面部拟合求解器的编辑器参数调整工具。 |
-| **MetaHumanFaceAnimationSolverEditor** | 面部动画求解器的编辑器界面和调试可视化。 |
-| **MetaHumanCaptureDataEditor** | 捕捉数据资产的编辑器查看器。 |
-| **MetaHumanImageViewerEditor** | 提供图像序列查看器的编辑器窗口，用于调试追踪过程。 |
-| **MetaHumanControlsConversionTest** | 控制参数转换功能的测试模块。 |
+| `SkeletalMeshUtilitiesCommon` | 提供骨骼网格体相关的通用工具函数 |
+| `ControlRigDeveloper` | 与 Control Rig（控制系统）开发相关的功能 |
+| `MetaHumanCaptureDataEditor` | 用于编辑和处理捕捉数据 |
+| `MetaHumanSDKEditor` | MetaHuman SDK 的编辑器部分，提供核心身份资产操作 |
+
+## 维护状态
+
+### 近期更新
+
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染伪影 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为已有网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复序列器缓存问题 |
+
+### 维护评价
+
+-   **活跃维护**：根据最新的 Git 记录，该插件在过去一周内有多次实质性功能更新和 Bug 修复（如身体追踪集成、渲染修复、导出优化），表明 Epic Games 正在**积极维护**此核心数字人工具。
+-   **推荐使用**：作为官方出品的核心数字人创作与动画工作流插件，其稳定性和功能完整性有保障，是从事数字人开发项目的必备工具。
+-   **注意事项**：由于模块众多且功能专业，学习曲线较陡。建议从官方文档和示例项目入手。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档](https://docs.unrealengine.com/en-US/AnimatingObjects/SkeletalMeshAnimation/Personas/Tools/MetaHumanAnimator/)
-- [测试用例]() (路径待补充)
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+-   [官方文档]() (暂无)
+-   [测试用例]() (可能位于 `Engine/Tests/MetaHuman/` 或各子模块内)

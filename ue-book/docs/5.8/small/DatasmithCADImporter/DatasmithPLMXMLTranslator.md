@@ -4,7 +4,7 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | CAD文件导入工具 |
+| 中文名 | CAD文件工具集 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
@@ -16,117 +16,213 @@
 
 ## 用途
 
-该插件是 Epic Games 开发的一套企业级 CAD 文件导入工具集。它并非一个单一的导入器，而是一个**模块化框架**，用于支持各种 CAD 文件格式（如 CATIA, NX, SolidWorks, Rhino, PLM XML 等）的转换和导入。其核心价值在于：
+这个插件是 UE5 Datasmith 框架中用于导入专业 CAD（计算机辅助设计）文件的核心工具集。它并非一个独立的格式处理器，而是提供了一整套基础设施、库和翻译器模块，用于解析来自不同 CAD 软件（如 CATIA, SolidWorks, NX, Inventor, PLMXML 等）的复杂几何体和场景结构，并将其转换为 Unreal Engine 可使用的静态网格、材质和场景层级数据。
 
-1.  **统一转换层**：通过 `DatasmithCADTranslator` 模块，将不同格式的 CAD 文件转换为 Datasmith 可理解的中间格式，再由 Datasmith 管线导入到 Unreal Engine。
-2.  **几何处理**：包含 `CADKernelSurface`, `ParametricSurface` 等模块，负责处理 CAD 软件中常见的参数化曲面、B-Rep 等高级几何数据，并将其转换为 UE 可使用的网格（Mesh）。
-3.  **数据接口**：`CADInterfaces` 和 `WireInterface` 等模块封装了与特定 CAD 软件内核（如 TechSoft, Alias）的交互接口。
-4.  **分布式处理**：`DatasmithDispatcher` 模块支持将复杂的 CAD 模型转换任务分发到多个工作进程（或机器），以提升大型模型的导入效率。
+它主要解决以下问题：
+1.  **格式繁杂**：工业 CAD 软件格式众多，且通常包含复杂的参数化曲面、装配体和产品结构（BOM），UE 原生无法直接读取。
+2.  **几何转换**：将 CAD 格式中的精确几何表示（B-Rep, 参数化曲面）转换为游戏引擎所需的三角面片（Polygon）网格。
+3.  **场景映射**：解析 CAD 文件中的装配体层级、组件实例、材料属性等信息，并正确映射到 UE 的 Actor/Component 结构。
 
-简单来说，这个插件解决了将**复杂、高精度的工业 CAD 模型**高效、准确地导入到 Unreal Engine 进行可视化、仿真或培训应用的问题。它允许开发者在 UE 中直接使用来自工程团队的原始 CAD 数据，而无需先在其他 DCC 软件中进行手动转换和拓扑优化。
+该插件默认禁用 (`EnabledByDefault: false`)，因为它依赖外部的第三方商业库（如 TechSoft, OpenNurbs）来处理核心的 CAD 文件解析，这些库需要用户自行获取并配置。
 
 ## 使用场景
 
--   你是一名汽车或航空领域的工程师，需要在 Unreal Engine 中创建一辆新车的数字孪生模型，而原始数据是 CATIA 或 NX 格式 → 使用此插件直接导入 CAD 文件。
--   你正在为大型工厂或建筑项目制作交互式培训模拟器，需要导入 Revit 或 SolidWorks 设计的精确设备模型 → 使用此插件，并可能利用其分布式处理能力加速大型装配体的导入。
--   你是一名技术美术，需要将来自不同 CAD 软件（如 Rhino, Alias）的工业设计模型统一导入 UE，并保持其参数化曲面特征 → 使用此插件，它内置了对不同格式的专用翻译器（`DatasmithOpenNurbsTranslator`, `DatasmithWireTranslator`）。
--   你需要在运行时动态加载 CAD 数据，或对导入的模型进行拓扑优化（如减面） → 该插件提供了 `LoadStaticMesh` 等运行时接口，以及 `FDatasmithTessellationOptions` 来控制网格生成的质量。
+-   你需要将来自 SolidWorks、CATIA、NX、Inventor 等 CAD 软件的三维模型（`.sldprt`, `.catpart`, `.prt`, `.ipt` 等）导入到 Unreal Engine 中进行可视化、培训或数字孪生项目。
+-   你拥有 PLMXML 格式的产品生命周期管理数据，需要将其中的产品结构、几何和元数据完整地导入引擎。
+-   你需要导入复杂的、包含参数化曲面（NURBS）的 CAD 模型，而不是简单的网格文件。
+-   你的项目属于汽车、航空、建筑或工业制造领域，需要处理上游设计部门提供的原始 CAD 数据。
 
 ## 蓝图用法
 
-该插件主要通过 **Datasmith 导入流程** 使用，在蓝图中直接暴露的节点有限。其核心功能在编辑器导入时自动调用。以下是通过模块公开接口可能进行的操作：
+此插件主要作为 Datasmith 导入流程的底层引擎存在，其核心功能（解析 CAD 文件、转换几何）均在 C++ 层实现，**没有直接暴露给蓝图使用的函数节点**。
+
+用户通过 **Datasmith 导入器**（`File -> Import`）或 **Datasmith Scene Actor**（蓝图中）来使用该插件的能力。在导入文件时，如果文件格式受支持，UE 会自动调用此插件中对应的翻译器模块。
 
 ### 核心节点
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `IDatasmithPlmXmlTranslatorModule::Get()` | 获取 PLMXML 翻译器模块的单例，用于检查其可用性或进行高级配置（通常由编辑器自动调用） | `IDatasmithPlmXmlTranslatorModule` |
+无。所有操作都在导入过程中由引擎自动调用。
 
-**注意**：更常见的用法是通过 Datasmith 的标准导入界面（如“导入”按钮或 `UDatasmithImportFactory`）来使用此插件，蓝图中通常不需要直接与这些模块交互。
+### 使用示例（蓝图描述）
+
+1.  在内容浏览器中，右键选择 `Import`。
+2.  浏览并选择一个支持的 CAD 文件（如 `.catproduct`, `.sldasm`）。
+3.  在弹出的 Datasmith 导入选项中，可以配置网格化参数（细分精度、光滑组等），这些选项会传递给底层的 CAD 翻译器。
+4.  导入完成后，场景和网格资产将出现在内容浏览器中，可以像普通资产一样拖拽到关卡中使用。
 
 ## C++ 用法
 
 ### 头文件引入
 
-要使用特定翻译器（如 PLMXML），你需要包含其模块头文件：
+由于插件模块众多，你需要根据具体需求引入。通常，使用者与 Datasmith 翻译器交互，而不是直接调用底层 CAD 接口。
 
 ```cpp
+// 引入 PLMXML 翻译器模块
 #include "DatasmithPlmXmlTranslatorModule.h"
 ```
 
 ### 基本用法
 
-虽然插件通常由编辑器自动调用，但你可以在 C++ 中直接使用其翻译器接口进行编程导入。以下示例展示了如何检查一个翻译器模块是否可用（基于提供的头文件）。
+以下示例展示了如何在 C++ 中检查 `DatasmithPLMXMLTranslator` 模块是否可用并获取其引用。这通常用于在程序化导入流程中验证功能是否就绪。
+（来源：`Source/DatasmithPLMXMLTranslator/Public/DatasmithPlmXmlTranslatorModule.h`）
 
 ```cpp
-// 来源: Private/DatasmithPlmXmlTranslator.h 的简化使用
-// 检查 DatasmithPlmXmlTranslator 模块是否已加载
+#include "DatasmithPlmXmlTranslatorModule.h"
+
+// 检查 PLMXML 翻译器模块是否已加载
 if (IDatasmithPlmXmlTranslatorModule::IsAvailable())
 {
-    // 获取模块引用，可以用于进一步的操作（如获取其内部翻译器实例）
+    // 获取模块引用，通常用于触发其注册过程或访问高级功能
     IDatasmithPlmXmlTranslatorModule& PlmXmlModule = IDatasmithPlmXmlTranslatorModule::Get();
-    UE_LOG(LogTemp, Log, TEXT("PLMXML Translator Module is available."));
+    // 此处模块引用可用于进一步操作，但其主要作用是确保模块被加载，使翻译器对 Datasmith 可见。
 }
 else
 {
-    UE_LOG(LogTemp, Warning, TEXT("PLMXML Translator Module is not loaded. Ensure the DatasmithCADImporter plugin is enabled."));
+    UE_LOG(LogTemp, Warning, TEXT("DatasmithPLMXMLTranslator module is not available."));
 }
 ```
 
 ### 进阶用法
 
-在插件内部，`FDatasmithPlmXmlTranslator` 类展示了如何通过 `IDatasmithTranslator` 接口实现一个完整的文件导入流程。以下是其生命周期的关键步骤：
+插件的核心是 `IDatasmithTranslator` 接口的各种实现。`FDatasmithPlmXmlTranslator` 是其中一个实现，展示了标准翻译器的生命周期。
+（来源：`Source/DatasmithPLMXMLTranslator/Private/DatasmithPlmXmlTranslator.h`）
 
-1.  **初始化**：调用 `Initialize` 设置翻译器的能力（支持哪些文件格式）。
-2.  **加载场景**：调用 `LoadScene` 解析文件（如 PLM XML 文件），将其内容转换为 `IDatasmithScene` 对象。
-3.  **加载网格**：当场景中的网格元素被请求时，调用 `LoadStaticMesh` 来实际生成网格数据（`FDatasmithMeshElementPayload`），这个过程会利用 `FDatasmithPlmXmlImporter` 和内部的 `FPlmXmlMeshLoader`。
-4.  **获取/设置选项**：通过 `GetSceneImportOptions` 和 `SetSceneImportOptions` 来配置细分曲面的质量（`UDatasmithCommonTessellationOptions`）等参数。
-5.  **卸载**：调用 `UnloadScene` 释放资源。
+```cpp
+// 假设你有一个 FDatasmithPlmXmlTranslator 的实例 (Translator)
+// 这通常由 Datasmith 导入管理器内部创建和管理。
+
+// 1. 初始化翻译器并查询其能力
+FDatasmithTranslatorCapabilities Capabilities;
+Translator->Initialize(Capabilities);
+
+// 2. 检查源文件是否支持
+FDatasmithSceneSource Source;
+Source.SetSourceFile(TEXT("C:/Models/Assembly.plmxml"));
+if (!Translator->IsSourceSupported(Source))
+{
+    return; // 文件不受支持
+}
+
+// 3. 加载场景
+TSharedRef<IDatasmithScene> Scene = MakeShared<FDatasmithScene>();
+if (!Translator->LoadScene(Scene))
+{
+    return; // 加载失败
+}
+
+// 4. (可选) 获取并设置导入选项
+TArray<TObjectPtr<UDatasmithOptionsBase>> ImportOptions;
+Translator->GetSceneImportOptions(ImportOptions);
+// 修改选项...
+Translator->SetSceneImportOptions(ImportOptions);
+
+// 5. 遍历场景中的网格元素并加载它们
+for (int32 i = 0; i < Scene->GetMeshesCount(); ++i)
+{
+    TSharedRef<IDatasmithMeshElement> MeshElement = Scene->GetMesh(i);
+    FDatasmithMeshElementPayload MeshPayload;
+    if (Translator->LoadStaticMesh(MeshElement, MeshPayload))
+    {
+        // 使用 MeshPayload 中的网格数据创建 UStaticMesh 等资产
+    }
+}
+
+// 6. 使用完毕后卸载
+Translator->UnloadScene();
+```
 
 ## Demo 示例
 
-以下是一个简化的示例，演示如何在插件模块内部注册并使用一个自定义翻译器。实际使用中，翻译器的注册和调用由 Datasmith 核心系统管理。
+以下是一个展示如何使用 `DatasmithPLMXMLTranslator` 模块的最小示例。注意，这主要用于理解模块接口，实际项目中通常由引擎的导入流程自动完成。
 
+**DatasmithPlmXmlDemoActor.h**
 ```cpp
-// MyCustomTranslatorModule.h
 #pragma once
-#include "Modules/ModuleManager.h"
+#include "GameFramework/Actor.h"
+#include "DatasmithPlmXmlDemoActor.generated.h"
 
-class IMyCustomTranslatorModule : public IModuleInterface
+UCLASS()
+class ADatasmithPlmXmlDemoActor : public AActor
 {
+	GENERATED_BODY()
 public:
-    static inline const TCHAR* ModuleName = TEXT("MyCustomTranslatorModule");
-    static IMyCustomTranslatorModule& Get();
-    static bool IsAvailable();
+	ADatasmithPlmXmlDemoActor();
+
+	// 要导入的 PLMXML 文件路径
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Datasmith Demo")
+	FFilePath PlmXmlFile;
+
+	// 尝试加载 PLMXML 场景
+	UFUNCTION(BlueprintCallable, Category = "Datasmith Demo")
+	bool LoadPlmXmlScene();
+
+private:
+	// 存储加载的场景
+	TSharedPtr<IDatasmithScene> LoadedScene;
 };
+```
 
-// MyCustomTranslatorModule.cpp
-#include "MyCustomTranslatorModule.h"
+**DatasmithPlmXmlDemoActor.cpp**
+```cpp
+#include "DatasmithPlmXmlDemoActor.h"
+#include "DatasmithPlmXmlTranslatorModule.h"
+#include "DatasmithPlmXmlTranslator.h" // 注意：这是私有头文件，此处仅为演示
 
-IMyCustomTranslatorModule& IMyCustomTranslatorModule::Get()
+ADatasmithPlmXmlDemoActor::ADatasmithPlmXmlDemoActor()
 {
-    return FModuleManager::LoadModuleChecked<IMyCustomTranslatorModule>(ModuleName);
+	PrimaryActorTick.bCanEverTick = false;
 }
 
-bool IMyCustomTranslatorModule::IsAvailable()
+bool ADatasmithPlmXmlDemoActor::LoadPlmXmlScene()
 {
-    return FModuleManager::Get().IsModuleLoaded(ModuleName);
-}
+	if (!PlmXmlFile.FilePath.IsEmpty() && IDatasmithPlmXmlTranslatorModule::IsAvailable())
+	{
+		// 创建翻译器实例
+		TSharedRef<FDatasmithPlmXmlTranslator> Translator = MakeShared<FDatasmithPlmXmlTranslator>();
+		
+		// 初始化
+		FDatasmithTranslatorCapabilities Caps;
+		Translator->Initialize(Caps);
 
-// 在你的 .uplugin 中注册该模块，并在模块启动时向 Datasmith 注册你的自定义翻译器。
-// 具体实现需参照 Datasmith 的扩展文档。
+		// 设置源并检查
+		FDatasmithSceneSource Source;
+		Source.SetSourceFile(PlmXmlFile.FilePath);
+		if (!Translator->IsSupported(Source))
+		{
+			UE_LOG(LogTemp, Error, TEXT("File not supported: %s"), *PlmXmlFile.FilePath);
+			return false;
+		}
+
+		// 加载场景
+		LoadedScene = MakeShared<FDatasmithScene>();
+		if (!Translator->LoadScene(LoadedScene.ToSharedRef()))
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to load scene from: %s"), *PlmXmlFile.FilePath);
+			return false;
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("Successfully loaded PLMXML scene with %d meshes"), LoadedScene->GetMeshesCount());
+		
+		// 注意：此演示未实际创建 UStaticMesh 资产。实际应用需使用 FDatasmithSceneExporter 或类似工具。
+		// 记得在适当时机调用 Translator->UnloadScene();
+		return true;
+	}
+	return false;
+}
 ```
 
 ## 模块依赖
 
-此插件的模块依赖高度分散，每个翻译器模块依赖其对应的外部 CAD 内核库。以下是一些**关键的、非标准**的依赖：
+要使用此插件，你的项目模块通常需要依赖 **Datasmith** 核心模块。具体需要哪些取决于你交互的层面。
 
 | 模块 | 用途 |
 |---|---|
-| `TechSoft` (外部库) | 由 `CADInterfaces` 模块依赖，用于支持多种主流 CAD 格式（如 CATIA, NX, STEP, IGES 等）的核心转换库。 |
-| `OpenNurbs6` (外部库) | 由 `DatasmithOpenNurbsTranslator` 模块依赖，用于支持 Rhino 3DM 文件格式的解析。 |
+| `TechSoft` | 底层 CAD 文件读取库（需要单独配置） |
+| `OpenNurbs6` | 底层 OpenNurbs 库，用于读取 Rhino 文件格式 |
+| `DatasmithCore` | Datasmith 核心场景、元素和翻译器接口定义 |
+| `DatasmithTranslator` | 翻译器基类和导入管理器 |
+| `DatasmithDispatcher` | 多进程/线程调度，用于并行处理 CAD 网格 |
 
-**注意**：这些依赖项通常是预编译的二进制库（如 .lib, .dll），在插件的 `Source` 目录或第三方目录下提供。普通用户不需要直接编译这些库，但需要确保它们在运行时可用。
+**简化依赖**：如果你的模块只需要触发导入流程或与导入后的资产交互，通常只需依赖 `DatasmithCore` 和 `DatasmithRuntime`。
 
 ## 维护状态
 
@@ -134,21 +230,222 @@ bool IMyCustomTranslatorModule::IsAvailable()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下将双精度常量截断为浮点数时产生的编译警告。 |
-| 2026-05-13 | `889b1ce2` | Added logic to allow Wire translator to work even if Alias 2027 is installed | 增加了逻辑，使 Wire 翻译器在安装了 Alias 2027 的环境下也能正常工作。 |
-| 2026-05-13 | `52c91865` | Updated TechSoft to 2026.3 | 将 TechSoft 库更新至 2026.3 版本。 |
-| 2026-05-12 | `f8fbdc1f` | Updated version of DatasmithCAD cache | 更新了 DatasmithCAD 缓存版本。 |
-| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 使函数类型转换警告在 MSVC 和 Clang 编译器之间可移植。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下双精度常量截断为浮点数的编译警告。 |
+| 2026-05-13 | `889b1ce2` | Added logic to allow Wire translator to work even if Alias 2027 is installed | 增强 Wire 翻译器兼容性，支持 Alias 2027。 |
+| 2026-05-13 | `52c91865` | Updated TechSoft to 2026.3 | 将核心 CAD 库 TechSoft 升级至 2026.3 版本。 |
+| 2026-05-12 | `f8fbdc1f` | Updated version of DatasmithCAD cache | 更新了 CAD 缓存的版本号。 |
+| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 修复跨编译器（MSVC/Clang）的类型转换警告，提高代码可移植性。 |
 
 ### 维护评价
 
--   **活跃维护**：该插件在最近（2026年5月）仍有**频繁且实质性**的更新，包括底层CAD内核库（TechSoft, Alias）的兼容性更新和编译修复，表明 Epic Games 正在**积极维护**。
--   **企业级插件**：作为 `Engine/Plugins/Enterprise` 目录下的插件，它面向专业用户，更新通常与下游CAD软件的新版本（如Alias 2027）保持同步。
--   **默认禁用**：由于其较大的体积和特定的使用场景，插件默认未启用，需要用户手动在插件列表中激活。
--   **推荐使用**：对于有工业CAD数据导入需求的项目，**强烈推荐**使用此插件。它是官方提供的、最完整和稳定的CAD导入解决方案。建议关注其更新日志，特别是与目标CAD软件版本相关的更新。
+-   **活跃维护**：作为 Epic Games 官方支持的企业级功能（Enterprise 标签），该插件一直处于持续的维护和功能增强中。从 Git 历史看，更新非常频繁（最近更新在 2026 年 5 月）。
+-   **核心依赖更新**：维护工作紧跟其底层第三方库（如 TechSoft）的更新，确保对新版本 CAD 软件格式的支持。
+-   **代码质量**：近期提交集中于编译警告修复、跨编译器兼容性提升和依赖版本升级，表明代码库处于健康、持续改进的状态。
+-   **注意事项**：该插件**默认禁用** (`EnabledByDefault: false`)，且依赖外部商业库（TechSoft, OpenNurbs），用户需要自行获取这些库并正确配置才能使用。这是其使用门槛。
+-   **推荐使用**：对于有工业 CAD 导入需求的项目，这是 **官方推荐且唯一受支持** 的解决方案。如果你需要处理专业的 CAD 格式，这是必须启用的插件。
 
 ## 相关链接
 
 -   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithCADImporter)
 -   [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/Datasmith/)
--   [测试用例]（由于是企业级插件，测试用例可能不公开，或位于内部引擎测试目录中，无法提供公开链接）
+-   [测试用例]（暂无公开测试用例路径）
+
+---
+# Datasmith PLMXML Translator
+
+> （子模块文档）专门处理 PLMXML 格式文件的 Datasmith 翻译器模块。
+
+| 属性 | 值 |
+|---|---|
+| 中文名 | PLMXML翻译器 |
+| 分类 | Importers |
+| 默认启用 | ❌ 否 |
+| 包含内容 | ❌ 无 |
+| 模块 | `DatasmithPLMXMLTranslator` (Runtime) |
+| 实验性 | 否 |
+| 创建时间 | 2019-10-04 |
+| 年龄标签 | 👴 老古董（约 7 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithCADImporter/Source/DatasmithPLMXMLTranslator) | |
+
+## 用途
+
+`DatasmithPLMXMLTranslator` 模块是 `DatasmithCADImporter` 插件中的一个专用翻译器。它的唯一职责是解析 **PLMXML** 格式文件。PLMXML 是一种基于 XML 的开放标准，常用于在 PLM（产品生命周期管理）系统（如 Siemens Teamcenter）中交换产品结构、几何、元数据和 3D 视图信息。
+
+此模块的作用是将 PLMXML 文件中的数据转换为 Datasmith 能够理解的通用场景（`IDatasmithScene`）和网格（`IDatasmithMeshElement`）数据，从而驱动整个导入流程。
+
+## 使用场景
+
+-   你的数据来源于 Teamcenter 等 PLM 系统，导出格式为 `.plmxml`。
+-   你需要将 PLMXML 中定义的完整产品 BOM（物料清单）结构、组件实例、变换以及关联的 CAD 几何体一起导入到 Unreal Engine。
+-   你需要保留 PLMXML 中携带的属性信息（如零件号、材料名称、自定义元数据）。
+
+## 蓝图用法
+
+无直接蓝图 API。该模块作为服务提供者，当用户通过标准 Datasmith 导入界面选择一个 `.plmxml` 文件时，会自动被引擎调用。
+
+## C++ 用法
+
+### 头文件引入
+
+```cpp
+// 引入模块接口以检查可用性
+#include "DatasmithPlmXmlTranslatorModule.h"
+```
+
+### 基本用法
+
+检查模块是否已加载并就绪。这是确保翻译器对 Datasmith 导入系统可见的关键。
+（来源：`Source/DatasmithPLMXMLTranslator/Public/DatasmithPlmXmlTranslatorModule.h`）
+
+```cpp
+// 在任何依赖 PLMXML 导入功能的代码之前检查
+if (!IDatasmithPlmXmlTranslatorModule::IsAvailable())
+{
+    // 模块未加载，可能是插件被禁用或依赖库缺失
+    UE_LOG(LogTemp, Error, TEXT("DatasmithPLMXMLTranslator module is not loaded. Cannot import PLMXML files."));
+    return;
+}
+
+// 模块已就绪，现在可以通过 Datasmith 导入路径使用
+```
+
+### 进阶用法
+
+直接与翻译器类交互，控制导入过程。这通常由 Datasmith 的导入管理器 (`FDatasmithSceneImporter`) 内部完成。
+（来源：`Source/DatasmithPLMXMLTranslator/Private/DatasmithPlmXmlTranslator.h`）
+
+```cpp
+// 假设我们手动模拟导入过程（仅供理解）
+#include "DatasmithPlmXmlTranslator.h"
+
+TSharedRef<FDatasmithPlmXmlTranslator> Translator = MakeShared<FDatasmithPlmXmlTranslator>();
+
+// 初始化
+FDatasmithTranslatorCapabilities Capabilities;
+Translator->Initialize(Capabilities);
+
+// 配置源
+FDatasmithSceneSource Source;
+Source.SetSourceFile(TEXT("/Game/Path/To/MyModel.plmxml"));
+
+// 加载场景描述
+TSharedRef<IDatasmithScene> Scene = MakeShared<FDatasmithScene>();
+if (Translator->LoadScene(Scene))
+{
+    // 场景已加载，现在可以查询网格
+    for (int32 i = 0; i < Scene->GetMeshesCount(); ++i)
+    {
+        TSharedRef<IDatasmithMeshElement> Mesh = Scene->GetMesh(i);
+        FDatasmithMeshElementPayload Payload;
+        
+        // 按需加载每个网格的几何数据
+        if (Translator->LoadStaticMesh(Mesh, Payload))
+        {
+            // Payload 中包含顶点、索引、材质槽等数据
+            // 用于创建真正的 UStaticMesh 资产
+        }
+    }
+    
+    // 清理
+    Translator->UnloadScene();
+}
+```
+
+## Demo 示例
+
+一个完整的、聚焦于 PLMXML 导入的最小示例。
+
+**PlmXmlImporterHelper.h**
+```cpp
+#pragma once
+#include "CoreMinimal.h"
+
+class IDatasmithScene;
+class IDatasmithMeshElement;
+
+class FPlmXmlImporterHelper
+{
+public:
+    // 尝试从 PLMXML 文件导入一个简单的场景摘要
+    static bool ImportSceneSummary(const FString& PlmXmlFilePath, FString& OutSummary);
+    
+private:
+    static void ProcessScene(const TSharedRef<IDatasmithScene>& Scene, FString& OutSummary);
+};
+```
+
+**PlmXmlImporterHelper.cpp**
+```cpp
+#include "PlmXmlImporterHelper.h"
+#include "DatasmithPlmXmlTranslatorModule.h"
+#include "DatasmithPlmXmlTranslator.h"
+#include "IDatasmithSceneElements.h"
+
+bool FPlmXmlImporterHelper::ImportSceneSummary(const FString& PlmXmlFilePath, FString& OutSummary)
+{
+    if (!IDatasmithPlmXmlTranslatorModule::IsAvailable())
+    {
+        OutSummary = TEXT("Translator module not available.");
+        return false;
+    }
+
+    TSharedRef<FDatasmithPlmXmlTranslator> Translator = MakeShared<FDatasmithPlmXmlTranslator>();
+    FDatasmithTranslatorCapabilities Caps;
+    Translator->Initialize(Caps);
+
+    FDatasmithSceneSource Source;
+    Source.SetSourceFile(PlmXmlFilePath);
+
+    if (!Translator->IsSourceSupported(Source))
+    {
+        OutSummary = FString::Printf(TEXT("File not supported: %s"), *PlmXmlFilePath);
+        return false;
+    }
+
+    TSharedRef<IDatasmithScene> Scene = MakeShared<FDatasmithScene>();
+    if (!Translator->LoadScene(Scene))
+    {
+        OutSummary = TEXT("Failed to load scene.");
+        return false;
+    }
+
+    ProcessScene(Scene, OutSummary);
+    Translator->UnloadScene();
+    return true;
+}
+
+void FPlmXmlImporterHelper::ProcessScene(const TSharedRef<IDatasmithScene>& Scene, FString& OutSummary)
+{
+    int32 ActorCount = Scene->GetActorsCount();
+    int32 MeshCount = Scene->GetMeshesCount();
+
+    OutSummary = FString::Printf(
+        TEXT("PLMXML Scene Loaded:\n  Actors: %d\n  Meshes: %d\n\nFirst few meshes:\n"),
+        ActorCount, MeshCount
+    );
+
+    for (int32 i = 0; i < FMath::Min(MeshCount, 5); ++i)
+    {
+        TSharedRef<IDatasmithMeshElement> Mesh = Scene->GetMesh(i);
+        OutSummary += FString::Printf(TEXT("  - %s\n"), *Mesh->GetName());
+    }
+}
+```
+
+## 模块依赖
+
+| 模块 | 用途 |
+|---|---|
+| `TechSoft` | PLMXML 文件的底层解析依赖于 TechSoft 库 |
+| `DatasmithCore` | 提供 `IDatasmithScene`, `IDatasmithTranslator` 等基础接口 |
+| `DatasmithDispatcher` | 可能用于并行加载 PLMXML 中引用的网格数据 |
+
+## 维护状态
+
+该模块与主插件 `DatasmithCADImporter` 的维护状态完全同步。近期更新（如 TechSoft 库升级、编译修复）均适用于此模块。作为官方维护的企业级组件，它保持着稳定的更新节奏以确保与最新版本 CAD 软件的兼容性。
+
+## 相关链接
+
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithCADImporter/Source/DatasmithPLMXMLTranslator)
+-   [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/Datasmith/)
+-   [测试用例]（暂无公开测试用例路径）

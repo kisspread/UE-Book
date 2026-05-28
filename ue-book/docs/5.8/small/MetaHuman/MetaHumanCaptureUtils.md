@@ -1,349 +1,458 @@
-# MetaHuman Capture Utils
+# MetaHuman Animator
 
-> 为 MetaHuman 动画捕获系统提供可重用的 C++ 工具基础设施，包括异步事件处理、任务管理、结果封装和作用域守卫等功能。
+> The official MetaHuman Unreal Engine toolkit
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman 捕获工具库 |
+| 中文名 | MetaHuman 动画工具 |
 | 分类 | MetaHuman |
-| 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（测试资源） |
-| 模块 | `MetaHumanCaptureUtils` (Runtime) |
+| 默认启用 | ❌ 否 |
+| 包含内容 | ✅ 有（蓝图资产、配置资源） |
+| 模块 | `MetaHumanCaptureUtils` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime), 等共 28 个模块 |
 | 实验性 | 否 |
-| 创建时间 | 未知 |
-| 年龄标签 | 🏛️ 文物（约 8 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureUtils) | |
+| 创建时间 | 2021-05-13 |
+| 年龄标签 | 🆕（约 5 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
+
+## ⚠️ 重要废弃提示
+
+**MetaHumanCaptureUtils 模块已在 UE 5.7 中标记为废弃**，其全部功能已迁移至 `CaptureManagerCore/CaptureUtils` 模块。本文档基于废弃前的源码进行记录，新项目应直接使用替代模块。
+
+涉及废弃的类包括：
+- `FCaptureEventSourceBase`、`FCaptureEventSource`、`FCaptureEventSourceWithLimiter`
+- `FCallbackSynchronizer`
+- `FCaptureEvent`、`ICaptureEventSource`
+- `FStopToken`
 
 ## 用途
 
-该模块并非面向最终用户的功能模块，而是 MetaHumanAnimator 插件内部的基础工具库。它封装了一系列通用的 C++ 工具类和模式，旨在为插件的其他模块（如捕获源、协议栈、数据处理等）提供标准化的底层支持。
+**MetaHumanCaptureUtils** 是 MetaHuman Animator 插件的底层工具模块，为面部捕捉和动画处理流水线提供通用基础设施。它解决的核心问题是：在多线程的面部捕捉工作流中，如何安全地进行异步任务管理、事件发布/订阅、回调同步和错误处理。
 
-其核心价值在于：
-1.  **统一异步事件处理**：提供线程安全的事件发布/订阅机制（`FCaptureEventSource`），用于在捕获过程中（如数据更新、状态变化）进行模块间通信。
-2.  **管理复杂异步任务**：提供可中止的异步任务封装（`FAbortableAsyncTask`），方便安全地执行后台耗时操作（如网络通信、文件处理）。
-3.  **规范错误处理**：提供 `TResult` 模板类，以类型安全的方式封装操作的成功值或错误信息，替代裸指针或错误码。
-4.  **保证资源清理**：提供作用域守卫（`TScopeGuard`）和 `SCOPE_EXIT` 宏，确保在作用域退出时执行清理操作（如释放锁、关闭连接）。
+该模块不直接面向最终用户，而是被 MetaHuman Animator 插件内部的其他模块（如 MetaHumanCaptureSource、MetaHumanFaceAnimationSolver 等）作为基础依赖使用。
 
-**重要提示**：根据源码注释，该模块已在 UE 5.7 中被废弃，其功能已迁移至 `CaptureManagerCore/CaptureUtils` 模块。此文档主要服务于遗留代码的维护。
+主要功能包括：
+- **异步事件系统**：线程安全的事件发布/订阅机制，支持限流发布
+- **错误处理**：类似 Rust 的 `Result<T, E>` 模式，优雅处理成功/失败双态结果
+- **委托管理**：自动在指定线程（游戏线程/工作线程）执行的委托封装
+- **回调同步**：等待多个异步回调全部完成后触发统一完成回调
+- **可中止异步任务**：支持外部取消的异步任务框架
+- **作用域守卫**：RAII 风格的资源清理工具
 
 ## 使用场景
 
-- 你正在开发一个 MetaHuman 捕获相关的插件或模块，需要处理来自多个来源的异步事件 → 使用 `FCaptureEventSource` 来发布事件，使用 `ICaptureEventSource` 接口来订阅。
-- 你需要在后台线程执行一个可能被取消的捕获操作（如下载文件、与设备通信）→ 使用 `FAbortableAsyncTask` 来包装你的任务函数。
-- 你的函数执行可能成功返回数据，也可能失败并带有错误信息 → 使用 `TResult<ValueType, ErrorType>` 来封装返回值。
-- 你需要在函数提前返回（如遇到错误）时自动释放锁或清理资源 → 使用 `SCOPE_EXIT` 宏。
+- 你需要构建自定义的面部捕捉数据处理流水线 → 使用事件系统和回调同步器
+- 你需要在捕捉流程中处理可能的失败场景 → 使用 `TResult<T, E>` 模式
+- 你需要从工作线程安全地通知游戏线程 → 使用 `TManagedDelegate`
+- 你需要运行可被外部取消的长时间异步任务 → 使用 `FAbortableAsyncTask`
+- 你需要确保在函数退出时执行清理操作 → 使用 `TScopeGuard` / `SCOPE_EXIT`
 
 ## 蓝图用法
 
-此模块为纯 C++ 工具库，不包含任何 `BlueprintCallable` 或 `BlueprintReadWrite` 标记的接口，无法在蓝图中直接使用。其提供的工具类被 MetaHumanAnimator 插件的其他蓝图可调用系统内部使用。
+**本模块不包含蓝图可调用 API。** MetaHumanCaptureUtils 是纯 C++ 工具模块，所有类和函数均无 `BlueprintCallable` 标记。蓝图层面的 MetaHuman 功能由其他模块（如 MetaHumanPerformance、MetaHumanIdentity 等）提供。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "Async/EventSourceUtils.h" // 事件源
-#include "Async/Task.h"            // 可中止异步任务
-#include "Error/Result.h"          // TResult 结果类型
-#include "Error/ScopeGuard.h"      // SCOPE_EXIT 宏
+// 核心工具类
+#include "Error/Result.h"
+#include "Error/ScopeGuard.h"
+
+// 异步工具类（均已废弃）
+#include "Async/Event.h"
+#include "Async/EventSourceUtils.h"
+#include "Async/ManagedDelegate.h"
+#include "Async/CallbackSynchronizer.h"
+#include "Async/Task.h"
+#include "Async/StopToken.h"
 ```
 
-### 基本用法
+> **注意**：所有 `Async/` 下的头文件在 UE 5.7+ 中已废弃，应使用 `CaptureManagerCore/CaptureUtils` 中的等价替代。
 
-#### 1. 创建可订阅的事件源
+### 基本用法 — TResult 错误处理
+
+`TResult<ResultType, ErrorType>` 提供了类型安全的成功/失败双态返回值，类似 Rust 的 `Result` 类型。
 
 ```cpp
-// 定义你自己的事件类，继承自 FCaptureEvent
-class FMyDataUpdatedEvent : public FCaptureEvent
+#include "Error/Result.h"
+
+// 自定义错误类型
+struct FMyError
 {
-public:
-    static inline const FString Name = TEXT("MyDataUpdated");
-    FMyDataUpdatedEvent(const FString& InData) : FCaptureEvent(Name), Data(InData) {}
-    FString Data;
+    FString Message;
+    int32 ErrorCode;
 };
 
-// 创建一个事件源类
-class FMyCaptureSource : public FCaptureEventSource
+// 返回成功值
+TResult<int32, FMyError> Divide(int32 A, int32 B)
 {
-public:
-    void SimulateDataUpdate()
+    if (B == 0)
     {
-        // 使用模板方法发布事件，线程安全
-        PublishEvent<FMyDataUpdatedEvent>(TEXT("New Frame Data"));
+        return FMyError{ TEXT("Division by zero"), -1 };
     }
-};
-
-// 订阅事件
-FMyCaptureSource Source;
-Source.SubscribeToEvent(FMyDataUpdatedEvent::Name,
-    TManagedDelegate<TSharedPtr<const FCaptureEvent>>::CreateLambda([](TSharedPtr<const FCaptureEvent> Event)
-    {
-        if (const FMyDataUpdatedEvent* DataEvent = static_cast<const FMyDataUpdatedEvent*>(Event.Get()))
-        {
-            UE_LOG(LogTemp, Log, TEXT("Data updated: %s"), *DataEvent->Data);
-        }
-    }));
-```
-
-#### 2. 封装可能失败的操作
-
-```cpp
-// 定义错误类型
-enum class EMyError { InvalidInput, NetworkTimeout };
-
-// 一个可能失败的函数
-TResult<int32, EMyError> ParseNumber(const FString& String)
-{
-    if (String.IsEmpty())
-    {
-        return EMyError::InvalidInput; // 返回错误
-    }
-
-    // ... 尝试解析 ...
-    return 42; // 返回成功值
+    return A / B;  // 隐式构造为成功结果
 }
 
-// 调用并处理结果
-auto Result = ParseNumber(TEXT("123"));
-if (Result.IsValid())
+// 使用结果
+void Example()
 {
-    int32 Number = Result.ClaimResult();
-    // 使用 Number
-}
-else
-{
-    EMyError Error = Result.GetError();
-    // 处理错误
+    auto Result = Divide(10, 2);
+
+    if (Result.IsValid())
+    {
+        int32 Value = Result.GetResult();  // 5
+    }
+    if (Result.IsError())
+    {
+        const FMyError& Error = Result.GetError();
+        UE_LOG(LogTemp, Error, TEXT("%s (Code: %d)"), *Error.Message, Error.ErrorCode);
+    }
+
+    // 移动语义取出结果（避免拷贝）
+    int32 Value = Result.ClaimResult();
 }
 ```
 
-#### 3. 执行可中止的后台任务
+**void 特化** — 用于不需要返回值的场景：
 
 ```cpp
-// 定义一个耗时任务
-auto Task = MakeUnique<FAbortableAsyncTask>([](const FStopToken& StopToken)
+// 无需返回值时使用 void 特化
+TResult<void, FString> SaveFile(const FString& Path)
 {
-    for (int32 i = 0; i < 1000000; ++i)
+    if (!FPaths::FileExists(Path))
     {
-        if (StopToken.IsStopRequested())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Task was aborted!"));
-            return;
-        }
-        // 执行一些计算或IO操作...
+        return FString(TEXT("File not found"));
     }
-    UE_LOG(LogTemp, Log, TEXT("Task completed successfully."));
-});
-
-// 异步启动
-Task->StartAsync();
-
-// 在某个时刻，比如用户取消操作时，中止任务
-Task->Abort();
+    // ... 保存逻辑
+    return ResultOk;  // 使用全局 constexpr FVoidResultTag
+}
 ```
 
-#### 4. 使用作用域守卫确保资源清理
+### 基本用法 — SCOPE_EXIT 作用域守卫
 
 ```cpp
+#include "Error/ScopeGuard.h"
+
 void ProcessData()
 {
-    // 获取一个全局锁
-    FScopeLock Lock(&GlobalMutex);
+    FScopeLock Lock(&CriticalSection);
+    AllocateResources();
 
-    // 分配一个资源
-    FResource* Resource = AllocateResource();
-    // 确保在函数任何退出路径（包括提前return）都释放它
+    // 确保函数退出时释放资源，无论正常返回还是异常
     SCOPE_EXIT
     {
-        FreeResource(Resource);
+        ReleaseResources();
+        UE_LOG(LogTemp, Log, TEXT("Resources released"));
     };
 
-    if (SomeCondition())
-    {
-        return; // 即使这里提前返回，Resource也会被释放
-    }
+    DoWork();  // 即使这里抛出异常，SCOPE_EXIT 也会执行
 
-    // ... 使用 Resource 进行工作 ...
+    // 手动创建守卫
+    auto Guard = MakeScopeGuard([]()
+    {
+        FPlatformProcess::Sleep(0.01f);  // 延迟清理
+    });
+
+    // 条件性取消守卫
+    if (bSkipCleanup)
+    {
+        Guard.Dismiss();
+    }
 }
 ```
 
-### 进阶用法：组合使用
+### 进阶用法 — 事件发布/订阅系统
 
-组合事件源、异步任务和结果类型来构建一个健壮的捕获操作。
+> ⚠️ 以下代码已在 UE 5.7 废弃
 
 ```cpp
-class FCaptureProcessor : public FCaptureEventSource
+#include "Async/Event.h"
+#include "Async/EventSourceUtils.h"
+
+// 定义自定义事件
+METAHUMAN_CAPTURE_DEFINE_EMPTY_EVENT(FMyFrameEvent, "MyFrameEvent")
+
+// 自定义带数据的事件
+struct FMyProgressEvent : public FCaptureEvent
+{
+    FMyProgressEvent(float InProgress)
+        : FCaptureEvent(TEXT("MyProgressEvent"))
+        , Progress(InProgress)
+    {}
+
+    float Progress;
+};
+
+// 创建事件源
+class FMyCaptureService : public FCaptureEventSource
 {
 public:
-    DECLARE_DELEGATE_OneParam(FOnCaptureComplete, TResult<FString, FText>);
-
-    void StartAsyncCapture(FOnCaptureComplete OnComplete)
+    FMyCaptureService()
     {
-        AsyncTask = MakeUnique<FAbortableAsyncTask>(
-            [WeakThis = MakeWeakObjectPtr(this), OnComplete](const FStopToken& StopToken)
-            {
-                // 模拟网络捕获
-                for (int32 i = 0; i < 5; ++i)
-                {
-                    if (StopToken.IsStopRequested())
-                    {
-                        // 在游戏线程报告中止
-                        AsyncTask(ENamedThreads::GameThread, [OnComplete]()
-                        {
-                            OnComplete.ExecuteIfBound(FText::FromString(TEXT("Capture aborted")));
-                        });
-                        return;
-                    }
-                    // ... 捕获步骤 ...
-                    // 发布进度事件
-                    if (TSharedPtr<FCaptureProcessor> StrongThis = WeakThis.Pin())
-                    {
-                        StrongThis->PublishEvent<FCaptureProgressEvent>(i + 1, 5);
-                    }
-                }
-
-                // 在游戏线程报告成功
-                AsyncTask(ENamedThreads::GameThread, [OnComplete]()
-                {
-                    OnComplete.ExecuteIfBound(FString(TEXT("ResultData")));
-                });
-            });
-        AsyncTask->StartAsync();
+        // 注册可订阅的事件
+        RegisterEvent(FMyFrameEvent::Name);
+        RegisterEvent(TEXT("MyProgressEvent"));
     }
 
-    void Abort()
+    void ProcessFrame()
     {
-        if (AsyncTask)
-        {
-            AsyncTask->Abort();
-        }
-    }
+        // 发布事件给所有订阅者（线程安全）
+        PublishEvent<FMyFrameEvent>();
 
-private:
-    TUniquePtr<FAbortableAsyncTask> AsyncTask;
+        float Progress = 0.5f;
+        PublishEvent<FMyProgressEvent>(Progress);
+    }
 };
+
+// 创建带限流的事件源（最多每 100ms 发布一次）
+class FMyThrottledSource : public FCaptureEventSourceWithLimiter
+{
+public:
+    FMyThrottledSource() : FCaptureEventSourceWithLimiter(100) {}
+
+    void OnFrameUpdate(float InProgress)
+    {
+        // 大部分调用会被跳过，仅在距上次发布超过 100ms 时才发布
+        PublishIfThresholdReached<FMyProgressEvent>(false, InProgress);
+    }
+
+    void OnFinalFrame(float InProgress)
+    {
+        // 强制发布最终事件（忽略限流）
+        PublishIfThresholdReached<FMyProgressEvent>(true, InProgress);
+    }
+};
+```
+
+### 进阶用法 — 回调同步器
+
+> ⚠️ 已在 UE 5.7 废弃
+
+等待多个异步操作全部完成后执行汇总操作：
+
+```cpp
+#include "Async/CallbackSynchronizer.h"
+
+void ProcessMultipleAssets()
+{
+    auto Sync = FCallbackSynchronizer::Create();
+
+    // 创建受管理的回调（会自动计数）
+    auto OnTextureLoaded = Sync->CreateCallback([](UTexture2D* Texture)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Texture loaded: %s"), *Texture->GetName());
+    });
+
+    auto OnMeshLoaded = Sync->CreateCallback([](UStaticMesh* Mesh)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Mesh loaded: %s"), *Mesh->GetName());
+    });
+
+    // 所有回调完成后执行
+    Sync->AfterAll(FCallbackSynchronizer::FAfterAllDelegate::CreateLambda([]()
+    {
+        UE_LOG(LogTemp, Log, TEXT("All assets loaded!"));
+    }));
+
+    // 发起异步操作，将受管理的回调作为完成通知
+    LoadTextureAsync(OnTextureLoaded);
+    LoadMeshAsync(OnMeshLoaded);
+}
+```
+
+### 进阶用法 — 线程管理委托
+
+> ⚠️ 已在 UE 5.7 废弃
+
+```cpp
+#include "Async/ManagedDelegate.h"
+
+void SetupCaptureCallbacks()
+{
+    // 创建在游戏线程执行的委托
+    TManagedDelegate<FString> OnCaptureComplete(
+        [](const FString& Result)
+        {
+            // 这段代码保证在游戏线程执行
+            UE_LOG(LogTemp, Log, TEXT("Capture complete: %s"), *Result);
+        },
+        EDelegateExecutionThread::GameThread
+    );
+
+    // 创建在调用线程执行的委托
+    TManagedDelegate<int32> OnProgress(
+        [](int32 Percent)
+        {
+            // 在工作线程直接执行，不跳转游戏线程
+            UpdateProgress(Percent);
+        },
+        EDelegateExecutionThread::InternalThread
+    );
+
+    // 多播委托版本
+    TManagedMulticastDelegate<float> OnFrameProcessed;
+    OnFrameProcessed.Add([](float DeltaTime)
+    {
+        // 注册多个处理器
+    });
+
+    // 从任意线程调用，委托会自动切换到指定线程执行
+    OnCaptureComplete(TEXT("Success"));
+    OnFrameProcessed(0.016f);
+}
+```
+
+### 进阶用法 — 可中止异步任务
+
+> ⚠️ 已在 UE 5.7 废弃
+
+```cpp
+#include "Async/Task.h"
+
+void StartLongRunningTask()
+{
+    // 创建可中止的异步任务
+    auto Task = MakeUnique<FAbortableAsyncTask>(
+        [](const FStopToken& StopToken)
+        {
+            for (int32 i = 0; i < 1000000; ++i)
+            {
+                // 检查是否被请求停止
+                if (StopToken.IsStopRequested())
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("Task aborted at iteration %d"), i);
+                    return;
+                }
+                ProcessFrame(i);
+            }
+        }
+    );
+
+    // 后台线程异步执行
+    Task->StartAsync();
+
+    // ... 某个时刻取消任务
+    Task->Abort();
+
+    // Task 析构时会自动 Abort + EnsureCompletion
+}
 ```
 
 ## Demo 示例
 
-以下是一个完整的、可编译的最小示例，演示了 `TResult` 和 `SCOPE_EXIT` 的使用。
+完整的、可编译的最小示例，演示 `TResult` 错误处理和 `TScopeGuard` 作用域守卫的使用：
 
-**MyProcessor.h**
 ```cpp
+// MyCaptureHelper.h
 #pragma once
 
 #include "Error/Result.h"
 #include "Error/ScopeGuard.h"
 
-enum class EProcessError
+struct FCaptureError
 {
-    InvalidData,
-    OutOfMemory
+    FString Message;
+    int32 Code;
 };
 
-class FMyProcessor
+class FMyCaptureHelper
 {
 public:
-    // 处理一个数组，可能失败
-    TResult<TArray<float>, EProcessError> ProcessData(const TArray<float>& InputData)
-    {
-        if (InputData.Num() == 0)
-        {
-            return EProcessError::InvalidData;
-        }
+    // 带错误处理的数据处理函数
+    TResult<FString, FCaptureError> ProcessCaptureData(const FString& InputPath);
 
-        TArray<float> OutputData;
-        // 确保在异常路径下清理可能的中间状态（此处仅为演示）
-        SCOPE_EXIT
-        {
-            OutputData.Reset(); // 实际上这里可能没有意义，仅为演示宏
-        };
-
-        // 模拟一个可能耗尽内存的操作
-        if (!OutputData.Reserve(InputData.Num() * 2))
-        {
-            return EProcessError::OutOfMemory;
-        }
-
-        for (float Value : InputData)
-        {
-            OutputData.Add(Value * 2.0f);
-        }
-
-        // 移出数据，避免拷贝
-        return MoveTemp(OutputData);
-    }
+    // 演示 SCOPE_EXIT 的资源管理
+    bool InitializeCaptureDevice();
 };
 ```
 
-**MyTest.cpp** (测试用例)
 ```cpp
-#include "MyProcessor.h"
-#include "Misc/AutomationTest.h"
+// MyCaptureHelper.cpp
+#include "MyCaptureHelper.h"
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FMyProcessorTest, "MetaHuman.CaptureUtils.TResultAndScopeGuard",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
-bool FMyProcessorTest::RunTest(const FString& Parameters)
+TResult<FString, FCaptureError> FMyCaptureHelper::ProcessCaptureData(const FString& InputPath)
 {
-    FMyProcessor Processor;
-
-    // 测试成功情况
+    // 验证输入
+    if (!FPaths::FileExists(InputPath))
     {
-        TArray<float> Input = {1.0f, 2.0f, 3.0f};
-        auto Result = Processor.ProcessData(Input);
-
-        TestTrue(TEXT("Should succeed"), Result.IsValid());
-        if (Result.IsValid())
-        {
-            TArray<float> Output = Result.ClaimResult();
-            TestEqual(TEXT("Output size should match"), Output.Num(), 3);
-            TestEqual(TEXT("First value should be doubled"), Output[0], 2.0f);
-        }
+        return FCaptureError{ FString::Printf(TEXT("File not found: %s"), *InputPath), 404 };
     }
 
-    // 测试失败情况
+    // 读取数据
+    FString RawData;
+    if (!FFileHelper::LoadFileToString(RawData, *InputPath))
     {
-        TArray<float> EmptyInput;
-        auto Result = Processor.ProcessData(EmptyInput);
-
-        TestTrue(TEXT("Should fail with InvalidData"), Result.IsError());
-        TestEqual(TEXT("Error should be InvalidData"), Result.GetError(), EProcessError::InvalidData);
+        return FCaptureError{ TEXT("Failed to read file"), 500 };
     }
 
+    // 处理成功
+    return FString::Printf(TEXT("Processed %d characters"), RawData.Len());
+}
+
+bool FMyCaptureHelper::InitializeCaptureDevice()
+{
+    void* DeviceHandle = FPlatformMisc::GetDeviceHandle();
+    if (!DeviceHandle)
+    {
+        return false;
+    }
+
+    // 使用 SCOPE_EXIT 确保设备句柄在函数退出时释放
+    auto DeviceGuard = MakeScopeGuard([DeviceHandle]()
+    {
+        FPlatformMisc::ReleaseDeviceHandle(DeviceHandle);
+    });
+
+    // 初始化设备（可能失败）
+    if (!FPlatformMisc::InitializeDevice(DeviceHandle))
+    {
+        return false;  // DeviceGuard 自动释放句柄
+    }
+
+    // 正常路径也自动释放
     return true;
 }
 ```
 
 ## 模块依赖
 
-此模块的依赖已在 Build.cs 中声明，主要依赖于 MetaHuman 核心技术库。
+本模块（MetaHumanCaptureUtils）的依赖关系简洁，无特殊依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCoreTechLib` | MetaHuman 核心技术库，可能包含底层的数学、几何或数据处理功能 |
+| 无特殊依赖 | 仅标准 Core/Engine 等基础模块 |
+
+注：使用 MetaHuman Animator 插件的其他模块时有更复杂的依赖，例如 MetaHumanIdentity 依赖 `ControlRigDeveloper`、`MetaHumanSDKEditor`、`SkeletalMeshUtilitiesCommon` 等。
 
 ## 维护状态
 
 ### 近期更新
 
-根据提供的 Git 历史，这些更新针对的是整个 MetaHumanAnimator 插件，并非专门针对 `MetaHumanCaptureUtils` 模块。该模块自身在近期没有直接的功能性更新。
-
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体跟踪时禁用关卡序列导出功能 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 的渲染瑕疵 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体跟踪时过滤可视化对象 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MHA] 为已有网格体导出动画序列 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 渲染瑕疵 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为已有网格体导出动画序列 |
 | 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
 
 ### 维护评价
 
-1.  **状态：已废弃**。源码中多个关键类（`FCaptureEventSourceBase`, `FCallbackSynchronizer`, `FCaptureEvent`, `FStopToken`）均明确标记为 `UE_DEPRECATED(5.7, ...)`，表明该模块的功能已在 UE 5.7 版本中被迁移至新的 `CaptureManagerCore/CaptureUtils` 模块。
-2.  **最新实质性更新**：从当前源码状态看，该模块最后的实质性更新应早于其被标记为废弃的版本（UE 5.7）。近期 Git 记录显示的是插件其他部分的更新。
-3.  **推荐使用**：**不推荐**在新项目或新模块中使用此模块。任何对这些工具类的需求都应转向使用其继任者 `CaptureManagerCore/CaptureUtils`。仅当维护基于 UE 5.7 之前版本的遗留 MetaHuman 插件代码时，才需要参考本文档。
+**MetaHuman Animator 插件整体处于活跃维护状态**，但 **MetaHumanCaptureUtils 模块本身已废弃**。
+
+- 插件整体仍被 Epic 积极维护，近期有功能更新和 bug 修复
+- MetaHumanCaptureUtils 模块在 UE 5.7 中被标记为废弃，所有功能迁移至 `CaptureManagerCore/CaptureUtils`
+- 模块内的 `Async/` 子目录下的类（事件源、回调同步器、停止令牌等）均标注了废弃宏
+- `TResult` 和 `TScopeGuard` 等通用工具类未标注废弃，可能仍在使用或尚待迁移
+
+**建议**：
+- 🟢 如果使用 MetaHuman Animator 的完整功能 → 继续使用，插件活跃维护中
+- 🔴 如果需要直接使用 MetaHumanCaptureUtils 中的底层工具 → **不要使用**，改用 `CaptureManagerCore/CaptureUtils`
+- 🟡 `TResult` 和 `TScopeGuard` 是通用模式，可参考但建议使用 UE 标准库或独立实现
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureUtils)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanControlsConversionTest) (位于插件内的独立测试模块)
+- [源码（MetaHumanCaptureUtils）](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureUtils)
+- [源码（MetaHuman Animator 插件根目录）](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+- [替代模块（CaptureManagerCore/CaptureUtils）](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureUtils) — UE 5.7+ 推荐使用

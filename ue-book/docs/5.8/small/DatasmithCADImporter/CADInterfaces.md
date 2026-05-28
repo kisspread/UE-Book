@@ -4,7 +4,7 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | CAD 文件导入器 |
+| 中文名 | CAD 导入器 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
@@ -16,66 +16,104 @@
 
 ## 用途
 
-DatasmithCADImporter 是 Unreal Engine 的 CAD 文件导入管线核心，负责将工业 CAD 格式（STEP、CATIA V5/V6、SolidWorks、JT、IGES、Parasolid、Inventor、Rhino/3DM、PLMXML 等）解析为 UE 可用的网格数据和场景图结构。
+DatasmithCADImporter 是 UE5 的核心 CAD 文件导入管线，负责将工业级 CAD 格式（STEP、JT、CATIA、SolidWorks、Rhino、IGES 等 40+ 种格式）转换为 UE 可用的网格和场景数据。
 
-该插件的核心价值在于：
+该插件解决的核心问题是：**工业 CAD 文件使用精确的 B-Rep（边界表示）几何体，而游戏引擎需要三角面片网格**。插件内部通过 TechSoft SDK 读取 CAD 原始数据，经过 B-Rep 适配、缝合（Sew）、曲面细分（Tessellation）等步骤，最终生成引擎可用的 StaticMesh。
 
-- **B-Rep 解析**：通过 TechSoft（HOOPS Exchange）SDK 读取 CAD 文件的精确几何表示（B-Rep），包括拓扑（Shell/Face/Loop/Edge）和曲面（NURBS、平面、圆柱、旋转面等）
-- **曲面细分**：支持两种细分路径——TechSoft 原生细分和 UE CADKernel 细分，可根据需要选择
-- **场景图保留**：保留 CAD 装配体的层级结构（Instance/Reference/OverrideOccurrence），支持外部引用和实例化
-- **缓存系统**：通过文件哈希实现导入缓存，避免重复解析相同 CAD 文件
-- **材质/颜色提取**：从 CAD 图形属性中提取材质和颜色信息，映射到 UE 材质系统
+插件架构分层清晰：
+- **CADInterfaces**：底层 TechSoft SDK 封装，处理 CAD 文件读写和几何操作
+- **CADLibrary**：场景图解析、缓存管理、导入参数控制
+- **DatasmithCADTranslator**：Datasmith 与 CAD 数据之间的翻译层
+- **各 WireInterface 模块**：对应不同版本的 CAD 内核（2020-2026），确保向前兼容
+- **ParametricSurface**：将 CAD 参数化曲面转换为 NURBS 或网格
 
-此插件**默认禁用**（`EnabledByDefault: false`），需要在插件管理器中手动启用，或者通过 Datasmith 导入流程自动加载。
+该插件默认禁用（`EnabledByDefault=false`），因为依赖商业授权的 TechSoft SDK，仅在安装了 Datasmith 相关组件后才可用。
 
 ## 使用场景
 
-- 你在做建筑可视化（ArchViz）→ 用 DatasmithCADImporter 导入 Revit/ArchiCAD 的 CAD 模型
-- 你在做汽车/工业设计评审 → 导入 CATIA/SolidWorks/JT 的装配体到 Unreal 进行实时渲染
-- 你需要在 UE 中精确呈现 CAD 几何（而非三角面片） → 使用 CADKernel 细分路径获得更好的曲面质量
-- 你有大量 CAD 文件需要反复导入 → 利用缓存机制加速后续导入
-- 你需要导入 Rhino 的 3DM 文件 → 使用 `DatasmithOpenNurbsTranslator` 模块
-- 你需要导入 Alias/Wire 文件进行汽车 A 面设计评审 → 使用 `DatasmithWireTranslator` 和对应的 `WireInterface` 模块
+- 你在做建筑可视化（ArchViz）→ 需要从 Revit、ArchiCAD 等导入 CAD 模型
+- 你在做工业产品可视化 → 需要从 CATIA、SolidWorks、NX 等导入精确几何体
+- 你在做数字孪生项目 → 需要从 PLM 系统（如 Teamcenter 的 PLMXML）导入装配体
+- 你需要导入 Rhino（.3dm）等 NURBS 建模软件的文件
+- 你需要导入 Alias/Wire 格式的汽车 A 级曲面数据
 
 ## 蓝图用法
 
-该插件主要为**底层导入管线**，不直接暴露蓝图节点。其功能通过 Datasmith 导入器统一调用。对开发者而言，主要通过 C++ API 交互。
+该插件是纯数据导入管线，不暴露任何蓝图可调用的函数（`UFUNCTION(BlueprintCallable)`）。
 
-### 模块可用性查询
+CAD 文件的导入通过 Datasmith Importer 的标准流程进行：
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `GetAvailability()` | 查询 CAD 接口模块是否可用 | `ICADInterfacesModule` |
-| `GetLibraryVersion()` | 获取 TechSoft 库版本字符串 | `ICADInterfacesModule` |
+### 导入流程
 
-### 使用示例（蓝图描述）
+1. 在编辑器中通过 **File → Import** 选择 CAD 文件
+2. 或使用 **Datasmith Import** 按钮（需要 Datasmith 插件）
+3. 插件自动根据文件扩展名选择对应的 Translator 模块
+4. 解析、缝合、细分、生成 StaticMesh 和场景层级
 
-在蓝图中，CAD 文件通常通过 **Datasmith 导入工作流** 间接使用：
-1. 在编辑器中选择 **File → Import → Datasmith Scene**
-2. 选择支持的 CAD 文件格式（.step, .catpart, .sldprt, .jt, .3dm 等）
-3. 导入器自动调用对应的 Translator 模块处理文件
+### 导入参数
 
-如需在运行时导入，需使用 DatasmithRuntime 插件的蓝图接口。
+导入行为通过 `FImportParameters` 控制，包括：
+- 缝合容差（Stitching Tolerance）
+- 是否移除重复三角面
+- 是否强制缝合
+- 曲面细分质量（SAG - Surface Approximation Goal）
+- 是否使用 JT 文件内嵌细分数据
 
 ## C++ 用法
+
+该插件主要是内部使用，对外暴露的 C++ API 有限。以下是关键接口：
 
 ### 头文件引入
 
 ```cpp
-#include "CADInterfacesModule.h"        // 模块可用性查询
-#include "TechSoftInterface.h"          // TechSoft SDK 封装
-#include "CADFileReader.h"              // CAD 文件读取
-#include "CADFileData.h"                // CAD 文件数据结构
-#include "CADSceneGraph.h"              // 场景图结构
-#include "CADFileParser.h"              // 文件解析器接口
+#include "CADFileReader.h"
+#include "CADFileData.h"
+#include "CADInterfacesModule.h"
+#include "TechSoftInterface.h"
 ```
 
-### 基本用法：查询模块可用性
-
-在使用 CAD 导入功能前，先检查 TechSoft SDK 是否可用。
+### 基本用法：读取 CAD 文件
 
 ```cpp
-// 来源: Source/CADInterfaces/Public/CADInterfacesModule.h
+#include "CADFileReader.h"
+
+// 创建导入参数和文件描述符
+FImportParameters ImportParams;
+FFileDescriptor FileDescriptor(TEXT("/path/to/model.step"), TEXT(""), TEXT(""));
+
+// 创建文件读取器
+CADLibrary::FCADFileReader FileReader(
+    ImportParams,
+    FileDescriptor,
+    EnginePluginsPath,  // Engine 插件路径，DWG/DGN 导入需要
+    CachePath           // 缓存路径
+);
+
+// 执行导入
+CADLibrary::ECADParsingResult Result = FileReader.ProcessFile();
+
+if (Result == CADLibrary::ECADParsingResult::Success)
+{
+    // 获取 CAD 文件数据
+    const CADLibrary::FCADFileData& CADFileData = FileReader.GetCADFileData();
+    
+    // 获取场景图
+    const CADLibrary::FArchiveSceneGraph& SceneGraph = CADFileData.GetSceneGraphArchive();
+    
+    // 获取网格数据
+    const TArray<CADLibrary::FBodyMesh>& BodyMeshes = CADFileData.GetBodyMeshes();
+    
+    // 遍历场景图中的实例
+    for (const CADLibrary::FArchiveInstance& Instance : SceneGraph.Instances)
+    {
+        // 处理每个实例...
+    }
+}
+```
+
+### 检查 TechSoft SDK 可用性
+
+```cpp
 #include "CADInterfacesModule.h"
 
 // 检查 CAD 接口是否可用
@@ -83,20 +121,15 @@ ECADInterfaceAvailability Availability = ICADInterfacesModule::GetAvailability()
 
 if (Availability == ECADInterfaceAvailability::Available)
 {
-    // 获取 TechSoft 库版本
+    // 获取 TechSoft SDK 版本
     const TCHAR* Version = ICADInterfacesModule::GetLibraryVersion();
-    UE_LOG(LogTemp, Log, TEXT("TechSoft version: %s"), Version);
-}
-else
-{
-    UE_LOG(LogTemp, Warning, TEXT("CAD interface unavailable - TechSoft SDK not linked"));
+    UE_LOG(LogTemp, Log, TEXT("TechSoft Version: %s"), Version);
 }
 ```
 
-### 基本用法：初始化 TechSoft 内核
+### 使用 TechSoft 接口进行底层操作
 
 ```cpp
-// 来源: Source/CADInterfaces/Public/TechSoftInterface.h
 #include "TechSoftInterface.h"
 
 using namespace CADLibrary;
@@ -104,328 +137,219 @@ using namespace CADLibrary;
 // 获取 TechSoft 接口单例
 FTechSoftInterface& TechSoft = FTechSoftInterface::Get();
 
-// 初始化内核（通常在模块启动时自动完成）
-bool bInitialized = TechSoft.InitializeKernel();
+// 初始化内核
+bool bInitialized = TechSoft.InitializeKernel(TEXT(""));
 
 if (bInitialized)
 {
-    const TCHAR* Version = TechSoft.GetVersion();
-    UE_LOG(LogTemp, Log, TEXT("TechSoft kernel initialized, version: %s"), Version);
-}
-```
-
-### 基本用法：读取 CAD 文件
-
-```cpp
-// 来源: Source/CADInterfaces/Public/CADFileReader.h
-#include "CADFileReader.h"
-#include "CADFileData.h"
-
-using namespace CADLibrary;
-
-// 配置导入参数
-FImportParameters ImportParams;
-// ... 设置导入参数（网格精度、缝合容差等）
-
-// 创建文件描述符
-FFileDescriptor FileDescription(TEXT("/path/to/model.step"));
-
-// 创建 CAD 文件读取器
-FCADFileReader Reader(ImportParams, FileDescription, EnginePluginsPath, CachePath);
-
-// 执行导入
-ECADParsingResult Result = Reader.ProcessFile();
-
-if (Result == ECADParsingResult::Success)
-{
-    // 获取解析后的 CAD 数据
-    const FCADFileData& CADData = Reader.GetCADFileData();
+    // 加载 CAD 文件
+    A3DImport Import;
+    // ... 设置导入选项 ...
     
-    // 访问场景图
-    const FArchiveSceneGraph& SceneGraph = CADData.GetSceneGraphArchive();
+    A3DStatus Status;
+    FUniqueTechSoftModelFile ModelFile = TechSoftInterface::LoadModelFileFromFile(Import, Status);
     
-    // 访问网格数据
-    const TArray<FBodyMesh>& BodyMeshes = CADData.GetBodyMeshes();
-    
-    UE_LOG(LogTemp, Log, TEXT("Imported %d bodies, %d references, %d instances"),
-        SceneGraph.Bodies.Num(),
-        SceneGraph.References.Num(),
-        SceneGraph.Instances.Num());
+    if (ModelFile.IsValid())
+    {
+        // 获取模型单位
+        double Unit = TechSoftInterface::GetModelFileUnit(ModelFile.Get());
+        
+        // 进行 B-Rep 适配
+        int32 ErrorCount = 0;
+        A3DCopyAndAdaptBrepModelData Settings;
+        A3DCopyAndAdaptBrepModelErrorData* Errors = nullptr;
+        TechSoftInterface::AdaptBRepInModelFile(ModelFile.Get(), Settings, ErrorCount, &Errors);
+        
+        // 缝合模型
+        A3DSewOptionsData SewOptions;
+        TechSoftInterface::SewModel(ModelFile.Get(), 0.1 /* cm */, &SewOptions);
+    }
+    // ModelFile 在作用域结束时自动释放
 }
 ```
 
-### 基本用法：遍历场景图
+### 管理 TechSoft 对象生命周期
 
 ```cpp
-// 来源: Source/CADInterfaces/Public/CADSceneGraph.h
-#include "CADSceneGraph.h"
-
-// 假设已通过 FCADFileReader 获取了 CADFileData
-const FArchiveSceneGraph& SceneGraph = CADFileData.GetSceneGraphArchive();
-
-// 遍历所有 Body（实际几何体）
-for (const FArchiveBody& Body : SceneGraph.Bodies)
-{
-    UE_LOG(LogTemp, Log, TEXT("Body %u: Label=%s, MeshActorUId=%u"),
-        Body.Id, *Body.Label, Body.MeshActorUId);
-}
-
-// 遍历实例化引用（装配结构）
-for (const FArchiveInstance& Instance : SceneGraph.Instances)
-{
-    UE_LOG(LogTemp, Log, TEXT("Instance %u -> Reference %u, External=%s"),
-        Instance.Id, Instance.ReferenceNodeId,
-        Instance.bIsExternalReference ? TEXT("Yes") : TEXT("No"));
-}
-
-// 遍历外部引用文件
-for (const FFileDescriptor& ExtRef : SceneGraph.ExternalReferenceFiles)
-{
-    UE_LOG(LogTemp, Log, TEXT("External ref: %s"), *ExtRef.GetSourcePath());
-}
-```
-
-### 进阶用法：使用 TechSoft SDK 原始接口
-
-当需要直接操作 TechSoft 数据结构时（需在 `#ifdef USE_TECHSOFT_SDK` 保护下）。
-
-```cpp
-// 来源: Source/CADInterfaces/Public/TechSoftInterface.h
-#include "TechSoftInterface.h"
-
-#ifdef USE_TECHSOFT_SDK
-using namespace CADLibrary;
-
-// 加载模型文件
-A3DImport ImportParams;
-A3DStatus Status;
-FUniqueTechSoftModelFile ModelFile = TechSoftInterface::LoadModelFileFromFile(ImportParams, Status);
-
-if (Status == A3D_SUCCESS && ModelFile.IsValid())
-{
-    // 获取模型单位
-    double Unit = TechSoftInterface::GetModelFileUnit(ModelFile.Get());
-    UE_LOG(LogTemp, Log, TEXT("Model unit: %f"), Unit);
-
-    // 获取曲面 NURBS 表示
-    A3DSurfNurbsData NurbsData;
-    A3DStatus SurfStatus = TechSoftInterface::GetSurfaceAsNurbs(
-        SomeSurfacePtr, &NurbsData, 0.01, true);
-
-    // 在 UV 参数处求值曲面
-    A3DVector2dData UVParam;
-    UVParam.m_dX = 0.5;
-    UVParam.m_dY = 0.5;
-    A3DVector3dData PointAndDerivatives[4]; // (Derivatives+1)^2 = 4
-    TechSoftInterface::Evaluate(SomeSurfacePtr, UVParam, 1, PointAndDerivatives);
-
-    // 缝合模型（修复拓扑间隙）
-    TechSoftInterface::SewModel(ModelFile.Get(), 0.1, nullptr);
-
-    // ModelFile 超出作用域时自动释放（FUniqueTechSoftModelFile 的 RAII 行为）
-}
-#endif
-```
-
-### 进阶用法：使用 CADKernel 曲面细分路径
-
-```cpp
-// 来源: Source/CADInterfaces/Private/TechSoftFileParserCADKernelTessellator.h
-// 该路径使用 UE 内置 CADKernel 进行曲面细分，而非 TechSoft 的细分器
-
-// 当使用 CADKernel 细分时，SewModel 在 GenerateBodyMeshes 中执行，
-// 而不是在 TechSoftFileParser 的标准流程中。
-// 这通常能产生更高质量的三角面片。
-
-// 具体使用方式由导入参数中的 Mesher 设置控制：
-// EMesher::TechSoft - 使用 TechSoft 原生细分
-// EMesher::CADKernel - 使用 UE CADKernel 细分
-```
-
-### 进阶用法：使用智能指针管理 TechSoft 对象
-
-```cpp
-// 来源: Source/CADInterfaces/Public/TUniqueTechSoftObj.h
 #include "TUniqueTechSoftObj.h"
 
 using namespace CADLibrary;
 
-// TUniqueTSObj 是 TechSoft 数据结构的 RAII 包装
-// 它自动处理 A3D_INITIALIZE_DATA / A3DGet / A3DGet(NULL) 的生命周期
+// 使用 RAII 方式管理 TechSoft 数据结构
+// TUniqueTSObj 在析构时自动调用 TechSoft 的 Get(NULL, &data) 释放内存
 
-// 用法一：创建空的已初始化结构
-TUniqueTSObj<A3DSurfNurbsData> NurbsSurface;
-// NurbsSurface 内部已通过 A3D_INITIALIZE_DATA 初始化
+// 创建并初始化数据结构
+TUniqueTSObj<A3DAsmProductOccurrenceData> OccurrenceData;
 
-// 用法二：从 TechSoft 实体指针填充数据
-TUniqueTSObj<A3DTopoFaceData> FaceData(A3DTopoFacePtr);
-if (FaceData.IsValid())
+// 从实体指针填充数据
+A3DStatus Status = OccurrenceData.FillFrom(SomeEntityPtr);
+if (Status == A3D_SUCCESS)
 {
-    // 通过解引用访问数据
-    const A3DTopoFaceData& Data = *FaceData;
-    // 或通过指针访问
-    const A3DTopoFaceData* DataPtr = FaceData.GetPtr();
+    // 通过运算符访问数据
+    const A3DAsmProductOccurrenceData& Data = *OccurrenceData;
+    // 或
+    OccurrenceData->m_pcPrototype;
 }
 
-// 从索引填充（如材质索引）
-TUniqueTSObjFromIndex<A3DGraphMaterialData> MaterialData(MaterialIndex);
+// 使用索引类型
+TUniqueTSObjFromIndex<A3DGraphRgbColorData> ColorData;
+ColorData.FillFrom(ColorIndex);
+```
 
-// 超出作用域时自动调用 TechSoft 的清理方法
+### 场景图操作
+
+```cpp
+#include "CADSceneGraph.h"
+
+using namespace CADLibrary;
+
+FArchiveSceneGraph SceneGraph;
+
+// 预分配内存
+uint32 ComponentCounts[EComponentType::LastType] = {0};
+ComponentCounts[EComponentType::Instance] = 100;
+ComponentCounts[EComponentType::Reference] = 50;
+ComponentCounts[EComponentType::Body] = 20;
+SceneGraph.Reserve(ComponentCounts);
+
+// 添加根引用
+FArchiveCADObject RootMeta;
+RootMeta.Label = TEXT("Root");
+FArchiveReference& RootRef = SceneGraph.AddReference(/* from unloaded ref */);
+
+// 添加实例
+FArchiveInstance& Instance = SceneGraph.AddInstance(RootMeta);
+Instance.ReferenceNodeId = RootRef.Id;
+
+// 添加 Body
+FArchiveBody& Body = SceneGraph.AddBody(RootRef, EMesher::TechSoft);
+Body.Label = TEXT("Part_Body");
+
+// 序列化到文件
+SceneGraph.SerializeMockUp(TEXT("/path/to/cache.sg"));
 ```
 
 ## Demo 示例
 
-以下是一个完整的、可编译的最小示例，展示如何使用 CADInterfaces 模块读取 CAD 文件并提取场景信息。
+以下是一个完整的最小示例，展示如何使用 CADInterfaces 模块检查 SDK 可用性并读取 CAD 文件的基本信息：
 
-### CADImporterExample.h
+### CADImportDemo.h
 
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
 
-class FCADImporterExample
+class FCADImportDemo
 {
 public:
-    /** 导入 CAD 文件并打印场景信息 */
-    static bool ImportCADFile(const FString& FilePath, const FString& CachePath = TEXT(""));
+    /** 检查 CAD 导入是否可用，并打印版本信息 */
+    static bool CheckAvailability();
     
-    /** 检查 CAD 接口是否可用 */
-    static bool IsCADAvailable();
-    
-    /** 获取 TechSoft 版本 */
-    static FString GetVersion();
+    /** 读取 CAD 文件并打印场景统计 */
+    static bool ImportAndAnalyze(const FString& CADFilePath);
 };
 ```
 
-### CADImporterExample.cpp
+### CADImportDemo.cpp
 
 ```cpp
-#include "CADImporterExample.h"
+#include "CADImportDemo.h"
 #include "CADInterfacesModule.h"
-#include "TechSoftInterface.h"
 #include "CADFileReader.h"
 #include "CADFileData.h"
-#include "CADSceneGraph.h"
+#include "TechSoftInterface.h"
 
-using namespace CADLibrary;
-
-bool FCADImporterExample::IsCADAvailable()
+bool FCADImportDemo::CheckAvailability()
 {
-    return ICADInterfacesModule::GetAvailability() == ECADInterfaceAvailability::Available;
-}
-
-FString FCADImporterExample::GetVersion()
-{
-    if (!IsCADAvailable())
+    // 检查 TechSoft SDK 是否加载
+    ECADInterfaceAvailability Availability = ICADInterfacesModule::GetAvailability();
+    
+    if (Availability == ECADInterfaceAvailability::Unavailable)
     {
-        return TEXT("Unavailable");
-    }
-    const TCHAR* Version = ICADInterfacesModule::GetLibraryVersion();
-    return FString(Version ? Version : TEXT("Unknown"));
-}
-
-bool FCADImporterExample::ImportCADFile(const FString& FilePath, const FString& CachePath)
-{
-    if (!IsCADAvailable())
-    {
-        UE_LOG(LogTemp, Error, TEXT("CAD interface is not available. Ensure TechSoft SDK is linked."));
+        UE_LOG(LogTemp, Warning, TEXT("CAD 接口不可用，请确保安装了 Datasmith 和 TechSoft SDK"));
         return false;
     }
+    
+    if (Availability == ECADInterfaceAvailability::Unknown)
+    {
+        // 触发模块加载
+        ICADInterfacesModule::Get();
+        Availability = ICADInterfacesModule::GetAvailability();
+    }
+    
+    const TCHAR* Version = ICADInterfacesModule::GetLibraryVersion();
+    UE_LOG(LogTemp, Log, TEXT("TechSoft SDK 版本: %s"), Version);
+    
+    return Availability == ECADInterfaceAvailability::Available;
+}
 
-    UE_LOG(LogTemp, Log, TEXT("TechSoft version: %s"), *GetVersion());
-
-    // 配置导入参数
+bool FCADImportDemo::ImportAndAnalyze(const FString& CADFilePath)
+{
+    using namespace CADLibrary;
+    
+    if (!CheckAvailability())
+    {
+        return false;
+    }
+    
+    // 设置导入参数
     FImportParameters ImportParams;
-
-    // 创建文件描述符
-    FFileDescriptor FileDescription(FilePath);
-
-    // 获取引擎插件路径（用于 DWG/DGN 导入的 KernelIO）
-    FString EnginePluginsPath = FPaths::EnginePluginsDir();
-
-    // 创建 CAD 文件读取器
-    FCADFileReader Reader(ImportParams, FileDescription, EnginePluginsPath, CachePath);
-
+    FFileDescriptor FileDescriptor(CADFilePath, TEXT(""), TEXT(""));
+    
+    // 创建读取器
+    FCADFileReader Reader(ImportParams, FileDescriptor);
+    
     // 执行导入
     ECADParsingResult Result = Reader.ProcessFile();
-
+    
     if (Result != ECADParsingResult::Success)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to import CAD file: %s"), *FilePath);
+        UE_LOG(LogTemp, Error, TEXT("CAD 文件导入失败: %s"), *CADFilePath);
         return false;
     }
-
-    // 获取解析结果
-    const FCADFileData& CADData = Reader.GetCADFileData();
-    const FArchiveSceneGraph& SceneGraph = CADData.GetSceneGraphArchive();
-
-    // 打印导入统计
-    UE_LOG(LogTemp, Log, TEXT("=== CAD Import Summary ==="));
-    UE_LOG(LogTemp, Log, TEXT("File: %s"), *FilePath);
-    UE_LOG(LogTemp, Log, TEXT("Bodies: %d"), SceneGraph.Bodies.Num());
-    UE_LOG(LogTemp, Log, TEXT("References: %d"), SceneGraph.References.Num());
-    UE_LOG(LogTemp, Log, TEXT("Instances: %d"), SceneGraph.Instances.Num());
-    UE_LOG(LogTemp, Log, TEXT("External References: %d"), SceneGraph.ExternalReferenceFiles.Num());
-    UE_LOG(LogTemp, Log, TEXT("Colors: %d"), SceneGraph.ColorHIdToColor.Num());
-    UE_LOG(LogTemp, Log, TEXT("Materials: %d"), SceneGraph.MaterialHIdToMaterial.Num());
-
-    // 遍历所有 Body 并打印网格统计
-    const TArray<FBodyMesh>& BodyMeshes = CADData.GetBodyMeshes();
+    
+    // 分析结果
+    const FCADFileData& Data = Reader.GetCADFileData();
+    const FArchiveSceneGraph& SceneGraph = Data.GetSceneGraphArchive();
+    
+    UE_LOG(LogTemp, Log, TEXT("=== CAD 导入统计 ==="));
+    UE_LOG(LogTemp, Log, TEXT("文件: %s"), *CADFilePath);
+    UE_LOG(LogTemp, Log, TEXT("引用数量: %d"), SceneGraph.References.Num());
+    UE_LOG(LogTemp, Log, TEXT("实例数量: %d"), SceneGraph.Instances.Num());
+    UE_LOG(LogTemp, Log, TEXT("Body 数量: %d"), SceneGraph.Bodies.Num());
+    UE_LOG(LogTemp, Log, TEXT("外部引用: %d"), SceneGraph.ExternalReferenceFiles.Num());
+    UE_LOG(LogTemp, Log, TEXT("颜色数量: %d"), SceneGraph.ColorHIdToColor.Num());
+    UE_LOG(LogTemp, Log, TEXT("材质数量: %d"), SceneGraph.MaterialHIdToMaterial.Num());
+    
+    // 遍历 Body 网格统计
+    const TArray<FBodyMesh>& BodyMeshes = Data.GetBodyMeshes();
+    int32 TotalVertices = 0;
+    int32 TotalFaces = 0;
+    
     for (const FBodyMesh& BodyMesh : BodyMeshes)
     {
-        UE_LOG(LogTemp, Log, TEXT("  Body Mesh UId=%u, FromCAD=%s"),
-            BodyMesh.MeshActorUId,
-            BodyMesh.bIsFromCad ? TEXT("Yes") : TEXT("No"));
+        for (const auto& [MeshKey, TessData] : BodyMesh.Meshes)
+        {
+            TotalVertices += TessData.PositionArray.Num();
+            TotalFaces += TessData.PositionIndices.Num() / 3;
+        }
     }
-
-    // 打印性能记录
-    const FImportRecord& Record = CADData.GetRecord();
-    UE_LOG(LogTemp, Log, TEXT("Import time: %.2f ms"), Record.ImportTime);
-    UE_LOG(LogTemp, Log, TEXT("Mesh time: %.2f ms"), Record.MeshTime);
-    UE_LOG(LogTemp, Log, TEXT("Total load time: %.2f ms"), Record.LoadProcessTime);
-
+    
+    UE_LOG(LogTemp, Log, TEXT("总顶点数: %d"), TotalVertices);
+    UE_LOG(LogTemp, Log, TEXT("总面数: %d"), TotalFaces);
+    
     return true;
 }
 ```
 
-### Build.cs 依赖
-
-```csharp
-// 你的模块 Build.cs 中需要添加：
-PublicDependencyModuleNames.AddRange(new string[]
-{
-    "CADInterfaces"
-});
-```
-
-注意：实际编译还需要 TechSoft SDK 的第三方库支持。该 SDK 以预编译形式随引擎分发，需确保 `USE_TECHSOFT_SDK` 宏已定义且库文件已正确链接。
-
 ## 模块依赖
-
-### 插件内模块依赖关系
-
-```
-DatasmithCADTranslator ──→ CADLibrary ──→ CADInterfaces
-                                        ──→ CADTools
-DatasmithOpenNurbsTranslator ──→ CADLibrary
-DatasmithPLMXMLTranslator ──→ CADLibrary
-DatasmithWireTranslator ──→ CADLibrary
-                             ──→ WireInterface20xx
-CADLibrary ──→ CADInterfaces
-           ──→ CADKernelSurface
-           ──→ ParametricSurface
-```
-
-### 外部依赖
 
 | 模块 | 用途 |
 |---|---|
-| `TechSoft` | HOOPS Exchange SDK，用于解析 STEP/CATIA/SolidWorks/JT/IGES 等 CAD 格式 |
-| `OpenNurbs6` | OpenNurbs 库，用于解析 Rhino 的 3DM 文件格式 |
-| `DatasmithCore` | Datasmith 核心框架（DatasmithTranslator 模块使用） |
-| `MeshConversion` | 网格数据转换（细分路径使用） |
-| `CADKernel` | UE 内置 CAD 曲面细分引擎（CADKernelSurface 模块使用） |
+| `TechSoft` | 商业 CAD 内核 SDK，提供 40+ 种 CAD 格式的读写能力 |
+| `OpenNurbs6` | Rhino 的开源 NURBS 库，用于 .3dm 文件解析 |
+| `CADKernel` | UE 自有的 CAD 内核，用于参数化曲面处理和网格生成 |
 
 ## 维护状态
 
@@ -433,28 +357,29 @@ CADLibrary ──→ CADInterfaces
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 常量截断为 float 的编译警告 |
-| 2026-05-13 | `889b1ce2` | Added logic to allow Wire translator to work even if Alias 2027 is installed | Wire 转换器兼容 Alias 2027 的逻辑适配 |
-| 2026-05-13 | `52c91865` | Updated TechSoft to 2026.3 | 升级 TechSoft SDK 到 2026.3 版本 |
-| 2026-05-12 | `f8fbdc1f` | Updated version of DatasmithCAD cache | 更新 CAD 缓存版本号（可能涉及缓存格式变更） |
-| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 修复 MSVC 和 Clang 之间的类型转换警告可移植性 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 转 float 的编译警告 |
+| 2026-05-13 | `889b1ce2` | Added logic to allow Wire translator to work even if Alias 2027 is installed | 使 Wire 翻译器兼容 Alias 2027 版本 |
+| 2026-05-13 | `52c91865` | Updated TechSoft to 2026.3 | 升级 TechSoft SDK 至 2026.3 版本 |
+| 2026-05-12 | `f8fbdc1f` | Updated version of DatasmithCAD cache | 更新 DatasmithCAD 缓存版本 |
+| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 使类型转换警告在 MSVC 和 Clang 之间可移植 |
 
 ### 维护评价
 
-**活跃维护** ⚡
+**活跃维护** — 该插件仍在积极维护中。
 
-该插件仍在被积极维护和更新：
+- **创建时间**：2019 年 10 月，已有约 7 年历史
+- **最近更新**：2026 年 5 月仍有实质性更新（TechSoft SDK 升级、新 Alias 版本兼容）
+- **维护状态**：高度活跃，定期更新 CAD SDK 版本和添加新格式支持
+- **WireInterface 模块**：包含 2020-2026 共 11 个版本的翻译器模块，表明持续跟进 CAD 内核版本
+- **注意事项**：
+  - 依赖商业授权的 TechSoft SDK，需要单独获取许可
+  - 默认禁用（`EnabledByDefault=false`），需手动启用
+  - 大型装配体导入可能消耗大量内存和时间
+  - 缓存机制（`.sg`/`.gm` 文件）可显著加速重复导入
 
-- **创建于 2019 年**，至今约 7 年历史，属于 Enterprise（企业级）插件
-- **最近 5 次提交均在 2026 年 5 月**，包括 SDK 版本升级（TechSoft 2026.3）、编译器兼容性修复、以及新版本 Alias 的支持
-- TechSoft SDK 的版本持续更新（从 `WireInterface` 模块覆盖 2020-2026 全版本可看出对每个年度 Alias 版本都有适配）
-- 缓存版本号也在更新，说明内部数据格式仍在演进
-- 作为 Datasmith 导入管线的核心组件，与 UE 的企业级内容创作工作流深度绑定，预计会持续维护
-
-**推荐使用**。如果你的项目需要从工业 CAD 格式导入精确几何模型，这是官方唯一的 CAD 导入方案。注意需要手动启用（`EnabledByDefault: false`），且需要 TechSoft 第三方 SDK 支持。
+**推荐使用**：如果你的项目需要导入工业 CAD 文件，这是 UE5 官方推荐的方案。确保正确配置 TechSoft SDK 许可证。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithCADImporter)
 - [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/Datasmith/)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithCADImporter/Tests)（如存在）

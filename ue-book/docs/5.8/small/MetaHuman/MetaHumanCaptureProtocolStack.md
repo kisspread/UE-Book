@@ -1,210 +1,222 @@
-# MetaHuman Capture Protocol Stack
+# MetaHuman Animator
 
-> The official MetaHuman Unreal Engine toolkit
+> The official MetaHuman Unreal Engine toolkit（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 捕获协议栈 |
+| 中文名 | MetaHuman动画器 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
-| 模块 | `MetaHumanCaptureProtocolStack` (Runtime) |
+| 包含内容 | ✅ 有（蓝图资产、测试资源） |
+| 模块 | `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 未知 |
-| 年龄标签 | 🆕（约 N 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureProtocolStack) | |
+| 创建时间 | unknown |
+| 年龄标签 | 🆕（约 0 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-该模块实现了 **Capture Protocol Stack (CPS)** 协议。这是一个网络通信协议栈，专门用于**发现、连接和控制**外部的捕获设备（例如运行在 iPhone 上的 Live Link Face 应用）。
+MetaHuman Animator 是一套用于在 Unreal Engine 中创建、编辑和驱动 MetaHuman 数字角色的完整工具链。它解决了从原始视频/音频数据到高质量、可实时驱动的 MetaHuman 面部动画的全流程问题。其核心价值在于提供了一个端到端的解决方案，允许用户：
+1.  **从捕获设备（如 iPhone）接收并处理面部表演数据**（通过 `MetaHumanCaptureProtocolStack` 等模块与移动端 App 通信）。
+2.  **管理和关联 MetaHuman 角色的身份资产**（如面部网格、DNA），这些资产是驱动动画的基础（通过 `MetaHumanIdentity` 模块）。
+3.  **应用和优化面部动画求解**，包括从视频追踪关键点、生成动画、以及从音频驱动面部动画（`Speech2Face`）。
+4.  **与 Sequencer 深度集成**，以便在时间轴上编辑和控制 MetaHuman 动画。
 
-它的核心职责是：
-1.  **设备发现**：通过 UDP 多播在网络上发现可用的 CPS 服务器。
-2.  **控制会话**：通过 TCP 建立稳定的控制连接，用于管理捕获会话（开始/停止会话、开始/停止/中止录制、查询录制状态、获取 Take 列表和元数据）。
-3.  **数据导出**：通过另一个 TCP 连接，将设备上录制的 Take 数据（视频、音频等）安全地传输到 UE 编辑器中。
-
-它是 **MetaHuman Animator** 工作流中，连接外部物理捕获设备与 Unreal Engine 的关键基础设施。
+它不仅仅是一个单一功能插件，而是一个庞大的生态系统，包含了数据捕获、处理、求解和编辑的所有必要组件。
 
 ## 使用场景
 
--   你在使用 **MetaHuman Animator** 工作流，需要从 **iPhone** 上的 **Live Link Face** 应用实时获取面部动画捕获数据。
--   你需要**批量管理**多个捕获设备的录制会话，例如开始录制、查询设备状态、获取录制好的 Take 列表。
--   你需要将设备上录制的高质量视频和音频文件**自动化地导出**到 UE 项目中，用于后续的 MetaHuman 面部动画解算。
--   你正在开发一个**自定义的捕获设备应用**，并希望它能够与 Unreal Engine 的 MetaHuman 工具链无缝集成。
+-   **数字人虚拟主播/实时交互**：你需要一个能实时响应用户语音和输入的 MetaHuman 角色，使用 `MetaHumanSpeech2Face` 模块将语音实时转换为面部动画。
+-   **影视预演/动画制作**：演员在动捕棚中表演，你需要使用 iPhone 应用（如 Live Link Face）捕获其面部表演，然后通过 `MetaHumanCaptureProtocolStack` 和 `MetaHumanCaptureSource` 将数据导入引擎，并应用 `MetaHumanFaceFittingSolver` 生成高质量的面部动画。
+-   **批量生产流程**：你有大量的面部表演视频片段需要处理成 MetaHuman 动画资产，可以使用 `MetaHumanBatchProcessor` 来自动化这一流程。
+-   **定制化角色开发**：你需要为特定的 MetaHuman 角色（`MetaHumanIdentity`）创建专属的动画控制器或微调面部动画效果。
 
 ## 蓝图用法
 
-**注意：** `MetaHumanCaptureProtocolStack` 主要是一个**运行时 C++ 模块**，为上层编辑器工具（如 `MetaHumanCaptureSource`、`MetaHumanCaptureDataEditor`）提供底层通信能力。它本身暴露给蓝图的 API 非常有限。
+### 核心节点
 
-其核心功能（如 `FControlMessenger`、`FExportClient`）在 C++ 层面使用，用于构建上层编辑器 UI 和工作流。蓝图开发者通常通过 MetaHuman Animator 的编辑器窗口间接使用其功能，而非直接调用此模块的蓝图节点。
+该插件的功能主要通过 C++ 类和编辑器工具暴露，直接的蓝图节点较少。以下是一些关键的可蓝图访问的类和功能：
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `SendRequest` (模板) | 向连接的移动设备（如运行 Live Link Face 的 iPhone）发送协议请求（如获取服务器信息、开始/停止录制）。这是一个模板函数，具体请求类型如 `FGetServerInformationRequest`。 | `FControlMessenger` |
+| `ExportTakeFiles` | 发起从移动设备导出特定 Take 的文件（如视频、音频）的任务。 | `FExportClient` |
+| `StartSession` / `StopSession` | 建立或断开与移动设备的控制会话。 | `FControlMessenger` |
+| `RegisterUpdateHandler` | 注册一个回调来处理来自设备的实时更新消息（如录制状态变化、Take 增删）。 | `FControlMessenger` |
+
+### 使用示例（蓝图描述）
+
+典型的蓝图工作流可能如下：
+1.  创建一个 `FControlMessenger` 对象，调用 `Start` 连接到移动设备的 IP 和端口。
+2.  调用 `StartSession` 初始化会话。
+3.  通过 `SendRequest` 并传入 `FGetServerInformationRequest` 来验证连接并获取设备信息。
+4.  调用 `RegisterUpdateHandler` 并绑定到 `GRecordingStatus` 地址路径，以便在演员开始或停止表演时收到通知。
+5.  当收到 `FStartRecordingTakeRequest` 的更新或通过 UI 触发时，构造一个 `FStartRecordingTakeRequest`（包含 Slate 名称和 Take 编号）并通过 `SendRequest` 发送。
+6.  使用 `FExportClient` 的 `ExportTakeFiles` 方法将录制的文件从设备导出到本地磁盘。
 
 ## C++ 用法
-
-本模块提供了底层的 C++ 类来实现 CPS 协议。以下是基于源码的典型使用模式。
 
 ### 头文件引入
 
 ```cpp
-#include "MetaHumanCaptureProtocolStack.h"
-// 通常还需要包含具体的子模块头文件，例如：
-#include "Control/Messages/Constants.h"
-#include "Control/ControlMessenger.h"
-#include "ExportClient/ExportClient.h"
+#include "MetaHumanCaptureProtocolStack/Control/Messages/Constants.h"
+#include "MetaHumanCaptureProtocolStack/Control/ControlMessenger.h"
+#include "MetaHumanCaptureProtocolStack/ExportClient/ExportClient.h"
 ```
 
 ### 基本用法
 
-连接设备并查询服务器信息。
+以下代码展示了如何使用 `FControlMessenger` 与移动设备建立连接并获取服务器信息。这是整个动画捕获流程的第一步。
+*（来源：基于 `ControlMessenger.h` 和 `Constants.h` 的 API 推断）*
 
 ```cpp
-// 1. 创建并初始化控制通信器 (FControlMessenger)
-UE::CPS::FControlMessenger ControlMessenger;
+using namespace UE::CPS;
 
-// 2. 注册更新消息处理器（可选，用于接收设备状态变化通知）
-ControlMessenger.RegisterUpdateHandler(UE::CPS::AddressPaths::GRecordingStatus,
-    [](TSharedPtr<UE::CPS::FControlUpdate> InUpdate) {
-        // 处理录制状态更新...
-    });
+// 创建 Messenger 实例
+FControlMessenger Messenger;
 
-// 3. 启动连接（IP和端口通常从设备发现阶段获得）
-const FString ServerIP = TEXT("192.168.1.100");
-const uint16 ControlPort = 14567;
-auto Result = ControlMessenger.Start(ServerIP, ControlPort);
-if (Result.IsError()) {
-    UE_LOG(LogTemp, Error, TEXT("Failed to start control messenger: %s"), *Result.ClaimError().GetMessage());
+// 注册断开连接的处理器
+Messenger.RegisterDisconnectHandler(FControlMessenger::FOnDisconnect::CreateLambda([](const FString& Cause) {
+    UE_LOG(LogTemp, Warning, TEXT("Disconnected: %s"), *Cause);
+}));
+
+// 启动连接（阻塞直到连接建立或失败）
+// IP 和端口通常从移动设备的发现协议或用户输入获得
+TProtocolResult<void> StartResult = Messenger.Start(TEXT("192.168.1.100"), 14785);
+if (StartResult.IsError()) {
+    UE_LOG(LogTemp, Error, TEXT("Failed to start connection: %s"), *StartResult.ClaimError().GetMessage());
     return;
 }
 
-// 4. 开始会话
-auto SessionResult = ControlMessenger.StartSession();
+// 开始一个控制会话
+TProtocolResult<void> SessionResult = Messenger.StartSession();
 if (SessionResult.IsError()) {
-    // 处理错误
+    UE_LOG(LogTemp, Error, TEXT("Failed to start session: %s"), *SessionResult.ClaimError().GetMessage());
+    return;
 }
 
-// 5. 发送请求并获取服务器信息
-auto ServerInfoResult = ControlMessenger.GetServerInformation();
-if (ServerInfoResult.IsValid()) {
-    const auto& ServerInfo = ServerInfoResult.GetResult();
-    UE_LOG(LogTemp, Log, TEXT("Connected to: %s (%s)"), *ServerInfo.GetName(), *ServerInfo.GetPlatformName());
-}
+// 发送一个同步请求获取服务器信息
+FGetServerInformationRequest InfoRequest;
+TProtocolResult<FGetServerInformationResponse> InfoResult = Messenger.SendRequest(InfoRequest);
 
-// 6. 完成后停止
-ControlMessenger.Stop();
+if (InfoResult.IsValid()) {
+    const FGetServerInformationResponse& Info = InfoResult.GetResult();
+    UE_LOG(LogTemp, Log, TEXT("Connected to: %s, Model: %s, Platform: %s %s"),
+        *Info.GetName(), *Info.GetModel(), *Info.GetPlatformName(), *Info.GetPlatformVersion());
+} else {
+    UE_LOG(LogTemp, Error, TEXT("GetServerInformation failed: %s"), *InfoResult.ClaimError().GetMessage());
+}
 ```
 
 ### 进阶用法
 
-异步发送控制请求并处理响应。
+结合 `FControlMessenger` 和 `FExportClient`，实现一个自动录制并导出 Take 的流程。这需要处理异步请求和更新。
+*（来源：基于 `ControlMessenger.h`、`ControlRequest.h`、`ExportClient.h` 的 API 推断）*
 
 ```cpp
-// 创建一个录制 Take 的请求
-UE::CPS::FStartRecordingTakeRequest RecordTakeRequest(
-    TEXT("MySlate"),     // Slate名称
-    1,                   // Take编号
-    TEXT("MySubject"),   // 主体（可选）
-    TEXT("MyScenario"),  // 场景（可选）
-    TArray<FString>{TEXT("TestTag")} // 标签（可选）
-);
+// ... 假设 Messenger 已经连接并开始会话 ...
 
-// 异步发送请求，并在回调中处理结果
-ControlMessenger.SendAsyncRequest(RecordTakeRequest,
-    UE::CPS::FControlMessenger::FOnControlResponse<UE::CPS::FStartRecordingTakeRequest>::CreateLambda(
-        [](TProtocolResult<UE::CPS::FStartRecordingTakeResponse> InResult) {
-            if (InResult.IsValid()) {
-                UE_LOG(LogTemp, Log, TEXT("Recording started successfully."));
-            } else {
-                UE_LOG(LogTemp, Error, TEXT("Failed to start recording: %s"), *InResult.ClaimError().GetMessage());
-            }
-        })
-);
+// 注册更新处理器来监听 Take 列表的变化
+Messenger.RegisterUpdateHandler(GTakeAdded, FControlUpdate::FOnUpdateMessage::CreateLambda([](TSharedPtr<FControlUpdate> Update) {
+    if (TSharedPtr<FTakeAddedUpdate> TakeUpdate = StaticCastSharedPtr<FTakeAddedUpdate>(Update)) {
+        UE_LOG(LogTemp, Log, TEXT("New Take added: %s"), *TakeUpdate->GetTakeName());
+    }
+}));
+
+// 开始录制一个 Take
+FStartRecordingTakeRequest RecordRequest(TEXT("MySlate"), 1, TEXT("Actor"), TEXT("Happy"));
+TProtocolResult<FStartRecordingTakeResponse> RecordResult = Messenger.SendRequest(RecordRequest);
+
+if (RecordResult.IsError()) {
+    UE_LOG(LogTemp, Error, TEXT("Failed to start recording: %s"), *RecordResult.ClaimError().GetMessage());
+    return;
+}
+
+// 模拟录制 5 秒
+FPlatformProcess::Sleep(5.0f);
+
+// 停止录制
+FStopRecordingTakeRequest StopRequest;
+TProtocolResult<FStopRecordingTakeResponse> StopResult = Messenger.SendRequest(StopRequest);
+
+if (StopResult.IsValid()) {
+    const FString& TakeName = StopResult.GetResult().GetTakeName();
+    UE_LOG(LogTemp, Log, TEXT("Recording stopped. Take: %s"), *TakeName);
+
+    // 创建导出客户端并导出刚录制的 Take
+    // 假设 ExportPort 来自 GetServerInformationResponse
+    uint16 ExportPort = 14786; // 示例端口
+    FExportClient ExportClient(TEXT("192.168.1.100"), ExportPort);
+
+    // 构造要导出的文件列表（需要从 GetTakeMetadata 获得具体文件信息）
+    TArray<FTakeFile> TakeFiles;
+    TakeFiles.Add({TEXT("video.mp4"), 1024000, 0}); // 示例文件
+    TakeFiles.Add({TEXT("audio.wav"), 512000, 0});
+
+    // 创建一个简单的流式写入器（实际项目中需实现 FBaseStream 以保存到磁盘）
+    // 此处仅为演示调用接口
+    // TUniquePtr<FBaseStream> Stream = MakeUnique<FMyDiskSaveStream>(SavePath);
+    // ExportClient.ExportTakeFiles(TakeName, MoveTemp(TakeFiles), MoveTemp(Stream));
+}
 ```
 
 ## Demo 示例
 
-一个最小的示例，展示如何初始化捕获协议栈并进行设备发现。
+一个最小的可编译示例，演示如何初始化 `MetaHumanCaptureProtocolStack` 模块并使用其日志类别。
+*（来源：`MetaHumanCaptureProtocolStack.h` 和 `Definitions.h`）*
 
+**MyMetaHumanDemoModule.h**
 ```cpp
-// MyCaptureDemo.h
 #pragma once
+#include "Modules/ModuleManager.h"
 
-#include "CoreMinimal.h"
-#include "Discovery/DiscoveryMessenger.h"
-
-class FMyCaptureDemo
+class FMyMetaHumanDemoModule : public IModuleInterface
 {
 public:
-    void StartDiscovery();
-    void StopDiscovery();
-
-private:
-    void OnServerDiscovered(UE::CPS::FDiscoveryResponse InResponse);
-    void OnServerNotify(UE::CPS::FDiscoveryNotify InNotify);
-
-    TUniquePtr<UE::CPS::FDiscoveryMessenger> DiscoveryMessenger;
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
 };
 ```
 
+**MyMetaHumanDemoModule.cpp**
 ```cpp
-// MyCaptureDemo.cpp
-#include "MyCaptureDemo.h"
-#include "Discovery/Messages/DiscoveryResponse.h"
-#include "Discovery/Messages/DiscoveryNotify.h"
+#include "MyMetaHumanDemoModule.h"
+#include "MetaHumanCaptureProtocolStack/MetaHumanCaptureProtocolStack.h"
+#include "MetaHumanCaptureProtocolStack/Utility/Definitions.h"
 
-void FMyCaptureDemo::StartDiscovery()
+#define LOCTEXT_NAMESPACE "FMyMetaHumanDemoModule"
+
+void FMyMetaHumanDemoModule::StartupModule()
 {
-    DiscoveryMessenger = MakeUnique<UE::CPS::FDiscoveryMessenger>();
+    // 确保 MetaHumanCaptureProtocolStack 模块已加载
+    FModuleManager::Get().LoadModuleChecked(TEXT("MetaHumanCaptureProtocolStack"));
 
-    // 注册设备响应和通知处理器
-    DiscoveryMessenger->SetResponseHandler(
-        UE::CPS::FDiscoveryMessenger::FOnResponseArrived::CreateRaw(
-            this, &FMyCaptureDemo::OnServerDiscovered));
-    DiscoveryMessenger->SetNotifyHandler(
-        UE::CPS::FDiscoveryMessenger::FOnNotifyArrived::CreateRaw(
-            this, &FMyCaptureDemo::OnServerNotify));
+    // 现在可以安全地使用该模块提供的日志类别
+    UE_LOG(LogCPSControlMessenger, Log, TEXT("MetaHuman Capture Protocol Stack is loaded and ready."));
 
-    // 启动发现服务
-    auto Result = DiscoveryMessenger->Start();
-    if (Result.IsError()) {
-        UE_LOG(LogTemp, Error, TEXT("Failed to start discovery: %s"), *Result.ClaimError().GetMessage());
-        return;
-    }
-
-    // 发送多播请求
-    Result = DiscoveryMessenger->SendMulticastRequest();
-    if (Result.IsError()) {
-        UE_LOG(LogTemp, Error, TEXT("Failed to send discovery request: %s"), *Result.ClaimError().GetMessage());
-    }
+    // 在此处添加您的初始化逻辑，例如创建 FControlMessenger 实例。
 }
 
-void FMyCaptureDemo::StopDiscovery()
+void FMyMetaHumanDemoModule::ShutdownModule()
 {
-    if (DiscoveryMessenger.IsValid()) {
-        DiscoveryMessenger->Stop();
-        DiscoveryMessenger.Reset();
-    }
+    // 清理资源
 }
 
-void FMyCaptureDemo::OnServerDiscovered(UE::CPS::FDiscoveryResponse InResponse)
-{
-    // 收到服务器对发现请求的响应
-    UE_LOG(LogTemp, Log, TEXT("Discovered server on port: %d"), InResponse.GetControlPort());
-    // 通常在此处记录服务器的IP和ControlPort，用于后续的FControlMessenger连接
-}
+#undef LOCTEXT_NAMESPACE
 
-void FMyCaptureDemo::OnServerNotify(UE::CPS::FDiscoveryNotify InNotify)
-{
-    // 收到服务器的主动通知（例如上线/下线状态变更）
-    if (InNotify.GetConnectionState() == UE::CPS::FDiscoveryNotify::EConnectionState::Online) {
-        UE_LOG(LogTemp, Log, TEXT("Server came online."));
-    } else {
-        UE_LOG(LogTemp, Log, TEXT("Server went offline."));
-    }
-}
+IMPLEMENT_MODULE(FMyMetaHumanDemoModule, MyMetaHumanDemoModule)
 ```
 
 ## 模块依赖
 
-无特殊依赖（仅标准 Core/Engine/Slate 等）。
+要使用 `MetaHumanCaptureProtocolStack` 模块或整个 `MetaHumanAnimator` 插件的功能，你的项目模块需要依赖以下 **独特** 的模块：
+
+| 模块 | 用途 |
+|---|---|
+| `MetaHumanCoreTechLib` | MetaHuman 底层核心算法和技术库，提供面部追踪、求解等基础计算功能。 |
+| `MetaHumanSDKEditor` | MetaHuman 的编辑器扩展 SDK，提供资产导入、管理等编辑器功能。 |
+| `ControlRigDeveloper` | 用于与 Control Rig 系统集成，驱动 MetaHuman 的骨骼和控制器。 |
+| `SkeletalMeshUtilitiesCommon` | 提供骨骼网格体相关的通用工具函数。 |
 
 ## 维护状态
 
@@ -212,22 +224,22 @@ void FMyCaptureDemo::OnServerNotify(UE::CPS::FDiscoveryNotify InNotify)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体跟踪时禁用关卡序列导出功能 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体跟踪时过滤可视化对象 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 为现有网格体导出动画序列 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 修复当启用身体追踪时关卡序列导出的功能 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色身上的渲染伪影问题 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 优化身体追踪时的可视化对象过滤 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 实现为已存在的网格体导出动画序列的功能 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存导致的问题 |
 
 ### 维护评价
 
--   **活跃维护**：最近（2026年5月）有连续的功能更新和 Bug 修复，表明该模块正处于**活跃开发和维护**阶段。
--   **功能演进**：更新内容涉及身体跟踪支持、数据导出优化和渲染修复，显示其功能在不断扩展和优化。
--   **重要性**：作为 MetaHuman Animator 工作流的核心通信层，它被 Epic Games 官方持续维护。
--   **已知限制**：所有公开 API 均标记为 `UE_DEPRECATED(5.7, ...)`，表明该模块的功能已被迁移到新的 `CaptureManagerCore/CaptureProtocolStack` 模块中。**在 UE 5.7 及以后版本中，应使用新模块**。当前版本（5.8）仍可使用，但属于维护状态。
--   **推荐**：对于 UE 5.6 及以下版本的项目，如果需要完整的 MetaHuman Animator 捕获工作流，**推荐使用**此模块。对于 UE 5.7+ 的新项目，建议查找并使用新的 `CaptureManagerCore/CaptureProtocolStack` 模块。
+**评价：活跃维护，但存在重大未来变更风险。**
+
+-   **活跃维护**：从 Git 历史看，该插件在最近一周内（2026年5月）有多个功能更新和 Bug 修复，表明 Epic Games 团队仍在积极维护和迭代 MetaHuman Animator。
+-   **重大警告**：源码中 **大量** 类和函数（尤其是 `MetaHumanCaptureProtocolStack` 模块中的）都标注了 `UE_DEPRECATED(5.7, "MetaHumanAnimator/MetaHumanCaptureProtocolStack is deprecated. This functionality is now available in the CaptureManagerCore/CaptureProtocolStack module")`。这意味着 **整个捕获协议栈功能将在未来版本（很可能是 UE 5.8 或 5.9）中被迁移到新的 `CaptureManagerCore/CaptureProtocolStack` 模块中，并在 `MetaHumanAnimator` 插件内废弃**。
+-   **建议**：虽然当前（UE 5.7/5.8）可以使用该插件，但开发者应密切关注版本更新日志，并为未来迁移到 `CaptureManagerCore` 做好准备。新的项目或功能开发应优先考虑使用未来的新模块路径。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureProtocolStack)
--   [官方文档]() (暂无)
--   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureProtocolStack/Private/Tests)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureProtocolStack/Private/Tests) （位于 `Private/Tests` 目录下）
+- （官方文档链接未在 .uplugin 中提供）

@@ -1,10 +1,10 @@
 # Datasmith CAD Importer
 
-> Collection of tools to work with CAD files.（照抄，不翻译）
+> Collection of tools to work with CAD files.
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | Datasmith CAD 导入器 |
+| 中文名 | CAD导入器 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
@@ -16,169 +16,208 @@
 
 ## 用途
 
-本插件是一个企业级 CAD 文件导入解决方案的核心，作为 Unreal Datasmith 技术栈的一部分。它主要解决将不同 CAD 软件（特别是工业设计和产品可视化领域常用的工具）生成的复杂、高精度模型高效、无损地导入 Unreal Engine 的问题。
+本插件并非一个简单的“文件导入器”，而是 **Datasmith 管线中专门用于处理复杂 CAD 数据的核心后端引擎集合**。它解决的核心问题是：**将来自工业设计软件（如 Autodesk Alias）的高级几何与拓扑数据，精确、高效地转换并网格化为 Unreal Engine 可用的 Mesh 和材质资产**。
 
-`DatasmithCADImporter` 本身是一个聚合插件，包含了用于处理多种 CAD 格式（如 `.wire` (Alias)、`.jt`、`.plmxml`、OpenNurbs (`.3dm`)、TechSoft 等）的翻译器和工具库。本次分析的 `WireInterface2022_1` 模块，是其中一个专门用于解析 **Alias 2022.1** 版本 `.wire` 文件格式的翻译器实现。它负责读取 Alias 的场景图（DAG）、提取几何体（网格、曲面）、处理材质并将其转换为 Unreal Datasmith 能理解的元素，最终实现实时渲染或进一步处理。
+其主要工作包括：
+1.  **解析多种 CAD 格式**：通过多个 `Translator` 模块（如 `DatasmithWireTranslator`、`DatasmithOpenNurbsTranslator`）支持 `.wire`（Alias）、`.3dm`（Rhino/OpenNurbs）、`.plmxml` 等格式。
+2.  **集成专业内核**：集成了 **CADKernel** 和 **TechSoft** 两个工业级几何内核，用于进行高精度的曲面细分、修复和转换，这是其处理复杂 CAD 数据的关键。
+3.  **构建场景图**：将 CAD 模型的层级结构（Group、Layer、Body）映射为 Datasmith 的 `IDatasmithActorElement` 场景树。
+4.  **材质转换**：将 CAD 软件中的着色器（如 Alias 的 Blinn、Phong）转换为 UE 的 PBR 材质。
+5.  **多进程调度**：通过 `DatasmithDispatcher` 模块可能支持分布式处理，加速大型模型的导入。
 
-其存在价值在于弥合专业 CAD 工业软件与游戏/实时引擎之间的数据鸿沟，让设计师和工程师能直接在 Unreal 中利用其 CAD 资产进行实时可视化、虚拟评审或数字孪生构建。
+简而言之，当通过 Datasmith 导入 CAD 文件时，实际的数据转换、几何处理工作由此插件的各个模块协作完成。
 
 ## 使用场景
 
-- **产品设计与可视化**：汽车、消费品等行业的设计师使用 Autodesk Alias 创建外形，需要将高精度模型导入 Unreal 进行实时渲染、交互式配置或营销材料制作。
-- **工业流程仿真**：将 CAD 设计数据集成到基于 Unreal 的培训或仿真系统中。
-- **跨软件资产管线**：作为资产管线的一部分，自动将 Alias 设计文件转换为 Unreal 可用的格式。
+-   你是汽车设计师或工业设计师，使用 **Autodesk Alias** 设计复杂曲面，并需要在 Unreal Engine 中创建实时交互的虚拟评审环境或营销素材 → 使用此插件的 **DatasmithWireTranslator** 模块。
+-   你需要将 **Rhino** 或其他使用 OpenNurbs 内核的软件中的 3D 模型导入引擎，且模型包含复杂的裁剪曲面 (Trimmed Surfaces) → 使用此插件的 **DatasmithOpenNurbsTranslator** 模块。
+-   你在实现一个完整的 **数字样机 (Digital Mock-up)** 或 **产品配置器** 管线，需要将 PLM（产品生命周期管理）系统中的 CAD 数据（PLMXML 格式）导入 Unreal → 使用此插件的 **DatasmithPLMXMLTranslator** 模块。
+-   你希望在导入过程中获得最高质量的曲面细分结果，并需要在 **CADKernel** 和 **TechSoft** 两种后端之间进行选择或切换。
 
 ## 蓝图用法
 
-本模块 (`WireInterface2022_1`) 是一个底层的运行时翻译器，其功能通过 Datasmith 导入流程在后台调用，并不直接暴露给蓝图系统。用户通过 Unreal 编辑器的 **Datasmith 导入器**（`.udatasmith` 或直接支持的格式）间接使用此功能。在导入 `.wire` 文件时，引擎会根据文件版本自动选择对应的 `WireInterface` 模块。
+本插件主要作为 **运行时翻译器模块**，其核心 API 是 `IWireInterface`，通常不直接暴露给蓝图使用。实际的导入流程由 Datasmith 框架自动调用。开发者主要通过 **Datasmith Importer 的设置** 来间接影响其行为。
+
+### 核心节点
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `SetImportSettings` | 为 Wire 翻译器配置导入选项（如细分精度、坐标转换等）。 | `FWireTranslatorImpl` (实现 `IWireInterface`) |
+| `Load` | 加载指定的 .wire 文件场景。 | `FWireTranslatorImpl` (实现 `IWireInterface`) |
+| `LoadStaticMesh` | 根据已加载的网格元素数据，生成实际的 `FMeshDescription`。 | `FWireTranslatorImpl` (实现 `IWireInterface`) |
+
+### 使用示例（蓝图描述）
+
+由于本插件是底层引擎，蓝图中通常不直接调用其函数。用户交互层面，主要通过以下方式影响其工作：
+1.  在 **Datasmith Import** 面板中选择要导入的 `.wire` 或其他支持的 CAD 文件。
+2.  在 **Import Settings** 面板中，配置 **Datasmith CAD Translator** 相关的参数，例如：
+    *   **Tessellation Options**：控制曲面网格化的精度（如公差、最大边长）。
+    *   **Geometry Kernel**：选择使用 CADKernel 还是 TechSoft 后端。
+    *   **Scale** 和 **Coordinate System**：设置单位和坐标系转换。
+3.  执行导入，Datasmith 框架会自动实例化对应的翻译器模块（如 `DatasmithWireTranslator`）来处理文件。
 
 ## C++ 用法
 
-本模块的核心是实现 `IWireInterface` 接口，主要由 `FWireTranslatorImpl` 类完成。
+本插件的设计允许开发者集成自定义的 CAD 转换逻辑。以下示例基于源码中 `FWireTranslatorImpl` 和转换器类的模式。
 
 ### 头文件引入
 
-使用此模块通常不需要直接引入其头文件，而是通过 Datasmith 翻译器框架调用。如需在扩展开发中使用，可引入模块头文件：
 ```cpp
-#include "WireInterfaceModule.h" // FDatasmithWireTranslatorModule
+#include "WireInterfaceModule.h" // 模块基础
+#include "WireInterfaceImpl.h"   // Wire翻译器实现
+// 如果需要使用 CADKernel 或 TechSoft 进行自定义转换
+#include "AliasModelToCADKernelConverter.h"
+#include "AliasModelToTechSoftConverter.h"
 ```
 
-### 基本用法
+### 基本用法（调用现有翻译器流程）
 
-**1. 模块可用性检查与临时目录**
+通常，以下流程由 Datasmith 框架管理。如果需要编程式导入，可参考此模式。
+
 ```cpp
-// 检查 WireTranslator 模块是否可用
-if (FDatasmithWireTranslatorModule::IsAvailable())
+// 1. 获取并加载翻译器模块
+auto& WireModule = UE_DATASMITHWIRETRANSLATOR_NAMESPACE::FDatasmithWireTranslatorModule::Get();
+// ... 确保模块已加载
+
+// 2. 创建翻译器实例并配置
+TSharedPtr<UE_DATASMITHWIRETRANSLATOR_NAMESPACE::FWireTranslatorImpl> Translator = MakeShared<UE_DATASMITHWIRETRANSLATOR_NAMESPACE::FWireTranslatorImpl>();
+// 来源：Private/WireInterfaceImpl.h
+Translator->SetImportSettings(MyWireSettings); // 配置导入参数
+Translator->SetOutputPath(MyOutputPath);
+
+// 3. 初始化并加载场景
+if (Translator->Initialize(TEXT("C:/MyModel.wire")))
 {
-    // 获取模块实例，通常用于获取临时文件路径等
-    FDatasmithWireTranslatorModule& WireModule = FDatasmithWireTranslatorModule::Get();
-    FString TempDir = WireModule.GetTempDir();
-    UE_LOG(LogTemp, Log, TEXT("Wire translator temp dir: %s"), *TempDir);
-}
-```
-
-**2. 核心翻译流程 (内部使用逻辑)**
-从 `FWireTranslatorImpl` 的接口可以推断其典型使用流程：
-```cpp
-// 假设已有 IWireInterface 指针 (通常由 Datasmith 根据文件类型创建)
-TSharedPtr<IWireInterface> WireTranslator = /* ... */;
-
-// 1. 初始化，传入 .wire 文件路径
-bool bInitialized = WireTranslator->Initialize(TEXT("C:/Models/Car.wire"));
-
-// 2. 设置导入选项（单位、曲面细分等）
-FWireSettings Options;
-Options.TessellationParameters.CurveTolerance = 0.1f;
-WireTranslator->SetImportSettings(Options);
-
-// 3. 设置输出路径（用于生成缓存或中间文件）
-WireTranslator->SetOutputPath(FPaths::ProjectSavedDir() / TEXT("WireCache"));
-
-// 4. 加载场景，解析模型结构，生成 Datasmith Scene 对象
-TSharedPtr<IDatasmithScene> DatasmithScene = MakeShared<FDatasmithScene>();
-bool bLoaded = WireTranslator->Load(DatasmithScene);
-
-// 5. 之后，通过 Datasmith 框架将 DatasmithScene 转换为 Unreal 资产
-```
-
-### 进阶用法：网格提取
-
-翻译器在后台处理网格时，会调用 `LoadStaticMesh` 方法，该方法内部依赖几何转换器（如 `FAliasModelToCADKernelConverter` 或 `FAliasModelToTechSoftConverter`）将 Alias 的几何数据转换为 `FMeshDescription`。
-```cpp
-// 简化的内部调用逻辑示意
-bool FWireTranslatorImpl::LoadStaticMesh(
-    const TSharedPtr<IDatasmithMeshElement> MeshElement,
-    FDatasmithMeshElementPayload& OutMeshPayload,
-    const FDatasmithTessellationOptions& InTessellationOptions)
-{
-    // ... 查找对应的几何数据源 (如 FAlDagNodePtr, FBodyNode, FPatchMesh)
-    // ... 调用 GetMeshDescription(...) 获取转换后的网格描述
-    TOptional<FMeshDescription> MeshDesc = GetMeshDescription(MeshElement, OutMeshPayload);
-    if (MeshDesc.IsSet())
+    // 创建一个用于接收数据的 Datasmith 场景
+    TSharedPtr<IDatasmithScene> DatasmithScene = FDatasmithSceneFactory::CreateScene(TEXT("MyCADScene"));
+    if (Translator->Load(DatasmithScene))
     {
-        OutMeshPayload.LODs.Add(MeshDesc.GetValue());
-        return true;
+        // 此时 DatasmithScene 应已被填充了从 .wire 文件解析出的 Actor、Mesh、Material 等元素
+        // 可以将这个场景对象进一步传递给 Datasmith 的其他工具进行序列化或直接应用到世界中
     }
-    return false;
 }
+```
+
+### 进阶用法（自定义几何转换器）
+
+如果需要扩展支持新的几何类型，可以继承并实现 `FCADModelToCADKernelConverterBase` 或 `FCADModelToTechSoftConverterBase`。
+
+```cpp
+// 来源：Private/AliasModelToCADKernelConverter.h
+// 假设我们需要支持一个新的 Alias 节点类型
+class FMyCustomAliasConverter : public UE_DATASMITHWIRETRANSLATOR_NAMESPACE::FAliasModelToCADKernelConverter
+{
+public:
+    using FAliasModelToCADKernelConverter::FAliasModelToCADKernelConverter;
+
+    // 重写添加几何的方法，处理我们的自定义节点
+    virtual bool AddGeometry(const CADLibrary::FCADModelGeometry& Geometry) override
+    {
+        if (const FAliasGeometry* AliasGeom = static_cast<const FAliasGeometry*>(&Geometry))
+        {
+            // 获取 Alias DAG 节点
+            const FAlDagNodePtr& DagNode = ...; // 从某种映射中获取
+            if (DagNode.IsValid())
+            {
+                // 这里可以调用 AddBRep 或其他基类方法，并传入我们自定义的处理逻辑
+                // 例如，对特定类型的节点进行特殊的拓扑修复
+                return AddBRep(DagNode, 0, EAliasObjectReference::LocalReference);
+            }
+        }
+        return false;
+    }
+
+    // 可能需要重写网格化或拓扑修复方法
+    virtual bool Tessellate(const CADLibrary::FMeshParameters& InMeshParameters, FMeshDescription& OutMeshDescription) override
+    {
+        // 在调用基类前进行自定义预处理
+        bool bResult = FAliasModelToCADKernelConverter::Tessellate(InMeshParameters, OutMeshDescription);
+        // 在网格生成后进行自定义后处理，例如添加特定的顶点属性
+        return bResult;
+    }
+};
 ```
 
 ## Demo 示例
 
-**场景**：模拟一个简单的场景，尝试加载一个 `.wire` 文件。
-*注意：这需要项目正确配置了 Datasmith 和 Alias 插件依赖。*
+一个最小化的、编程式调用 Datasmith Wire 翻译器的控制台应用示例。假设已有一个有效的 `.wire` 文件路径。
 
 ```cpp
-// WireDemo.h
+// MyCADImporter.h
 #pragma once
 #include "CoreMinimal.h"
 
-class FWireDemo
+class FMyCADImporter
 {
 public:
-    static void RunDemo(const FString& WireFilePath);
+    static bool ImportWireFile(const FString& WireFilePath, const FString& OutputDir);
 };
 ```
 
 ```cpp
-// WireDemo.cpp
-#include "WireDemo.h"
+// MyCADImporter.cpp
+#include "MyCADImporter.h"
 #include "WireInterfaceModule.h"
-#include "IWireInterface.h" // 来自 DatasmithCADTranslator 模块
-#include "DatasmithSceneFactory.h"
-#include "DatasmithScene.h"
+#include "WireInterfaceImpl.h"
+#include "DatasmithSceneFactory.h" // 来自 Datasmith 核心模块
 
-void FWireDemo::RunDemo(const FString& WireFilePath)
+bool FMyCADImporter::ImportWireFile(const FString& WireFilePath, const FString& OutputDir)
 {
-    // 1. 确保 WireInterface 模块可用
-    if (!FDatasmithWireTranslatorModule::IsAvailable())
+    // 检查并加载翻译器模块
+    if (!UE_DATASMITHWIRETRANSLATOR_NAMESPACE::FDatasmithWireTranslatorModule::IsAvailable())
     {
         UE_LOG(LogTemp, Error, TEXT("WireInterface module is not available."));
-        return;
+        return false;
+    }
+    auto& WireModule = UE_DATASMITHWIRETRANSLATOR_NAMESPACE::FDatasmithWireTranslatorModule::Get();
+
+    // 创建翻译器
+    auto Translator = MakeShared<UE_DATASMITHWIRETRANSLATOR_NAMESPACE::FWireTranslatorImpl>();
+    Translator->SetOutputPath(OutputDir);
+
+    // 设置导入参数 (示例)
+    FWireSettings Settings;
+    // ... 填充 Settings ...
+    Translator->SetImportSettings(Settings);
+
+    // 初始化并加载
+    if (!Translator->Initialize(*WireFilePath))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to initialize translator for: %s"), *WireFilePath);
+        return false;
     }
 
-    // 2. 创建一个 Wire Translator 实例 (通常由 Datasmith 的翻译器工厂自动完成)
-    // 这里简化演示，实际中需使用模块管理器根据文件版本创建对应实例
-    // TSharedPtr<IWireInterface> Translator = ...;
+    // 创建 Datasmith 场景对象
+    TSharedPtr<IDatasmithScene> Scene = FDatasmithSceneFactory::CreateScene(TEXT("ImportedWireScene"));
+    if (!Translator->Load(Scene))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to load wire file: %s"), *WireFilePath);
+        return false;
+    }
 
-    // 3. 假设我们已经获得了正确的 IWireInterface 实例
-    // (以下代码为逻辑演示，非可直接编译的完整获取过程)
+    // 导入成功，此时 Scene 中应包含转换后的数据
+    UE_LOG(LogTemp, Log, TEXT("Successfully imported wire file. Scene has %d children."), Scene->GetActorsCount());
 
-    // 创建一个临时的 Datasmith Scene 来接收数据
-    TSharedPtr<IDatasmithScene> NewScene = FDatasmithSceneFactory::CreateScene(TEXT("WireImportDemo"));
+    // 这里可以将 Scene 序列化为 .udatasmith 文件，或用于其他处理
+    // 例如: FDatasmithSceneExporter::ExportSceneToUAsset(Scene, OutputPath);
 
-    // 初始化翻译器
-    // Translator->Initialize(*WireFilePath);
-
-    // 设置选项
-    // FWireSettings Settings;
-    // Translator->SetImportSettings(Settings);
-
-    // 执行加载
-    // bool bSuccess = Translator->Load(NewScene);
-
-    // if (bSuccess)
-    // {
-    //     UE_LOG(LogTemp, Log, TEXT("Wire file loaded successfully. Scene has %d actors."), NewScene->GetActorsCount());
-    //     // 接下来可通过 Datasmith 导入器将 NewScene 转换为 Unreal 资产
-    // }
-    // else
-    // {
-    //     UE_LOG(LogTemp, Error, TEXT("Failed to load Wire file: %s"), *WireFilePath);
-    // }
+    return true;
 }
 ```
 
 ## 模块依赖
 
-从模块构建文件分析，本插件依赖一些特殊的外部库，用于解析特定的 CAD 几何内核。
+从模块名和源码分析推断，此插件的核心依赖。要使用此插件，你的模块通常不需要直接依赖它，因为调用由 Datasmith 框架完成。但如果你要**集成或扩展**此插件，你的模块可能需要以下依赖。
 
 | 模块 | 用途 |
 |---|---|
-| `TechSoft` | 提供用于读取和转换特定 CAD 格式（如 JT）的几何内核库。 |
-| `OpenNurbs6` | 用于读取 OpenNurbs (`.3dm`) 格式的几何内核库。 |
+| `TechSoft` | 提供 A3DSDK 库，用于解析和处理 A3D CAD 内核数据（如 STEP、IGES、CATIA 等）。 |
+| `OpenNurbs6` | 提供 OpenNurbs 工具包，用于解析和处理 Rhino 的 3DM 文件格式。 |
+| `CADKernel` | Epic 自研的 CAD 几何内核，用于高精度曲面细分、修复和网格化。 |
+| `CADLibrary` | 提供通用的 CAD 数据结构、导入参数和转换器基础类。 |
+| `DatasmithCore` | Datasmith 框架的核心库，提供场景、元素、材质等基础接口。 |
 
-此外，所有模块都隐式依赖 `DatasmithCore` 和 `CADLibrary` 等核心 Datasmith 与 CAD 处理模块。
+*注意：常见的 Core, CoreUObject, Engine 等依赖已省略。*
 
 ## 维护状态
 
@@ -186,22 +225,24 @@ void FWireDemo::RunDemo(const FString& WireFilePath)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了严格浮点模式下，双精度常量截断为单精度浮点数导致的编译警告。 |
-| 2026-05-13 | `889b1ce2` | Added logic to allow Wire translator to work even if Alias 2027 is installed | 添加逻辑，使得即使安装了 Alias 2027，Wire 翻译器仍能正常工作。 |
-| 2026-05-13 | `52c91865` | Updated TechSoft to 2026.3 | 将 TechSoft 库更新至 2026.3 版本。 |
-| 2026-05-12 | `f8fbdc1f` | Updated version of DatasmithCAD cache | 更新了 DatasmithCAD 缓存的版本标识。 |
-| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 使函数类型转换警告在 MSVC 和 Clang 编译器间具有可移植性。 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复了在严格浮点模式下，双精度常量转换为浮点数时产生的编译警告。 |
+| 2026-05-13 | `889b1ce2` | Added logic to allow Wire translator to work even if Alias 2027 is installed | 添加了兼容性逻辑，使 Wire 翻译器在安装了 Alias 2027 版本的环境下也能正常工作。 |
+| 2026-05-13 | `52c91865` | Updated TechSoft to 2026.3 | 将 TechSoft 依赖库更新到了 2026.3 版本。 |
+| 2026-05-12 | `f8fbdc1f` | Updated version of DatasmithCAD cache | 更新了 Datasmith CAD 缓存的版本机制。 |
+| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 修复了函数类型转换警告，使其在 MSVC 和 Clang 编译器间都能正常编译。 |
 
 ### 维护评价
 
-该插件模块**正处于活跃维护中**。从最近的提交记录（截至2026年5月）来看，更新非常频繁，主要集中在：
-1.  **兼容性更新**：持续适配新版本的 Alias 软件（如 Alias 2027），并更新核心依赖库（TechSoft）。
-2.  **编译健壮性**：修复了跨编译器的警告和浮点精度问题，表明团队注重代码质量和跨平台支持。
-3.  **基础设施更新**：更新缓存版本，可能意味着改进了数据导入或处理的流程。
+**活跃维护**。该插件近期（2026年5月）有密集的更新活动，内容涵盖：
+-   **编译修复**：解决编译器警告，提升代码可移植性。
+-   **功能更新**：更新关键的第三方库（TechSoft）和内部缓存版本。
+-   **兼容性增强**：主动适配新版 CAD 软件（Alias 2027），表明其跟随着上游软件生态在积极维护。
+-   作为 **Enterprise** 分类下的插件，属于 Epic 官方支持的商业工具链的一部分，长期维护有保障。
 
-尽管插件整体创建时间已有约7年，但作为企业级 Datasmith 生态的关键组件，它随着主引擎和依赖库的迭代而持续更新。**推荐使用**，特别是对于需要处理现代版本 Alias `.wire` 文件的项目。
+该插件是工业/汽车设计领域使用 Unreal Engine 进行实时可视化的关键基础设施。虽然其默认不启用，但对于有相关需求的项目来说，是经过充分验证和持续维护的可靠选择。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Enterprise/DatasmithCADImporter)
 - [官方文档](https://docs.unrealengine.com/en-US/WorkingWithContent/Importing/Datasmith/)
+- 测试用例：此插件的主要测试逻辑可能集成在 Datasmith 的整体测试套件或企业级项目中，插件目录内未发现独立的测试文件。

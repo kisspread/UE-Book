@@ -4,11 +4,11 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | CAD 文件导入器 |
+| 中文名 | CAD 工业导入器 |
 | 分类 | Importers |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
-| 模块 | `CADInterfaces` (Runtime), `CADKernelSurface` (Runtime), `CADLibrary` (Runtime), `CADTools` (Runtime), `DatasmithCADTranslator` (Runtime), `DatasmithDispatcher` (Runtime), `DatasmithOpenNurbsTranslator` (Runtime), `DatasmithPLMXMLTranslator` (Runtime), `DatasmithWireTranslator` (Runtime), `ParametricSurface` (Runtime), `ParametricSurfaceExtension` (Runtime), `WireInterface2020` ~ `WireInterface2026_0` (Runtime) |
+| 模块 | `CADInterfaces` (Runtime), `CADKernelSurface` (Runtime), `CADLibrary` (Runtime), `CADTools` (Runtime), `DatasmithCADTranslator` (Runtime), `DatasmithDispatcher` (Runtime), `DatasmithOpenNurbsTranslator` (Runtime), `DatasmithPLMXMLTranslator` (Runtime), `DatasmithWireTranslator` (Runtime), `ParametricSurface` (Runtime), `ParametricSurfaceExtension` (Runtime), `WireInterface2020` (Runtime), `WireInterface2021_3` (Runtime), `WireInterface2022` (Runtime), `WireInterface2022_1` (Runtime), `WireInterface2022_2` (Runtime), `WireInterface2023_0` (Runtime), `WireInterface2023_1` (Runtime), `WireInterface2024_1` (Runtime), `WireInterface2025_0` (Runtime), `WireInterface2026_0` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2019-10-04 |
 | 年龄标签 | 👴 老古董（约 7 年） |
@@ -16,231 +16,206 @@
 
 ## 用途
 
-DatasmithCADImporter 是 Datasmith 导入框架的 CAD 后端，负责将工业 CAD 格式（Alias、Rhino、OpenNurbs、PLMXML、Wire 等）转换为 UE 可用的网格和场景数据。
+这是一个工业级 CAD 文件导入插件，解决的核心问题是：**如何将工程 CAD 软件（如 CATIA、NX、SolidWorks、Alias、Rhino、3DExperience 等）创建的参数化曲面模型转换为 Unreal 可渲染的 StaticMesh**。
 
-该插件的核心价值在于：工业 CAD 模型使用参数化曲面（NURBS/B-Rep）而非三角面片，无法直接渲染。本插件通过 TechSoft 和 CADKernel 两大内核将参数化几何体 **细分（Tessellation）** 为三角网格，同时保留拓扑修复、UV 映射、对称检测等高级功能。
+CAD 模型与游戏引擎模型的根本区别在于：
+- CAD 使用 **NURBS 参数化曲面**（精确的数学描述），而 UE 使用 **三角面片网格**（近似的多边形）
+- CAD 模型包含复杂的 **拓扑关系**（BRep 边界表示），需要修复才能生成有效网格
+- CAD 坐标系、单位、比例因子各不相同，需要统一转换
 
-**为什么需要手动启用（EnabledByDefault=false）**：该插件依赖第三方库 TechSoft（商业授权），并非所有 UE 用户都需要或拥有此依赖。
+本插件通过 Tessellation（曲面细分）将参数化几何体转换为三角网格，同时保留材质/图层信息。**注意：必须手动启用**（`EnabledByDefault: false`），因为它是 Enterprise 级功能，需要额外的第三方库（TechSoft、OpenNurbs）支持。
 
 ## 使用场景
 
-- 你在做 **建筑可视化 / 工业数字孪生** → 需要导入 Catia、SolidWorks、STEP、IGES 等 CAD 格式 → 启用本插件
-- 你需要对已导入的 CAD 模型进行 **重新细分（Retessellation）** 以调整精度 → 本插件提供 `FDatasmithRetessellationOptions` 支持
-- 你需要导入 **Rhino (.3dm) / OpenNurbs** 格式的参数化模型 → 使用 `DatasmithOpenNurbsTranslator` 模块
-- 你需要导入 **Alias Wire** 格式 → 使用 `DatasmithWireTranslator` + 对应年份的 `WireInterface` 模块
-- 你需要导入 **PLMXML** 产品生命周期数据 → 使用 `DatasmithPLMXMLTranslator` 模块
-
-## 架构概览
-
-本插件采用 **模块化翻译器架构**，核心流程如下：
-
-```
-CAD 文件格式
-    │
-    ▼
-┌─────────────────────────┐
-│  DatasmithCADTranslator  │  ← 总入口，路由到具体翻译器
-│  DatasmithOpenNurbs…     │
-│  DatasmithPLMXML…        │
-│  DatasmithWireTranslator │
-└──────────┬──────────────┘
-           │ 解析 CAD 几何体
-           ▼
-┌─────────────────────────┐
-│    CADInterfaces         │  ← TechSoft SDK 封装
-│    CADLibrary            │  ← 通用 CAD 工具库
-│    CADTools              │
-└──────────┬──────────────┘
-           │ 参数化曲面转换
-           ▼
-┌─────────────────────────┐
-│    ParametricSurface     │  ← NURBS → 三角网格细分
-│    ParametricSurfaceExt  │
-│    CADKernelSurface      │  ← CADKernel 内核细分
-└──────────┬──────────────┘
-           │ 网格数据
-           ▼
-┌─────────────────────────┐
-│    DatasmithDispatcher   │  ← 多进程调度（批量导入加速）
-└─────────────────────────┘
-```
-
-**WireInterface 模块族**（2020 ~ 2026）是版本化的 Alias Wire 格式接口，每个年份对应一个独立模块，确保向后兼容。
+- 你在做一个建筑可视化项目 → 导入 Revit/ArchiCAD 生成的 CAD 模型到 UE
+- 你在做汽车数字展厅 → 导入 CATIA/NX 的汽车零件模型，保留参数化曲面质量
+- 你需要对已导入的 CAD 模型重新细分（Retessellate）以调整精度 → 使用 ParametricSurface 模块的重新细分功能
+- 你有 Alias/Rhino 的工业设计模型 → 使用 WireInterface 和 OpenNurbs 翻译器导入
 
 ## 蓝图用法
 
-本插件主要面向编辑器导入流程，直接暴露的蓝图节点较少。关键的 USTRUCT 已标记 `BlueprintType`，可在蓝图中操作：
+本插件主要是运行时翻译器层，不直接暴露蓝图可调用节点。核心交互通过 Datasmith 导入流程完成。
 
-### 核心结构体
-
-| 结构体 | 说明 |
-|---|---|
-| `FParametricSceneParameters` | 场景级参数：坐标系、公制单位、缩放因子 |
-| `FParametricMeshParameters` | 网格级参数：法线翻转、对称设置 |
-
-### 蓝图数据资产
+### 核心类
 
 | 类 | 说明 |
 |---|---|
-| `UDatasmithParametricSurfaceData` | 附加到 StaticMesh 的参数化曲面原始数据，支持 Retessellation |
-| `UTechSoftParametricSurfaceData` | TechSoft 专用的参数化曲面数据子类，实现了真正的 Retessellation |
+| `UDatasmithParametricSurfaceData` | 存储 CAD 参数化曲面的原始数据和细分参数，附加到 StaticMesh 上 |
+| `FParametricSurfaceTranslator` | 处理参数化曲面文件的翻译，提供细分选项配置 |
+| `ICADModelConverter` | CAD 模型转换器的抽象接口，定义了完整的处理流水线 |
+
+### 使用示例（蓝图描述）
+
+在 Datasmith 导入面板中，当导入 CAD 文件时会自动调用对应的 Translator。如果需要修改细分参数：
+1. 导入 CAD 文件后，选中生成的 StaticMesh Asset
+2. 在 Details 面板中找到附加的 `Datasmith Parametric Surface Data` 对象
+3. 修改 `LastTessellationOptions` 中的 ChordTolerance、MaxEdgeLength 等参数
+4. 触发 Retessellate 以使用新参数重新生成网格
 
 ## C++ 用法
 
-### 核心接口：ICADModelConverter
-
-这是所有 CAD 模型转换器的基接口，定义了完整的转换流水线：
+### 头文件引入
 
 ```cpp
-// Source/ParametricSurface/Public/CADModelConverter.h
-namespace CADLibrary
-{
-    class ICADModelConverter
-    {
-    public:
-        // 1. 初始化转换会话
-        virtual void InitializeProcess() = 0;
-        
-        // 2. 添加几何体（可多次调用以合并多个 Body）
-        virtual bool AddGeometry(const FCADModelGeometry& Geometry) = 0;
-        
-        // 3. 拓扑修复（缝合间隙、修复退化面等）
-        virtual bool RepairTopology() = 0;
-        
-        // 4. 保存 B-Rep 文件（用于后续 Retessellation）
-        virtual bool SaveModel(const TCHAR* OutputPath, TSharedPtr<IDatasmithMeshElement> MeshElement) = 0;
-        
-        // 5. 细分为三角网格
-        virtual bool Tessellate(const FMeshParameters& InMeshParameters, FMeshDescription& OutMeshDescription) = 0;
-        
-        // 设置细分精度参数
-        virtual void SetImportParameters(
-            double ChordTolerance,      // SAG（弦高公差）
-            double MaxEdgeLength,       // 最大边长
-            double NormalTolerance,     // 相邻三角面法线夹角
-            EStitchingTechnique StitchingTechnique  // 拓扑缝合策略
-        ) = 0;
-        
-        // 为已生成的网格附加参数化曲面数据（用于后期 Retessellation）
-        virtual void AddSurfaceDataForMesh(
-            const TCHAR* InFilePath,
-            const FMeshParameters& InMeshParameters,
-            const FDatasmithTessellationOptions& InTessellationOptions,
-            FDatasmithMeshElementPayload& OutMeshPayload
-        ) const = 0;
-    };
-}
+#include "ParametricSurfaceModule.h"
+#include "ParametricSurfaceTranslator.h"
+#include "CADModelConverter.h"
+#include "DatasmithParametricSurfaceData.h"
 ```
 
-### TechSoft 转换器示例
+### 基本用法
+
+创建一个 ParametricSurface 数据对象并附加到 StaticMesh：
 
 ```cpp
-// Source/ParametricSurface/Public/CADModelToTechSoftConverterBase.h
-#include "CADModelToTechSoftConverterBase.h"
+#include "ParametricSurfaceModule.h"
+#include "DatasmithParametricSurfaceData.h"
 
-// 创建转换器实例（使用默认导入参数）
+// 创建参数化曲面数据
+UDatasmithParametricSurfaceData* SurfaceData = FParametricSurfaceModule::CreateParametricSurface();
+
+// 设置源文件
+SurfaceData->SetFile(TEXT("C:/Models/engine_block.step"));
+
+// 配置导入参数
 CADLibrary::FImportParameters ImportParams;
-FCADModelToTechSoftConverterBase Converter(ImportParams);
-
-// 设置细分参数：弦高 0.5mm，最大边长 10mm，法线公差 15°
-Converter.SetImportParameters(0.5, 10.0, 15.0, CADLibrary::EStitchingTechnique::StitchingSew);
-
-// 执行完整流程
-Converter.InitializeProcess();
-// ... AddGeometry() 调用 ...
-Converter.RepairTopology();
-Converter.SaveModel(*OutputPath, MeshElement);
-
-FMeshDescription MeshDescription;
-Converter.Tessellate(MeshParams, MeshDescription);
+ImportParams.SetTesselationParameters(
+    0.5,    // ChordTolerance (SAG)
+    10.0,   // MaxEdgeLength
+    15.0,   // NormalTolerance (角度)
+    CADLibrary::EStitchingTechnique::StitchingTechnique_Sew
+);
+SurfaceData->SetImportParameters(ImportParams);
 ```
 
-### 翻译器基础类
+*（来源：`Public/DatasmithParametricSurfaceData.h`、`Public/ParametricSurfaceModule.h`）*
+
+### 进阶用法
+
+使用 `ICADModelConverter` 接口完成完整的 CAD 模型转换流水线：
 
 ```cpp
-// Source/ParametricSurface/Public/ParametricSurfaceTranslator.h
-// 自定义翻译器时继承 FParametricSurfaceTranslator
-class FMyCADTranslator : public FParametricSurfaceTranslator
-{
-protected:
-    // 覆写此方法来设置默认细分选项
-    virtual void InitCommonTessellationOptions(FDatasmithTessellationOptions& TessellationOptions) override
-    {
-        TessellationOptions.ChordTolerance = 0.1f;
-        TessellationOptions.MaxEdgeLength = 5.0f;
-        TessellationOptions.NormalTolerance = 10.0f;
-    }
-};
+#include "CADModelToTechSoftConverterBase.h"
+#include "CADLibrary.h"
+
+// 1. 创建转换器实例（由子类 TechSoft 实现）
+CADLibrary::FImportParameters ImportParams;
+auto Converter = MakeShared<FCADModelToTechSoftConverterBase>(ImportParams);
+
+// 2. 初始化处理环境
+Converter->InitializeProcess();
+
+// 3. 设置细分参数
+Converter->SetImportParameters(
+    0.1,    // ChordTolerance - 越小越精细
+    5.0,    // MaxEdgeLength
+    10.0,   // NormalTolerance
+    CADLibrary::EStitchingTechnique::StitchingTechnique_Sew
+);
+
+// 4. 修复拓扑（处理开放边、自相交等问题）
+Converter->RepairTopology();
+
+// 5. 保存模型（用于后续重新细分）
+FString SavedPath = TEXT("C:/Cache/cad_model.dat");
+Converter->SaveModel(*SavedPath, MeshElement);
+
+// 6. 细分（Tessellation）
+FMeshDescription MeshDesc;
+CADLibrary::FMeshParameters MeshParams;
+MeshParams.bNeedSwapOrientation = true;
+Converter->Tessellate(MeshParams, MeshDesc);
+
+// 7. 后续可将曲面数据附加到 StaticMesh
+FDatasmithMeshElementPayload Payload;
+FDatasmithTessellationOptions TessOptions;
+Converter->AddSurfaceDataForMesh(*SavedPath, MeshParams, TessOptions, Payload);
 ```
 
-### 参数化曲面数据工具函数
-
-```cpp
-// Source/ParametricSurface/Public/ParametricSurfaceTranslator.h
-namespace ParametricSurfaceUtils
-{
-    // 为已有的网格附加参数化曲面数据
-    bool AddSurfaceData(
-        const TCHAR* MeshFilePath,
-        const CADLibrary::FImportParameters& InSceneParameters,
-        const CADLibrary::FMeshParameters& InMeshParameters,
-        const FDatasmithTessellationOptions& InCommonTessellationOptions,
-        FDatasmithMeshElementPayload& OutMeshPayload
-    );
-}
-```
+*（来源：`Public/CADModelConverter.h`、`Public/CADModelToTechSoftConverterBase.h`）*
 
 ## Demo 示例
 
+一个完整的 CAD 模型导入器示例：
+
+**MyCADImporter.h**
 ```cpp
-// MyCADImporter.h
 #pragma once
+
 #include "CADModelConverter.h"
-#include "CADModelToTechSoftConverterBase.h"
 #include "ParametricSurfaceTranslator.h"
 #include "DatasmithParametricSurfaceData.h"
 
-class FMyCADImportSession
+// 自定义 CAD 翻译器
+class FMyCADTranslator : public FParametricSurfaceTranslator
 {
 public:
-    void ImportCADFile(const FString& FilePath);
+    // 初始化细分参数默认值
+    virtual void InitCommonTessellationOptions(FDatasmithTessellationOptions& TessOptions) override
+    {
+        TessOptions.ChordTolerance = 0.1f;
+        TessOptions.MaxEdgeLength = 5.0f;
+        TessOptions.NormalTolerance = 10.0f;
+    }
 };
 
-// MyCADImporter.cpp
+// 自定义模型转换器
+class FMyCADModelConverter : public CADLibrary::ICADModelConverter
+{
+public:
+    FMyCADModelConverter(CADLibrary::FImportParameters InParams)
+        : ImportParameters(MoveTemp(InParams)) {}
+
+    virtual void InitializeProcess() override;
+    virtual bool RepairTopology() override;
+    virtual bool SaveModel(const TCHAR* OutputPath, TSharedPtr<IDatasmithMeshElement> MeshElement) override;
+    virtual bool Tessellate(const CADLibrary::FMeshParameters& InMeshParameters, FMeshDescription& OutMeshDescription) override;
+    virtual void SetImportParameters(double ChordTolerance, double MaxEdgeLength, double NormalTolerance, CADLibrary::EStitchingTechnique StitchingTechnique) override;
+    virtual bool AddGeometry(const CADLibrary::FCADModelGeometry& Geometry) override { return false; }
+    virtual bool IsSessionValid() override { return true; }
+    virtual void AddSurfaceDataForMesh(const TCHAR* InFilePath, const CADLibrary::FMeshParameters& InMeshParameters, const FDatasmithTessellationOptions& InTessellationOptions, FDatasmithMeshElementPayload& OutMeshPayload) const override;
+
+private:
+    CADLibrary::FImportParameters ImportParameters;
+};
+```
+
+**MyCADImporter.cpp**
+```cpp
 #include "MyCADImporter.h"
 #include "ParametricSurfaceModule.h"
 
-void FMyCADImportSession::ImportCADFile(const FString& FilePath)
+void FMyCADModelConverter::InitializeProcess()
 {
-    // 检查 ParametricSurface 模块是否可用（需要 TechSoft 依赖）
-    if (!FParametricSurfaceModule::IsAvailable())
-    {
-        UE_LOG(LogTemp, Error, TEXT("ParametricSurface module is not available. Check TechSoft installation."));
-        return;
-    }
+    // 初始化 TechSoft 或 CADKernel 内核
+}
 
-    // 创建参数化曲面数据对象
-    UDatasmithParametricSurfaceData* SurfaceData = FParametricSurfaceModule::CreateParametricSurface();
-    
-    // 设置场景参数
-    CADLibrary::FImportParameters ImportParams;
-    ImportParams.SetTesselationParameters(
-        0.5,   // ChordTolerance (SAG)
-        10.0,  // MaxEdgeLength
-        15.0,  // NormalTolerance
-        CADLibrary::EStitchingTechnique::StitchingSew
-    );
-    
-    SurfaceData->SetImportParameters(ImportParams);
-    
-    // 加载原始 CAD 数据
-    SurfaceData->SetFile(*FilePath);
-    
-    // 验证数据有效性
-    if (SurfaceData->IsValid())
-    {
-        UE_LOG(LogTemp, Log, TEXT("CAD file loaded: %s"), *FilePath);
-    }
+bool FMyCADModelConverter::RepairTopology()
+{
+    // 修复 BRep 拓扑问题：开放边、退化面等
+    return true;
+}
+
+bool FMyCADModelConverter::SaveModel(const TCHAR* OutputPath, TSharedPtr<IDatasmithMeshElement> MeshElement)
+{
+    // 将中间 BRep 模型保存为文件，供后续重新细分
+    return true;
+}
+
+bool FMyCADModelConverter::Tessellate(const CADLibrary::FMeshParameters& InMeshParameters, FMeshDescription& OutMeshDescription)
+{
+    // 执行曲面细分，将 NURBS 转为三角网格
+    return true;
+}
+
+void FMyCADModelConverter::SetImportParameters(double ChordTolerance, double MaxEdgeLength, double NormalTolerance, CADLibrary::EStitchingTechnique StitchingTechnique)
+{
+    ImportParameters.SetTesselationParameters(ChordTolerance, MaxEdgeLength, NormalTolerance, StitchingTechnique);
+}
+
+void FMyCADModelConverter::AddSurfaceDataForMesh(const TCHAR* InFilePath, const CADLibrary::FMeshParameters& InMeshParameters, const FDatasmithTessellationOptions& InTessellationOptions, FDatasmithMeshElementPayload& OutMeshPayload) const
+{
+    // 将曲面数据关联到 StaticMesh，支持后续重新细分
 }
 ```
 
@@ -248,14 +223,10 @@ void FMyCADImportSession::ImportCADFile(const FString& FilePath)
 
 | 模块 | 用途 |
 |---|---|
-| `TechSoft` | TechSoft HOOPS 内核，提供 CAD 格式解析和 B-Rep 几何操作 |
-| `OpenNurbs6` | OpenNurbs 库，用于 Rhino (.3dm) 格式解析 |
-| `DatasmithCore` | Datasmith 核心框架（IDatasmithTranslator、MeshElement 等） |
-| `DatasmithImporter` | Datasmith 导入器框架（场景构建、资产管理） |
-| `MeshDescription` | 网格数据结构（FMeshDescription） |
-| `StaticMeshDescription` | StaticMesh 网格描述扩展 |
-
-> 注意：`TechSoft` 是商业库，需要单独获取许可证。没有 TechSoft 时本插件的核心功能不可用。
+| `TechSoft` | TechSoft 公司的 CAD 内核库，用于解析 CATIA/NX/SolidWorks 等格式 |
+| `OpenNurbs6` | 开源 NURBS 库，用于解析 Rhino 的 3DM 文件格式 |
+| `DatasmithRuntime` | Datasmith 运行时导入框架 |
+| `DatasmithCore` | Datasmith 核心类型定义 |
 
 ## 维护状态
 
@@ -263,18 +234,19 @@ void FMyCADImportSession::ImportCADFile(const FString& FilePath)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 常量截断为 float 的编译警告 |
-| 2026-05-13 | `889b1ce2` | Added logic to allow Wire translator to work even if Alias 2027 is installed | 支持 Alias 2027 环境下的 Wire 格式翻译器 |
-| 2026-05-13 | `52c91865` | Updated TechSoft to 2026.3 | 升级 TechSoft 依赖至 2026.3 版本 |
-| 2026-05-12 | `f8fbdc1f` | Updated version of DatasmithCAD cache | 更新 CAD 缓存格式版本号 |
-| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 修复 MSVC 与 Clang 之间的类型转换警告兼容性 |
+| 2026-05-13 | `852b276c` | Fixes code that produces warnings about double constant truncation to float under strict fp mode. | 修复严格浮点模式下 double 转 float 的编译警告 |
+| 2026-05-13 | `889b1ce2` | Added logic to allow Wire translator to work even if Alias 2027 is installed | 兼容 Alias 2027 版本的 Wire 翻译器 |
+| 2026-05-13 | `52c91865` | Updated TechSoft to 2026.3 | 升级 TechSoft 内核到 2026.3 版本 |
+| 2026-05-12 | `f8fbdc1f` | Updated version of DatasmithCAD cache | 更新 CAD 缓存格式版本 |
+| 2026-05-12 | `3e657fb3` | Make function type cast warnings portable between MSVC and Clang. | 修复跨编译器（MSVC/Clang）类型转换警告 |
 
 ### 维护评价
 
-- **活跃维护**：最近一次更新在 2026 年 5 月，距今不到 1 个月，且持续进行实质性更新（TechSoft 版本升级、新 Alias 版本支持）
-- **企业级插件**：由 Epic Games 官方维护，作为 Datasmith 企业级管线的核心组件
-- **版本化接口**：WireInterface 采用年份版本化设计（2020~2026），说明此插件面向长期工业用户
-- **推荐使用**：如果你的工作流涉及 CAD 文件导入，本插件是 UE5 中唯一的企业级解决方案，且维护状态良好
+- **创建时间**：2019 年 10 月，已有约 7 年历史
+- **更新频率**：**非常活跃**，最近一次更新在 2026 年 5 月（文档编写时），且持续更新第三方库版本
+- **维护状态**：**活跃维护中**，Epic Games 的 Enterprise 团队在持续维护
+- **已知限制**：需要手动启用（`EnabledByDefault: false`），依赖 TechSoft 商业库（需要许可证）
+- **推荐使用**：✅ 强烈推荐用于工业 CAD 模型导入场景。这是 UE5 中唯一官方支持的 CAD 参数化曲面导入方案，支持格式广泛（CATIA、NX、SolidWorks、Alias、Rhino、3DExperience 等），且持续更新第三方库版本以保持兼容性。
 
 ## 相关链接
 
