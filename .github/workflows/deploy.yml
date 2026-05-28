@@ -44,10 +44,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      # 强行分配 10GB 的硬盘作为虚拟内存！(使用 dd 命令代替 fallocate)
+      # 强行分配 12GB 的硬盘作为虚拟内存！(使用 dd 命令代替 fallocate)
       - name: Allocate Swap Space
         run: |
-          sudo dd if=/dev/zero of=/mnt/swapfile bs=1M count=10240
+          sudo dd if=/dev/zero of=/mnt/swapfile bs=1M count=12288
           sudo chmod 600 /mnt/swapfile
           sudo mkswap /mnt/swapfile
           sudo swapon /mnt/swapfile
