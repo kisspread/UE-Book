@@ -108,13 +108,15 @@ jobs:
             SUMMARY=$(python3 -c "
           import json
           d = json.load(open('v2/last_run.json'))
-          results = d.get('results', [])
-          success = sum(1 for r in results if r.get('success') and not r.get('skipped'))
-          failed = sum(1 for r in results if not r.get('success') and not r.get('skipped'))
-          skipped = sum(1 for r in results if r.get('skipped'))
+          # Prefer this_round (per-round), fall back to results (merged) for backward compat
+          this_round = d.get('this_round', d.get('results', []))
+          success = sum(1 for r in this_round if r.get('success') and not r.get('skipped'))
+          failed = sum(1 for r in this_round if not r.get('success') and not r.get('skipped'))
+          skipped = sum(1 for r in this_round if r.get('skipped'))
           elapsed = d.get('last_result', {}).get('elapsed', 0)
-          names = [r['name'] for r in results if r.get('success') and not r.get('skipped')][:5]
-          err_names = [r['name'] for r in results if not r.get('success') and not r.get('skipped')][:3]
+          # Show last 5 generated (most recent), not first 5 (always the same)
+          names = [r['name'] for r in this_round if r.get('success') and not r.get('skipped')][-5:]
+          err_names = [r['name'] for r in this_round if not r.get('success') and not r.get('skipped')][:3]
           lines = []
           if success: lines.append(f'✅ {success} succeeded')
           if skipped: lines.append(f'⏭️  {skipped} skipped')

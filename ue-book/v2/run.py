@@ -110,7 +110,9 @@ def main():
         _mark_complete(log_path, results=all_results, elapsed=elapsed)
     else:
         # Save intermediate state for debugging / resume (MUST come before commit)
-        _save_progress(log_path, args, results=all_results,
+        _save_progress(log_path, args,
+                       results=all_results,
+                       this_round=results,
                        elapsed=elapsed, skipped=n_skip)
 
     # ── Commit and push (after save, so last_run.json is up to date) ──
@@ -140,8 +142,8 @@ def _git_commit_push(project_dir: str, version: str,
             cwd=project_dir, capture_output=True, text=True, timeout=10,
         )
         subprocess.run(
-            ["git", "add", "ue-book/docs/", "ue-book/manifest.json",
-             "ue-book/v2/last_run.json"],
+            ["git", "add", "docs/", "manifest.json",
+             "v2/last_run.json"],
             cwd=project_dir, capture_output=True, text=True, timeout=30,
         )
         # Check if there's anything to commit
@@ -194,9 +196,7 @@ def _trigger_next_workflow(project_dir: str, args):
              "--repo", repo,
              "--ref", "master",
              "-F", f"version={args.version}",
-             "-F", f"max_duration={args.max_duration}"]
-            + (["-F", "force=all"] if args.force_all else [])
-            + (["-F", f"force={','.join(args.force)}"] if args.force and not args.force_all else []),
+             "-F", f"max_duration={args.max_duration}"],
             cwd=project_dir,
             capture_output=True, text=True,
             timeout=30,
@@ -214,10 +214,18 @@ def _trigger_next_workflow(project_dir: str, args):
 
 
 def _save_progress(log_path: str, args,
-                   results: list[dict], elapsed: float,
+                   results: list[dict],
+                   this_round: list[dict],
+                   elapsed: float,
                    skipped: int):
-    """Save intermediate state to last_run.json."""
-    n_ok = sum(1 for r in results if r.get("success") and not r.get("skipped"))
+    """Save intermediate state to last_run.json.
+
+    ``results`` is the merged history across all runs.
+    ``this_round`` is only the current run's output.
+    ``last_result`` reflects THIS round, not the cumulative total.
+    """
+    n_ok = sum(1 for r in this_round if r.get("success") and not r.get("skipped"))
+    n_fail = sum(1 for r in this_round if not r.get("success") and not r.get("skipped"))
     data = {
         "version": args.version,
         "complete": False,
@@ -228,9 +236,11 @@ def _save_progress(log_path: str, args,
             "max_duration": args.max_duration,
         },
         "results": results,
+        "this_round": this_round,
         "last_result": {
             "success": n_ok,
             "skipped": skipped,
+            "failed": n_fail,
             "elapsed": elapsed,
         },
     }
