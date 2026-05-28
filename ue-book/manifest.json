@@ -368,9 +368,9 @@
       "doc_path": "docs/5.8/small/ControlRigModules/"
     },
     "ControlRigSpline": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ControlRigSpline/"
+      "doc_path": "docs/5.8/small/ControlRigSpline/"
     },
     "CryptoKeys": {
       "generated_in": "5.7",
@@ -674,9 +674,9 @@
       "doc_path": "docs/5.7/small/LiveLinkCamera/"
     },
     "LiveLinkCurveDebugUI": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/LiveLinkCurveDebugUI/"
+      "doc_path": "docs/5.8/small/LiveLinkCurveDebugUI/"
     },
     "LiveLinkDevice": {
       "generated_in": "5.7",
@@ -1966,9 +1966,9 @@
       "doc_path": "docs/5.8/large/DatasmithFBXImporter/"
     },
     "EaseCurveTool": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/EaseCurveTool/"
+      "doc_path": "docs/5.8/large/EaseCurveTool/"
     },
     "EnhancedInput": {
       "generated_in": "5.7",
@@ -2251,9 +2251,9 @@
       "doc_path": "docs/5.7/xlarge/DMXProtocol/"
     },
     "DNACalib": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/DNACalib/"
+      "doc_path": "docs/5.8/xlarge/DNACalib/"
     },
     "DataLink": {
       "generated_in": "5.7",
@@ -2276,9 +2276,9 @@
       "doc_path": "docs/5.8/xlarge/DatasmithImporter/"
     },
     "DeformerGraph": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/DeformerGraph/"
+      "doc_path": "docs/5.8/xlarge/DeformerGraph/"
     },
     "DynamicMaterial": {
       "generated_in": "5.7",
@@ -2306,14 +2306,14 @@
       "doc_path": "docs/5.8/xlarge/GameplayCameras/"
     },
     "GameplayInsights": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/GameplayInsights/"
+      "doc_path": "docs/5.8/xlarge/GameplayInsights/"
     },
     "GeneSplicer": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/GeneSplicer/"
+      "doc_path": "docs/5.8/xlarge/GeneSplicer/"
     },
     "GeometryCache": {
       "generated_in": "5.7",
@@ -2336,9 +2336,9 @@
       "doc_path": "docs/5.7/xlarge/Harmonix/"
     },
     "IKRig": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/IKRig/"
+      "doc_path": "docs/5.8/xlarge/IKRig/"
     },
     "LevelSnapshots": {
       "generated_in": "5.7",
@@ -3222,49 +3222,49 @@
       "doc_path": "docs/5.7/small/DynamicMaterialMediaStreamBridge/"
     },
     "DynamicWind": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/DynamicWind/"
+      "doc_path": "docs/5.8/small/DynamicWind/"
     },
     "EditorDataStorage": {
-      "generated_in": "5.7",
-      "size": "large",
-      "doc_path": "docs/5.7/large/EditorDataStorage/"
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/EditorDataStorage/"
     },
     "EditorDataStorageFeatures": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/EditorDataStorageFeatures/"
+      "doc_path": "docs/5.8/xlarge/EditorDataStorageFeatures/"
     },
     "EditorPerformance": {
-      "generated_in": "5.7",
-      "size": "small",
-      "doc_path": "docs/5.7/small/EditorPerformance/"
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/EditorPerformance/"
     },
     "EditorTelemetry": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/EditorTelemetry/"
+      "doc_path": "docs/5.8/small/EditorTelemetry/"
     },
     "DataprepGeometryOperations": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/DataprepGeometryOperations/"
+      "doc_path": "docs/5.8/small/DataprepGeometryOperations/"
     },
     "DatasmithInterchange": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/DatasmithInterchange/"
+      "doc_path": "docs/5.8/medium/DatasmithInterchange/"
     },
     "DatasmithRuntime": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/DatasmithRuntime/"
+      "doc_path": "docs/5.8/medium/DatasmithRuntime/"
     },
     "EvaluationNotifies": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/EvaluationNotifies/"
+      "doc_path": "docs/5.8/small/EvaluationNotifies/"
     },
     "FastGeoStreaming": {
       "generated_in": "5.8",
@@ -4282,9 +4282,9 @@
       "doc_path": "docs/5.7/small/MJPEGDecoderElectra/"
     },
     "MediaCompositing": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/MediaCompositing/"
+      "doc_path": "docs/5.8/medium/MediaCompositing/"
     },
     "MediaFrameworkUtilities": {
       "generated_in": "5.8",
@@ -4318,29 +4318,29 @@
       "forced": true
     },
     "MfMedia": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/MfMedia/"
+      "doc_path": "docs/5.8/medium/MfMedia/"
     },
     "NDIMedia": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/NDIMedia/"
+      "doc_path": "docs/5.8/large/NDIMedia/"
     },
     "OpusDecoderElectra": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/OpusDecoderElectra/"
+      "doc_path": "docs/5.8/small/OpusDecoderElectra/"
     },
     "PixelCapture": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/PixelCapture/"
+      "doc_path": "docs/5.8/large/PixelCapture/"
     },
     "PixelStreaming": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/PixelStreaming/"
+      "doc_path": "docs/5.8/xlarge/PixelStreaming/"
     },
     "PixelStreaming2": {
       "generated_in": "5.7",
@@ -4348,9 +4348,9 @@
       "doc_path": "docs/5.7/xlarge/PixelStreaming2/"
     },
     "TimecodeSynchronizer": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/TimecodeSynchronizer/"
+      "doc_path": "docs/5.8/medium/TimecodeSynchronizer/"
     },
     "VPxDecoderElectra": {
       "generated_in": "5.8",
