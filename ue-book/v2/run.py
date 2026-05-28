@@ -163,6 +163,11 @@ def _git_commit_push(project_dir: str, version: str,
         if r.returncode != 0:
             print(f"⚠️  git commit failed: {r.stderr.strip()[:200]}")
             return
+        # Clean up stale rebase state from previous crashed runs
+        subprocess.run(
+            ["git", "rebase", "--abort"],
+            cwd=project_dir, capture_output=True, text=True, timeout=10,
+        )
         # Pull rebase + push
         subprocess.run(
             ["git", "pull", "--rebase", "origin", "master"],

@@ -98,6 +98,7 @@ jobs:
             exit 0
           fi
           git commit -m "docs: fallback commit for UE ${{ inputs.version }} plugin docs"
+          git rebase --abort 2>/dev/null || true
           git pull --rebase origin master
           git push
 
