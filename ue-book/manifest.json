@@ -48,9 +48,10 @@
       "doc_path": "docs/5.7/small/ARUtilities/"
     },
     "AbilitySystemGameFeatureActions": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AbilitySystemGameFeatureActions/"
+      "doc_path": "docs/5.8/small/AbilitySystemGameFeatureActions/",
+      "forced": true
     },
     "ActorLayerUtilities": {
       "generated_in": "5.7",
@@ -58,9 +59,10 @@
       "doc_path": "docs/5.7/small/ActorLayerUtilities/"
     },
     "ActorPalette": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ActorPalette/"
+      "doc_path": "docs/5.8/small/ActorPalette/",
+      "forced": true
     },
     "ActorSequence": {
       "generated_in": "5.7",
@@ -113,9 +115,10 @@
       "doc_path": "docs/5.7/small/AndroidPermission/"
     },
     "AnimToTexture": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AnimToTexture/"
+      "doc_path": "docs/5.8/small/AnimToTexture/",
+      "forced": true
     },
     "AnimationBudgetAllocator": {
       "generated_in": "5.7",
@@ -133,9 +136,10 @@
       "doc_path": "docs/5.7/small/AnimationLocomotionLibrary/"
     },
     "AnimationSharing": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AnimationSharing/"
+      "doc_path": "docs/5.8/small/AnimationSharing/",
+      "forced": true
     },
     "AnimatorKit": {
       "generated_in": "5.8",
@@ -223,9 +227,10 @@
       "doc_path": "docs/5.7/small/BaseMaterial/"
     },
     "BlankPlugin": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/BlankPlugin/"
+      "doc_path": "docs/5.8/small/BlankPlugin/",
+      "forced": true
     },
     "BlendSpaceMotionAnalysis": {
       "generated_in": "5.8",
@@ -248,9 +253,10 @@
       "doc_path": "docs/5.7/small/BlueprintMaterialTextureNodes/"
     },
     "CLionSourceCodeAccess": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/CLionSourceCodeAccess/"
+      "doc_path": "docs/5.8/small/CLionSourceCodeAccess/",
+      "forced": true
     },
     "CQTest": {
       "generated_in": "5.7",
@@ -313,9 +319,10 @@
       "doc_path": "docs/5.7/small/CmdLinkServer/"
     },
     "CodeLiteSourceCodeAccess": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/CodeLiteSourceCodeAccess/"
+      "doc_path": "docs/5.8/small/CodeLiteSourceCodeAccess/",
+      "forced": true
     },
     "CompositeCore": {
       "generated_in": "5.7",
@@ -328,19 +335,22 @@
       "doc_path": "docs/5.7/small/CompositePlane/"
     },
     "ConcertInsightsClient": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ConcertInsightsClient/"
+      "doc_path": "docs/5.8/small/ConcertInsightsClient/",
+      "forced": true
     },
     "ConcertInsightsCore": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ConcertInsightsCore/"
+      "doc_path": "docs/5.8/small/ConcertInsightsCore/",
+      "forced": true
     },
     "ConcertInsightsServer": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ConcertInsightsServer/"
+      "doc_path": "docs/5.8/small/ConcertInsightsServer/",
+      "forced": true
     },
     "ContentBrowserAliasDataSource": {
       "generated_in": "5.7",
@@ -428,9 +438,10 @@
       "doc_path": "docs/5.7/small/DatasmithMVR/"
     },
     "DetailPoseModel": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/DetailPoseModel/"
+      "doc_path": "docs/5.8/small/DetailPoseModel/",
+      "forced": true
     },
     "DirectoryPlaceholder": {
       "generated_in": "5.8",
@@ -438,9 +449,10 @@
       "doc_path": "docs/5.8/small/DirectoryPlaceholder/"
     },
     "DisasterRecoveryClient": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/DisasterRecoveryClient/"
+      "doc_path": "docs/5.8/small/DisasterRecoveryClient/",
+      "forced": true
     },
     "DiscoveryBeaconReceiver": {
       "generated_in": "5.7",
@@ -754,9 +766,10 @@
       "doc_path": "docs/5.7/small/LocationServicesIOSImpl/"
     },
     "Locomotor": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/Locomotor/"
+      "doc_path": "docs/5.8/small/Locomotor/",
+      "forced": true
     },
     "MIDIDevice": {
       "generated_in": "5.7",
@@ -890,9 +903,10 @@
       "doc_path": "docs/5.7/small/OnlineSubsystemAmazon/"
     },
     "OnlineSubsystemApple": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/OnlineSubsystemApple/"
+      "doc_path": "docs/5.8/small/OnlineSubsystemApple/",
+      "forced": true
     },
     "OodleNetwork": {
       "generated_in": "5.7",
@@ -1125,14 +1139,16 @@
       "doc_path": "docs/5.7/small/SlateScripting/"
     },
     "SocketSubsystemEOS": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/SocketSubsystemEOS/"
+      "doc_path": "docs/5.8/small/SocketSubsystemEOS/",
+      "forced": true
     },
     "SocketSubsystemSteamIP": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/SocketSubsystemSteamIP/"
+      "doc_path": "docs/5.8/small/SocketSubsystemSteamIP/",
+      "forced": true
     },
     "SoundCueTemplates": {
       "generated_in": "5.7",
@@ -1260,9 +1276,10 @@
       "doc_path": "docs/5.7/small/VisualStudioSourceCodeAccess/"
     },
     "VoiceChat": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/VoiceChat/"
+      "doc_path": "docs/5.8/small/VoiceChat/",
+      "forced": true
     },
     "WarpUtils": {
       "generated_in": "5.7",
@@ -1270,9 +1287,10 @@
       "doc_path": "docs/5.7/small/WarpUtils/"
     },
     "WebAuth": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/WebAuth/"
+      "doc_path": "docs/5.8/small/WebAuth/",
+      "forced": true
     },
     "WebBrowserNativeProxy": {
       "generated_in": "5.7",
@@ -1365,9 +1383,10 @@
       "doc_path": "docs/5.7/medium/ActorModifierCore/"
     },
     "AdvancedRenamer": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/AdvancedRenamer/"
+      "doc_path": "docs/5.8/medium/AdvancedRenamer/",
+      "forced": true
     },
     "AnimationModifierLibrary": {
       "generated_in": "5.7",
@@ -1470,19 +1489,22 @@
       "doc_path": "docs/5.7/medium/ConcertClientSharedSlate/"
     },
     "ConcertInsightsVisualizer": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/ConcertInsightsVisualizer/"
+      "doc_path": "docs/5.8/medium/ConcertInsightsVisualizer/",
+      "forced": true
     },
     "ConcertReplicationScripting": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/ConcertReplicationScripting/"
+      "doc_path": "docs/5.8/medium/ConcertReplicationScripting/",
+      "forced": true
     },
     "CurveExpression": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/CurveExpression/"
+      "doc_path": "docs/5.8/medium/CurveExpression/",
+      "forced": true
     },
     "CustomDetailsView": {
       "generated_in": "5.7",
@@ -1505,9 +1527,10 @@
       "doc_path": "docs/5.8/medium/DataValidation/"
     },
     "EOSVoiceChat": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/EOSVoiceChat/"
+      "doc_path": "docs/5.8/medium/EOSVoiceChat/",
+      "forced": true
     },
     "EditorTests": {
       "generated_in": "5.7",
@@ -1550,14 +1573,16 @@
       "doc_path": "docs/5.7/medium/GuidedTutorials/"
     },
     "HierarchyTable": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/HierarchyTable/"
+      "doc_path": "docs/5.8/medium/HierarchyTable/",
+      "forced": true
     },
     "HierarchyTableAnimation": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/HierarchyTableAnimation/"
+      "doc_path": "docs/5.8/medium/HierarchyTableAnimation/",
+      "forced": true
     },
     "LandscapePatch": {
       "generated_in": "5.7",
@@ -1621,9 +1646,10 @@
       "doc_path": "docs/5.8/medium/NNERuntimeORT/"
     },
     "NVCodecs": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/NVCodecs/"
+      "doc_path": "docs/5.8/medium/NVCodecs/",
+      "forced": true
     },
     "NamingTokens": {
       "generated_in": "5.7",
@@ -1686,14 +1712,16 @@
       "doc_path": "docs/5.7/medium/OnlineServicesOSSAdapter/"
     },
     "OnlineSubsystemEOS": {
-      "generated_in": "5.7",
-      "size": "medium",
-      "doc_path": "docs/5.7/medium/OnlineSubsystemEOS/"
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/OnlineSubsystemEOS/",
+      "forced": true
     },
     "OnlineSubsystemGoogle": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/OnlineSubsystemGoogle/"
+      "doc_path": "docs/5.8/medium/OnlineSubsystemGoogle/",
+      "forced": true
     },
     "OnlineSubsystemGooglePlay": {
       "generated_in": "5.7",
@@ -1706,14 +1734,16 @@
       "doc_path": "docs/5.7/medium/OnlineSubsystemIOS/"
     },
     "OnlineSubsystemNull": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/OnlineSubsystemNull/"
+      "doc_path": "docs/5.8/medium/OnlineSubsystemNull/",
+      "forced": true
     },
     "OnlineSubsystemTencent": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/OnlineSubsystemTencent/"
+      "doc_path": "docs/5.8/medium/OnlineSubsystemTencent/",
+      "forced": true
     },
     "OpenXR": {
       "generated_in": "5.7",
@@ -1921,9 +1951,10 @@
       "doc_path": "docs/5.7/large/ComputeFramework/"
     },
     "ConcertMain": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/ConcertMain/"
+      "doc_path": "docs/5.8/large/ConcertMain/",
+      "forced": true
     },
     "ConcertSyncClient": {
       "generated_in": "5.7",
@@ -1946,9 +1977,10 @@
       "doc_path": "docs/5.7/large/ConsoleVariables/"
     },
     "ContextualAnimation": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/ContextualAnimation/"
+      "doc_path": "docs/5.8/large/ContextualAnimation/",
+      "forced": true
     },
     "CurveEditorTools": {
       "generated_in": "5.8",
@@ -2056,14 +2088,16 @@
       "doc_path": "docs/5.7/large/OnlineSubsystem/"
     },
     "OnlineSubsystemFacebook": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/OnlineSubsystemFacebook/"
+      "doc_path": "docs/5.8/large/OnlineSubsystemFacebook/",
+      "forced": true
     },
     "OnlineSubsystemSteam": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/OnlineSubsystemSteam/"
+      "doc_path": "docs/5.8/large/OnlineSubsystemSteam/",
+      "forced": true
     },
     "OpenCV": {
       "generated_in": "5.7",
@@ -2416,14 +2450,16 @@
       "doc_path": "docs/5.7/xlarge/MovieRenderPipeline/"
     },
     "MultiUserClient": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/MultiUserClient/"
+      "doc_path": "docs/5.8/xlarge/MultiUserClient/",
+      "forced": true
     },
     "MultiUserServer": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/MultiUserServer/"
+      "doc_path": "docs/5.8/xlarge/MultiUserServer/",
+      "forced": true
     },
     "Mutable": {
       "generated_in": "5.8",
@@ -2441,9 +2477,10 @@
       "doc_path": "docs/5.7/xlarge/OnlineServices/"
     },
     "OnlineSubsystemUtils": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/OnlineSubsystemUtils/"
+      "doc_path": "docs/5.8/xlarge/OnlineSubsystemUtils/",
+      "forced": true
     },
     "PCG": {
       "generated_in": "5.7",
@@ -3032,14 +3069,16 @@
       "doc_path": "docs/5.8/small/RenderTraceInsights/"
     },
     "VTCodecs": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/VTCodecs/"
+      "doc_path": "docs/5.8/small/VTCodecs/",
+      "forced": true
     },
     "WMFCodecs": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/WMFCodecs/"
+      "doc_path": "docs/5.8/small/WMFCodecs/",
+      "forced": true
     },
     "BackChannel": {
       "generated_in": "5.7",
@@ -3472,9 +3511,10 @@
       "doc_path": "docs/5.7/large/MediaStream/"
     },
     "MeshModelingToolsetExp": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/MeshModelingToolsetExp/"
+      "doc_path": "docs/5.8/xlarge/MeshModelingToolsetExp/",
+      "forced": true
     },
     "MeshResizing": {
       "generated_in": "5.8",
@@ -3502,64 +3542,76 @@
       "doc_path": "docs/5.8/large/MetasoundExperimental/"
     },
     "MotoSynth": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/MotoSynth/"
+      "doc_path": "docs/5.8/small/MotoSynth/",
+      "forced": true
     },
     "MotorSimOutputMotoSynth": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/MotorSimOutputMotoSynth/"
+      "doc_path": "docs/5.8/small/MotorSimOutputMotoSynth/",
+      "forced": true
     },
     "Mover": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/Mover/"
+      "doc_path": "docs/5.8/xlarge/Mover/",
+      "forced": true
     },
     "MoverAnimNext": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/MoverAnimNext/"
+      "doc_path": "docs/5.8/small/MoverAnimNext/",
+      "forced": true
     },
     "MoverExamples": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/MoverExamples/"
+      "doc_path": "docs/5.8/small/MoverExamples/",
+      "forced": true
     },
     "MoverIntegrations": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/MoverIntegrations/"
+      "doc_path": "docs/5.8/small/MoverIntegrations/",
+      "forced": true
     },
     "MoverTests": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/MoverTests/"
+      "doc_path": "docs/5.8/small/MoverTests/",
+      "forced": true
     },
     "MovieSceneAnimMixer": {
-      "generated_in": "5.7",
-      "size": "medium",
-      "doc_path": "docs/5.7/medium/MovieSceneAnimMixer/"
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/MovieSceneAnimMixer/",
+      "forced": true
     },
     "MovieScenePoseSearchTracks": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/MovieScenePoseSearchTracks/"
+      "doc_path": "docs/5.8/small/MovieScenePoseSearchTracks/",
+      "forced": true
     },
     "MutableClothing": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/MutableClothing/"
+      "doc_path": "docs/5.8/small/MutableClothing/",
+      "forced": true
     },
     "MutableDataflow": {
-      "generated_in": "5.7",
-      "size": "small",
-      "doc_path": "docs/5.7/small/MutableDataflow/"
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/MutableDataflow/",
+      "forced": true
     },
     "MutablePopulation": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/MutablePopulation/"
+      "doc_path": "docs/5.8/medium/MutablePopulation/",
+      "forced": true
     },
     "NFORDenoise": {
       "generated_in": "5.7",
@@ -4032,64 +4084,76 @@
       "doc_path": "docs/5.7/large/Workspace/"
     },
     "XRCreativeFramework": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/XRCreativeFramework/"
+      "doc_path": "docs/5.8/medium/XRCreativeFramework/",
+      "forced": true
     },
     "Cascade": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/Cascade/"
+      "doc_path": "docs/5.8/medium/Cascade/",
+      "forced": true
     },
     "CascadeToNiagaraConverter": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/CascadeToNiagaraConverter/"
+      "doc_path": "docs/5.8/small/CascadeToNiagaraConverter/",
+      "forced": true
     },
     "ExampleCustomDataInterface": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ExampleCustomDataInterface/"
+      "doc_path": "docs/5.8/small/ExampleCustomDataInterface/",
+      "forced": true
     },
     "Niagara": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/Niagara/"
+      "doc_path": "docs/5.8/xlarge/Niagara/",
+      "forced": true
     },
     "NiagaraFluids": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/NiagaraFluids/"
+      "doc_path": "docs/5.8/small/NiagaraFluids/",
+      "forced": true
     },
     "NiagaraMRQ": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/NiagaraMRQ/"
+      "doc_path": "docs/5.8/small/NiagaraMRQ/",
+      "forced": true
     },
     "NiagaraNanite": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/NiagaraNanite/"
+      "doc_path": "docs/5.8/small/NiagaraNanite/",
+      "forced": true
     },
     "NiagaraPreviewContent": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/NiagaraPreviewContent/"
+      "doc_path": "docs/5.8/small/NiagaraPreviewContent/",
+      "forced": true
     },
     "NiagaraSimCaching": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/NiagaraSimCaching/"
+      "doc_path": "docs/5.8/small/NiagaraSimCaching/",
+      "forced": true
     },
     "Fab": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/Fab/"
+      "doc_path": "docs/5.8/large/Fab/",
+      "forced": true
     },
     "FastBuildController": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/FastBuildController/"
+      "doc_path": "docs/5.8/small/FastBuildController/",
+      "forced": true
     },
     "AlembicHairImporter": {
       "generated_in": "5.8",

@@ -4,191 +4,94 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 苹果视频编解码器插件 |
+| 中文名 | VT 编解码器 |
 | 分类 | Codecs |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `VTCodecs` (Runtime), `VTCodecsRHI` (Runtime) |
 | 实验性 | ⚠️ 是 |
-| 创建时间 | 2026-01-22 |
-| 年龄标签 | 🆕（约 1 年） |
+| 创建时间 | 2023-11-14 |
+| 年龄标签 | 🆕（约 2 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/VTCodecs) | |
 
 ## 用途
 
-VTCodecs 是 UE5 AVCodecs 框架的 Apple 平台编解码器实现。它封装了 Apple 的 VideoToolbox 框架，在 macOS 和 iOS 设备上提供硬件加速的 H.264、H.265/HEVC 视频编码与解码能力。该插件解决了跨平台视频编解码中 Apple 平台特殊 API 的适配问题，使得上层 AVCodecs 用户无需关心平台差异即可利用原生硬件编解码器。
+VTCodecs 为 UE5 的 AVCodecs（音视频编解码器）插件体系集成了 Apple 的 Video Toolbox 框架。它提供了基于 macOS/iOS 原生硬件加速能力的 H.264/H.265 视频编码器和解码器实现。
+
+该插件解决的问题是：在 Apple 平台上，UE5 需要一个利用系统级硬件编解码能力的高性能视频处理方案。Video Toolbox 是 Apple 提供的低级别视频编解码 API，可以直接访问硬件编码器/解码器（如 Apple Silicon 的媒体引擎），相比纯软件编解码有显著的性能优势。
+
+插件包含两个模块：
+- **VTCodecs**：核心编解码器逻辑，实现 Video Toolbox 的编码器和解码器抽象
+- **VTCodecsRHI**：将 VT 编解码器与 UE5 的 RHI（渲染硬件接口）层桥接，支持 GPU 纹理的直接编解码
+
+> ⚠️ 此插件默认禁用且处于实验性阶段，仅适用于 macOS/iOS 平台。
 
 ## 使用场景
 
-- 你需要对 iOS 或 macOS 上的视频流进行实时硬件编码（如推流、录制）
-- 你希望在 Apple 设备上使用最高效的 H.264/H.265 解码以播放视频
-- 你在开发基于 AVCodecs 的媒体处理管线，需要无缝支持 Apple 平台
+- 你在 macOS/iOS 上进行视频录制或流媒体推流，需要硬件加速的 H.264/H.265 编码
+- 你需要在 Apple 平台上解码来自网络或文件的视频流，利用硬件解码降低 CPU 占用
+- 你在构建 AVCodecs 自定义编解码管线，需要注册 Video Toolbox 后端作为编解码方案
 
 ## 蓝图用法
 
-VTCodecs 不直接暴露蓝图可调用节点。所有编解码器操作通过 C++ 的 AVCodecs 接口完成。蓝图用户可通过**媒体播放器**、**媒体捕获**等高级别蓝图节点间接使用，但底层编解码器选择由系统自动切换。
-
-若需要在蓝图中触发特定编解码器配置，建议通过自定义 C++ 蓝图函数库封装 AVCodecs 调用。
+该插件作为底层编解码器后端，通常不直接暴露蓝图节点。其 API 主要通过 AVCodecs 的上层接口使用。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "AVCodecsCore.h"        // 基类
-#include "VideoToolboxCodec.h"   // VTCodecs 提供的编解码器实现
+#include "VTCodecsModule.h"
 ```
 
 ### 基本用法
 
-以下示例展示如何通过 AVCodecs 框架创建一个 H.264 编码器，并利用 VTCodecs 提供的 Apple 实现。
+该插件作为 AVCodecs 的编解码器后端注册，使用时需通过 AVCodecs 的统一接口：
 
 ```cpp
-// 来源：基于 AVCodecs 测试用例（相似逻辑存在于 AVCodecsCore 测试中）
-#include "AVCodecsCore.h"
-#include "VideoToolboxCodec.h"
+// Video Toolbox 编解码器通过 AVCodecs 的模块系统自动注册
+// 无需手动实例化，启用插件后即可通过以下方式使用：
 
-void EncodeFrameWithVTCodecs()
-{
-    // 1. 获取编解码器配置
-    FVideoEncoderConfig Config;
-    Config.Width = 1920;
-    Config.Height = 1080;
-    Config.FrameRate = 30;
-    Config.Bitrate = 5000000;  // 5 Mbps
-    Config.CodecType = ECodecType::H264;
+#include "AVCodecs/Public/VideoEncoder.h"
+#include "AVCodecs/Public/VideoDecoder.h"
 
-    // 2. 创建编码器（AVCodecs 会自动选择平台最佳实现，macOS/iOS 上为 VTCodecs）
-    TUniquePtr<FVideoEncoder> Encoder = FVideoEncoder::Create(Config);
-    check(Encoder.IsValid());
-
-    // 3. 输入帧（假设已有 RGBA 像素数据）
-    FVideoFrame InputFrame;
-    InputFrame.Width = 1920;
-    InputFrame.Height = 1080;
-    InputFrame.Data = /* 你的数据指针 */;
-    InputFrame.Stride = 1920 * 4;
-
-    // 4. 编码
-    bool bEncoded = Encoder->Encode(InputFrame);
-    ensure(bEncoded);
-
-    // 5. 获取编码后的数据通过回调（通常在编码器创建时设置回调）
-    // 实际使用需设置 FVideoEncoderConfig::OnEncodedFrame 等回调
-}
-```
-
-### 进阶用法
-
-多编解码器切换与配置：
-
-```cpp
-// 动态选择 H.265 硬件编码器（若设备支持）
-FVideoEncoderConfig Config;
-Config.CodecType = ECodecType::H265;
-// VTCodecs 会尝试创建 VideoToolbox 的 HEVC 编码器
-TUniquePtr<FVideoEncoder> Encoder = FVideoEncoder::Create(Config);
-```
-
-解码器使用类似：
-
-```cpp
-TUniquePtr<FVideoDecoder> Decoder = FVideoDecoder::Create(FVideoDecoderConfig());
-// 输入H.264/H.265 NAL单元进行解码
+// 编码器会自动检测并使用 Video Toolbox 后端（macOS/iOS 平台）
 ```
 
 ## Demo 示例
 
-以下是一个完整的 C++ 类，展示如何在游戏模块中使用 VTCodecs 进行视频帧编码：
-
-```cpp
-// MyCodecDemo.h
-#pragma once
-#include "CoreMinimal.h"
-#include "AVCodecsCore.h"
-
-class FMyCodecDemo
-{
-public:
-    void Run();
-};
-```
-
-```cpp
-// MyCodecDemo.cpp
-#include "MyCodecDemo.h"
-#include "VideoToolboxCodec.h"
-#include "Containers/Array.h"
-
-void FMyCodecDemo::Run()
-{
-    // 配置编码器
-    FVideoEncoderConfig Config;
-    Config.Width = 640;
-    Config.Height = 480;
-    Config.FrameRate = 30;
-    Config.Bitrate = 2000000;
-    Config.CodecType = ECodecType::H264;
-
-    // 创建编码器
-    TUniquePtr<FVideoEncoder> Encoder = FVideoEncoder::Create(Config);
-    if (!Encoder)
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create video encoder (may not be supported on this platform)"));
-        return;
-    }
-
-    // 模拟编码一帧
-    TArray<uint8> PixelData;
-    PixelData.SetNum(640 * 480 * 4); // RGBA
-    FMemory::Memset(PixelData.GetData(), 128);
-
-    FVideoFrame Frame;
-    Frame.Width = 640;
-    Frame.Height = 480;
-    Frame.Data = PixelData.GetData();
-    Frame.Stride = 640 * 4;
-
-    bool bSuccess = Encoder->Encode(Frame);
-    if (bSuccess)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Frame encoded successfully via VTCodecs (Apple VideoToolbox)"));
-    }
-}
-```
+作为底层编解码器后端，此插件不包含独立的 Demo。使用时参考 AVCodecs 主插件的示例，将编解码器后端切换为 Video Toolbox 即可。
 
 ## 模块依赖
 
 | 模块 | 用途 |
 |---|---|
-| `AVCodecsCore` | AVCodecs 框架核心基类与工厂接口 |
-| `RHI` | 渲染硬件接口，用于与 GPU 纹理交互（VTCodecsRHI 模块依赖） |
-| `ApplePlatform` | Apple 平台特性支持（隐式依赖） |
+| `AVCodecs` | AVCodecs 编解码器框架基座 |
+| `AVRHI` | 音视频 RHI 桥接层 |
 
-其他依赖均为标准 `Core`、`Engine`、`CoreUObject` 等，未特殊列出。
+> Apple Video Toolbox 框架通过平台 SDK 自动链接，无需额外配置。
 
 ## 维护状态
 
 ### 近期更新
 
-- 2026-02-27	ae4a826	Take two after fixing bad find-and-replace.
-- 2026-02-27	6759aa54	[Backout] - CL51314860
-- 2026-02-27	7723864b	Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing regist
-- 2026-01-24	e793e61e	Fixed more compile errors when using portable toolchain
-- 2026-01-22	ad8a0de1	Update BuildVersionSettings that are out of date
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-04-28 | `808cb4e5` | Fixed scoped enums that are used in formatting functions that can cause garbage output | 修复作用域枚举在格式化函数中导致的输出错误 |
+| 2026-02-27 | `ae4a826a` | Take two after fixing bad find-and-replace. | 修正前次错误的查找替换操作 |
+| 2026-02-27 | `6759aa54` | [Backout] - CL51314860 | 回退之前的提交 CL51314860 |
+| 2026-02-27 | `7723864b` | Move FCoreDelegates::OnPostEngineInit to FCoreDelegates::GetOnPostEngineInit() to fix missing registry | 迁移核心委托 API 修复注册遗漏问题 |
+| 2026-01-24 | `e793e61e` | Fixed more compile errors when using portable toolchain | 修复可移植工具链下的更多编译错误 |
 
 ### 维护评价
 
-VTCodecs 是一个**实验性**插件，创建于 2026 年初，至今约 1 年。最近的更新集中在编译错误修复和代码迁移（如委托注册方式），**没有功能性更新**。目前插件基本可用，但以下问题需要注意：
+该插件创建于 2023 年 11 月，至今约 2 年。从最近的提交记录来看，2026 年仍有活跃更新，但主要是编译修复和 API 适配性的改动（如核心委托 API 迁移、作用域枚举修复），而非功能性开发。插件一直处于实验性状态且默认禁用，尚未进入正式发布流程。
 
-- 该插件需要手动启用（`EnabledByDefault: false`）
-- 实验性版本可能缺少部分编解码器特性（如 B 帧、NV12 支持等）
-- 仅适用于 Apple 平台（macOS、iOS、tvOS）
-
-对于需要在 Apple 设备上使用硬件编解码的开发者，该插件是推荐的解决方案。但由于其实验性状态，建议在发布前进行充分测试。
+- **优点**：仍在跟随引擎主线进行兼容性维护
+- **不足**：长期停留在实验阶段，无实质性功能迭代
+- **建议**：仅在 macOS/iOS 平台的开发/测试环境中使用，不建议用于生产项目
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/VTCodecs)
-- [官方文档](https://docs.unrealengine.com/5.4/en-US/avcodecs-in-unreal-engine/)（AVCodecs 框架通用文档）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/Tests)
+- [AVCodecs 父插件](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs)

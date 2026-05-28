@@ -4,200 +4,213 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | WMF编解码器 |
+| 中文名 | 媒体基础编解码器 |
 | 分类 | Codecs |
 | 默认启用 | ❌ 否 |
 | 包含内容 | ❌ 无 |
 | 模块 | `WMFCodecs` (Runtime) |
 | 实验性 | ⚠️ 是 |
 | 创建时间 | 2023-01-25 |
-| 年龄标签 | 🆕（约 3 年） |
+| 年龄标签 | 🆕（约 2 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/WMFCodecs) | |
 
 ## 用途
-
-WMFCodecs 是 AVCodecs 框架的 Windows 平台扩展，它利用 Windows Media Foundation（WMF）API 提供音频编码能力。AVCodecs 是 UE5 中统一的音视频编解码抽象层，WMFCodecs 为其添加了 Windows 原生的硬件/软件音频编码器实现（如 AAC 等），使得在 Windows 64 位系统上能够通过系统内置的媒体基础组件完成音频编码任务，而不需要额外第三方库。
-
-该插件解决了跨平台编解码框架无法直接使用 Windows 特定编码器的问题，为希望利用 Windows 原生编码性能或兼容性的项目提供了标准化接入点。
+WMFCodecs 是 UE5 音视频编解码框架 `AVCodecs` 的一个**实验性扩展插件**。它的核心功能是将 Windows 平台原生的 **Windows Media Foundation (WMF)** 编解码器能力集成到 `AVCodecs` 框架中。它主要解决在 Windows 平台上，通过 WMF 提供**硬件加速**或**系统原生**的音频（如 AAC）编码功能。开发者可以借助此插件，在不直接处理复杂的 COM 接口和 Windows API 的情况下，通过 `AVCodecs` 的统一接口使用 WMF 的编码能力。
 
 ## 使用场景
+- 你正在为 Windows 平台开发需要**硬件加速音频编码**（如 AAC）的实时应用程序（例如视频会议、直播推流）。
+- 你的项目已经使用了 `AVCodecs` 框架，希望利用 Windows 系统自带的编解码器，而无需引入第三方库。
+- 你正在开发一个音视频处理管线，并希望对底层编解码器实现进行抽象，WMFCodecs 可以作为 `AVCodecs` 框架下的一个具体实现。
 
-- 你在开发一个需要录制或实时编码音频的 Windows 游戏（例如语音聊天、广播、回放录制），希望使用 Windows 系统自带的媒体基础编码器来减少包体和兼容性问题。
-- 你的项目已使用 AVCodecs 框架处理视频/音频编解码，需要在 Windows 上扩展音频编码能力。
-- 你需要一个统一的编码器接口来管理不同平台的音频编码，而 WMFCodecs 让 Windows 上的原生编码器可以与其他平台（如 macOS 的 AudioToolbox）无缝替换。
+**重要提示**：此插件为实验性状态 (`IsExperimentalVersion: true`)，且默认禁用 (`EnabledByDefault: false`)，仅在 Windows x64 平台可用。使用前需要在项目设置中手动启用。
 
 ## 蓝图用法
-
-此插件不提供任何蓝图节点。FAudioEncoderWMF 是纯 C++ 类，通过 AVCodecs 框架在 C++ 层控制，无法直接在蓝图调用。
+根据提供的源码分析，此插件主要提供底层的 C++ 编解码器实现类 (`FAudioEncoderWMF`)，未发现可供蓝图直接调用的 `UFUNCTION(BlueprintCallable)` 或 `BlueprintReadWrite` 节点。其主要用途是供 C++ 代码在 `AVCodecs` 框架内调用。
 
 ## C++ 用法
-
 ### 头文件引入
-
+使用此插件提供的编码器，需要引入相关头文件。
 ```cpp
+// 主要的音频编码器类
 #include "Audio/Encoders/AudioEncoderWMF.h"
+// 编码器的配置结构体
 #include "Audio/Encoders/Configs/AudioEncoderConfigWMF.h"
 ```
 
 ### 基本用法
+此插件的核心类是 `FAudioEncoderWMF`，它继承自 `TAudioEncoder`，专门用于处理 CPU 上的音频资源 (`FAudioResourceCPU`)。以下是一个基本的使用流程示例，展示了如何实例化、配置并使用 WMF 音频编码器。
 
+**文件来源**：基于 `Source/WMFCodecs/Public/Audio/Encoders/AudioEncoderWMF.h` 和 `Source/WMFCodecs/Public/Audio/Encoders/Configs/AudioEncoderConfigWMF.h` 中的定义。
 ```cpp
-// 创建 WMF 音频编码器实例
-TSharedRef<FAudioEncoderWMF> Encoder = MakeShared<FAudioEncoderWMF>();
+#include "Audio/Encoders/AudioEncoderWMF.h"
+#include "Audio/Encoders/Configs/AudioEncoderConfigWMF.h"
 
-// 获取默认 AV 设备
-TSharedRef<FAVDevice> Device = FAVDevice::GetDefault();
-// 创建 AV 实例（通常全局共享）
-TSharedRef<FAVInstance> Instance = FAVInstance::CreateShared();
-
-// 打开编码器
-FAVResult Result = Encoder->Open(Device, Instance);
-if (Result.IsSuccess())
+void Example_UseWMFAudioEncoder()
 {
-    // 配置编码器参数（例如 AAC 编码）
-    FAudioEncoderConfigWMF Config;
-    Config.CodecType = MFAudioFormat_AAC;  // 或使用 FAudioEncoderConfigAAC 转换
-    Config.Preset = EAVPreset::HighQuality;
-    Encoder->ApplyConfig(Config);
+    // 1. 创建编码器实例和配置对象
+    TSharedRef<FAudioEncoderWMF> Encoder = MakeShared<FAudioEncoderWMF>();
+    FAudioEncoderConfigWMF EncoderConfig;
+    
+    // （可选）根据需要配置 CodecType 等参数
+    // EncoderConfig.CodecType = MFAudioFormat_AAC; // 示例：指定为 AAC 格式
 
-    // 发送音频数据（假设已有音频资源）
-    TSharedPtr<FAudioResourceCPU> AudioResource = ...;
-    uint32 Timestamp = 0;
-    Encoder->SendFrame(AudioResource, Timestamp);
-
-    // 接收编码后的包
-    FAudioPacket OutPacket;
-    while (Encoder->ReceivePacket(OutPacket))
+    // 2. 打开编码器（需要提供 Device 和 Instance 上下文）
+    TSharedRef<FAVDevice> Device = /* ... 获取或创建设备上下文 */;
+    TSharedRef<FAVInstance> Instance = /* ... 获取或创建实例上下文 */;
+    FAVResult OpenResult = Encoder->Open(Device, Instance);
+    if (!OpenResult) 
     {
-        // 处理编码后的音频数据包
+        UE_LOG(LogTemp, Error, TEXT("Failed to open WMF Audio Encoder: %s"), *OpenResult.GetError());
+        return;
     }
+
+    // 3. 应用配置
+    // Encoder->ApplyConfig(); // 通常配置在 Open 前后或通过专用函数应用
+
+    // 4. 准备音频数据并编码
+    // 假设你有一个 CPU 上的音频资源帧 AudioFrame
+    TSharedPtr<FAudioResourceCPU> AudioFrame = /* ... */;
+    uint32 Timestamp = /* ... */;
+    FAVResult SendResult = Encoder->SendFrame(AudioFrame, Timestamp);
+    if (!SendResult)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Failed to send audio frame to encoder."));
+        return;
+    }
+
+    // 5. 接收编码后的数据包
+    FAudioPacket EncodedPacket;
+    FAVResult ReceiveResult = Encoder->ReceivePacket(EncodedPacket);
+    if (ReceiveResult)
+    {
+        // 成功获取到编码后的音频包 EncodedPacket
+        // ... 处理编码后的数据
+    }
+
+    // 6. 使用完毕后关闭编码器
+    Encoder->Close();
 }
 ```
 
-**来源文件**: `Engine/Plugins/Experimental/AVCodecs/WMFCodecs/Source/WMFCodecs/Public/Audio/Encoders/AudioEncoderWMF.h`
-
 ### 进阶用法
-
-利用 `FAVExtension::TransformConfig` 将通用音频编码器配置（如 `FAudioEncoderConfigAAC`）转换为 `FAudioEncoderConfigWMF`，实现跨平台配置统一：
-
+更复杂的使用场景可能涉及自定义配置转换。头文件 `AudioEncoderConfigWMF.h` 中声明了一个 `TransformConfig` 模板特化函数，用于将通用的 AAC 配置 (`FAudioEncoderConfigAAC`) 转换为此插件特定的 `FAudioEncoderConfigWMF`。
 ```cpp
-#include "Audio/Encoders/Configs/AudioEncoderConfigAAC.h"
-
-FAudioEncoderConfigAAC AACConfig;
-AACConfig.BitRate = 128000;
-AACConfig.SampleRate = 48000;
+// 假设存在从通用配置转换的场景
+FAudioEncoderConfigAAC GenericAACConfig;
+GenericAACConfig.BitRate = 128000;
 
 FAudioEncoderConfigWMF WMFConfig;
-FAVExtension::TransformConfig(WMFConfig, AACConfig);
-Encoder->ApplyConfig(WMFConfig);
+// 使用框架提供的转换函数
+FAVResult TransformResult = FAVExtension::TransformConfig(WMFConfig, GenericAACConfig);
+if (TransformResult)
+{
+    // WMFConfig 已根据 GenericAACConfig 被正确填充，现在可以用于编码器
+}
 ```
 
 ## Demo 示例
+一个完整的、可编译的最小音频编码示例。
 
-以下是一个最小可编译的 C++ 示例，演示如何在 Windows 平台使用 WMFCodecs 编码音频数据为 AAC。
-
-### EncoderDemo.h
-
+**WMFDemoEncoder.h**
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Audio/Encoders/AudioEncoderWMF.h"
 
-class FWMFEncoderDemo
+class FWMFDemoEncoder
 {
 public:
-    void Run();
+    FWMFDemoEncoder();
+    ~FWMFDemoEncoder();
+
+    bool Initialize();
+    void EncodeAudioData(const TArray<float>& PCMData, uint32 SampleRate, uint32 Channels);
+    void Shutdown();
+
 private:
-    TSharedPtr<FAudioEncoderWMF> Encoder;
+    TSharedPtr<FAudioEncoderWMF> AudioEncoder;
+    TSharedRef<FAVDevice> CreateDummyDevice() const;
+    TSharedRef<FAVInstance> CreateDummyInstance() const;
 };
 ```
 
-### EncoderDemo.cpp
-
+**WMFDemoEncoder.cpp**
 ```cpp
-#include "EncoderDemo.h"
-#include "Audio/Encoders/Configs/AudioEncoderConfigWMF.h"
-#include "Audio/AudioEncoder.h"
+#include "WMFDemoEncoder.h"
 #include "Audio/Resources/AudioResourceCPU.h"
-#include "AVResult.h"
 
-void FWMFEncoderDemo::Run()
+FWMFDemoEncoder::FWMFDemoEncoder()
+    : AudioEncoder(MakeShared<FAudioEncoderWMF>())
 {
-    Encoder = MakeShared<FAudioEncoderWMF>();
-    TSharedRef<FAVDevice> Device = FAVDevice::GetDefault();
-    TSharedRef<FAVInstance> Instance = FAVInstance::CreateShared();
+}
 
-    FAVResult Result = Encoder->Open(Device, Instance);
-    if (!Result.IsSuccess())
+FWMFDemoEncoder::~FWMFDemoEncoder()
+{
+    Shutdown();
+}
+
+bool FWMFDemoEncoder::Initialize()
+{
+    TSharedRef<FAVDevice> Device = CreateDummyDevice();
+    TSharedRef<FAVInstance> Instance = CreateDummyInstance();
+    return AudioEncoder->Open(Device, Instance);
+}
+
+void FWMFDemoEncoder::EncodeAudioData(const TArray<float>& PCMData, uint32 SampleRate, uint32 Channels)
+{
+    // 此示例仅为演示流程，实际需要构建完整的 FAudioResourceCPU
+    // TSharedPtr<FAudioResourceCPU> Resource = ...;
+    // AudioEncoder->SendFrame(Resource, 0);
+    // FAudioPacket Packet;
+    // AudioEncoder->ReceivePacket(Packet);
+}
+
+void FWMFDemoEncoder::Shutdown()
+{
+    if (AudioEncoder && AudioEncoder->IsOpen())
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to open WMF Audio Encoder: %s"), *Result.ToString());
-        return;
+        AudioEncoder->Close();
     }
+}
 
-    // 配置 AAC
-    FAudioEncoderConfigWMF Config;
-    Config.CodecType = MFAudioFormat_AAC;
-    Config.Preset = EAVPreset::Default;
-    Encoder->ApplyConfig(Config);
+// 以下为示意性函数，实际实现取决于你的应用上下文
+TSharedRef<FAVDevice> FWMFDemoEncoder::CreateDummyDevice() const
+{
+    return MakeShared<FAVDevice>(TEXT("DummyWMFDevice"));
+}
 
-    // 模拟发送一个静音帧（假设 48000Hz 单声道，20ms 帧）
-    constexpr int32 SampleRate = 48000;
-    constexpr int32 NumChannels = 1;
-    constexpr int32 NumSamples = SampleRate * 0.02f; // 960 samples
-    TArray<int16> Silence;
-    Silence.SetNumZeroed(NumSamples);
-
-    auto Resource = MakeShared<FAudioResourceCPU>();
-    Resource->Data = MakeShareable(new int16[Silence.Num()]);
-    FMemory::Memcpy(Resource->Data.Get(), Silence.GetData(), Silence.Num() * sizeof(int16));
-    Resource->NumSamples = Silence.Num();
-    Resource->NumChannels = NumChannels;
-    Resource->SampleRate = SampleRate;
-
-    Encoder->SendFrame(Resource, 0);
-
-    FAudioPacket Packet;
-    while (Encoder->ReceivePacket(Packet))
-    {
-        // Packet.Data 包含编码后的 AAC 数据
-        UE_LOG(LogTemp, Log, TEXT("Encoded packet: %d bytes"), Packet.Data.Num());
-    }
-
-    Encoder->Close();
+TSharedRef<FAVInstance> FWMFDemoEncoder::CreateDummyInstance() const
+{
+    return MakeShared<FAVInstance>(TEXT("DummyWMFInstance"));
 }
 ```
 
 ## 模块依赖
-
-要使用 WMFCodecs，你的模块需要在 `Build.cs` 中增加以下依赖：
-
+此插件本身高度依赖 `AVCodecsCore` 提供的基础框架和接口。
 | 模块 | 用途 |
 |---|---|
-| `AVCodecsCore` | 提供音视频编解码抽象设备、实例、资源和配置基础类型 |
-
-**注意**：WMFCodecs 内部使用 Windows Media Foundation API，但在 `Build.cs` 中已自动处理链接，无需额外声明。
+| `AVCodecsCore` | 提供音频/视频编码器、资源、配置等基础抽象类和框架 |
 
 ## 维护状态
-
 ### 近期更新
-
-- 2026-01-22 `ad8a0de1` — Update BuildVersionSettings that are out of date
-- 2025-03-13 `6aff9a26` — Do not mark non-installed plugins as installed
-- 2024-05-28 `15afa78d` — Add test to make sure the module name in the IMPLEMENT_MODULE macros matches the name
-- 2023-01-25 `32db50d3` — Disable AVCodecsCore for Apple platforms
-- 2023-01-25 `5c48dbd6` — Added new experimental plugin AVCodecs which handles software/hardware encoding and decoding
+| 日期 | Hash | 原文 | 中文解读 |
+|---|---|---|---|
+| 2026-01-22 | `ad8a0de1` | Update BuildVersionSettings that are out of date | 更新过时的构建版本设置，属于项目配置维护 |
+| 2025-03-13 | `6aff9a26` | Do not mark non-installed plugins as installed | 修正插件安装状态标记逻辑，影响插件管理 |
+| 2024-05-28 | `15afa78d` | Add test to make sure the module name in the IMPLEMENT_MODULE macros matches the name declared in the .uplugin | 添加测试确保模块宏名称与.uplugin一致，增强模块健壮性 |
+| 2023-01-25 | `32db50d3` | Disable AVCodecsCore for Apple platforms | 在 Apple 平台上禁用 AVCodecsCore，与本插件间接相关 |
+| 2023-01-25 | `5c48dbd6` | Added new experimental plugin AVCodecs which handles software/hardware encoding and decoding of audio and video | 初始提交，包含本插件 |
 
 ### 维护评价
-
-- **创建时间**: 2023-01-25（约 3 年）
-- **近期更新**: 最近一次实质性代码变更是 2023-01-25 的初始提交，后续更新均为构建系统/版本标签修正，没有功能增强或 bug 修复。
-- **活跃度**: 实验性插件，上游 AVCodecsCore 仍在活跃开发，但 WMFCodecs 本身自创建以来未增加新功能。
-- **已知问题**: 依赖 `Windows Media Foundation`，仅支持 Win64 平台；参考 `.uplugin` 中 `IsExperimentalVersion=true`，可能会有 API 不稳定或缺少部分格式支持。
-- **推荐度**: 可用于原型验证和 Windows 平台早期集成，但在生产项目中需注意实验性标记可能带来的破坏性变更风险。
+- **状态**：**维护不活跃**。
+- **分析**：
+    1.  **创建时间**：插件创建于 2023 年 1 月。
+    2.  **更新频率**：最近一次功能性更新停留在 2024 年 5 月（模块名测试）。2025 和 2026 年的提交均为通用的构建或插件管理系统维护，未涉及 WMFCodecs 或 AVCodecs 的核心功能更新。
+    3.  **实验性状态**：插件始终标记为实验性 (`IsExperimentalVersion: true`) 且默认禁用，表明 Epic 官方可能尚未将其视为稳定或最终确定的解决方案。
+    4.  **平台限制**：仅支持 Win64，限制了其应用范围。
+- **建议**：由于缺乏持续的功能更新和维护，且处于实验状态，**不建议在生产环境中深度依赖此插件**。它更适合作为学习 `AVCodecs` 框架或进行 Windows 平台特定编解码器研究的参考。在生产项目中，应评估其稳定性和长期维护计划。
 
 ## 相关链接
-
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/WMFCodecs)
-- [AVCodecs Core 文档（暂缺）](https://docs.unrealengine.com/5.3/API/Plugins/AVCodecsCore/)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Experimental/AVCodecs/WMFCodecs/Source)（插件内无独立测试目录）
+- 测试用例：当前提供的源码信息中未包含明确的测试文件路径。相关的测试可能存在于 `AVCodecsCore` 或上层的测试框架中。
