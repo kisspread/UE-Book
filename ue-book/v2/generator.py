@@ -57,92 +57,22 @@ def generate_doc(harness: str, context: str, branch: str = "") -> tuple[str, flo
 
 
 def _sanitize(doc: str) -> str:
-    """Strip LLM output tags that leak through (function calls, thinking, XML).
-
-    Also strips unbalanced HTML tags that would cause VitePress build errors.
-    """
-    import re
-
-    # ── Phase 1: strip known LLM leak tags (thinking, function calls) ──
-    leak_tags = ["<function", "</function", "<tool_call", "</tool_call",
-                 "</thinking", "</think", "<thinking", "<think"]
-    if any(t in doc for t in leak_tags):
-        lines = doc.split("\n")
-        clean = []
-        skip = False
-        for line in lines:
-            if any(t in line for t in ["<function", "<tool_call", "<thinking", "<think"]):
-                skip = True
-                continue
-            if skip and any(t in line for t in ["</invoke", "</function", "</tool_call",
-                                                  "</thinking", "</think"]):
-                skip = False
-                continue
-            if not skip:
-                clean.append(line)
-        doc = "\n".join(clean)
-
-    # ── Phase 2: strip unbalanced HTML tags that break VitePress ──
-    # Only keep tags that are safe in markdown. Strip everything else.
-    # Code blocks (```...```) are protected — tags inside them are literal.
-    safe_tags = {"details", "summary", "br", "hr", "kbd", "sup", "sub"}
-    tag_pattern = re.compile(r'</?(\w+)[^>]*>')
-
-    # Split into code-block and non-code-block regions
-    code_block = re.compile(r'```', re.MULTILINE)
-    regions = []  # [(start, end, is_code)]
-    pos = 0
-    in_code = False
-    for m in code_block.finditer(doc):
-        if in_code:
-            regions.append((pos, m.end(), True))
-            pos = m.end()
-            in_code = False
-        else:
-            if pos < m.start():
-                regions.append((pos, m.start(), False))
-            pos = m.start()
-            in_code = True
-    if pos < len(doc):
-        regions.append((pos, len(doc), in_code))
-
-    # Process non-code regions only
-    to_strip = []
-    opens = []
-    for start, end, is_code in regions:
-        if is_code:
+    """Strip LLM output tags that leak through (function calls, thinking, XML)."""
+    tags = ["<function", "</function", "<tool_call", "</tool_call",
+            "</thinking", "</think", "<thinking", "<think"]
+    if not any(t in doc for t in tags):
+        return doc
+    lines = doc.split("\n")
+    clean = []
+    skip = False
+    for line in lines:
+        if any(t in line for t in ["<function", "<tool_call", "<thinking", "<think"]):
+            skip = True
             continue
-        region_text = doc[start:end]
-        for m in tag_pattern.finditer(region_text):
-            full = m.group(0)
-            tag = m.group(1).lower()
-            abs_start = start + m.start()
-            abs_end = start + m.end()
-            if full.startswith("</"):
-                found = False
-                for i in range(len(opens) - 1, -1, -1):
-                    if opens[i][0] == tag:
-                        opens.pop(i)
-                        found = True
-                        break
-                if not found:
-                    to_strip.append((abs_start, abs_end))
-            else:
-                if tag in safe_tags:
-                    opens.append((tag, abs_start))
-                else:
-                    to_strip.append((abs_start, abs_end))
-
-    # Strip any remaining unclosed safe opening tags
-    for tag, pos in opens:
-        end_pos = doc.find('>', pos)
-        if end_pos != -1:
-            to_strip.append((pos, end_pos + 1))
-
-    if to_strip:
-        chars = list(doc)
-        for s, e in sorted(to_strip, reverse=True):
-            chars[s:e] = [''] * (e - s)
-        doc = ''.join(chars)
-
-    return doc.strip()
+        if skip and any(t in line for t in ["</invoke", "</function", "</tool_call",
+                                              "</thinking", "</think"]):
+            skip = False
+            continue
+        if not skip:
+            clean.append(line)
+    return "\n".join(clean).strip()
