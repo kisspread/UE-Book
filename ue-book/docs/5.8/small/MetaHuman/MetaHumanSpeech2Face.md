@@ -1,50 +1,60 @@
-# MetaHuman Animator
+# MetaHuman Speech2Face
 
-> The official MetaHuman Unreal Engine toolkit（照抄，不翻译）
+> The official MetaHuman Unreal Engine toolkit
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman 动画师工具包 |
+| 中文名 | 语音驱动面部动画 |
 | 分类 | MetaHuman |
-| 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（神经网络模型、动画资产、蓝图资产） |
-| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
+| 默认启用 | ❌ 否 |
+| 包含内容 | ✅ 有（神经网络模型资产） |
+| 模块 | `MetaHumanSpeech2Face` (Runtime), `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2021-05-06 |
-| 年龄标签 | 🏛️ 文物（约 5 年） |
+| 创建时间 | 2023-01-01 |
+| 年龄标签 | 🆕（约 3 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是 Epic Games 官方推出的用于创建和驱动 MetaHuman 数字人角色的综合工具集。它不仅仅是一个简单的资产包，而是提供了一套完整的工作流，涵盖了从面部性能捕捉数据导入、面部动画生成（包括从音频和视频）、角色身份配置、到最终在引擎内驱动高保真 MetaHuman 角色的全部环节。其核心目的是降低创建逼真、高质量数字人角色动画的技术门槛，实现高效、批量化的制作流程。
+MetaHuman Speech2Face 是 MetaHuman Animator 工具套件中的语音驱动面部动画模块。它解决的核心问题是：**如何从一段语音录音自动生成面部动画数据**。
+
+该模块内部使用两个神经网络模型（通过 UE 的 NNE 推理框架运行）：
+
+1. **音频编码器（AudioEncoder）**：将原始音频特征化为模型可理解的向量表示，采样率 16kHz
+2. **动画解码器（AnimationDecoder / RigLogicPredictor）**：将音频特征解码为 RigLogic 面部骨骼控制值
+
+生成的动画数据覆盖完整的面部区域——眉毛、眼睛（含眨眼）、鼻子、嘴巴、下巴、舌头以及头部姿态。输出为 RigLogic rig 控制器名称到浮点值的映射，可直接驱动 MetaHuman 角色的面部动画。
 
 ## 使用场景
 
--   **数字人动画制作**：使用基于视频或音频的性能捕捉数据，自动驱动 MetaHuman 角色的面部表情和口型同步。
--   **游戏对话系统**：为大量游戏对话快速生成口型同步和基础表情动画，无需手动关键帧。
--   **虚拟主播与实时应用**：结合实时面捕方案，利用插件提供的低延迟动画解算器驱动 MetaHuman 进行实时直播或交互。
--   **影视与过场动画**：将专业演员的表演捕捉数据，精确转换为 MetaHuman 角色的面部动画。
+- 你有一段语音录制（SoundWave 资产），需要为 MetaHuman 角色自动生成口型同步和面部表情动画 → 使用 Speech2Face
+- 你正在制作对话密集的过场动画，需要快速生成面部动画草稿 → 使用 Speech2Face 作为起点再手动调整
+- 你需要从音频批量生成面部动画序列 → 使用 Speech2Face API 结合 Sequencer 导出
+- 你需要不同的情绪风格（中性、高兴、悲伤、愤怒等）来影响生成的面部动画 → 使用 SetMood 配置情绪参数
+- 你只需要口部动画，不需要眉毛和眼睛的变化 → 使用 `MouthOnly` 输出模式
 
 ## 蓝图用法
 
-基于源码分析，`MetaHumanSpeech2Face` 模块主要提供 C++ 层的动画生成能力，但其配置结构体可用于蓝图。
+Speech2Face 核心类 `FSpeech2Face` 被 `#if WITH_EDITOR` 包裹，属于纯编辑器功能，不直接暴露为蓝图节点。但 `AudioDrivenAnimationConfig.h` 中定义的配置结构体是蓝图可见的：
 
-### 核心节点
+### 核心结构体
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Set Mood` | 设置生成的动画所表达的情绪。 | `FAudioDrivenAnimationSolveOverrides` |
-| `Set Mood Intensity` | 设置情绪表达的强度。 | `FAudioDrivenAnimationSolveOverrides` |
+| `FAudioDrivenAnimationModels` | 指定音频编码器和动画解码器的 NNE 模型资产路径 | `USTRUCT(BlueprintType)` |
+| `FAudioDrivenAnimationSolveOverrides` | 覆盖情绪类型和情绪强度参数 | `USTRUCT(BlueprintType)` |
+| `EAudioDrivenAnimationMood` | 情绪枚举（Neutral、Happy、Sad、Angry 等） | `UENUM(BlueprintType)` |
+| `EAudioDrivenAnimationOutputControls` | 输出控制模式：FullFace（全脸）或 MouthOnly（仅嘴部） | `UENUM(BlueprintType)` |
 
-### 使用示例（蓝图描述）
+### 使用示例
 
-1.  创建一个 `FAudioDrivenAnimationSolveOverrides` 结构体变量。
-2.  在蓝图中，通过该变量的引脚设置 `Mood` (如 `Happy`) 和 `MoodIntensity` (如 `0.8`)。
-3.  将此结构体传递给能够执行音频驱动动画生成的节点（例如，在 `MetaHumanToolkit` 或 `MetaHumanPipeline` 模块中提供的封装节点）。
+在 MetaHuman Animator 编辑器工具中，你可以通过属性面板配置以下参数：
+
+1. **模型配置**：指定 `FAudioDrivenAnimationModels` 中的 AudioEncoder 和 AnimationDecoder 模型资产（.uasset 文件）
+2. **情绪覆盖**：在 `FAudioDrivenAnimationSolveOverrides` 中设置 Mood（如 AutoDetect 自动检测、Neutral 中性、Happy 高兴）和 MoodIntensity（0.0-1.0 情绪强度）
+3. **输出范围**：选择 FullFace（完整面部 76+ 控制器）或 MouthOnly（仅嘴部相关控制器）
 
 ## C++ 用法
-
-核心类 `FSpeech2Face` 用于从音频生成面部动画数据。它本身是编辑器专用（`WITH_EDITOR`）。
 
 ### 头文件引入
 
@@ -55,135 +65,207 @@ MetaHuman Animator 是 Epic Games 官方推出的用于创建和驱动 MetaHuman
 
 ### 基本用法
 
-以下示例展示了如何使用 `FSpeech2Face` 从音频生成动画序列。
+以下示例展示如何从语音生成面部动画（来源：`Public/Speech2Face.h`）：
 
 ```cpp
-// 来源: Public/Speech2Face.h
-// 假设已加载音频资源 USoundWave* MySoundWave;
-// 1. 创建FSpeech2Face实例
+// 注意：所有 API 都在 #if WITH_EDITOR 内，仅编辑器可用
+
+// 1. 创建 FSpeech2Face 实例（内部加载神经网络模型）
 TUniquePtr<FSpeech2Face> Speech2Face = FSpeech2Face::Create();
-
-if (Speech2Face)
+if (!Speech2Face.IsValid())
 {
-    // 2. 配置参数
-    FSpeech2Face::FAudioParams AudioParams(MySoundWave);
-    float OutputFps = 30.0f;
-    bool bGenerateBlinks = true;
-    FAudioDrivenAnimationSolveOverrides SolveOverrides;
-    SolveOverrides.Mood = EAudioDrivenAnimationMood::Happy;
-    SolveOverrides.MoodIntensity = 0.7f;
+    UE_LOG(LogTemp, Error, TEXT("Failed to create Speech2Face instance"));
+    return;
+}
 
-    // 3. 设置情绪 (如果实例支持)
-    // Speech2Face->SetMood(SolveOverrides.Mood);
-    // Speech2Face->SetMoodIntensity(SolveOverrides.MoodIntensity);
+// 2. 配置音频参数
+TObjectPtr<USoundWave> SoundWave = /* 从资产加载 */;
+FSpeech2Face::FAudioParams AudioParams(
+    SoundWave,      // 语音录音资产
+    0.0f,           // 音频起始偏移（秒）
+    true,           // 是否混合声道（降混）
+    0               // 使用的声道索引
+);
 
-    // 4. 生成动画
-    TArray<FSpeech2Face::FAnimationFrame> FaceAnimation;
-    TArray<FSpeech2Face::FAnimationFrame> HeadAnimation;
+// 3. 生成面部动画
+TArray<FSpeech2Face::FAnimationFrame> FaceAnimation;
+TArray<FSpeech2Face::FAnimationFrame> HeadAnimation;
 
-    bool bSuccess = Speech2Face->GenerateFaceAnimation(
-        AudioParams,
-        OutputFps,
-        bGenerateBlinks,
-        []() -> bool { return false; /* 取消回调，返回false表示继续 */ },
-        FaceAnimation,
-        HeadAnimation
-    );
+bool bSuccess = Speech2Face->GenerateFaceAnimation(
+    AudioParams,
+    24.0f,                                          // 输出动画帧率
+    true,                                           // 是否生成眨眼
+    []() { return false; },                         // 取消回调（不取消）
+    FaceAnimation,                                  // 输出：面部动画
+    HeadAnimation                                   // 输出：头部姿态动画
+);
 
-    if (bSuccess)
+// 4. 遍历动画数据
+for (int32 FrameIdx = 0; FrameIdx < FaceAnimation.Num(); ++FrameIdx)
+{
+    const auto& Frame = FaceAnimation[FrameIdx];
+    // Frame 是 TMap<FString, float>，键为 rig 控制器名称，值为浮点值
+    for (const auto& [ControlName, Value] : Frame)
     {
-        // 5. 使用生成的动画数据 (FaceAnimation, HeadAnimation)
-        // 每个 FAnimationFrame 是一个 TMap<FString, float>，键为控制点名称，值为动画值。
-        UE_LOG(LogTemp, Log, TEXT("Generated %d frames of face animation."), FaceAnimation.Num());
+        // 例如: "CTRL_L_brow_down.ty" -> -0.5f
+        // 例如: "CTRL_C_jaw.ty" -> 0.3f
     }
 }
 ```
 
 ### 进阶用法
 
-在 `MetaHumanPipeline` 模块中，`FSpeech2Face` 通常作为一个处理节点，被集成到更复杂的数据处理流水线中，可以实现从原始素材（视频/音频）到最终 Skeletal Mesh 动画的全自动化流程。
+带情绪设置和自定义模型的高级用法：
+
+```cpp
+// 使用自定义 NNE 模型
+FAudioDrivenAnimationModels CustomModels;
+CustomModels.AudioEncoder = FSoftObjectPath("/Game/Models/CustomAudioEncoder.CustomAudioEncoder");
+CustomModels.AnimationDecoder = FSoftObjectPath("/Game/Models/CustomAnimDecoder.CustomAnimDecoder");
+
+TUniquePtr<FSpeech2Face> Speech2Face = FSpeech2Face::Create(CustomModels);
+
+// 设置情绪参数
+Speech2Face->SetMood(EAudioDrivenAnimationMood::Happy);
+Speech2Face->SetMoodIntensity(0.7f);  // 70% 高兴强度
+
+// 生成动画（带取消支持）
+TArray<FSpeech2Face::FAnimationFrame> FaceAnim;
+TArray<FSpeech2Face::FAnimationFrame> HeadAnim;
+
+std::atomic<bool> bCancelRequested{false};
+
+bool bSuccess = Speech2Face->GenerateFaceAnimation(
+    FSpeech2Face::FAudioParams(MySoundWave, 0.5f, true, 0),  // 跳过前 0.5 秒
+    30.0f,       // 30 FPS 输出
+    false,       // 不生成眨眼
+    [&bCancelRequested]() { return bCancelRequested.load(); },  // 可取消
+    FaceAnim,
+    HeadAnim
+);
+
+// 头部姿态动画通过以下辅助函数转换为 Transform
+if (HeadAnim.Num() > 0)
+{
+    FTransform HeadPose = UE::MetaHuman::GetHeadPoseTransformFromRawControls(HeadAnim[0]);
+    // HeadPose 包含平移 (tx, ty, tz) 和旋转 (rx, ry, rz)
+}
+
+// 将 GUI 控制器名称转换为原始控制器名称
+for (auto& Frame : FaceAnim)
+{
+    UE::MetaHuman::ReplaceHeadGuiControlsWithRaw(Frame);
+}
+
+// 获取仅嘴部控制器集合（用于过滤非嘴部动画）
+TSet<FString> MouthControls = UE::MetaHuman::GetMouthOnlyRawControls();
+```
 
 ## Demo 示例
 
-一个最小化的、可运行的编辑器工具命令行示例，用于演示基本流程。
+以下是一个完整的最小示例，展示如何在编辑器工具中使用 Speech2Face 从音频生成动画：
 
 ```cpp
 // Speech2FaceDemo.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Speech2Face.h"
+#include "UObject/NoExportTypes.h"
+#include "Speech2FaceDemo.generated.h"
 
 class USoundWave;
+class FSpeech2Face;
 
-class FSpeech2FaceDemo
+UCLASS(BlueprintType)
+class USpeech2FaceDemo : public UObject
 {
+    GENERATED_BODY()
+
 public:
-    static void GenerateDemoAnimation();
+    /** 从音频资产生成面部动画数据 */
+    UFUNCTION(BlueprintCallable, Category = "Speech2FaceDemo")
+    bool GenerateAnimationFromAudio(USoundWave* InSoundWave, float InFps = 24.0f);
+
+private:
+    // Speech2Face 实例可复用
+    TUniquePtr<FSpeech2Face> Speech2FaceInstance;
 };
 ```
 
 ```cpp
 // Speech2FaceDemo.cpp
 #include "Speech2FaceDemo.h"
+#include "Speech2Face.h"
 #include "AudioDrivenAnimationConfig.h"
 #include "Sound/SoundWave.h"
 
-void FSpeech2FaceDemo::GenerateDemoAnimation()
+bool USpeech2FaceDemo::GenerateAnimationFromAudio(USoundWave* InSoundWave, float InFps)
 {
-    // 注意：此为示意代码，实际音频资源加载逻辑需自行实现。
-    USoundWave* DemoSoundWave = LoadObject<USoundWave>(nullptr, TEXT("/Game/Audio/DemoDialogue"));
-    if (!DemoSoundWave)
+    if (!InSoundWave)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Failed to load demo sound wave."));
-        return;
+        UE_LOG(LogTemp, Error, TEXT("Invalid SoundWave asset"));
+        return false;
     }
 
-    TUniquePtr<FSpeech2Face> Solver = FSpeech2Face::Create();
-    if (!Solver)
+    // 创建或复用实例
+    if (!Speech2FaceInstance.IsValid())
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create FSpeech2Face instance. Neural network models may be missing."));
-        return;
+        Speech2FaceInstance = FSpeech2Face::Create();
+    }
+    if (!Speech2FaceInstance.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to initialize Speech2Face"));
+        return false;
     }
 
-    FSpeech2Face::FAudioParams Params(DemoSoundWave, 0.0f, true, 0);
-    float DesiredFps = 24.0f;
-    bool bBlinks = true;
+    // 使用中性情绪
+    Speech2FaceInstance->SetMood(EAudioDrivenAnimationMood::Neutral);
+    Speech2FaceInstance->SetMoodIntensity(1.0f);
 
-    TArray<FSpeech2Face::FAnimationFrame> FaceData;
-    TArray<FSpeech2Face::FAnimationFrame> HeadData;
-
-    // 生成动画
-    bool bGenerated = Solver->GenerateFaceAnimation(
-        Params,
-        DesiredFps,
-        bBlinks,
-        []() { return false; }, // 不取消
-        FaceData,
-        HeadData
+    // 构造音频参数
+    FSpeech2Face::FAudioParams AudioParams(
+        InSoundWave,
+        0.0f,   // 无偏移
+        true,   // 混合声道
+        0       // 第 0 声道
     );
 
-    if (bGenerated)
+    // 生成动画
+    TArray<FSpeech2Face::FAnimationFrame> FaceAnimation;
+    TArray<FSpeech2Face::FAnimationFrame> HeadAnimation;
+
+    bool bSuccess = Speech2FaceInstance->GenerateFaceAnimation(
+        AudioParams,
+        InFps,
+        true,                                       // 生成眨眼
+        []() { return false; },                     // 不取消
+        FaceAnimation,
+        HeadAnimation
+    );
+
+    if (bSuccess)
     {
-        UE_LOG(LogTemp, Log, TEXT("Successfully generated animation data with %d frames."), FaceData.Num());
-        // 此处可以将 FaceData/HeadData 转换为 UE 的动画资产或进行下一步处理。
+        UE_LOG(LogTemp, Log, TEXT("Generated %d frames of face animation"), FaceAnimation.Num());
+        UE_LOG(LogTemp, Log, TEXT("Generated %d frames of head animation"), HeadAnimation.Num());
     }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Animation generation failed."));
-    }
+
+    return bSuccess;
 }
 ```
 
 ## 模块依赖
 
-从 `MetaHumanSpeech2Face.Build.cs` 分析，使用者需要依赖以下核心模块。请注意，这是针对 `MetaHumanSpeech2Face` 子模块的依赖，整个插件的依赖更为复杂。
+本模块（MetaHumanSpeech2Face）的 Build.cs 未在提供的信息中列出完整依赖。但根据源码分析，其独特依赖如下：
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCoreTechLib` | MetaHuman 核心算法库，提供底层求解器支持。 |
+| `NNE` | 神经网络推理框架，用于加载和运行音频编码器/动画解码器模型 |
+| `AudioMixer` / `AudioPlatform` | 音频采样和重采样处理（SoundWave PCM 数据提取） |
+| `ControlRig` | RigLogic 控制器数据结构 |
+| `MetaHumanCore` | MetaHuman 核心工具库 |
+| `RigLogicModule` | RigLogic 面部骨骼驱动系统 |
 
-**无特殊依赖（仅标准 Core/Engine/Slate 等）**：对于直接使用 `FSpeech2Face` API 的用法，除了 `MetaHumanCoreTechLib`，通常还需依赖 `NNE` 模块来加载神经网络模型。
+其余依赖为标准 Core/Engine/Slate 等常见模块。
 
 ## 维护状态
 
@@ -191,24 +273,28 @@ void FSpeech2FaceDemo::GenerateDemoAnimation()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 在启用身体追踪时禁用关卡序列导出功能 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色上的渲染瑕疵 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵 |
 | 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 为现有网格体导出动画序列 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为现有网格体导出动画序列 |
 | 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
 
 ### 维护评价
 
-**综合评价：活跃维护中**
+**活跃维护** ✅
 
-- **年龄**：该插件于 2021 年左右随 MetaHuman 项目一同发布，作为核心工具链的一部分，已存在约 5 年。
-- **更新频率与内容**：从提供的 git 历史看，更新非常频繁（最近几次更新集中在2天内），且都是**功能性更新和 Bug 修复**（如导出功能、渲染修复、缓存问题），表明 Epic Games 在持续投入开发。
-- **活跃度**：作为 MetaHuman 生态系统的核心组件，预计会随着引擎版本持续更新。
-- **已知限制**：`MetaHumanSpeech2Face` 模块明确标记为 `WITH_EDITOR`，意味着音频驱动动画生成功能**仅在编辑器环境可用**，不能用于打包后的运行时。
-- **推荐使用**：对于任何涉及 MetaHuman 角色动画的项目，此插件是**官方推荐且必须使用**的工具包。对于非 MetaHuman 角色，其语音驱动动画生成的核心类 `FSpeech2Face` 具有参考价值，但集成复杂度较高。
+MetaHumanAnimator 是 Epic Games 重点维护的旗舰插件，用于 MetaHuman 角色的完整动画制作流程。最近的更新集中在：
+
+- **身体追踪集成**：近期多次提交涉及身体追踪功能的集成和修复
+- **Sequencer 集成**：持续改进与 UE Sequencer 的协作，修复缓存和导出问题
+- **渲染修复**：修复 MetaHuman 角色的渲染问题
+
+该插件包含 29+ 个子模块和 544 个源文件，是 Epic 官方支持的大型专业工具套件。虽然 `IsBetaVersion=false`，但 Speech2Face 核心 API 全部在 `#if WITH_EDITOR` 内，意味着仅在编辑器环境中可用，不适合作为运行时语音驱动解决方案。
+
+**推荐使用**：如果你的项目需要为 MetaHuman 角色生成语音驱动的面部动画，这是唯一官方支持的解决方案。注意需要配合 MetaHuman 模型资产和 NNE 模型资产使用。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
 - [官方文档](https://docs.unrealengine.com/en-US/metahuman-animator/)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Tests)
+- [MetaHuman Speech2Face 模块源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanSpeech2Face)

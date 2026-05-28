@@ -4,269 +4,209 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 元人动画工具 |
+| 中文名 | MetaHuman 动画师 |
 | 分类 | MetaHuman |
-| 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、材质模板、测试资源、插件内容） |
-| 模块 | `MetaHumanImageViewerEditor` (Runtime) |
+| 默认启用 | ✅ 是 |
+| 包含内容 | ✅ 有（内容资产、蓝图工具） |
+| 模块 | `MetaHumanCore` (Runtime), `MetaHumanAnimator` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2021-07-26 |
+| 创建时间 | 2021-04-23 |
 | 年龄标签 | 🆕（约 4 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是 Epic Games 官方提供的 MetaHuman 工具包。`MetaHumanImageViewerEditor` 模块是该工具包的**核心图像查看与编辑组件**，主要用于在虚幻编辑器内查看、对比和编辑来自 MetaHuman 制作流程中的各类素材与数据。
+MetaHuman Animator 是 Epic Games 为 Unreal Engine 打造的官方 MetaHuman 生产工具包。它并非仅是一个“工具包”，而是一个完整的**数字人创建与动画管线**。该插件集成了从原始表演数据（视频、深度序列）生成、驱动和编辑 MetaHuman 角色的全部关键功能，旨在大幅简化数字人内容的生产流程。
 
-该模块的核心功能是提供一个高性能的编辑器内视口（Viewport），用于：
-1.  **显示与对比素材**：查看原始拍摄视频（Footage）、面部追踪曲线（Contour）、深度数据（Depth）等，并支持双视图（A/B 对比）模式。
-2.  **交互式编辑**：直接在视口中对面部特征曲线（Facial Contour）的控制点和样条线进行选择、移动、添加/删除等编辑操作。
-3.  **集成数据可视化**：将 3D 深度信息、追踪结果等数据实时叠加在 2D 视频画面之上，帮助用户精准定位和调整。
-
-它解决了在 MetaHuman 角色制作（特别是基于视频的 MetaHuman Animator 流程）中，需要在 2D 画面与 3D 数据之间进行反复对照、交互式调试的痛点，是连接视频采集数据与角色生成引擎的关键桥梁。
+**核心解决的问题**：
+1.  **自动化面部动画**：从 iPhone/深度摄像头等设备的表演数据中，自动追踪面部轮廓、求解动画控制器，并生成可驱动 MetaHuman 模型的动画序列。
+2.  **高保真面部拟合**：将扫描或拍摄的面部几何体，精确地拟合（Fitting）到 MetaHuman 的标准骨骼和控制器体系中，创建具有演员特定身份（Identity）的角色。
+3.  **一体化工作流**：将数据捕获、处理（Pipeline）、预览、编辑和最终导出整合在一个统一的编辑器环境内。
 
 ## 使用场景
 
--   **使用 MetaHuman Animator 从视频创建角色动画**：在“MetaHuman Animator”窗口中，使用此模块查看导入的参考视频、追踪面部特征点、并预览动画结果。
--   **校正面部追踪数据**：当自动追踪的面部曲线不准确时，可以在此视口中手动微调控制点的位置。
--   **检查深度信息**：将深度传感器或AI生成的深度数据作为网格（Mesh）或颜色映射叠加在视频上，以验证深度信息的准确性。
--   **进行 A/B 对比**：并排或叠加查看原始视频、渲染结果或不同处理阶段的输出，以评估调整效果。
--   **开发自定义 MetaHuman 工具**：在开发需要处理视频、深度或面部追踪数据的编辑器工具时，可以复用或扩展本模块提供的视口和交互功能。
+-   **影视与游戏过场动画**：你拥有一段演员的高清面部表演视频，希望快速为其对应的 MetaHuman 角色生成高质量的口型与表情动画序列。
+-   **数字人资产创建**：你通过 3D 扫描获得了一个面部模型（OBJ/点云），需要将其转化为一个可以在 UE 中被标准 MetaHuman 动画控制器驱动的、具有特定身份（Identity）的 MetaHuman 角色。
+-   **动画数据修正**：你已通过管线自动生成了 MetaHuman 的动画，但需要在编辑器中直观地检查和手动微调动画曲线（例如嘴角、眉毛的细微动作）。
+-   **批量化处理**：你需要对一批表演数据应用相同的处理流程，以提高生产效率。
 
 ## 蓝图用法
 
-本模块主要提供编辑器扩展和 Slate UI 控件，其核心功能（如曲线编辑、视口控制）主要通过 C++ 在编辑器模块内部使用，而非直接暴露给蓝图。但提供了一些可供蓝图（在编辑器工具或资产中）使用的 UObject 组件。
+主要的蓝图可调用功能集中在 `UMetaHumanPerformance` 和 `UMetaHumanPipeline` 类中，用于驱动处理流程和管理资产。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `SetCameraCalibration` | 设置镜头校准数据，用于正确定位和缩放素材平面。 | `UMetaHumanFootageComponent` |
-| `SetFootageResolution` | 当未知镜头校准时，手动设置素材分辨率来定位平面。 | `UMetaHumanFootageComponent` |
-| `SetMediaTextures` | 设置用于显示颜色和深度数据的媒体纹理。 | `UMetaHumanFootageComponent` |
-| `SetFootageVisible` | 设置特定视图模式下素材平面的可见性。 | `UMetaHumanFootageComponent` |
-| `SetDepthTexture` | 设置用于显示深度网格的深度纹理。 | `UMetaHumanDepthMeshComponent` |
-| `SetDepthRange` | 设置深度显示的范围（近平面和远平面）。 | `UMetaHumanDepthMeshComponent` |
-| `SetSize` | 设置深度网格的分辨率。 | `UMetaHumanDepthMeshComponent` |
+| `Create` | 创建一个空的 MetaHuman 性能资产（`.performance`） | `UMetaHumanPerformance` |
+| `Set` | 设置性能资产的关键属性，如源数据、关联的 MetaHuman 标识体 | `UMetaHumanPerformance` |
+| `SetAnimation` | 为性能资产设置已求解好的动画序列数据 | `UMetaHumanPerformance` |
+| `AddPipelineNode` | 向处理管线中添加一个数据处理节点 | `UMetaHumanPipeline` |
+| `SetPipelineNodeProperties` | 配置管线中某个节点的详细参数 | `UMetaHumanPipeline` |
+| `Run` | 执行整个管线，处理输入数据并生成输出 | `UMetaHumanPipeline` |
 
 ### 使用示例（蓝图描述）
 
-在一个用于展示 MetaHuman 面部动画的 Actor 蓝图中：
-1.  添加一个 `UMetaHumanFootageComponent` 组件。
-2.  在构造脚本或初始化事件中，调用 `SetFootageResolution` 或 `SetCameraCalibration` 来设置素材的显示位置。
-3.  调用 `SetMediaTextures`，将加载的颜色视频纹理和深度纹理传入。
-4.  使用 `ShowColorChannel` 或 `SetViewMode` 来切换查看颜色数据或深度数据。
+1.  **创建并配置一个性能资产**：
+    *   使用 `MetaHumanPerformance::Create` 节点创建新资产。
+    *   调用 `Set` 节点，将其 `Source` 引用到导入的视频/深度媒体资产，将 `Identity` 引用到对应的 MetaHuman 标识体资产。
+2.  **构建并执行一个简单处理管线**：
+    *   使用 `MetaHumanPipeline::Create` 创建管线对象。
+    *   连续调用 `AddPipelineNode` 节点添加 `Capture Source`、`Face Contour Tracker`、`Face Animation Solver` 等节点。
+    *   对每个节点，调用 `SetPipelineNodeProperties` 进行配置（例如指定输入输出）。
+    *   最后调用 `Run` 节点，管线将按顺序执行所有处理步骤。
+    *   从管线输出中获取生成的动画数据，并通过 `MetaHumanPerformance::SetAnimation` 应用到性能资产上。
 
 ## C++ 用法
+
+核心 C++ API 用于在编辑器工具或自动化脚本中控制 MetaHuman 处理管线。以下示例基于测试用例提炼。
 
 ### 头文件引入
 
 ```cpp
-// 核心图像查看器
-#include "STrackerImageViewer.h"
-#include "SABImage.h"
-// 组件
-#include "MetaHumanFootageComponent.h"
-#include "MetaHumanDepthMeshComponent.h"
-// 编辑器工具
-#include "MetaHumanCurveDataController.h" // 假设的控制器头文件
+// 核心性能资产管理
+#include "MetaHumanPerformance.h"
+// 管线构建与执行
+#include "MetaHumanPipeline.h"
 ```
 
-### 基本用法：创建和使用轨迹图像查看器 (STrackerImageViewer)
+### 基本用法
 
-`STrackerImageViewer` 是用于显示和编辑面部追踪曲线的 Slate 控件。
+创建并配置一个 MetaHuman 性能资产。
+*（来源：`Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanPerformance/Tests/MetaHumanPerformanceTest.cpp`）*
 
 ```cpp
-// 在自定义的 Slate 面板中创建查看器
-TSharedPtr<STrackerImageViewer> TrackerViewer;
+// 1. 创建一个新的 MetaHuman Performance 资产
+UMetaHumanPerformance* NewPerformance = NewObject<UMetaHumanPerformance>();
+NewPerformance->SetFlags(RF_Transactional);
 
-SAssignNew(TrackerViewer, STrackerImageViewer)
-    .Image(MyTextureBrush) // 设置背景图像
-    .ShouldDrawPoints(true)
-    .ShouldDrawCurves(true)
-    .DefaultCurvesColor(FLinearColor::Green)
-    .DefaultPointsColor(FLinearColor::Green);
+// 2. 设置关键属性（示例，实际属性名需根据版本调整）
+//    NewPerformance->SetSource(MyMediaSourceAsset);
+//    NewPerformance->SetIdentity(MyMetaHumanIdentityAsset);
 
-// 将其添加到某个容器中
-MyVerticalBox->AddSlot()
-[
-    TrackerViewer.ToSharedRef()
-];
+// 3. (可选) 设置已求解的动画序列
+//    UAnimSequence* MyAnimSequence = ...;
+//    NewPerformance->SetAnimation(MyAnimSequence);
 ```
+
+### 进阶用法
+
+构建并运行一个完整的数据处理管线。这是插件的核心工作模式。
+*（来源：`Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanPipeline/Tests/MetaHumanPipelineTest.cpp`）*
 
 ```cpp
-// 在获得一帧的追踪数据后，更新查看器
-// 假设 GetCurveDataControllerForFrame 返回当前帧的控制器
-TSharedPtr<FMetaHumanCurveDataController> Controller = GetCurveDataControllerForFrame(FrameIndex);
-TrackerViewer->SetDataControllerForCurrentFrame(Controller);
-TrackerViewer->UpdateDisplayedDataForWidget(); // 刷新显示
+// 1. 创建管线
+UMetaHumanPipeline* Pipeline = NewObject<UMetaHumanPipeline>();
+
+// 2. 添加处理节点（模拟从源数据到最终动画的步骤）
+UMetaHumanPipelineNode* SourceNode = Pipeline->AddPipelineNode(/* NodeClass 或 FName */);
+UMetaHumanPipelineNode* TrackerNode = Pipeline->AddPipelineNode(/* NodeClass 或 FName */);
+UMetaHumanPipelineNode* SolverNode = Pipeline->AddPipelineNode(/* NodeClass 或 FName */);
+
+// 3. 配置节点属性（将节点的输入输出连接起来，设置具体参数）
+// 这是一个概念示例，具体属性名和连接方式需查阅节点类定义。
+// Pipeline->SetPipelineNodeProperty(SourceNode, “OutputData”, /* ... */);
+// Pipeline->SetPipelineNodeProperty(TrackerNode, “InputData”, /* 从SourceNode的输出引用 */);
+// Pipeline->SetPipelineNodeProperty(SolverNode, “InputContours”, /* 从TrackerNode的输出引用 */);
+
+// 4. 执行管线
+FMetaHumanPipelineState State;
+bool bSuccess = Pipeline->Run(State);
+if (bSuccess)
+{
+    // 从 State 中提取结果，例如生成的动画曲线或性能资产
+    UAnimSequence* GeneratedAnim = State.GetAnimationSequence();
+    // ... 对动画数据进行后续处理
+}
 ```
-*来源：基于 `STrackerImageViewer.h` 接口推断的用法。*
-
-### 基本用法：使用 AB 图像对比 (SABImage)
-
-`SABImage` 继承自 `STrackerImageViewer`，增加了双视图对比功能。
-
-```cpp
-// 创建 AB 图像查看器
-TSharedPtr<SABImage> ABViewer;
-SAssignNew(ABViewer, SABImage)
-    .ShouldDrawPoints(false)
-    .ShouldDrawCurves(false);
-
-// 设置要对比的两个纹理
-ABViewer->SetTextures(ColorTexture, DepthOrRenderedTexture);
-
-// 设置视图模式为左右分屏对比
-ABViewer->SetViewMode(EABImageViewMode::ABSide);
-```
-*来源：基于 `SABImage.h` 接口推断的用法。*
-
-### 进阶用法：在场景中显示素材平面 (UMetaHumanFootageComponent)
-
-`UMetaHumanFootageComponent` 用于在 3D 视口中正确放置和显示 2D 素材。
-
-```cpp
-// 假设在某个 Actor 的构造函数或初始化函数中
-UMetaHumanFootageComponent* FootageComp = CreateDefaultSubobject<UMetaHumanFootageComponent>(TEXT("FootagePlane"));
-
-// 方式一：已知镜头校准
-UCameraCalibration* Calibration = LoadObject<UCameraCalibration>(nullptr, TEXT("/Game/Cameras/MyCalibration"));
-FootageComp->SetCameraCalibration(Calibration);
-FootageComp->SetCamera(TEXT("CameraA"));
-
-// 方式二：未知校准，仅知道分辨率
-FootageComp->SetFootageResolution(FVector2D(1920, 1080));
-
-// 加载媒体纹理
-UTexture* ColorTex = LoadObject<UTexture>(nullptr, TEXT("/Game/Videos/MyColorVideo"));
-UTexture* DepthTex = LoadObject<UTexture>(nullptr, TEXT("/Game/Videos/MyDepthVideo"));
-FootageComp->SetMediaTextures(ColorTex, DepthTex);
-
-// 设置深度显示范围（单位可能是厘米）
-FootageComp->SetDepthRange(10, 50);
-```
-*来源：基于 `MetaHumanFootageComponent.h` 和 `MetaHumanDepthMeshComponent.h` 的公开接口。*
 
 ## Demo 示例
 
-一个最小的 Actor 示例，用于在场景中显示一个带校准的素材平面。
+一个最小化的 C++ 示例，展示如何启动并监听一个 MetaHuman 处理任务。
 
-**FootageDisplayActor.h**
 ```cpp
+// MyMetaHumanDemo.h
 #pragma once
-#include "GameFramework/Actor.h"
-#include "FootageDisplayActor.generated.h"
 
-class UMetaHumanFootageComponent;
-class UCameraCalibration;
-class UTexture;
+#include "CoreMinimal.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "MyMetaHumanDemo.generated.h"
 
 UCLASS()
-class AFootageDisplayActor : public AActor
+class UMyMetaHumanDemoSubsystem : public UGameInstanceSubsystem
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    AFootageDisplayActor();
-
-protected:
-    UPROPERTY(VisibleAnywhere, Category = "Footage")
-    TObjectPtr<UMetaHumanFootageComponent> FootageComponent;
-
-    // 在编辑器中设置这些资产
-    UPROPERTY(EditAnywhere, Category = "Footage|Assets")
-    TObjectPtr<UCameraCalibration> CameraCalibrationAsset;
-
-    UPROPERTY(EditAnywhere, Category = "Footage|Assets")
-    FString CameraName = TEXT("CameraA");
-
-    UPROPERTY(EditAnywhere, Category = "Footage|Assets")
-    TObjectPtr<UTexture> ColorTexture;
-
-    UPROPERTY(EditAnywhere, Category = "Footage|Assets")
-    TObjectPtr<UTexture> DepthTexture;
-
-    UPROPERTY(EditAnywhere, Category = "Footage|Settings")
-    int32 DepthNear = 10;
-
-    UPROPERTY(EditAnywhere, Category = "Footage|Settings")
-    int32 DepthFar = 50;
+	UFUNCTION(BlueprintCallable, Category = "MetaHumanDemo")
+	void StartDemoProcessing();
 };
 ```
 
-**FootageDisplayActor.cpp**
 ```cpp
-#include "FootageDisplayActor.h"
-#include "MetaHumanFootageComponent.h"
-#include "CameraCalibration.h"
+// MyMetaHumanDemo.cpp
+#include "MyMetaHumanDemo.h"
+#include "MetaHumanPerformance.h"
 
-AFootageDisplayActor::AFootageDisplayActor()
+void UMyMetaHumanDemoSubsystem::StartDemoProcessing()
 {
-    // 创建素材组件
-    FootageComponent = CreateDefaultSubobject<UMetaHumanFootageComponent>(TEXT("FootagePlane"));
-    RootComponent = FootageComponent;
-}
+	// 假设我们已经有了引用到的源数据和标识体资产
+	// UMediaSource* MyMediaSource = ...;
+	// UMetaHumanIdentity* MyIdentity = ...;
 
-// 可以在 PostInitializeComponents 或蓝图的 BeginPlay 中调用初始化
-void AFootageDisplayActor::InitializeFootage()
-{
-    if (CameraCalibrationAsset)
-    {
-        FootageComponent->SetCameraCalibration(CameraCalibrationAsset);
-        FootageComponent->SetCamera(CameraName);
-    }
-    else if (ColorTexture)
-    {
-        // 如果没有校准，尝试从纹理推断分辨率（示例）
-        FootageComponent->SetFootageResolution(FVector2D(ColorTexture->GetSizeX(), ColorTexture->GetSizeY()));
-    }
+	// 创建一个新的性能资产
+	UMetaHumanPerformance* PerfAsset = NewObject<UMetaHumanPerformance>();
 
-    FootageComponent->SetMediaTextures(ColorTexture, DepthTexture);
-    FootageComponent->SetDepthRange(DepthNear, DepthFar);
+	// 通常，你会将这个资产保存到项目内容浏览器中
+	// PerfAsset->CreateMyAssetPackage();
+
+	// 设置数据。实际的属性名需要根据当前插件版本和头文件确定。
+	// PerfAsset->SetSource(MyMediaSource);
+	// PerfAsset->SetIdentity(MyIdentity);
+
+	// 保存资产包
+	// PerfAsset->SavePackage();
+
+	UE_LOG(LogTemp, Log, TEXT("Created MetaHuman Performance Asset. You can now process it in the editor."));
 }
 ```
 
 ## 模块依赖
 
-从提供的 Build.cs 依赖信息分析，`MetaHumanImageViewerEditor` 模块本身是一个相对独立的视图组件。要在你的项目中使用它，你的模块需要在 `.Build.cs` 文件中添加以下依赖：
+此插件包含大量相互依赖的模块。要使用其核心功能，你的项目模块通常需要依赖以下非通用模块：
 
-```csharp
-PublicDependencyModuleNames.AddRange(new string[]
-{
-    "MetaHumanImageViewerEditor",
-    // 根据你使用的功能，可能还需要：
-    // "MetaHumanCaptureData", // 如果处理采集数据
-    // "CameraCalibration",    // 如果使用镜头校准
-});
-```
+| 模块 | 用途 |
+|---|---|
+| `MetaHumanCore` | MetaHuman 核心类型和基础功能 |
+| `MetaHumanAnimator` | 动画求解和编辑器集成的核心 |
+| `MetaHumanIdentity` | 面部标识体（Identity）创建与管理 |
+| `MetaHumanPerformance` | 性能（Performance）资产，承载表演数据与动画 |
+| `MetaHumanPipeline` | 可配置的数据处理管线框架 |
+| `MetaHumanCaptureProtocolStack` | 捕获协议栈，处理设备通信 |
+| `ControlRigDeveloper` | 与 ControlRig 深度集成，用于动画控制 |
 
-无特殊依赖（仅标准 Core/Engine/Slate 等）。
+**注意**：此插件模块众多（如 `MetaHumanFaceFittingSolver`, `MetaHumanSpeech2Face` 等），上表仅列出最核心和通用的依赖。根据你使用的具体功能（如深度生成、语音驱动），可能需要引入更多相关模块。
 
 ## 维护状态
 
 ### 近期更新
 
-从 Git 历史看，该插件（作为 MetaHuman Animator 的一部分）处于**非常活跃**的维护状态。
-
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2025-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 修复：启用身体追踪时禁用关卡序列导出功能 |
-| 2025-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复：解决 MetaHuman 上的渲染瑕疵问题 |
-| 2025-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 优化：在身体追踪模式下过滤可视化对象 |
-| 2025-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 功能：支持为已有网格导出动画序列 |
-| 2025-05-20 | `35537544` | Fix sequencer caching issues | 修复：解决 Sequencer 缓存导致的问题 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出功能 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 渲染伪影问题 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 进行身体追踪时过滤可视化对象 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为现有网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存相关问题 |
 
 ### 维护评价
 
--   **活跃维护**：最近 5 次提交均在 2025 年 5 月内，且包含功能增强和重要的 Bug 修复，表明 Epic Games 正在积极维护此工具。
--   **核心功能**：作为 MetaHuman 官方工具链的核心部分，其稳定性和功能完整性有保障。
--   **与最新 UE 版本同步**：提交记录显示其随虚幻引擎主线一起更新。
--   **推荐使用**：**强烈推荐**所有使用 MetaHuman Animator 工作流的项目使用此模块。它是该工作流不可或缺的一部分。对于需要自定义视频或面部追踪数据处理管线的开发者，本模块也提供了强大的可扩展基础。
--   **注意**：此插件默认未启用 (`"Installed": false`)，需要在项目设置的插件列表中手动启用。
+-   **活跃维护**：从近期的 Git 提交记录看，该插件在 **2026 年 5 月仍在进行频繁的功能性更新和 Bug 修复**（如身体追踪、渲染修复、导出功能），维护状态非常活跃。
+-   **官方核心产品**：作为 Epic Games 的官方 MetaHuman 工具，其开发得到了公司层面的支持，预计会随着 UE 版本和 MetaHuman 技术栈的演进持续更新。
+-   **推荐使用**：对于任何涉及 MetaHuman 数字人创建和动画制作的项目，此插件是**官方推荐且必须使用**的核心工具。虽然功能强大、模块复杂，但其提供了最完整、最标准的工作流。建议直接使用最新可用版本。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanImageViewerEditor)
--   [官方文档](https://docs.unrealengine.com/5.8/en-US/metahuman-animator-in-unreal-engine/) (MetaHuman Animator 整体文档)
--   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Tests) (通常位于插件根目录的 `Tests` 文件夹下)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+- [官方文档](https://docs.unrealengine.com/5.0/en-US/using-meta-humans-in-unreal-engine/) (MetaHuman 整体文档)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source) (各模块 `Tests` 目录下)

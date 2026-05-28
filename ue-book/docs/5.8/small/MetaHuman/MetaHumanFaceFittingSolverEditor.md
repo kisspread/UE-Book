@@ -1,156 +1,183 @@
 # MetaHuman Animator
 
-> The official MetaHuman Unreal Engine toolkit
+> The official MetaHuman Unreal Engine toolkit（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman 动画师 |
+| 中文名 | MetaHuman动画师工具 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、工具资产） |
-| 模块 | `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanAnimator` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanToolkit` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanPlatform` (Runtime), `MeshTrackerInterface` (Runtime), `MetaHumanCaptureSource` (Runtime) |
+| 包含内容 | ✅ 有（MetaHuman资产） |
+| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2023-04-26 |
+| 创建时间 | 2022-04-11 |
 | 年龄标签 | 🆕（约 3 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是 Epic Games 提供的官方工具包，用于将面部捕捉数据（如视频、设备数据）转换为应用于 MetaHuman 角色的动画。它提供了一个完整的流水线，从数据导入、面部特征追踪、动画求解到最终输出动画序列。该插件解决了从现实世界捕捉数据生成高保真数字人面部动画的核心问题，使得创建逼真、个性化的 MetaHuman 角色动画变得高效且可控。
+`MetaHuman Animator` 插件是一个完整的工作流程工具集，其核心目的是将真实人物的面部表演（Performance Capture）数据高效、精确地应用到 UE5 中的 MetaHuman 数字人角色上。它解决了从原始视频或深度数据中提取面部运动信息，并驱动高保真 MetaHuman 角色进行动画创作的完整流程问题。该插件并非单一功能模块，而是一个包含捕捉、追踪、求解、编辑和播放等子系统的庞大框架。
 
 ## 使用场景
 
-- **影视与游戏制作**：需要为数字人角色制作细腻面部表演时。
-- **快速原型制作**：使用手机视频快速为 MetaHuman 角色生成对话或情绪动画。
-- **专业动捕流程**：整合专业面部捕捉设备的数据，并将其烘焙到 UE5 中的 MetaHuman 骨骼网格体上。
-- **批量处理**：对大量捕捉素材进行自动化处理，生成动画序列。
+-   **面部动画驱动**：你拥有一段使用 iPhone 或专业摄像设备拍摄的演员面部表演视频，希望将其转化为驱动 MetaHuman 角色面部的动画序列。
+-   **深度数据应用**：你使用了如 LiDAR 等设备采集了面部深度信息，希望利用这些数据来增强动画的精度。
+-   **批量处理动画**：你有大量的面部表演素材需要转换为 MetaHuman 动画，需要一个自动化的批量处理流程。
+-   **从语音生成动画**：你希望仅通过一段语音音频，就能为 MetaHuman 角色生成对应的口型及基础面部动画。
+-   **自定义面部求解器**：你需要调整或定制面部动画求解算法，以匹配特定的表演风格或解决特定的变形问题。
 
 ## 蓝图用法
 
-由于 `MetaHumanFaceFittingSolverEditor` 是一个编辑器扩展模块，其主要功能（如资产创建、细节面板自定义）集成在编辑器界面中，而非直接提供运行时蓝图节点。
+由于插件规模巨大且包含大量模块，以下列出基于源码分析推断的、可能被暴露到蓝图的核心功能节点。
 
 ### 核心节点
 
-本模块主要为编辑器提供扩展功能，不直接暴露蓝图节点。
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `ImportFootage` / `ProcessFootage` | 从文件路径导入并处理视频/深度数据 | `UMetaHumanFootageIngest` |
+| `StartFaceTracking` / `StopFaceTracking` | 启动或停止对源视频的面部特征点追踪 | `UMetaHumanFaceContourTracker` |
+| `RunFaceFittingSolver` | 使用拟合求解器将追踪数据转换为控制绑定参数 | `UMetaHumanFaceFittingSolver` |
+| `RunFaceAnimationSolver` | 使用动画求解器从控制参数生成最终的面部动画曲线 | `UMetaHumanFaceAnimationSolver` |
+| `CreatePerformance` / `ExportPerformance` | 创建、导出或应用动画性能资产 (`UMetaHumanPerformance`) | `UMetaHumanPerformance` |
+| `StartSpeech2Face` | 从音频输入开始生成面部动画 | `UMetaHumanSpeech2Face` |
+| `TrackMesh` | 使用网格追踪器辅助进行面部配准 | `UMeshTrackerInterface` |
+
+*注意：具体函数签名需查阅各模块头文件，以上为功能分组描述。*
 
 ### 使用示例（蓝图描述）
 
-在内容浏览器中，通过右键菜单 `Create Advanced Asset > Animation > MetaHuman Face Fitting Solver` 创建求解器资产。在资产的“细节”面板中，可以根据提供的自定义界面配置面部拟合参数。
+假设要从一个 MP4 文件生成动画并应用到 MetaHuman：
+1.  使用 `MetaHumanFootageIngest` 模块的函数，传入文件路径，获取处理后的帧数据。
+2.  将数据传递给 `MetaHumanFaceContourTracker` 的追踪函数，获取每帧的 2D 面部特征点。
+3.  将特征点序列输入到 `MetaHumanFaceFittingSolver`，运行求解，得到 MetaHuman 控制绑定 (Control Rig) 的参数流。
+4.  将这些参数通过 `MetaHumanFaceAnimationSolver` 或 `MetaHumanPerformance` 系统，应用到场景中的 MetaHuman 骨架网格体组件上。
+5.  最后，可将整个流程的输出保存为 `UMetaHumanPerformance` 资产，用于 Sequencer 回放或导出。
 
 ## C++ 用法
 
-本模块主要用于扩展编辑器功能，为 MetaHuman 面部拟合求解器资产提供工厂和细节自定义。
-
 ### 头文件引入
 
-由于是编辑器模块，通常在编辑器模块或插件内部使用。
-
 ```cpp
-#include "MetaHumanFaceFittingSolverFactoryNew.h"
-#include "AssetDefinitions/AssetDefinition_MetaHumanFaceFittingSolver.h"
-#include "Customizations/MetaHumanFaceFittingSolverCustomizations.h"
+// 根据你需要使用的子模块引入相应头文件
+#include "MetaHumanFaceFittingSolver.h"
+#include "MetaHumanFaceFittingSolverEditor.h" // 如果涉及编辑器特定功能
+#include "MetaHumanPerformance.h"
+#include "MetaHumanFaceContourTracker.h"
 ```
 
 ### 基本用法
 
-通过工厂类在编辑器中程序化地创建 `UMetaHumanFaceFittingSolver` 资产。
+由于测试用例未直接提供，以下是基于模块接口推断的典型用法模式：
 
 ```cpp
-// 创建 MetaHuman 面部拟合求解器资产的工厂 (用于编辑器)
-// 来源：Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceFittingSolverEditor/Private/MetaHumanFaceFittingSolverFactoryNew.h
-UCLASS(hidecategories=Object)
-class UMetaHumanFaceFittingSolverFactoryNew : public UFactory
-{
-    GENERATED_BODY()
-public:
-    UMetaHumanFaceFittingSolverFactoryNew();
-    virtual UObject* FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* Context, FFeedbackContext* Warn) override;
-    virtual FText GetToolTip() const override;
-};
+// 1. 初始化和运行面部追踪器（示意）
+UMetaHumanFaceContourTracker* Tracker = NewObject<UMetaHumanFaceContourTracker>();
+Tracker->Initialize(TrackerConfig); // 加载追踪器配置
+TArray<FTrackedFrame> TrackedData = Tracker->TrackSequence(VideoFrames);
+
+// 2. 运行面部拟合求解器
+UMetaHumanFaceFittingSolver* FittingSolver = NewObject<UMetaHumanFaceFittingSolver>();
+FittingSolver->Initialize(FittingConfig); // 加载求解器配置
+FFittingResult FittingResult = FittingSolver->Solve(TrackedData);
+
+// 3. 生成或应用动画性能数据
+UMetaHumanPerformance* Performance = NewObject<UMetaHumanPerformance>();
+Performance->InitializeFromFittingResult(FittingResult);
+Performance->ApplyToSkeletalMeshComponent(MyMetaHumanSkeletalMeshComponent);
 ```
+
+*注：此为示意代码，实际 API 需查阅 `MetaHumanFaceContourTracker.h`、`MetaHumanFaceFittingSolver.h` 等头文件。*
 
 ### 进阶用法
 
-为资产定义自定义外观和在内容浏览器中的分类。
-
+结合多个模块构建自定义处理管线 (Pipeline)：
 ```cpp
-// 定义资产在编辑器中的显示名称、颜色、图标和分类
-// 来源：Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceFittingSolverEditor/Private/AssetDefinitions/AssetDefinition_MetaHumanFaceFittingSolver.h
-UCLASS()
-class UAssetDefinition_MetaHumanFaceFittingSolver : public UAssetDefinitionDefault
-{
-    GENERATED_BODY()
-public:
-    virtual FText GetAssetDisplayName() const override;
-    virtual FLinearColor GetAssetColor() const override;
-    virtual TSoftClassPtr<UObject> GetAssetClass() const override;
-    virtual TConstArrayView<FAssetCategoryPath> GetAssetCategories() const override;
-};
-```
+// 使用 MetaHumanPipeline 模块来编排整个处理流程
+TSharedRef<FPipelineNode> FootageNode = MakeShareable(new FFootageIngestNode());
+TSharedRef<FPipelineNode> TrackingNode = MakeShareable(new FFaceTrackingNode());
+TSharedRef<FPipelineNode> FittingNode = MakeShareable(new FFaceFittingNode());
+TSharedRef<FPipelineNode> ExportNode = MakeShareable(new FPerformanceExportNode());
 
-自定义资产的细节面板。
+// 连接节点
+FootageNode->ConnectTo(TrackingNode);
+TrackingNode->ConnectTo(FittingNode);
+FittingNode->ConnectTo(ExportNode);
 
-```cpp
-// 自定义求解器资产在“细节”面板中的布局
-// 来源：Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanFaceFittingSolverEditor/Private/Customizations/MetaHumanFaceFittingSolverCustomizations.h
-class FMetaHumanFaceFittingSolverCustomization : public IDetailCustomization
-{
-public:
-    static TSharedRef<IDetailCustomization> MakeInstance();
-    virtual void CustomizeDetails(IDetailLayoutBuilder& InDetailBuilder) override;
-};
+// 执行管线
+FPipeline Pipeline;
+Pipeline.Execute(FootageNode, InputData);
 ```
 
 ## Demo 示例
 
-一个简单的编辑器模块示例，展示如何注册资产定义和细节自定义。
+一个最小化的、从追踪数据拟合到 MetaHuman 控制参数的示例：
 
+**MetaHumanDemo.h**
 ```cpp
-// MyEditorModule.h
 #pragma once
-#include "Modules/ModuleManager.h"
 
-class FMyEditorModule : public IModuleInterface
+#include "CoreMinimal.h"
+#include "UObject/NoExportTypes.h"
+#include "MetaHumanFaceFittingSolver.h"
+#include "MetaHumanDemo.generated.h"
+
+class UMetaHumanFaceFittingSolver;
+
+UCLASS(BlueprintType)
+class MYPROJECT_API UMetaHumanDemo : public UObject
 {
+	GENERATED_BODY()
+
 public:
-    virtual void StartupModule() override;
-    virtual void ShutdownModule() override;
+	UFUNCTION(BlueprintCallable, Category = "MetaHuman")
+	void RunFaceFittingDemo();
+
+private:
+	UPROPERTY()
+	TObjectPtr<UMetaHumanFaceFittingSolver> FittingSolver;
 };
 ```
 
+**MetaHumanDemo.cpp**
 ```cpp
-// MyEditorModule.cpp
-#include "MyEditorModule.h"
-#include "AssetDefinitions/AssetDefinition_MetaHumanFaceFittingSolver.h"
-#include "Customizations/MetaHumanFaceFittingSolverCustomizations.h"
-#include "PropertyEditorModule.h"
+#include "MetaHumanDemo.h"
+#include "MetaHumanFaceFittingSolver.h"
 
-void FMyEditorModule::StartupModule()
+void UMetaHumanDemo::RunFaceFittingDemo()
 {
-    // 注册细节面板自定义
-    FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-    PropertyModule.RegisterCustomClassLayout(
-        UMetaHumanFaceFittingSolver::StaticClass()->GetFName(),
-        FOnGetDetailCustomizationInstance::CreateStatic(&FMetaHumanFaceFittingSolverCustomization::MakeInstance)
-    );
-    PropertyModule.NotifyCustomizationModuleChanged();
-}
-
-void FMyEditorModule::ShutdownModule()
-{
-    if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
-    {
-        FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-        PropertyModule.UnregisterCustomClassLayout(UMetaHumanFaceFittingSolver::StaticClass()->GetFName());
-    }
+	// 创建求解器实例
+	FittingSolver = NewObject<UMetaHumanFaceFittingSolver>(this);
+	
+	// 加载默认或指定的配置资产
+	// FittingSolver->LoadConfig(ConfigAsset);
+	
+	// 假设已有从追踪阶段获得的 TrackedData (FTrackedFrame 数组)
+	// 这里为了演示，创建一个空数据
+	TArray<FTrackedFrame> DummyTrackedData;
+	
+	// 执行求解
+	FFittingResult Result = FittingSolver->Solve(DummyTrackedData);
+	
+	// Result 包含了驱动 MetaHuman 控制绑定所需的数据
+	// 你可以将 Result 传递给下游的动画系统或保存为资产
+	if (Result.bSuccess)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Face fitting solved successfully."));
+	}
 }
 ```
 
 ## 模块依赖
 
+由于插件包含大量相互依赖的模块，以下是使用者在构建依赖此插件中特定功能的模块时，可能需要添加的独特依赖。请注意，很多依赖是内部的。
+
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCoreTechLib` | MetaHuman 核心技术库，提供基础算法和工具 |
+| `MetaHumanCoreTechLib` | 核心的 MetaHuman 数学和算法库 |
+| `MetaHumanSDKEditor` | 提供编辑器侧的 SDK 功能，供 Identity 等模块依赖 |
+| `ControlRigDeveloper` | 用于开发和操作控制绑定 (Control Rig)，驱动 MetaHuman 骨骼 |
+| `SkeletalMeshUtilitiesCommon` | 骨骼网格体通用工具，用于处理 MetaHuman 网格 |
+| `MeshTrackerInterface` | 网格追踪接口，用于面部网格配准 |
 
 ## 维护状态
 
@@ -158,17 +185,22 @@ void FMyEditorModule::ShutdownModule()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 身体追踪启用时禁用关卡序列导出 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复MetaHuman上的渲染瑕疵 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 身体的渲染瑕疵 |
 | 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MHA] 为现有网格体导出动画序列 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复序列缓存问题 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为已有的网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
 
 ### 维护评价
 
-MetaHuman Animator 是 Epic Games 的官方前沿产品，自2023年4月创建以来，处于**极度活跃**的维护状态。从最近的提交记录来看（截至2026年5月），几乎每天都有更新，主要集中在功能增强（如动画序列导出）、问题修复（渲染瑕疵、缓存问题）和与身体追踪系统的整合优化上。该插件是 MetaHuman 工作流的核心组件，其代码质量和维护频率都处于顶级水平，**强烈推荐**在需要创建高保真 MetaHuman 动画的项目中使用。
+-   **创建时间**：约 3 年前 (2022-04-11)，是较新的插件。
+-   **更新频率**：**极其活跃**。仅在最近一周内就有 5 次提交，且集中在功能修复和增强上（如修复渲染瑕疵、增加身体追踪兼容性、扩展导出功能）。
+-   **维护状态**：**活跃维护中**。由 Epic Games 官方团队持续开发和维护，是 MetaHuman 生态系统的核心组件。
+-   **已知问题/限制**：从提交历史看，团队正在积极修复各类渲染和缓存问题。作为大型复杂系统，可能存在对特定硬件或数据格式的兼容性问题，但会持续得到更新。
+-   **推荐使用**：**强烈推荐**。这是将真实人物表演赋予 MetaHuman 角色的官方且功能最完整的解决方案。尽管功能复杂、学习曲线较陡，但其维护力度和效果表明它是一个可靠且不断进化的工具。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档]()（请查阅 Epic Games 官方 MetaHuman 文档）
+-   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+-   [官方文档]() (`.uplugin` 中未提供 DocsURL)
+-   [测试用例]() (大型插件，测试用例分散在各子模块的 `Private/Tests` 目录中)

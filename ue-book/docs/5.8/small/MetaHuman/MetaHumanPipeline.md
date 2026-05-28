@@ -1,207 +1,175 @@
 # MetaHuman Animator
 
-> The official MetaHuman Unreal Engine toolkit（照抄，不翻译）
+> The official MetaHuman Unreal Engine toolkit
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 元人动画师 |
+| 中文名 | MetaHuman动画器 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（管线节点、追踪器、动画工具） |
-| 模块 | `MetaHumanPipeline` (Runtime) |
+| 包含内容 | ✅ 有（代码、资产、配置） |
+| 模块 | `MetaHumanPipeline` (Runtime), 等共27个模块 |
 | 实验性 | 否 |
-| 创建时间 | 约 2023 年 |
-| 年龄标签 | 🆕（约 3 年） |
+| 创建时间 | 未知 |
+| 年龄标签 | 未知 |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是 MetaHuman 工具包的官方运行时组件，核心是提供了一个灵活、可扩展的数据处理管道（Pipeline）框架。该模块本身不直接实现面部追踪或动画生成，而是定义了如何将各个独立的处理步骤（如面部追踪、深度生成、光流计算、语音转动画等）组合成一个连贯的数据处理流程。
+MetaHuman Animator 是 Epic Games 官方提供的 MetaHuman 动画工具套件。它并非一个单一的工具，而是一个**可扩展的管线系统**，专为将各种输入数据（如 iPhone 原深感摄像头视频、语音音频、立体相机视频）转换为高质量的 MetaHuman 面部动画而设计。
 
-它的存在是为了解决从原始数据（如视频、深度图像、音频）到最终可用于驱动 MetaHuman 角色的动画数据之间的自动化、可配置处理流程构建问题。开发者和艺术家可以通过连接不同的处理节点（Node）来创建定制化的数据处理流水线。
+该插件的核心价值在于提供了一个**模块化、可组合的框架**。它将复杂的面部动画处理流程分解为多个独立的“节点”（Node），例如面部追踪节点（`FFaceTrackerNode`）、语音转动画节点（`FSpeechToAnimNode`）、深度生成节点（`FDepthGenerateNode`）等。开发者可以像搭积木一样，将这些节点通过管线（`FPipeline`）连接起来，构建定制化的动画处理流水线。
+
+它解决了从原始媒体文件到最终可用于驱动 MetaHuman 角色骨骼的动画数据（Controls）之间的完整处理链条问题，是 MetaHuman 生态中处理“动”的核心组件。
 
 ## 使用场景
 
-- **从 iPhone/双目视频创建面部动画**：构建一个包含 `FFaceTrackerIPhoneNode` 或 `FFaceTrackerStereoNode` 的管道，处理视频输入，输出面部追踪数据。
-- **基于音频生成面部动画**：使用 `FSpeechToAnimNode` 节点，将音频文件（USoundWave）作为输入，直接生成驱动 MetaHuman 面部的动画曲线。
-- **批量处理面部动画**：结合 `FAsyncNode` 和 `FBatchProcessor` 等机制，高效地处理大量视频或音频文件，生成动画资产。
-- **自定义处理流程**：你可以继承 `FNode`，创建自己的处理节点，例如加入独特的滤镜、数据修正或与其他系统（如物理模拟）集成的逻辑。
+- **电影级面部动捕动画**：你使用专业的立体摄像机或 iPhone 拍摄了演员的面部表演，需要将其转换为精确的 MetaHuman 动画。
+- **语音驱动面部动画**：你只有一段音频文件，希望自动生成对应的口型和面部表情动画。
+- **iPhone 原深感摄像头面部动画**：你使用 iPhone 的 TrueDepth 摄像头拍摄了视频，需要提取其中的面部运动数据。
+- **自定义动画处理流程**：作为技术美术或引擎程序员，你需要对标准的面部追踪或动画解算流程进行修改或扩展，以满足特定项目的需求。
 
 ## 蓝图用法
 
-此模块（`MetaHumanPipeline`）主要提供 C++ 层面的管道构建能力，并未暴露直接在蓝图中使用的节点。实际的蓝图工具（如 `MetaHumanPerformance` 或编辑器工具）会使用此模块作为后端来执行处理。
+该插件的**核心功能是通过 C++ 实现的**，主要提供了一系列用于构建动画处理管线的节点类。在蓝图层面，它主要通过编辑器工具（如 MetaHuman Animator 编辑器窗口）来使用，而非直接暴露用于蓝图图表的简单函数节点。
+
+用户与该插件的主要交互是通过 UE 编辑器中 MetaHuman Animator 面板完成的，该面板封装了复杂的管线操作。
 
 ## C++ 用法
 
 ### 头文件引入
 
-要使用管道系统和内置节点，你需要包含相应的头文件。
 ```cpp
-#include "Nodes/FaceTrackerNode.h"
-#include "Nodes/SpeechToAnimNode.h"
-#include "Nodes/HyprsenseNode.h"
-// 其他节点头文件根据需要引入
+#include "MetaHumanPipeline/Public/Nodes/FaceTrackerNode.h"
+#include "MetaHumanPipeline/Public/Nodes/SpeechToAnimNode.h"
+#include "MetaHumanPipeline/Public/Nodes/AsyncNode.h"
 ```
 
-### 基本用法
+### 基本用法：自定义管线节点
 
-管道的基本单元是 `FNode`。每个节点通过 `FPipelineData` 对象接收输入数据，进行处理后，将结果通过 `FPipelineData` 传递给下一个节点。以下是一个简化示例，演示如何使用内置节点。
+该插件的使用主要是**继承或使用现有的管线节点**。下面是一个基于测试用例 (`TestNodes.h`) 的简单自定义节点示例，它接收一个整数并将其递增。
+
+**来源文件：** `Source/MetaHumanPipeline/Private/Nodes/TestNodes.h`
 
 ```cpp
-// 示例：创建一个 iPhone 面部追踪节点并设置参数
-// （来源：基于 FaceTrackerNode.h 的接口推断）
-void SetupFaceTrackingPipeline()
+// MyIncrementNode.h
+#pragma once
+#include "MetaHumanPipeline/Public/Nodes/Node.h" // 假设 FNode 定义在此
+
+namespace UE::MetaHuman::Pipeline
 {
-    // 创建一个 iPhone 面部追踪节点
-    TSharedPtr<UE::MetaHuman::Pipeline::FFaceTrackerIPhoneNode> FaceTrackerNode =
-        MakeShared<UE::MetaHuman::Pipeline::FFaceTrackerIPhoneNode>(TEXT("MyFaceTracker"));
-    
-    // 配置节点参数
-    FaceTrackerNode->SolverConfigData = TEXT("/Path/To/SolverConfig.json");
-    FaceTrackerNode->DNAReader = LoadDNAReader(); // 假设有一个函数加载DNA
-    FaceTrackerNode->Calibrations = GetCameraCalibrations(); // 获取相机标定数据
-    FaceTrackerNode->Camera = TEXT("Front");
-    FaceTrackerNode->NumberOfFrames = 100;
-    
-    // 在管道的某个阶段使用这个节点
-    // ... (在实际的 FGraph 或 FTask 管理中使用)
+    class FMyIncrementNode : public FNode
+    {
+    public:
+        FMyIncrementNode(const FString& InName) : FNode("MyIncrement", InName)
+        {
+            // 定义输入输出引脚类型
+            Pins.Add(FPin("InputInt", EPinDirection::Input, EPinType::Int));
+            Pins.Add(FPin("OutputInt", EPinDirection::Output, EPinType::Int));
+        }
+
+        // 处理每一帧数据的核心函数
+        virtual bool Process(const TSharedPtr<FPipelineData>& InPipelineData) override
+        {
+            // 从管线数据中获取输入值
+            int32 InputValue = InPipelineData->GetData<int32>(Pins[0]);
+            
+            // 执行处理逻辑
+            int32 OutputValue = InputValue + 1;
+            
+            // 将结果设置回管线数据
+            InPipelineData->SetData<int32>(Pins[1], OutputValue);
+            
+            return true; // 处理成功
+        }
+    };
 }
 ```
 
-### 进阶用法
+### 进阶用法：使用异步节点
 
-你可以创建自定义节点，并将其集成到管道中。下面是一个最简单的自定义节点示例，它将接收到的整数加1后输出。
+对于计算密集型任务（如神经网络推理），可以使用 `FAsyncNode` 模板来将节点包装为可异步执行，避免阻塞主线程。
+
+**来源文件：** `Source/MetaHumanPipeline/Public/Nodes/AsyncNode.h`
 
 ```cpp
-// 定义自定义节点（来源：基于 TestNodes.h 的 FIntIncNode 模式）
-class FMyCustomIncNode : public UE::MetaHuman::Pipeline::FNode
-{
-public:
-    FMyCustomIncNode(const FString& InName) 
-        : FNode("MyCustomInc", InName)
-    {
-        // 定义输入和输出引脚
-        Pins.Add(FPin("Input", EPinDirection::Input, EPinType::Int));
-        Pins.Add(FPin("Output", EPinDirection::Output, EPinType::Int));
-    }
+// 使用现成的 HyprsenseNode 作为被包装的节点类型
+// 创建一个包含 2 个内部节点实例的异步包装节点
+TArray<TSharedPtr<UE::MetaHuman::Pipeline::FHyprsenseNode>> InternalNodes;
+InternalNodes.Add(MakeShared<UE::MetaHuman::Pipeline::FHyprsenseNode>("Tracker1"));
+InternalNodes.Add(MakeShared<UE::MetaHuman::Pipeline::FHyprsenseNode>("Tracker2"));
 
-    virtual bool Process(const TSharedPtr<FPipelineData>& InPipelineData) override
-    {
-        // 从输入引脚获取数据
-        const int32 InputValue = InPipelineData->GetData<int32>(Pins[0]);
-        
-        // 处理数据
-        const int32 OutputValue = InputValue + 1;
-        
-        // 将结果设置到输出引脚
-        InPipelineData->SetData<int32>(Pins[1], OutputValue);
-        
-        return true; // 返回 true 表示处理成功
-    }
-};
+auto AsyncTrackerNode = MakeShared<UE::MetaHuman::Pipeline::FAsyncNode<UE::MetaHuman::Pipeline::FHyprsenseNode>>(
+    2, // 异步节点数量
+    "MyAsyncFaceTracker"
+);
 
-// 在管道中使用自定义节点
-void UseCustomNodeInPipeline()
-{
-    TSharedPtr<FMyCustomIncNode> MyNode = MakeShared<FMyCustomIncNode>(TEXT("Incrementer"));
-    // ... 将 MyNode 添加到管道图中，并与其他节点连接
-}
+// 在管线中使用 AsyncTrackerNode，它会并行处理到来的数据帧
 ```
 
 ## Demo 示例
 
-以下是一个完整的、可编译的最小示例，演示如何创建一个简单的整数处理管道。
+以下是一个最小、可编译的自定义节点示例，它将两个浮点数相加。
 
-**CustomIncNode.h**
+**MyFloatSumNode.h**
 ```cpp
-// CustomIncNode.h
 #pragma once
+#include "MetaHumanPipeline/Public/Nodes/Node.h"
 
-#include "CoreMinimal.h"
-#include "Nodes/Node.h"
-
-class FCustomIncNode : public UE::MetaHuman::Pipeline::FNode
+namespace UE::MetaHuman::Pipeline
 {
-public:
-    FCustomIncNode(const FString& InName);
+    class FMyFloatSumNode : public FNode
+    {
+    public:
+        FMyFloatSumNode(const FString& InName);
 
-    virtual bool Process(const TSharedPtr<UE::MetaHuman::Pipeline::FPipelineData>& InPipelineData) override;
-};
+        virtual bool Process(const TSharedPtr<FPipelineData>& InPipelineData) override;
+    };
+}
 ```
 
-**CustomIncNode.cpp**
+**MyFloatSumNode.cpp**
 ```cpp
-// CustomIncNode.cpp
-#include "CustomIncNode.h"
-#include "PipelineData.h"
+#include "MyFloatSumNode.h"
+#include "MetaHumanPipeline/Public/Nodes/PipelineData.h" // FPipelineData 定义
 
-FCustomIncNode::FCustomIncNode(const FString& InName)
-    : FNode("CustomInc", InName)
+FMyFloatSumNode::FMyFloatSumNode(const FString& InName)
+    : FNode("MyFloatSum", InName)
 {
-    // 定义输入输出引脚
-    Pins.Add(FPin("ValueIn", EPinDirection::Input, EPinType::Int, 0));
-    Pins.Add(FPin("ValueOut", EPinDirection::Output, EPinType::Int, 0));
+    Pins.Add(FPin("FloatA", EPinDirection::Input, EPinType::Float, 0));
+    Pins.Add(FPin("FloatB", EPinDirection::Input, EPinType::Float, 1));
+    Pins.Add(FPin("Sum", EPinDirection::Output, EPinType::Float));
 }
 
-bool FCustomIncNode::Process(const TSharedPtr<UE::MetaHuman::Pipeline::FPipelineData>& InPipelineData)
+bool FMyFloatSumNode::Process(const TSharedPtr<FPipelineData>& InPipelineData)
 {
-    // 获取输入的整数
-    const int32 Value = InPipelineData->GetData<int32>(Pins[0]);
-    
-    // 处理（这里简单+1）
-    const int32 NewValue = Value + 1;
-    
-    // 设置输出
-    InPipelineData->SetData<int32>(Pins[1], NewValue);
-    
+    if (!InPipelineData)
+    {
+        return false;
+    }
+
+    const float A = InPipelineData->GetData<float>(Pins[0]);
+    const float B = InPipelineData->GetData<float>(Pins[1]);
+    const float Result = A + B;
+
+    InPipelineData->SetData<float>(Pins[2], Result);
     return true;
-}
-```
-
-**UsageExample.cpp**
-```cpp
-// UsageExample.cpp (演示如何构建和运行一个极简管道)
-#include "CustomIncNode.h"
-#include "PipelineData.h"
-#include "Graph.h" // 假设的管道图管理器
-
-void RunSimplePipelineDemo()
-{
-    // 1. 创建节点
-    TSharedPtr<FCustomIncNode> IncNode1 = MakeShared<FCustomIncNode>(TEXT("First"));
-    TSharedPtr<FCustomIncNode> IncNode2 = MakeShared<FCustomIncNode>(TEXT("Second"));
-    
-    // 2. 假设有一个管道图管理器 FGraph
-    UE::MetaHuman::Pipeline::FGraph PipelineGraph;
-    
-    // 3. 将节点添加到图中
-    PipelineGraph.AddNode(IncNode1);
-    PipelineGraph.AddNode(IncNode2);
-    
-    // 4. 连接节点（IncNode1 的输出连接到 IncNode2 的输入）
-    PipelineGraph.Connect(IncNode1, 0, IncNode2, 0); // Pin Index 0
-    
-    // 5. 为第一个节点准备初始输入数据
-    TSharedPtr<UE::MetaHuman::Pipeline::FPipelineData> InitialData = 
-        MakeShared<UE::MetaHuman::Pipeline::FPipelineData>();
-    InitialData->SetData<int32>(IncNode1->Pins[0], 10); // 输入初始值 10
-    
-    // 6. 执行管道（具体执行方式取决于管道图的实现）
-    // PipelineGraph.Execute(InitialData);
-    
-    // 执行后，理论上 IncNode2 的输出引脚值应为 12 (10+1+1)
 }
 ```
 
 ## 模块依赖
 
-`MetaHumanPipeline` 模块依赖 `UnrealEd`，这是因为某些节点（如 `FSpeechToAnimNode`）在加载资产（如 `USoundWave`）时需要编辑器功能。对于运行时使用，这些依赖通常由宿主模块处理。
+该插件的 `MetaHumanPipeline` 模块依赖于 `UnrealEd`，因为许多节点（如用于管理配置、与资产系统交互）需要编辑器功能。
+
+要使用该插件的管线框架，你的模块可能需要依赖 `MetaHumanPipeline`。由于该插件主要提供处理框架和具体实现节点，其自身对 UE 核心模块（如 Core, Engine, NNE 等）有广泛依赖，但这些对于使用者来说通常是透明的。
 
 | 模块 | 用途 |
 |---|---|
-| `NNE` | 用于加载和运行神经网络模型（HyprSense 追踪器） |
-| `ControlRig` | 用于最终的动画数据输出（通过其他上层模块） |
-| `MediaUtils` | 用于处理视频、音频等媒体数据 |
+| `MetaHumanPipeline` | 核心的动画处理管线框架和各种节点实现 |
+| `NNE` (Neural Network Engine) | 为面部追踪等节点提供神经网络推理能力 |
+| `ControlRigDeveloper` | 与 MetaHuman 的 Control Rig 骨骼控制联动 |
+
+**注意**：以上依赖关系仅为 `MetaHumanPipeline` 模块的典型依赖。整个 MetaHuman Animator 插件包含 27 个模块，各自有特定的依赖关系。
 
 ## 维护状态
 
@@ -209,22 +177,21 @@ void RunSimplePipelineDemo()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能。 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色的渲染伪影问题。 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在进行身体追踪时过滤掉调试可视化对象。 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为已有的 MetaHuman 网格体导出动画序列。 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复了 Sequencer 中的缓存问题。 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 修复了在启用身体追踪时关卡序列导出功能可能失效的问题 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复了 MetaHuman 模型上可能存在的渲染伪影 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 优化了身体追踪时的可视化对象过滤，提升性能和清晰度 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 为已有网格体添加了动画序列导出功能 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复了 Sequencer（定序器）相关的缓存问题 |
 
 ### 维护评价
 
-**活跃维护**。
-- 插件创建时间较新（约3年），属于 Epic Games 的官方 MetaHuman 工具链核心组件。
-- 从最近的 git 记录来看，更新非常频繁（几乎每天），且内容涵盖**新功能添加**、**渲染/动画问题修复**以及**工作流改进**。
-- 代码中存在 `UE_DEPRECATED(5.8, ...)` 标记，表明开发团队正在积极进行 API 清理和升级（例如将 NNE 模型从 `IModelInstanceGPU` 迁移到 `IModelInstanceRunSync`）。
-- **强烈推荐使用**，但需注意其作为运行时管道框架的定位，上层的用户界面和便捷工具通常由 `MetaHumanPerformance` 等其他插件提供。
+**维护状态：活跃维护中**。
+-   **创建时间**：未知，但作为 MetaHuman 生态的核心组件，其发布与 UE5 MetaHuman 工具的推出时间接近。
+-   **近期活动**：从 Git 历史看，在 **2026 年 5 月** 有非常高频的更新（几乎每天），且提交内容集中在功能增强（如新增导出功能）、bug 修复和性能优化上。
+-   **建议**：该插件由 Epic Games 官方维护，是其旗舰 MetaHuman 工具链的一部分，**强烈推荐使用**。它持续获得更新以支持新的平台、硬件和工作流。用户应关注官方文档和引擎更新日志以获取最新特性。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档]() (暂无)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanPipeline/Private/Test) (推测路径，需根据实际情况确认)
+- [官方文档](https://docs.unrealengine.com/5.0/en-US/animating-metahumans-in-unreal-engine/)（MetaHuman 动画总览页面，包含 Animator 的使用指引）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanPipeline/Private/Nodes/TestNodes.h)（管线节点的基础测试用例）

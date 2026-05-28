@@ -6,153 +6,154 @@
 |---|---|
 | 中文名 | 元人类动画师 |
 | 分类 | MetaHuman |
-| 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（材质模板、蓝图资产、配置文件） |
+| 默认启用 | ✅ 是 |
+| 包含内容 | ✅ 有（MetaHuman 核心技术库、动画与面部追踪工具、资产配置等） |
 | 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 约 2022 年 |
-| 年龄标签 | 🆕（约 4 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman) | |
+| 创建时间 | 未知 |
+| 年龄标签 | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是一套用于创建、管理和驱动 MetaHuman 角色面部动画的完整工具链。其核心解决的问题是：如何将来自真实世界的面部捕捉数据（如 iPhone 深度相机数据、专业动捕设备数据）高效、精确地转换为高质量的 MetaHuman 虚拟角色面部动画。它不仅包含数据采集和追踪的后端处理，还提供了编辑器内用于资产创建、配置求解器、预览和最终导出的全套工具，旨在实现“捕捉到屏幕”的一体化工作流。
+MetaHuman Animator 是一个完整的官方工具套件，用于将真实的面部动作捕捉数据（视频、深度图、追踪点等）驱动 MetaHuman 角色模型。它解决的核心问题是将原始的、可能带有噪声的捕获数据，通过一系列解算器（如面部动画解算器、面部拟合解算器）转换为可用于驱动高质量数字人面部骨骼动画的资产。该插件是 MetaHuman 角色创建和动画工作流中数据驱动动画的核心部分。
 
 ## 使用场景
 
-- **游戏开发**：为游戏中的主要角色（NPC/主角）快速生成基于真人表演的细腻面部动画，大幅提升角色表演的真实感。
-- **虚拟制片/影视**：在电影或广告制作中，使用动捕设备录制演员表演，然后将其应用到虚拟 MetaHuman 角色上，进行实时预览或最终渲染。
-- **数字人直播/虚拟主播**：将面部捕捉数据实时驱动虚拟 MetaHuman 角色，用于直播或虚拟发布会。
-- **快速原型制作**：利用 iPhone 的 FaceID 摄像头等消费级设备快速录制面部表演，并生成可用于原型或测试的动画。
+- 你使用 iPhone 或其他专业设备拍摄了演员的面部表演视频，并希望将其转换为 MetaHuman 角色的动画序列。
+- 你需要调整面部动画解算的精细度，例如控制眼睛注视的平滑度或牙齿动画的驱动方式（基于追踪点或估算）。
+- 你在开发一个需要实时或后期驱动高质量数字人面部的项目，例如影视预览、虚拟制片或游戏过场动画。
+- 你需要批量处理多段捕获数据，将其转换为动画序列。
 
 ## 蓝图用法
 
-该插件的模块以 C++ 运行时库和编辑器工具为主，大部分核心功能通过编辑器资产（如 `UAnimSequence`）和编辑器工具（如专用资产编辑器）暴露，纯蓝图可调用函数较少。
+`MetaHumanFaceAnimationSolver` 模块主要为 C++ 后端提供核心配置和数据生成逻辑，其蓝图暴露接口相对有限。更多用于驱动 MetaHuman 角色的蓝图节点（如播放捕获数据、应用动画）位于上层模块（如 `MetaHumanPerformance`，`MetaHumanSequencer`）中。`UMetaHumanFaceAnimationSolver` 本身是一个配置对象。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `CanProcess` | 检查求解器当前配置是否满足处理条件 | `UMetaHumanFaceAnimationSolver` |
-| `GetSolverTemplateData` | 获取求解器模板数据（JSON格式） | `UMetaHumanFaceAnimationSolver` |
-| `GetSolverConfigData` | 获取当前求解器配置数据（JSON格式） | `UMetaHumanFaceAnimationSolver` |
+| `Get Solver Template Data` | 获取面部解算器的模板数据（JSON字符串） | `UMetaHumanFaceAnimationSolver` |
+| `Get Solver Config Data` | 获取当前解算器的配置数据（JSON字符串） | `UMetaHumanFaceAnimationSolver` |
+| `Can Process` | 检查解算器是否已准备好处理数据 | `UMetaHumanFaceAnimationSolver` |
 
 ### 使用示例（蓝图描述）
 
-1.  **创建与配置求解器**：在内容浏览器中创建 `MetaHuman Face Animation Solver` 资产。在属性面板中，你可以覆盖默认的深度图影响（`DepthMapInfluence`）、眼睛平滑度（`EyeSolveSmoothness`）和牙齿模式（`TeethMode`）。
-2.  **在性能资产中使用**：创建一个 `MetaHuman Performance` 资产。在其属性面板中，将上一步创建的 `MetaHuman Face Animation Solver` 资产指定给 `Face Solver` 属性。之后，当处理性能数据时，该求解器将被使用。
+1.  在内容浏览器中右键创建或在蓝图中 spawn 一个 `MetaHumanFaceAnimationSolver` 资产。
+2.  在其“细节”面板中，调整“参数”下的覆盖设置，如“深度图影响”、“眼睛解算平滑度”和“牙齿模式”。
+3.  在需要生成解算配置的流程中（通常在更深的动画处理管线中），获取该 `UMetaHumanFaceAnimationSolver` 对象的引用，并调用 `Get Solver Config Data` 等节点，将返回的 JSON 字符串传递给底层的解算处理流程。
 
 ## C++ 用法
+
+该模块的核心类 `UMetaHumanFaceAnimationSolver` 用于管理和生成面部动画解算所需的各种配置数据。
 
 ### 头文件引入
 
 ```cpp
-#include “MetaHumanFaceAnimationSolver/MetaHumanFaceAnimationSolver.h”
+#include "MetaHumanFaceAnimationSolver.h"
 ```
 
 ### 基本用法
 
-创建并配置一个面部动画求解器对象。这个对象通常用于定义面部动画处理过程中的各种参数。
+创建一个解算器实例，并检查其配置是否有效。
 
 ```cpp
-// 来源: 模块 API 分析
-// 创建一个求解器实例
-UMetaHumanFaceAnimationSolver* FaceSolver = NewObject<UMetaHumanFaceAnimationSolver>();
+// 假设已经有了 UMetaHumanFaceAnimationSolver 的实例
+UMetaHumanFaceAnimationSolver* Solver = NewObject<UMetaHumanFaceAnimationSolver>();
 
-// 覆盖默认设置并进行配置
-FaceSolver->bOverrideDepthMapInfluence = true;
-FaceSolver->DepthMapInfluence = EDepthMapInfluenceValue::Low; // 使用较低的深度图影响
-FaceSolver->bOverrideEyeSolveSmoothness = true;
-FaceSolver->EyeSolveSmoothness = 0.3f; // 设置眼睛平滑度
-
-// 检查配置是否可用于处理
-if (FaceSolver->CanProcess())
+// 检查解算器是否就绪
+if (Solver->CanProcess())
 {
-    // 获取用于某个特定捕捉数据的求解器配置
-    FString SolverConfigJson = FaceSolver->GetSolverConfigData(MyCaptureData);
-    // SolverConfigJson 可以被传递给底层的求解管线
+    // 获取当前配置的解算器定义数据
+    FString SolverDefinitionsData = Solver->GetSolverDefinitionsData();
+    // 此字符串可用于后续的解算流程
 }
 ```
 
 ### 进阶用法
 
-监听求解器配置的改变，并在外部做出响应。
+根据捕获数据动态获取合适的配置，并覆盖特定参数。
 
 ```cpp
-// 来源: 模块 API 分析
-UMetaHumanFaceAnimationSolver* FaceSolver = /* ... */;
+// 获取与特定捕获数据关联的有效配置
+UCaptureData* MyCaptureData = ...; // 从某处获取
+FString SolverConfigData = Solver->GetSolverConfigData(MyCaptureData);
 
-// 绑定一个回调函数到配置变更委托
-FDelegateHandle Handle = FaceSolver->OnInternalsChanged().AddLambda([]()
-{
-    UE_LOG(LogTemp, Log, TEXT(“Face animation solver config has been changed.”));
-    // 在这里更新依赖此配置的其他系统或UI
-});
+// 使用静态函数将配置设置为易于编辑的模式
+FString EasyToEditConfig = UMetaHumanFaceAnimationSolver::SetEasyToEditControlConstraints(SolverConfigData);
 
-// 当你不再需要监听时，解绑
-FaceSolver->OnInternalsChanged().Remove(Handle);
+// 覆盖特定参数
+Solver->bOverrideDepthMapInfluence = true;
+Solver->DepthMapInfluence = EDepthMapInfluenceValue::Low;
+Solver->bOverrideEyeSolveSmoothness = true;
+Solver->EyeSolveSmoothness = 0.5f;
 ```
 
 ## Demo 示例
 
-一个最小化的 C++ 示例，展示如何创建和配置一个 `UMetaHumanFaceAnimationSolver`。
+一个演示如何配置并使用 `UMetaHumanFaceAnimationSolver` 生成配置数据的最小示例。
 
 ```cpp
-// MyFaceSolverDemo.h
+// FaceAnimationSolverDemo.h
 #pragma once
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include “MetaHumanFaceAnimationSolver/MetaHumanFaceAnimationSolver.h”
-#include "MyFaceSolverDemo.generated.h"
+#include "MetaHumanFaceAnimationSolver.h"
+#include "FaceAnimationSolverDemo.generated.h"
 
 UCLASS()
-class MYPROJECT_API AMyFaceSolverDemo : public AActor
+class AFaceAnimationSolverDemo : public AActor
 {
     GENERATED_BODY()
+
 public:
-    AMyFaceSolverDemo();
+    AFaceAnimationSolverDemo();
 
-    UPROPERTY(VisibleAnywhere, Category = “MetaHuman”)
-    TObjectPtr<UMetaHumanFaceAnimationSolver> FaceAnimationSolver;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MetaHuman")
+    TObjectPtr<UMetaHumanFaceAnimationSolver> Solver;
 
-    UFUNCTION(BlueprintCallable, Category = “MetaHuman”)
-    void PrintSolverConfig();
+    UFUNCTION(BlueprintCallable, Category = "MetaHuman")
+    FString GenerateSolverConfig();
 };
-```
 
-```cpp
-// MyFaceSolverDemo.cpp
-#include "MyFaceSolverDemo.h"
+// FaceAnimationSolverDemo.cpp
+#include "FaceAnimationSolverDemo.h"
 
-AMyFaceSolverDemo::AMyFaceSolverDemo()
+AFaceAnimationSolverDemo::AFaceAnimationSolverDemo()
 {
     PrimaryActorTick.bCanEverTick = false;
-
-    // 创建求解器实例作为子对象
-    FaceAnimationSolver = CreateDefaultSubobject<UMetaHumanFaceAnimationSolver>(TEXT("FaceSolver"));
+    Solver = CreateDefaultSubobject<UMetaHumanFaceAnimationSolver>(TEXT("FaceAnimationSolver"));
 }
 
-void AMyFaceSolverDemo::PrintSolverConfig()
+FString AFaceAnimationSolverDemo::GenerateSolverConfig()
 {
-    if (FaceAnimationSolver && FaceAnimationSolver->CanProcess())
+    if (Solver && Solver->CanProcess())
     {
-        FString ConfigJson = FaceAnimationSolver->GetSolverConfigData();
-        UE_LOG(LogTemp, Log, TEXT(“Current Solver Config:\n%s”), *ConfigJson);
+        // 覆盖一些参数以满足特定需求
+        Solver->bOverrideEyeSolveSmoothness = true;
+        Solver->EyeSolveSmoothness = 0.8f;
+        Solver->bOverrideTeethMode = true;
+        Solver->TeethMode = ETeethMode::Estimated;
+
+        // 生成并返回配置数据
+        return Solver->GetSolverConfigData();
     }
+    return TEXT("");
 }
 ```
 
 ## 模块依赖
 
-`MetaHumanFaceAnimationSolver` 模块本身无特殊依赖（仅标准 Core/Engine/Slate 等）。但请注意，要完整使用 MetaHuman Animator 的功能，整个插件依赖以下不常见的模块（已从各子模块的 Build.cs 中提取）：
+该插件包含众多模块，其共同的独特依赖是 MetaHuman 自身的技术栈。对于 `MetaHumanFaceAnimationSolver` 模块，其特定依赖如下：
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCoreTechLib` | MetaHuman 底层核心算法库 |
-| `MetaHumanSDKEditor` | MetaHuman SDK 编辑器集成 |
-| `ControlRigDeveloper` | 用于与 Control Rig 蓝图编辑器交互 |
-| `SkeletalMeshUtilitiesCommon` | 骨骼网格体处理工具 |
-| `MetaHumanImageViewerEditor` | 图像查看器编辑器集成 |
+| `MetaHumanCoreTechLib` | 提供 MetaHuman 核心技术的 C++ 库接口，是解算器的基础 |
+| `MetaHumanConfig` | 管理和加载 MetaHuman 的配置文件和预设 |
+| `MetaHumanCaptureData` / `MetaHumanCaptureUtils` | 处理来自各种设备（如 iPhone）的捕获数据结构和工具 |
+
+**注意**：该插件多个模块依赖 `UnrealEd`，表明其包含大量编辑器功能（如资产编辑器、自定义控件）。最终用户在打包的游戏构建中只会包含 `Runtime` 类型的模块。
 
 ## 维护状态
 
@@ -160,21 +161,18 @@ void AMyFaceSolverDemo::PrintSolverConfig()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色上的渲染伪影问题 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 身上的渲染伪影问题 |
 | 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在身体追踪时过滤可视化对象 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 为已存在的网格体导出动画序列 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 的缓存问题 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为现有网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
 
 ### 维护评价
 
-MetaHuman Animator 插件处于**活跃维护**状态。
-- **近期更新**：最近的提交（2026年5月）表明开发团队仍在积极修复问题、优化功能（如身体追踪集成、导出流程、渲染问题），并且在进行功能增强。
-- **功能状态**：作为 Epic Games 官方维护的 MetaHuman 核心工具链，它是一个成熟且持续发展的产品，旨在为 MetaHuman 生态系统提供全面支持。
-- **推荐**：对于任何需要高质量、高保真 MetaHuman 角色面部动画的项目，此插件是官方推荐且功能完备的解决方案，**推荐使用**。
+MetaHuman Animator 插件是 Epic Games 官方维护的核心 MetaHuman 工作流组件，**处于活跃维护状态**。从最近的提交记录（2026年5月）可以看出，团队仍在持续进行功能增强（如为现有网格导出动画）、bug 修复（渲染、缓存问题）和逻辑优化（身体追踪相关）。虽然插件的初始创建时间未知，但作为 MetaHuman 套件的一部分，它在 UE5 发布后一直得到紧密维护。由于其在数字人工作流中的核心地位，**强烈推荐**用于任何涉及 MetaHuman 面部动画制作的项目。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman)
-- [官方文档](https://docs.unrealengine.com/5.0/en-US/metahuman-animator-in-unreal-engine/) （MetaHuman Animator 文档）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/Tests) （插件目录下的Tests文件夹）
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+- [官方文档]() （待 Epic Games 提供官方文档链接）
+- [测试用例]() （测试用例位于引擎测试框架中，未包含在插件目录内）

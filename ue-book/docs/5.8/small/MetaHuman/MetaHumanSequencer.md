@@ -1,44 +1,53 @@
 # MetaHuman Sequencer
 
-> MetaHuman Sequencer integration module.
+> The official MetaHuman Unreal Engine toolkit
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 定序器集成 |
+| 中文名 | MetaHuman 动画序列器 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（媒体轨道、音频轨道、自定义通道资产） |
+| 包含内容 | ✅ 有（序列器自定义轨道、通道、节） |
 | 模块 | `MetaHumanSequencer` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | - |
-| 年龄标签 | - |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanSequencer) | |
+| 创建时间 | unknown |
+| 年龄标签 | 🆕 |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Sequencer 模块专门用于扩展 Unreal Engine 的 Sequencer（定序器），使其能够与 MetaHuman 性能数据无缝协作。它解决了在 Sequencer 时间线上编辑、预览和驱动 MetaHuman 数字人面部动画时的特殊需求。
+MetaHumanSequencer 模块为 MetaHuman 性能/动画系统在 UE Sequencer（序列器）中提供深度集成。它解决的核心问题是：MetaHuman 的面部动画流程需要在 Sequencer 中同步播放音频波形、视频素材，并支持按帧标记"排除帧"（excluded frames，即不可用/低质量的捕获数据区间），同时需要自定义的 bool 类型通道来标记每一帧的处理状态。
 
-该模块的核心是处理与排除帧（Excluded Frames，即面捕数据中未使用的视频帧）、媒体缓存和播放同步相关的问题。它提供了自定义的 Sequencer 轨道（Track）、通道（Channel）和节（Section），确保 MetaHuman 动画数据在 Sequencer 中能够正确、高效地进行非线性编辑和播放。
+该模块通过自定义 `UMovieSceneSequence`、音频/媒体轨道编辑器、以及自定义的 `FMetaHumanMovieSceneChannel`（bool 通道），让 MetaHuman Performance 工作流可以完全在 Sequencer 中进行可视化编辑和回放。
 
 ## 使用场景
 
-- 你正在使用 MetaHuman Animator 从视频面捕数据制作数字人动画，并希望在 Sequencer 时间线上精确编辑和预览结果。
-- 你需要处理包含排除帧（例如演员转身或面部被遮挡的片段）的媒体源，并在 Sequencer 中直观地看到这些区域。
-- 你希望调整 MetaHuman 动画媒体轨道在 Sequencer 中的显示高度，以便更好地预览缩略图或波形。
-- 你正在开发需要深度集成 Sequencer 的 MetaHuman 工作流工具。
+- 你在使用 MetaHuman Animator 捕获面部表演数据后，需要在 Sequencer 中预览音频和视频同步效果 → 此模块提供自定义音频/媒体轨道编辑器
+- 你需要在 Sequencer 中查看和标记排除帧（低质量捕获区间），以告知面部动画求解器跳过这些帧 → `FMetaHumanMediaSection` 提供可视化绘制排除帧的功能
+- 你需要通过 Sequencer 控制 MetaHuman 动画序列的绑定和回放上下文 → `UMetaHumanSceneSequence` 提供自定义序列管理
+- 你需要在 Sequencer 中对每一帧添加或移除"是否参与处理"的 bool 标记 → `FMetaHumanMovieSceneChannel` 提供逐帧 bool 通道
 
 ## 蓝图用法
 
-本模块主要提供的是 Sequencer 编辑器扩展，其核心类（如 `FMetaHumanMovieSceneChannel`、`UMetaHumanSceneSequence`）主要被 Sequencer 系统内部调用，通常不直接通过蓝图节点暴露给用户。用户通过 Sequencer 编辑器的图形界面与这些功能交互。
+本模块主要面向编辑器内 Sequencer 的 C++ 扩展，公开的蓝图接口较少。以下是从源码中提取的关键可访问接口：
 
-### 核心交互
+### 核心节点
 
-| 功能 | 说明 |
-|---|---|
-| **自定义媒体轨道** | 在 Sequencer 中为 MetaHuman Performance 创建专属的媒体轨道，支持排除帧可视化。 |
-| **自定义音频轨道** | 在 Sequencer 中为 MetaHuman Performance 创建专属的音频轨道。 |
-| **媒体节高度调整** | 通过轨道编辑器 widget 调整媒体节的高度。 |
-| **排除帧过滤/显示** | 自动识别并以特殊方式绘制媒体源中的排除帧区域。 |
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `GetMetaHumanChannelRef` | 获取 MetaHuman bool 通道的引用 | `UMetaHumanMovieSceneMediaSection` |
+| `OnKeyAddedEventDelegate` | 键被添加时的委托 | `UMetaHumanMovieSceneMediaSection` |
+| `OnKeyDeletedEventDelegate` | 键被删除时的委托 | `UMetaHumanMovieSceneMediaSection` |
+| `AddChannelToMovieSceneSection` | 将 MetaHuman 通道添加到媒体节 | `UMetaHumanMovieSceneMediaSection` |
+
+### 使用示例（蓝图描述）
+
+MetaHumanSequencer 主要在编辑器 Sequencer UI 中自动生效。当你在 MetaHuman Performance 面板中加载一段表演数据时，Sequencer 会自动创建对应的 `UMetaHumanSceneSequence`，其中包含：
+1. 一个 `UMetaHumanMovieSceneMediaTrack` 用于播放视频素材
+2. 一个 `UMetaHumanAudioTrack` 用于播放音频
+3. 媒体节上叠加的排除帧可视化层
+
+开发者通常不需要直接在蓝图中操作这些类，而是通过 MetaHuman Animator 的 UI 面板间接使用。
 
 ## C++ 用法
 
@@ -47,102 +56,154 @@ MetaHuman Sequencer 模块专门用于扩展 Unreal Engine 的 Sequencer（定�
 ```cpp
 #include "MetaHumanSequence.h"
 #include "MetaHumanMovieSceneChannel.h"
-#include "MetaHumanMediaTrackEditor.h"
+#include "MetaHumanMovieSceneMediaSection.h"
 ```
 
-### 基本用法 (创建和使用自定义通道数据)
+### 基本用法 — 自定义 bool 通道评估
 
-MetaHuman 动画数据通过 `FMetaHumanMovieSceneChannel` 进行存储和操作。
+`FMetaHumanMovieSceneChannel` 是一个存储 `bool` 值的 MovieScene 通道，用于标记每一帧是否被排除：
 
 ```cpp
 // 来源: Public/MetaHumanMovieSceneChannel.h
-// 创建一个自定义的布尔通道，用于表示某帧是否为排除帧
-FMetaHumanMovieSceneChannel ExclusionChannel;
+FMetaHumanMovieSceneChannel MyChannel;
 
-// 添加关键帧：第10帧为排除帧（true），第20帧为正常帧（false）
-TMovieSceneChannelData<bool> ChannelData = ExclusionChannel.GetData();
-ChannelData.AddKey(FFrameNumber(10), true);
-ChannelData.AddKey(FFrameNumber(20), false);
+// 设置默认值（无键时使用）
+MyChannel.SetDefault(true);
 
-// 评估通道在特定时间的值
-bool bIsExcludedAtFrame15 = false;
-ExclusionChannel.Evaluate(FFrameTime(15), bIsExcludedAtFrame15);
-// bIsExcludedAtFrame15 可能为 true，因为10到20帧之间是保持上一个关键帧的值
+// 在指定时间评估通道
+bool bValue = false;
+FFrameTime FrameTime(100);  // 第 100 帧
+bool bSuccess = MyChannel.Evaluate(FrameTime, bValue);
+
+// 获取所有键的时间和值
+TArrayView<const FFrameNumber> Times = MyChannel.GetTimes();
+TArrayView<const bool> Values = MyChannel.GetValues();
+
+// 检查是否有数据
+if (MyChannel.HasAnyData())
+{
+    // 通道包含键或默认值
+}
 ```
 
-### 进阶用法 (设置序列默认值与排除帧信息)
-
-`UMetaHumanSceneSequence` 是 Sequencer 数据的核心容器。
+### 基本用法 — 媒体节中操作排除帧通道
 
 ```cpp
-// 来源: Public/MetaHumanSequence.h
-// 获取或创建一个 MetaHuman 场景序列
-UMetaHumanSceneSequence* MySequence = NewObject<UMetaHumanSceneSequence>();
+// 来源: Public/MetaHumanMovieSceneMediaSection.h
+// 获取 MetaHuman 媒体节的通道引用
+UMetaHumanMovieSceneMediaSection* MediaSection = /* 获取节的指针 */;
+FMetaHumanMovieSceneChannel& Channel = MediaSection->GetMetaHumanChannelRef();
 
-#if WITH_EDITOR
-// 设置序列的默认 Tick Rate，通常关联到面捕素材数据
-// UFootageCaptureData* FootageData = ...; // 获取你的面捕数据
-// MySequence->SetTickRate(FootageData);
-
-// 绑定一个委托，用于获取排除帧信息（用于UI绘制等）
-MySequence->GetExcludedFrameInfo.BindLambda([](FFrameRate& OutSourceRate, FFrameRangeMap& OutExcludedFramesMap, int32& OutMediaStartFrame, TRange<FFrameNumber>& OutProcessingLimit)
-{
-    // 在这里填充排除帧信息，例如从你的资产中读取
-    OutSourceRate = FFrameRate(24, 1);
-    // ... 填充其他参数
+// 监听键添加/删除事件
+MediaSection->OnKeyAddedEventDelegate().AddLambda([]() {
+    UE_LOG(LogTemp, Log, TEXT("Key added to MetaHuman channel"));
 });
-#endif
+
+MediaSection->OnKeyDeletedEventDelegate().AddLambda([]() {
+    UE_LOG(LogTemp, Log, TEXT("Key removed from MetaHuman channel"));
+});
+
+// 手动将通道添加到节
+MediaSection->AddChannelToMovieSceneSection();
+```
+
+### 进阶用法 — 自定义排除帧绘制
+
+```cpp
+// 来源: Public/MetaHumanMediaSection.h
+// 在自定义 Sequencer Section 的 OnPaint 中绘制排除帧
+int32 FMySection::OnPaintSection(FSequencerSectionPainter& InPainter) const
+{
+    int32 LayerId = FSequencerSection::OnPaintSection(InPainter);
+
+    // 使用 MetaHuman 提供的辅助函数绘制排除帧
+    LayerId = MetaHumanSectionPainterHelper::PaintExcludedFrames(
+        InPainter,
+        LayerId,
+        Sequencer.Get(),
+        Section
+    );
+
+    return LayerId;
+}
+```
+
+### 进阶用法 — 自定义回放上下文
+
+```cpp
+// 来源: Public/MetaHumanSequencerPlaybackContext.h
+FMetaHumanSequencerPlaybackContext PlaybackContext;
+UObject* Context = PlaybackContext.GetPlaybackContext();
+// 返回当前用于 Sequencer 回放的世界上下文
 ```
 
 ## Demo 示例
 
-以下是一个最小化的示例，演示如何注册一个自定义的 MetaHuman 媒体轨道编辑器（需要在 Editor 模块的 StartupModule 中调用）。
+一个最小示例，展示如何读取 MetaHuman 通道数据：
 
 ```cpp
-// MetaHumanCustomTrackEditor.h
+// MyMetaHumanSequenceHelper.h
 #pragma once
-#include "ISequencerModule.h"
 
-// 声明一个简单的自定义媒体轨道编辑器工厂
-class FMyCustomMediaTrackEditorFactory : public ISequencerTrackEditorFactory
+#include "CoreMinimal.h"
+#include "MetaHumanSequence.h"
+#include "MetaHumanMovieSceneMediaSection.h"
+
+class FMyMetaHumanSequenceHelper
 {
 public:
-    static void Register(ISequencerModule& SequencerModule)
-    {
-        // 注册我们的编辑器，使其支持 UMetaHumanMovieSceneMediaTrack 类型
-        SequencerModule.RegisterPropertyTrackEditor(
-            FOnCreateTrackEditor::CreateStatic(&FMyCustomMediaTrackEditorFactory::CreateTrackEditor),
-            FOnGetTrackSupportedTypes::CreateStatic(&FMyCustomMediaTrackEditorFactory::GetSupportedTypes));
-    }
+    /** 检查指定帧是否在排除帧范围内 */
+    static bool IsFrameExcluded(UMetaHumanMovieSceneMediaSection* InSection, FFrameNumber InFrame);
 
-    static TSharedRef<ISequencerTrackEditor> CreateTrackEditor(TSharedRef<ISequencer> InOwningSequencer)
-    {
-        // 复用标准的 MetaHuman 媒体轨道编辑器
-        return FMetaHumanMediaTrackEditor::CreateTrackEditor(InOwningSequencer);
-    }
-
-    static TArray<TSubclassOf<UMovieSceneTrack>> GetSupportedTypes()
-    {
-        // 支持 MetaHuman 自定义的媒体轨道类
-        return { UMetaHumanMovieSceneMediaTrack::StaticClass() };
-    }
+    /** 设置指定帧的排除状态 */
+    static void SetFrameExcluded(UMetaHumanMovieSceneMediaSection* InSection, FFrameNumber InFrame, bool bExcluded);
 };
+```
 
-// MetaHumanCustomTrackEditor.cpp
-#include "MetaHumanCustomTrackEditor.h"
-// ... (实现，通常注册逻辑放在编辑器模块的 StartupModule)
+```cpp
+// MyMetaHumanSequenceHelper.cpp
+#include "MyMetaHumanSequenceHelper.h"
+#include "MetaHumanMovieSceneChannel.h"
+
+bool FMyMetaHumanSequenceHelper::IsFrameExcluded(
+    UMetaHumanMovieSceneMediaSection* InSection, FFrameNumber InFrame)
+{
+    if (!InSection)
+    {
+        return false;
+    }
+
+    FMetaHumanMovieSceneChannel& Channel = InSection->GetMetaHumanChannelRef();
+    bool bValue = false;
+    bool bEvaluated = Channel.Evaluate(InFrame, bValue);
+    // false 表示该帧被排除
+    return bEvaluated && !bValue;
+}
+
+void FMyMetaHumanSequenceHelper::SetFrameExcluded(
+    UMetaHumanMovieSceneMediaSection* InSection, FFrameNumber InFrame, bool bExcluded)
+{
+    if (!InSection)
+    {
+        return;
+    }
+
+    FMetaHumanMovieSceneChannel& Channel = InSection->GetMetaHumanChannelRef();
+    TMovieSceneChannelData<bool> Data = Channel.GetData();
+    // bExcluded=false 表示排除，bExcluded=true 表示包含
+    Data.UpdateOrAddKey(InFrame, !bExcluded);
+}
 ```
 
 ## 模块依赖
 
+基于模块内部依赖关系，使用 MetaHumanSequencer 时你的模块应依赖：
+
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCore` | MetaHuman 核心功能模块 |
-| `MetaHumanPerformance` | 处理 MetaHuman 性能（动画）数据 |
-| `MetaHumanCaptureDataEditor` | 处理面捕数据的编辑器功能 |
-| `MediaAssets` | UE 媒体资产基础模块 |
-| `SequencerCore` | Sequencer 核心功能模块 |
-| `SequencerWidgets` | Sequencer UI 小部件 |
+| `MetaHumanSequencer` | 本模块，提供 Sequencer 集成 |
+| `MetaHumanPerformance` | MetaHuman 性能/表演数据资产 |
+| `MetaHumanCore` | MetaHuman 核心工具函数 |
 
 ## 维护状态
 
@@ -150,19 +211,19 @@ public:
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 禁用身体追踪时的关卡序列导出 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染伪影 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 渲染伪影 |
 | 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 为现有网格体导出动画序列 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为现有网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复序列器缓存问题 |
 
 ### 维护评价
 
-MetaHuman Sequencer 是 MetaHuman Animator 插件的核心组件之一，专门为 Sequencer 工作流设计。从 git 历史看，该模块持续收到功能更新和错误修复（最近一次更新在 2026 年 5 月），表明 Epic Games 正在积极维护和迭代该功能。
+**活跃维护**：近期（2026 年 5 月）有密集的实质性更新，包括功能增强（身体追踪集成、动画导出）和 Bug 修复（渲染伪影、缓存问题）。作为 Epic Games 官方 MetaHuman 工具链的核心模块，预期会随 Unreal Engine 版本持续更新。
 
-作为 MetaHuman 官方工具链的一部分，该模块与引擎版本紧密同步，可靠性较高。对于使用 MetaHuman Animator 并在 Sequencer 中进行动画编辑的项目，**强烈推荐使用此模块**。它是实现专业级 MetaHuman 动画非线性编辑的关键。
+作为 MetaHuman Animator 的子模块，该模块与 MetaHuman 整体产品线深度绑定，不会被独立废弃。推荐在 MetaHuman 面部动画工作流中使用。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanSequencer)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanSequencer) (可能包含内部测试，路径需确认)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+- [官方文档](https://docs.unrealengine.com/en-US/Animating-Characters/MetaHuman/)（MetaHuman 文档）
