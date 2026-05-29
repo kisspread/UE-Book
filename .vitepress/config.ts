@@ -178,10 +178,10 @@ export default defineConfig({
 
   ignoreDeadLinks: true,
   markdown: {
-    html: false,
+    html: true,
     config: (md) => {
-      // 定义常见的合法 HTML 标签（你之前正则里的那些）
-      const htmlTags = /^\/?(?:div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th|thead|tbody|br|hr|code|pre|strong|em|b|i|u|s|script|style|template|slot|component|section|header|footer|nav|main|aside|article|form|input|button|select|option|label|textarea|link|meta|head|body|html|iframe|svg|path|circle|rect|g|video|audio|source|canvas|v-[a-z-]+)[\s>]/i;
+      // 定义常见的合法 HTML 标签（SVG 标签已移除——commit message 里的 <path> <Source> 不是 HTML）
+      const htmlTags = /^\/?(?:div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th|thead|tbody|br|hr|code|pre|strong|em|b|i|u|s|details|summary|script|style|template|slot|component|section|header|footer|nav|main|aside|article|form|input|button|select|option|label|textarea|link|meta|head|body|html|iframe|video|audio|source|canvas|v-[a-z-]+|HomeCards)[\s>/]/i;
 
       // 注册一个底层的 AST 处理规则
       md.core.ruler.push('escape_cpp_templates', (state) => {
