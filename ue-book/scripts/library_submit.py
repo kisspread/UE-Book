@@ -266,12 +266,12 @@ UE 相关项目通常具有以下特征之一：
     # Extract JSON
     match = re.search(r"\{[\s\S]*\}", result)
     if not match:
-        return {"valid": False, "reason": f"LLM 返回格式异常：{result[:200]}"}
+        return {"valid": False, "reason": f"LLM 返回格式异常：{result[:200]}", "retry": True}
 
     try:
         info = json.loads(match.group())
     except json.JSONDecodeError:
-        return {"valid": False, "reason": f"LLM 返回 JSON 解析失败：{result[:200]}"}
+        return {"valid": False, "reason": f"LLM 返回 JSON 解析失败：{result[:200]}", "retry": True}
 
     # Validate category
     cat = info.get("category", "")
@@ -457,11 +457,19 @@ def main():
     if user_desc:
         print(f"  User desc: {user_desc[:80]}...")
 
-    # 5. LLM analysis
+    # 5. LLM analysis (retry up to 3 times on format errors, no retry on rejection)
     print("  Analyzing with LLM...")
-    info = analyze_repo(repo_info, readme, file_tree, user_desc)
+    info = None
+    for attempt in range(1, 4):
+        info = analyze_repo(repo_info, readme, file_tree, user_desc)
+        if info.get("valid"):
+            break
+        if info.get("retry") and attempt < 3:
+            print(f"  ⚠️ Format error (attempt {attempt}/3), retrying...")
+            continue
+        break
 
-    if not info.get("valid"):
+    if info is None or not info.get("valid"):
         reason = info.get("reason", "未知原因")
         print(f"  ❌ Rejected: {reason}")
         msg = f"❌ 未通过收录审核\n\n{reason}"
