@@ -156,6 +156,9 @@ for (const [pluginName, info] of Object.entries(plugins)) {
   const srcDir = resolveSourcePath(docPath);
   if (version === '5.7') has5_7.add(pluginName);
 
+  // Exclude 5.7 from output (OOM workaround — 5.7 pages not built, restore when VitePress OOM fixed)
+  if (version === '5.7') continue;
+
   if (!fs.existsSync(srcDir)) { errors++; continue; }
 
   const indexFile = path.join(srcDir, 'index.md');
@@ -171,17 +174,18 @@ for (const [pluginName, info] of Object.entries(plugins)) {
   }
 }
 
-// FS leftovers (V1 dirs not in manifest, like ADM 5.7)
+// FS leftovers disabled (OOM workaround — 5.7 pages not built)
+// let fsExtra = 0;
+// const extras = scanFilesystemExtras(has5_7);
+// for (const { name, size, content } of extras) {
+//   const entry = buildEntry(parseAttributeTable(content), name, '5.7', size, content);
+//   if (existingNames[name]) entry.name_cn = existingNames[name];
+//   if (entry.name_cn) withCN++;
+//   if (entry.description_cn) withDescCN++;
+//   allPlugins.push(entry);
+//   fsExtra++;
+// }
 let fsExtra = 0;
-const extras = scanFilesystemExtras(has5_7);
-for (const { name, size, content } of extras) {
-  const entry = buildEntry(parseAttributeTable(content), name, '5.7', size, content);
-  if (existingNames[name]) entry.name_cn = existingNames[name];
-  if (entry.name_cn) withCN++;
-  if (entry.description_cn) withDescCN++;
-  allPlugins.push(entry);
-  fsExtra++;
-}
 
 allPlugins.sort((a, b) => a.name.localeCompare(b.name));
 
