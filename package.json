@@ -3,7 +3,7 @@
   "scripts": {
     "docs:dev": "vitepress dev",
     "docs:build2": "NODE_OPTIONS='--max-old-space-size=6144' vitepress build",
-    "docs:build": "NODE_OPTIONS='--max-old-space-size=12288' vitepress build",
+    "docs:build": "NODE_OPTIONS='--max-old-space-size=10240' vitepress build",
     "docs:preview": "vitepress preview",
     "sync": "node scripts/sync-manifest.mjs",
     "deploy": "gh-pages -d .vitepress/dist"
