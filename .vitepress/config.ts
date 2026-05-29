@@ -53,7 +53,7 @@ if (fs.existsSync(MANIFEST_PATH)) {
 }
 
 const seenRewrite = new Set<string>()  // "ver/name"
-for (const ver of ['5.7', '5.8']) {
+for (const ver of ['5.8']) {
   for (const size of SIZE_DIRS) {
     const sizeDir = path.join(DOCS_DIR, ver, size)
     if (!fs.existsSync(sizeDir)) continue
