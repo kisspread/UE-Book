@@ -29,6 +29,8 @@ if (fs.existsSync(excludeFilePath)) {
   srcExclude = JSON.parse(fs.readFileSync(excludeFilePath, 'utf-8'))
   console.log(`[config] 分批模式启动：忽略 ${srcExclude.length} 个文件不参与此次编译`)
 }
+// Exclude 5.7 docs to reduce memory (OOM workaround, restore when VitePress fixes OOM)
+srcExclude.push('**/5.7/**')
 
 
 
