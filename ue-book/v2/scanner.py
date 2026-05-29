@@ -261,22 +261,54 @@ def _gh_graphql(query: str, **kwargs) -> dict:
 
 
 def _get_plugin_list_from_tree(branch: str) -> list[dict]:
+    """List all .uplugin files recursively via GitHub tree API.
+
+    Handles truncated responses by scanning top-level subdirectories
+    individually (each subtree call is less likely to hit the limit).
+    """
     from . import config
     repo = config.GH_REPO
     tree_ref = f"{branch}:Engine%2FPlugins"
+
+    # First try: single recursive call
     data = _gh_api(f"repos/{repo}/git/trees/{tree_ref}", recursive=1)
+    if not data.get("truncated"):
+        return _extract_plugins(data.get("tree", []))
+
+    # Truncated — scan each top-level subdirectory separately
+    print("  ⚠️  Tree truncated, scanning subdirectories individually...")
+    top = _gh_api(f"repos/{repo}/git/trees/{tree_ref}")
     plugins = {}
-    for entry in data.get("tree", []):
-        if entry["path"].endswith(".uplugin") and entry["type"] == "blob":
+    for entry in top.get("tree", []):
+        if entry["type"] != "tree":
+            continue
+        sub_path = f"{tree_ref}%2F{entry['path']}"
+        try:
+            sub_data = _gh_api(f"repos/{repo}/git/trees/{sub_path}", recursive=1)
+            sub_plugins = _extract_plugins(sub_data.get("tree", []),
+                                           category_prefix=entry["path"] + "/")
+            for p in sub_plugins:
+                if p["name"] not in plugins:
+                    plugins[p["name"]] = p
+        except RuntimeError:
+            continue
+    return list(plugins.values())
+
+
+def _extract_plugins(tree: list[dict], category_prefix: str = "") -> list[dict]:
+    """Extract .uplugin entries from a tree response."""
+    plugins = {}
+    for entry in tree:
+        if entry.get("path", "").endswith(".uplugin") and entry.get("type") == "blob":
             parts = entry["path"].split("/")
             if len(parts) >= 2:
                 plugin_dir = "/".join(parts[:-1])
                 plugin_name = parts[-1].replace(".uplugin", "")
-                category = parts[0]
-                full_path = f"Engine/Plugins/{plugin_dir}"
+                full_path = f"Engine/Plugins/{category_prefix}{plugin_dir}"
                 if plugin_name not in plugins:
                     plugins[plugin_name] = {
-                        "name": plugin_name, "path": full_path, "category": category,
+                        "name": plugin_name, "path": full_path,
+                        "category": parts[0],
                     }
     return list(plugins.values())
 
