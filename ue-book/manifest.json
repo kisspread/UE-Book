@@ -393,14 +393,16 @@
       "doc_path": "docs/5.7/small/DMXDisplayCluster/"
     },
     "DMXFixtures": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/DMXFixtures/"
+      "doc_path": "docs/5.8/small/DMXFixtures/",
+      "forced": true
     },
     "DMXModularFeatures": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/DMXModularFeatures/"
+      "doc_path": "docs/5.8/small/DMXModularFeatures/",
+      "forced": true
     },
     "DTLSHandlerComponent": {
       "generated_in": "5.7",
@@ -614,9 +616,10 @@
       "doc_path": "docs/5.7/small/IOSDeviceProfileSelector/"
     },
     "IOSReplayKit": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/IOSReplayKit/"
+      "doc_path": "docs/5.8/small/IOSReplayKit/",
+      "forced": true
     },
     "IOSTapJoy": {
       "generated_in": "5.8",
@@ -624,9 +627,10 @@
       "doc_path": "docs/5.8/small/IOSTapJoy/"
     },
     "InputDebugging": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/InputDebugging/"
+      "doc_path": "docs/5.8/small/InputDebugging/",
+      "forced": true
     },
     "KDevelopSourceCodeAccess": {
       "generated_in": "5.8",
@@ -649,9 +653,10 @@
       "doc_path": "docs/5.8/small/LensDistortion/"
     },
     "LevelStreamingPersistence": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/LevelStreamingPersistence/"
+      "doc_path": "docs/5.8/small/LevelStreamingPersistence/",
+      "forced": true
     },
     "LibVpxCodecs": {
       "generated_in": "5.8",
@@ -714,9 +719,10 @@
       "doc_path": "docs/5.7/small/LiveLinkOverNDisplay/"
     },
     "LiveLinkPrestonMDR": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/LiveLinkPrestonMDR/"
+      "doc_path": "docs/5.8/small/LiveLinkPrestonMDR/",
+      "forced": true
     },
     "LiveLinkUnrealDevice": {
       "generated_in": "5.8",
@@ -855,9 +861,10 @@
       "doc_path": "docs/5.8/small/NUTUnrealEngine/"
     },
     "NavCorridor": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/NavCorridor/"
+      "doc_path": "docs/5.8/small/NavCorridor/",
+      "forced": true
     },
     "NullSourceCodeAccess": {
       "generated_in": "5.8",
@@ -980,14 +987,16 @@
       "doc_path": "docs/5.7/small/PreLoadScreenMoviePlayer/"
     },
     "ProceduralMeshComponent": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ProceduralMeshComponent/"
+      "doc_path": "docs/5.8/small/ProceduralMeshComponent/",
+      "forced": true
     },
     "PropertyAccessEditor": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/PropertyAccessEditor/"
+      "doc_path": "docs/5.8/small/PropertyAccessEditor/",
+      "forced": true
     },
     "PropertyAccessNode": {
       "generated_in": "5.8",
@@ -1045,9 +1054,10 @@
       "doc_path": "docs/5.8/small/RenderGraphInsights/"
     },
     "RenderTrace": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/RenderTrace/"
+      "doc_path": "docs/5.8/small/RenderTrace/",
+      "forced": true
     },
     "ReplayTracks": {
       "generated_in": "5.8",
@@ -1095,14 +1105,16 @@
       "doc_path": "docs/5.8/small/SampleToolsEditorMode/"
     },
     "SceneStateDataLink": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/SceneStateDataLink/"
+      "doc_path": "docs/5.8/small/SceneStateDataLink/",
+      "forced": true
     },
     "SequencerPlaylists": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/SequencerPlaylists/"
+      "doc_path": "docs/5.8/small/SequencerPlaylists/",
+      "forced": true
     },
     "SignificanceManager": {
       "generated_in": "5.7",
@@ -1195,9 +1207,10 @@
       "doc_path": "docs/5.7/small/StormSyncAvalancheBridge/"
     },
     "SunPosition": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/SunPosition/"
+      "doc_path": "docs/5.8/small/SunPosition/",
+      "forced": true
     },
     "TcpMessaging": {
       "generated_in": "5.8",
@@ -1350,19 +1363,22 @@
       "doc_path": "docs/5.8/small/XcodeGPUDebuggerPlugin/"
     },
     "ZoneGraphAnnotations": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ZoneGraphAnnotations/"
+      "doc_path": "docs/5.8/small/ZoneGraphAnnotations/",
+      "forced": true
     },
     "nDisplayModularFeatures": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/nDisplayModularFeatures/"
+      "doc_path": "docs/5.8/small/nDisplayModularFeatures/",
+      "forced": true
     },
     "ActorModifierCore": {
-      "generated_in": "5.7",
-      "size": "medium",
-      "doc_path": "docs/5.7/medium/ActorModifierCore/"
+      "generated_in": "5.8",
+      "size": "large",
+      "doc_path": "docs/5.8/large/ActorModifierCore/",
+      "forced": true
     },
     "AdvancedRenamer": {
       "generated_in": "5.8",
@@ -1565,9 +1581,10 @@
       "doc_path": "docs/5.8/medium/LandscapePatch/"
     },
     "LiveLinkOpenTrackIO": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/LiveLinkOpenTrackIO/"
+      "doc_path": "docs/5.8/medium/LiveLinkOpenTrackIO/",
+      "forced": true
     },
     "MQTT": {
       "generated_in": "5.8",
@@ -1606,14 +1623,16 @@
       "doc_path": "docs/5.8/medium/MotionWarping/"
     },
     "MultiServerReplication": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/MultiServerReplication/"
+      "doc_path": "docs/5.8/medium/MultiServerReplication/",
+      "forced": true
     },
     "MusicEnvironment": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/MusicEnvironment/"
+      "doc_path": "docs/5.8/medium/MusicEnvironment/",
+      "forced": true
     },
     "NNERuntimeORT": {
       "generated_in": "5.8",
@@ -1746,9 +1765,10 @@
       "doc_path": "docs/5.8/large/PluginBrowser/"
     },
     "PropertyBindingUtils": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/PropertyBindingUtils/"
+      "doc_path": "docs/5.8/medium/PropertyBindingUtils/",
+      "forced": true
     },
     "RHITests": {
       "generated_in": "5.7",
@@ -1811,9 +1831,10 @@
       "doc_path": "docs/5.7/medium/Soundscape/"
     },
     "StageMonitoring": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/StageMonitoring/"
+      "doc_path": "docs/5.8/medium/StageMonitoring/",
+      "forced": true
     },
     "SubversionSourceControl": {
       "generated_in": "5.8",
@@ -1876,9 +1897,10 @@
       "doc_path": "docs/5.8/large/AIAssistant/"
     },
     "ActorModifier": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/ActorModifier/"
+      "doc_path": "docs/5.8/large/ActorModifier/",
+      "forced": true
     },
     "AudioModulation": {
       "generated_in": "5.8",
@@ -2006,9 +2028,10 @@
       "doc_path": "docs/5.8/large/GoogleARCore/"
     },
     "InstancedActors": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/InstancedActors/"
+      "doc_path": "docs/5.8/large/InstancedActors/",
+      "forced": true
     },
     "InterchangeTests": {
       "generated_in": "5.7",
@@ -2136,9 +2159,10 @@
       "doc_path": "docs/5.8/large/WaveformEditor/"
     },
     "ZoneGraph": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/ZoneGraph/"
+      "doc_path": "docs/5.8/large/ZoneGraph/",
+      "forced": true
     },
     "ACLPlugin": {
       "generated_in": "5.8",
@@ -2236,14 +2260,16 @@
       "doc_path": "docs/5.7/xlarge/DMXEngine/"
     },
     "DMXGDTF": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/DMXGDTF/"
+      "doc_path": "docs/5.8/xlarge/DMXGDTF/",
+      "forced": true
     },
     "DMXPixelMapping": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/DMXPixelMapping/"
+      "doc_path": "docs/5.8/xlarge/DMXPixelMapping/",
+      "forced": true
     },
     "DMXProtocol": {
       "generated_in": "5.7",
@@ -2516,9 +2542,10 @@
       "doc_path": "docs/5.7/xlarge/StormSync/"
     },
     "Synthesis": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/Synthesis/"
+      "doc_path": "docs/5.8/xlarge/Synthesis/",
+      "forced": true
     },
     "Takes": {
       "generated_in": "5.7",
@@ -2541,9 +2568,10 @@
       "doc_path": "docs/5.7/xlarge/TextureShare/"
     },
     "USDCore": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/USDCore/"
+      "doc_path": "docs/5.8/xlarge/USDCore/",
+      "forced": true
     },
     "UVEditor": {
       "generated_in": "5.8",
@@ -4451,6 +4479,18 @@
       "generated_in": "5.8",
       "size": "small",
       "doc_path": "docs/5.8/small/MVVMToolset/"
+    },
+    "AccumulationDOF": {
+      "generated_in": "5.8",
+      "size": "medium",
+      "doc_path": "docs/5.8/medium/AccumulationDOF/",
+      "forced": true
+    },
+    "LiveLinkSoundDevice": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/LiveLinkSoundDevice/",
+      "forced": true
     }
   }
 }
