@@ -162,7 +162,7 @@ IMPLEMENT_MODULE(FMyBspExtensionModule, MyBspExtension)
 | 2026-05-14 | `5c94be5d` | Global snapping toggle in toolbar, and (red) indicator when one or more snapping options are enabled | 工具栏添加全局吸附开关及红色状态指示器 |
 | 2026-04-14 | `35e60df1` | Migrate UE_LOG to UE_LOGF. | 日志宏迁移为新格式 UE_LOGF |
 | 2026-02-25 | `12a309dc` | Remove as many PVS suppressions as possible that are no longer needed | 清理不再需要的 PVS 静态分析抑制项 |
-| 2026-02-03 | `61433296` | Rename FViewMatrices members to follow the <Source>To<Target> pattern for transforms, to reduce ambi | 重命名视图矩阵成员以遵循 Source→Target 命名规范 |
+| 2026-02-03 | `61433296` | Rename FViewMatrices members to follow the &lt;Source&gt;To&lt;Target&gt; pattern for transforms, to reduce ambi | 重命名视图矩阵成员以遵循 Source→Target 命名规范 |
 
 ### 维护评价
 

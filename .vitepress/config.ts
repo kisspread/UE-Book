@@ -180,8 +180,9 @@ export default defineConfig({
   markdown: {
     html: true,
     config: (md) => {
-      // 定义常见的合法 HTML 标签（SVG 标签已移除——commit message 里的 <path> <Source> 不是 HTML）
-      const htmlTags = /^\/?(?:div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th|thead|tbody|br|hr|code|pre|strong|em|b|i|u|s|details|summary|script|style|template|slot|component|section|header|footer|nav|main|aside|article|form|input|button|select|option|label|textarea|link|meta|head|body|html|iframe|video|audio|source|canvas|v-[a-z-]+|HomeCards)[\s>/]/i;
+      // 只保留文档实际使用的 HTML/Vue 标签，其余全部转义。
+      // 不在此白名单的标记——包括 UE commit message 里的 <Source> <path> 等——都会被转义为 &lt;tag&gt;。
+      const htmlTags = /^\/?(?:br|hr|strong|em|b|i|u|s|code|pre|details|summary|v-[a-z-]+|HomeCards)[\s>/]/i;
 
       // 注册一个底层的 AST 处理规则
       md.core.ruler.push('escape_cpp_templates', (state) => {
