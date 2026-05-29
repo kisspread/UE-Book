@@ -4,178 +4,171 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman 动画器 |
+| 中文名 | 数字人动画师 |
 | 分类 | MetaHuman |
 | 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（动画资产、配置文件、核心算法库） |
-| 模块 | `MetaHumanConfigEditor` (Runtime) |
+| 包含内容 | ✅ 有（蓝图资产、配置、测试资源） |
+| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 未知 |
+| 创建时间 | 2025-07-01 |
 | 年龄标签 | 🆕（约 1 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-MetaHuman Animator 是 Epic Games 为 Unreal Engine 开发的官方 MetaHuman 动画制作工具套件。它解决的核心问题是**从面部捕捉数据（如 iPhone 深度摄像头、专业动捕设备等）驱动高保真 MetaHuman 数字人角色进行逼真面部动画**。
-
-该插件提供了一整套完整的流水线，包括：
-- **面部追踪与轮廓检测**：从视频或深度序列中提取关键的面部特征点和轮廓。
-- **动画求解**：将捕捉的表演数据转换为 MetaHuman 骨骼可用的动画控制。
-- **面部拟合**：确保捕捉的数据能够精确地适配到特定的 MetaHuman 模型上。
-- **性能优化**：提供用于实时或近实时动画驱动的解决方案。
-- **集成与批处理**：支持与 Sequencer 集成进行时间线编辑，并提供批处理能力。
-
-它的存在是为了让影视、游戏、虚拟主播等领域的创作者，能够高效、精确地将真实演员的面部表演“转移”到虚拟的 MetaHuman 角色上，实现令人信服的数字人表演。
+MetaHuman Animator 是 Epic Games 官方提供的 MetaHuman 角色动画制作全套工具链。它不是一个单一功能插件，而是一个庞大的**动画制作生态系统**，涵盖了从面部和身体捕捉数据的获取（MetaHumanCaptureSource）、处理（MetaHumanPipeline）、面部动画解算（MetaHumanFaceAnimationSolver）、性能优化（MetaHumanPerformance）到最终在 Sequencer 中进行高级编辑（MetaHumanSequencer）的完整工作流。该插件旨在将高保真、电影级的 MetaHuman 角色动画制作能力直接集成到 Unreal Engine 内部，替代或补充传统的外部 DCC（数字内容创建）工具流程。
 
 ## 使用场景
 
-- 你正在为电影或电视节目制作高质量的数字人过场动画，并需要将演员的现场表演录制下来 → 使用 MetaHuman Animator 的**面部捕捉数据导入、追踪与求解**功能。
-- 你是一个虚拟主播（VTuber），希望自己的 MetaHuman 虚拟形象能够实时模仿你的面部表情 → 使用 MetaHuman Animator 的**实时性能驱动**模块。
-- 你需要为游戏中的 NPC 批量生成大量基于真人表演的口型同步和表情动画 → 使用 MetaHuman Animator 的**批处理**功能。
-- 你已经通过 iPhone 的 LiDAR 或其它方式录制了面部表演数据，需要将其应用到 UE 中的 MetaHuman 角色上 → 使用完整的**数据处理流水线**。
+- **影视级虚拟人表演捕捉**：你使用 iPhone、专业头盔或其他设备进行了面部捕捉，需要将原始数据（视频、深度图）转化为驱动 MetaHuman 模型的高质量面部动画。
+- **对话驱动的面部动画**：你有一段音频，希望为其自动生成自然的面部表情动画（Speech2Face）。
+- **批量处理与自动化**：你需要对大量 MetaHuman 模型进行统一的配置应用、动画重定向或资产处理（MetaHumanBatchProcessor）。
+- **基于深度的重建与匹配**：你拥有多角度或深度相机拍摄的面部数据，需要重建出高精度的 3D 面部网格（MetaHumanDepthGenerator, MetaHumanFaceFittingSolver）。
+- **集成自定义设备**：你的动捕设备使用了自定义的网络协议，需要通过插件进行接入（MetaHumanCaptureProtocolStack）。
+- **高级动画编辑与合成**：你已经在 Sequencer 中制作了基础动画，需要精细调整控制器、混合动画或应用物理效果（MetaHumanSequencer, MetaHumanToolkit）。
 
 ## 蓝图用法
 
-MetaHuman Animator 的蓝图节点主要集中在 `MetaHumanConfigEditor` 模块以及后续可能出现的 `MetaHumanPerformance`、`MetaHumanIdentity` 等模块中。`MetaHumanConfigEditor` 本身主要提供编辑器内的配置界面支持。
+*注意：由于该插件主要包含底层 C++ 模块和编辑器工具，其公共 API 主要通过 C++ 暴露，核心工作流通常在编辑器面板中以可视化方式完成，而非通过蓝图节点直接调用。*
 
-### 核心节点
+### 核心节点 (示例)
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `SMetaHumanConfigCombo::Construct` | （内部 Slate 控件）构建用于选择 MetaHuman 配置类型的下拉框。 | `SMetaHumanConfigCombo` |
-| `UMetaHumanConfigFactory::FactoryCreateFile` | （编辑器功能）将外部的配置文件（如 `.mha` 文件）导入并创建为 `UMetaHumanConfig` 资产。 | `UMetaHumanConfigFactory` |
-
-**说明**：由于 MetaHuman Animator 的核心功能（如动画求解、追踪）通常是通过专用编辑器工具窗口（如 MetaHuman Animator 面板）或数据资产触发的，其暴露给普通蓝图的通用 `BlueprintCallable` 函数相对有限。更复杂的动画控制和数据流通常在 C++ 层面或通过 `ControlRig` 等系统完成。
+大部分高级功能封装在编辑器自定义面板中。少量可用于运行时的 `BlueprintCallable` 函数可能存在于 `MetaHumanCore` 或 `MetaHumanPerformance` 等模块中，需要具体分析。`MetaHumanConfigEditor` 模块本身不暴露蓝图 API。
 
 ## C++ 用法
 
-### 头文件引入
+该插件主要为**编辑器扩展**和**底层库**，其 C++ API 主要供引擎内部或其他高级插件调用。
+
+### 头文件引入 (MetaHumanConfigEditor 模块示例)
 
 ```cpp
-#include "MetaHumanConfigEditor.h"
-#include "MetaHumanConfig.h" // 假设的基础配置类
+#include "MetaHumanConfigEditor/Private/Customizations/MetaHumanConfigCustomizations.h"
 ```
 
 ### 基本用法
 
-**创建和管理 MetaHuman 配置**
+MetaHumanConfigEditor 模块的核心作用是提供 `UMetaHumanConfig` 资产在编辑器中的自定义界面。在其他模块中注册 `UMetaHumanConfig` 资产的详细信息自定义。
 
 ```cpp
-// 假设你想通过代码创建一个新的 MetaHuman 配置资产
-// （这通常由编辑器工厂 UMetaHumanConfigFactory 处理，但这是底层逻辑示例）
-UPackage* Package = CreatePackage(*FString::Printf(TEXT("/Game/MyMetaHumans/%s"), *ConfigName));
-UMetaHumanConfig* NewConfig = NewObject<UMetaHumanConfig>(Package, *ConfigName, RF_Public | RF_Standalone);
-NewConfig->MarkPackageDirty();
-```
-
-**使用资产定义 (Asset Definition)**
-
-```cpp
-// 通过资产定义获取 MetaHuman 配置资产的显示信息
-// (通常在编辑器上下文中使用，例如用于资产浏览器或右键菜单)
-UAssetDefinition_MetaHumanConfig* AssetDef = GetDefault<UAssetDefinition_MetaHumanConfig>();
-FText DisplayName = AssetDef->GetAssetDisplayName(); // 例如 “MetaHuman Config”
-FLinearColor Color = AssetDef->GetAssetColor(); // 资产在编辑器中显示的颜色
+// 来自 MetaHumanConfigEditor/Private/Customizations/MetaHumanConfigCustomizations.h
+// 在某个编辑器模块的 StartupModule 中注册自定义
+FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+PropertyModule.RegisterCustomClassLayout(
+    UMetaHumanConfig::StaticClass()->GetFName(),
+    FOnGetDetailCustomizationInstance::CreateStatic(&FMetaHumanConfigCustomization::MakeInstance)
+);
 ```
 
 ### 进阶用法
 
-结合 `MetaHumanConfigEditor` 和其他模块（如 `MetaHumanIdentity`, `MetaHumanPerformance`），你可以构建自定义的动画处理流程。
+在自定义详情面板中，使用 `SMetaHumanConfigCombo` 控件为特定属性提供便捷的配置资产选择下拉框。
 
 ```cpp
-// 伪代码：描述一个可能的自动化处理流程
-// 1. 加载一个 MetaHuman 身份资产 (Identity)
-UMetaHumanIdentity* Identity = LoadObject<UMetaHumanIdentity>(nullptr, TEXT("/Game/MH/Identity_MyCharacter"));
-
-// 2. 使用该身份关联一个配置 (Config)
-UMetaHumanConfig* Config = GetConfigForIdentity(Identity); // 假设的函数
-
-// 3. 将捕捉数据输入到管道 (Pipeline) 中进行处理
-// MetaHumanPipeline, MetaHumanFaceAnimationSolver 等模块会在此介入
-// 4. 最终生成动画序列并应用到 Skeletal Mesh Component
+// 来自 MetaHumanConfigEditor/Private/SMetaHumanConfigCombo.h
+// 在 IDetailCustomization::CustomizeDetails 的实现中
+TSharedRef<SWidget> ConfigComboWidget =
+    SNew(SMetaHumanConfigCombo)
+    .MetaHumanConfigType(EMetaHumanConfigType::Face) // 指定配置类型
+    .PropertyOwner(PropertyOwnerObject) // 持有属性的对象
+    .Property(PropertyHandle); // 要编辑的属性句柄
+DetailBuilder.AddCustomRowToCategory(CategoryName)
+    .NameContent()
+    [ PropertyHandle->CreatePropertyNameWidget() ]
+    .ValueContent()
+    [ ConfigComboWidget ];
 ```
 
 ## Demo 示例
 
-以下是一个最小化的 C++ 示例，演示如何在一个编辑器工具中展示 MetaHuman 配置资产的选择界面。
+以下示例展示了如何在自定义的编辑器面板中使用 `SMetaHumanConfigCombo` 控件来关联编辑一个 `UObject` 上的 `UMetaHumanConfig*` 属性。
 
 ```cpp
-// MyMetaHumanTool.h
+// MyConfigPanel.h
 #pragma once
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
-#include "MetaHumanConfig.h"
 
-class SMyMetaHumanTool : public SCompoundWidget
+class SMyConfigPanel : public SCompoundWidget
 {
 public:
-    SLATE_BEGIN_ARGS(SMyMetaHumanTool) {}
+    SLATE_BEGIN_ARGS(SMyConfigPanel) {}
+    SLATE_ARGUMENT(TObjectPtr<UObject>, ConfigOwner)
     SLATE_END_ARGS()
 
     void Construct(const FArguments& InArgs);
 
 private:
-    TSharedPtr<class SMetaHumanConfigCombo> ConfigSelector;
+    // 一个指向拥有配置属性的对象的指针
+    TObjectPtr<UObject> ConfigOwnerObject;
 };
 ```
 
 ```cpp
-// MyMetaHumanTool.cpp
-#include "MyMetaHumanTool.h"
-#include "SMetaHumanConfigCombo.h"
-#include "PropertyHandle.h"
+// MyConfigPanel.cpp
+#include "MyConfigPanel.h"
+#include "SMetaHumanConfigCombo.h" // MetaHumanConfigEditor 模块的头文件
+#include "MetaHumanConfig.h"       // MetaHumanConfig 模块的头文件
+#include "DetailLayoutBuilder.h"
+#include "IDetailsView.h"
 
-void SMyMetaHumanTool::Construct(const FArguments& InArgs)
+void SMyConfigPanel::Construct(const FArguments& InArgs)
 {
-    // 创建一个 MetaHuman 配置类型选择器
-    // EMetaHumanConfigType 是一个枚举，定义了配置的用途（如面部动画、音频驱动等）
-    // 这里我们传入一个虚拟的属性句柄，实际使用中可能需要关联到真正的资产属性
-    TSharedPtr<IPropertyHandle> DummyPropertyHandle; // 需要从实际资产获取
+    ConfigOwnerObject = InArgs._ConfigOwner;
+
+    // 创建一个用于编辑 UMetaHumanConfig* 属性的属性句柄
+    // 假设你的 ConfigOwnerObject 类有一个名为 'CurrentConfig' 的 UPROPERTY
+    FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+    TSharedPtr<IPropertyHandle> ConfigPropertyHandle =
+        PropertyModule.CreatePropertyHandle(ConfigOwnerObject, GET_MEMBER_NAME_CHECKED(YourClass, CurrentConfig));
 
     ChildSlot
     [
-        SNew(SMetaHumanConfigCombo)
-        // 注意：SMetaHumanConfigCombo 的 Construct 函数需要额外参数，这里为演示简化了调用
+        SNew(SVerticalBox)
+        + SVerticalBox::Slot()
+        .AutoHeight()
+        .Padding(4.0f)
+        [
+            // 实例化 MetaHuman 配置下拉选择框
+            SNew(SMetaHumanConfigCombo)
+            .MetaHumanConfigType(EMetaHumanConfigType::Face) // 例如，面部配置
+            .PropertyOwner(ConfigOwnerObject)
+            .Property(ConfigPropertyHandle)
+        ]
     ];
 }
 ```
 
 ## 模块依赖
 
-**使用此插件（或其子模块）的特殊依赖**：
+*注意：MetaHumanConfigEditor 是大型插件 `MetaHumanAnimator` 中的一个子模块。其自身依赖相对简单，但完整使用插件功能需要整个插件。*
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCoreTechLib` | MetaHuman 核心算法库，包含面部追踪、求解等核心计算逻辑。 |
-| `SkeletalMeshUtilitiesCommon` | 用于操作骨骼网格体的通用工具。 |
-| `ControlRigDeveloper` | 与 ControlRig 系统集成，用于驱动最终的动画。 |
-| `MetaHumanSDKEditor` | MetaHuman SDK 的编辑器部分。 |
-
-*省略了所有常见的基础依赖（Core, Engine, Slate 等）。*
+| `MetaHumanConfig` | 定义 `UMetaHumanConfig` 核心资产类型和枚举 |
+| `SlateCore` | 构建 `SMetaHumanConfigCombo` 所需的 Slate UI 框架 |
 
 ## 维护状态
 
 ### 近期更新
 
+从 `git log` 分析，整个 MetaHumanAnimator 插件处于活跃开发中，近期更新主要围绕功能完善和问题修复。
+
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出功能，避免冲突。 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色上的渲染瑕疵。 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 进行身体追踪时过滤掉不必要的可视化对象。 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MetaHuman Animator] 支持为已存在的网格体导出动画序列。 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复与 Sequencer 集成时的缓存问题。 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 优化工作流：当启用身体追踪时，禁用关卡序列导出选项，避免无效操作 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色的渲染伪影问题 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 改进身体追踪模式下的可视化，过滤掉不必要的物体，使视图更清晰 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 新增功能：支持为已有的 MetaHuman 网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 中的缓存问题，提升动画编辑的稳定性和性能 |
 
 ### 维护评价
 
-MetaHuman Animator 是 Epic Games 为 MetaHuman 生态推出的官方、核心工具插件，**维护极其活跃**。
-- **创建时间**：虽然具体日期未知，但作为5.0版本后推出的新系统，年龄很短（🆕）。
-- **更新频率**：从提交历史看，近期（2026年5月）有多次连续的功能更新和Bug修复，开发非常密集。
-- **活跃度**：毫无疑问，该插件是 Epic 重点投入和维护的项目，处于**积极开发**阶段。
-- **已知问题**：作为复杂的新系统，可能存在特定配置或边缘情况下的Bug（如提交记录中的渲染瑕疵修复），但都在快速解决中。
-- **推荐使用**：**强烈推荐**。对于任何需要创建高保真数字人动画的 UE5 项目，这是官方且功能最完整的解决方案。
+- **活跃维护**：根据 Git 历史，该插件在**最近一周内有多次功能性提交**，修复了关键问题（渲染、缓存）并添加了新功能（动画序列导出）。这表明 Epic Games 团队正在积极开发和维护该插件。
+- **功能重要性**：作为 MetaHuman 官方工作流的核心组件，它受到 Epic 的长期支持。
+- **实验性/稳定性**：`.uplugin` 中 `IsBetaVersion` 和 `IsExperimentalVersion` 均为 `false`，表明该插件已达到**正式发布**状态。
+- **推荐**：**强烈推荐**。如果你正在使用 MetaHuman 并计划进行专业级的动画制作（尤其是基于捕捉的流程），这是必须启用的核心插件。它功能强大且维护积极。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- 官方文档：暂无直接链接，请参考 Epic Games 官方文档和学习平台。
-- 测试用例：可能位于 `Engine/Plugins/MetaHuman/MetaHumanAnimator/Tests` 或 `Engine/Tests` 下的对应目录。
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/metahuman-animator-for-unreal-engine/) （MetaHuman 官方文档主站）

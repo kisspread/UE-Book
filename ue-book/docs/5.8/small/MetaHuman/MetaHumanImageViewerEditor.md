@@ -1,231 +1,239 @@
 # MetaHuman Animator
 
-> The official MetaHuman Unreal Engine toolkit（照抄，不翻译）
+> The official MetaHuman Unreal Engine toolkit
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 数字人动画师工具包 |
+| 中文名 | MetaHuman 动画师工具包 |
 | 分类 | MetaHuman |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（编辑器资产、材质模板、数据资产） |
-| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
+| 包含内容 | ✅ 有（蓝图资产，材质模板，测试资源） |
+| 模块 | `MetaHumanImageViewerEditor` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime), `MeshTrackerInterface` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 未知 |
-| 年龄标签 | 🆕（约 N 年） |
+| 创建时间 | 2021-11-01 |
+| 年龄标签 | 📜 约5年 |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
 
-基于源码分析，MetaHuman Animator 是一个用于创建 MetaHuman 角色动画的完整工具集。它并非一个简单的运行时插件，而是一套庞大的编辑器和数据处理管线，旨在解决从真实演员表演到虚拟数字人角色动画转换的整个流程问题。
+MetaHuman Animator 是一套完整的官方工具包，旨在简化在虚幻引擎中创建、驱动和动画化高保真数字人类（MetaHuman）的完整工作流程。它不仅仅是“官方工具包”，而是一个集成的深度学习和计算摄影系统。其核心价值在于提供从原始捕获数据（如 iPhone 或多摄像头阵列的视频/深度数据）到最终可驱动的数字人类资产的端到端管线。该插件解决了以下关键问题：
 
-其核心功能包括：
-1.  **面部动作捕捉与处理**：支持从多种来源（如深度摄像头、iPhone TrueDepth、视频）捕获面部数据，并通过一系列模块（如 `MetaHumanFaceContourTracker`, `MetaHumanFaceFittingSolver`, `MetaHumanFaceAnimationSolver`）进行跟踪、拟合和求解。
-2.  **数字人身份创建与编辑**：`MetaHumanIdentity` 模块用于管理数字人的面部身份、拓扑和骨骼控制绑定，是连接捕获数据与最终动画资产的桥梁。
-3.  **数据可视化与编辑**：`MetaHumanImageViewerEditor` 等模块提供在编辑器中查看捕获画面、深度图、轮廓曲线，并进行交互式编辑的能力，这是精确调整动画结果的关键。
-4.  **动画序列生成**：最终将处理后的动作数据转换为可驱动 MetaHuman 骨骼的动画序列（Sequencer 或自定义性能资产）。
-
-**为什么存在**：MetaHuman Animator 存在是为了让开发者能够高效、精确地将真实人类的细腻表演“翻译”成高质量的 MetaHuman 虚拟角色动画，这是电影、游戏和实时虚拟制作中创造逼真数字人的核心需求。
+1.  **面部数据驱动与动画解算**：能够从视频或深度数据中精确追踪面部关键点，并解算出对应的面部控制曲线，用于驱动 MetaHuman 骨骼动画。
+2.  **身份与性能的分离**：通过 `MetaHumanIdentity` 等模块，允许用户独立创建或调整数字人类的静态身份（面部形状），然后应用不同的表演数据。
+3.  **深度感知与三维重建**：集成深度生成器和网格追踪器，能够从二维数据推断三维空间信息，提升面部拟合的精度。
+4.  **批量处理与自动化**：提供批量处理器和自动化管线，支持对大量表演数据进行高效的动画生成。
+5.  **影视级工作流集成**：包含与 Sequencer 深度集成的模块，支持在虚拟制片环境中实时驱动和编辑 MetaHuman 表演。
 
 ## 使用场景
 
--   你需要将真实演员的面部表演驱动 MetaHuman 角色，用于影视级虚拟制片或游戏过场动画。
--   你使用 iPhone 的 FaceID 摄像头或专业深度摄像头（如 LiDAR）进行面部动作捕捉，并希望将其集成到 UE5 工作流中。
--   你需要对自动捕捉生成的面部曲线和轮廓进行手动校正，以达到完美的动画效果。
--   你正在开发一个需要批量处理大量面部表演数据的系统，例如生成 NPC 动画。
--   你希望将音频（语音）直接转换为面部动画（通过 `MetaHumanSpeech2Face` 模块）。
+-   你是一位影视或游戏美术师，需要从演员的多角度表演视频中快速生成高质量的面部动画，用于游戏过场或电影角色 → 使用 `MetaHumanFaceContourTracker` 和 `MetaHumanFaceAnimationSolver`。
+-   你正在开发一个需要大量不同数字人类角色的项目，希望基于一套基础模型，通过不同的表演数据生成多样化的角色表现 → 使用 `MetaHumanIdentity` 创建身份，结合 `MetaHumanPerformance` 应用表演。
+-   你在进行虚拟制片，需要在 Sequencer 中实时预览和编辑 MetaHuman 角色的面部表情 → 使用 `MetaHumanSequencer` 模块。
+-   你需要处理来自 iPhone TrueDepth 摄像头或专用深度相机的深度视频数据，以创建更精确的 3D 面部几何体 → 使用 `MetaHumanDepthGenerator`。
+-   你希望基于音频文件（如语音）自动为 MetaHuman 生成口型同步动画 → 使用 `MetaHumanSpeech2Face`。
 
 ## 蓝图用法
 
-由于该插件主要由编辑器模块和运行时数据组件构成，其蓝图接口主要集中在数据组件和资产操作上。核心节点多与设置捕获数据、控制显示和驱动动画相关。
+基于源码分析，以下是当前模块 `MetaHumanImageViewerEditor` 中可暴露的核心蓝图相关 API。注意，该插件主要是一个编辑器工具套件，大部分功能在编辑器和专用资产中通过 UI 操作，直接暴露给运行时蓝图的节点较少。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Set Camera Calibration` | 根据相机校准数据，设置素材显示平面的位置和比例。 | `UMetaHumanFootageComponent` |
-| `Set Footage Resolution` | 在没有校准数据时，通过指定素材分辨率来设置显示平面。 | `UMetaHumanFootageComponent` |
-| `Set Media Texture` | 设置用于显示的颜色和深度纹理。 | `UMetaHumanFootageComponent` |
-| `Set View Mode` | 设置 AB 图像查看器的视图模式（单视图/双视图/分屏等）。 | `SABImage` (Slate Widget) |
-| `Set Data Controller For Current Frame` | 为当前帧设置曲线数据控制器，用于显示和编辑轮廓线。 | `STrackerImageViewer` |
-| `Set Edit Curves And Points Enabled` | 启用或禁用用户对曲线和控制点的交互式编辑。 | `STrackerImageViewer` |
+| `SetCameraCalibration` | 设置摄像机标定数据，用于在视口中正确定位画面平面。 | `UMetaHumanFootageComponent` |
+| `SetFootageResolution` | 当没有已知标定时，设置画面分辨率以用于定位。 | `UMetaHumanFootageComponent` |
+| `SetMediaTextures` | 设置代表颜色和深度数据的媒体纹理。 | `UMetaHumanFootageComponent` |
+| `SetDepthRange` | 设置深度数据的近远平面范围。 | `UMetaHumanFootageComponent` |
+| `ShowColorChannel` | 在指定的 AB 视图模式下显示颜色通道。 | `UMetaHumanFootageComponent` |
+| `SetDepthTexture` | 设置用于显示网格的深度纹理。 | `UMetaHumanDepthMeshComponent` |
+| `SetCameraCalibration` | 设置用于计算深度网格位置的摄像机标定。 | `UMetaHumanDepthMeshComponent` |
+| `SetDepthRange` | 设置深度显示的近远平面。 | `UMetaHumanDepthMeshComponent` |
+| `SetViewMode` | 设置此组件的 ShowFlags 以匹配给定的视图模式索引。 | `UMetaHumanSceneCaptureComponent2D` |
+| `SetViewportClient` | 设置控制此组件的视口客户端。 | `UMetaHumanSceneCaptureComponent2D` |
+| `SetDataControllerForCurrentFrame` | 为当前帧设置曲线数据控制器，驱动图像查看器显示。 | `STrackerImageViewer` |
+| `UpdateDisplayedDataForWidget` | 更新此控件上显示的点和曲线数据。 | `STrackerImageViewer` |
+| `SetEditCurvesAndPointsEnabled` | 设置是否允许用户通过交互编辑点和曲线。 | `STrackerImageViewer` |
 
 ### 使用示例（蓝图描述）
 
-在一个自定义的 MetaHuman 动画编辑器面板中，可以这样使用：
-1.  **创建并添加** `UMetaHumanFootageComponent` 组件到场景中的 Actor。
-2.  调用 `Set Media Texture` 节点，将捕获流程中得到的彩色纹理和深度纹理分别传入。
-3.  调用 `Set Camera Calibration` 节点，传入对应的相机校准数据（`UCameraCalibration` 资产），使画面正确对齐。
-4.  为了在自定义 Slate 面板中查看素材，需要创建一个 `SABImage` 或 `STrackerImageViewer` 类型的 Slate 控件，并调用其 `Set Textures` 或 `Set View Mode` 等方法来配置显示。
+由于 `STrackerImageViewer` 是一个 Slate 控件，通常不直接在标准游戏蓝图图表中使用。以下示例描述了在编辑器工具蓝图或 Slate UI 中如何配置一个 `UMetaHumanFootageComponent` 来显示带有深度叠加的视频画面：
+
+1.  在场景中放置一个 Actor（如 `AActor`）。
+2.  添加一个 `UMetaHumanFootageComponent` 组件。
+3.  通过“BeginPlay”或某个自定义事件，调用该组件的 `SetCameraCalibration` 函数，传入一个有效的 `UCameraCalibration` 资产。
+4.  接着，调用 `SetMediaTextures` 函数，分别传入颜色纹理和深度纹理（可来自媒体源或渲染目标）。
+5.  为了查看深度信息，调用 `ShowColorChannel` 并传入 `EABImageViewMode::A`（假设使用 A 通道显示颜色），然后在同一视图模式下通过材质参数或后续函数调用启用深度显示。
+6.  最后，调整摄像机或使用 `GetFootageScreenRect` 函数获取的输出来对齐视口，以完美观察画面。
 
 ## C++ 用法
-
-该插件的 C++ 用法通常涉及构建自定义编辑器工具或深度集成 MetaHuman 处理管线。
 
 ### 头文件引入
 
 ```cpp
-// 主要组件和查看器
-#include "MetaHumanFootageComponent.h"
+// 包含图像查看器控件
 #include "STrackerImageViewer.h"
-#include "SABImage.h"
-#include "MetaHumanDepthMeshComponent.h"
 
-// 数据控制器和操作
-#include "MetaHumanCurveDragOperations.h"
+// 包含画面组件
+#include "MetaHumanFootageComponent.h"
+
+// 包含深度网格组件
+#include "MetaHumanDepthMeshComponent.h"
 ```
 
 ### 基本用法
 
-**在场景中显示捕获的素材画面**（源自 `UMetaHumanFootageComponent` 的使用模式）：
+以下示例展示了如何在编辑器工具代码中创建和使用一个 `STrackerImageViewer` 控件。这通常用于构建自定义的 MetaHuman 面部追踪编辑器界面。
 
 ```cpp
-// 假设在一个自定义的 Actor 或 EditorUtilityWidget 中
-UPROPERTY()
-TObjectPtr<UMetaHumanFootageComponent> FootageComponent;
+// 来源：假设的编辑器工具代码，概念基于 Public/STrackerImageViewer.h
+#include "STrackerImageViewer.h"
+#include "MetaHumanCurveDataController.h" // 假设的数据控制器
 
-// 创建并初始化组件
-FootageComponent = NewObject<UMetaHumanFootageComponent>(GetOwningActor());
-FootageComponent->RegisterComponent();
-FootageComponent->AttachToComponent(GetOwningActor()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+class SMyFaceTrackerPanel : public SCompoundWidget
+{
+    SLATE_BEGIN_ARGS(SMyFaceTrackerPanel) {}
+    SLATE_END_ARGS()
 
-// 设置数据
-FootageComponent->SetMediaTextures(ColorTexture, DepthTexture);
-FootageComponent->SetCameraCalibration(SelectedCameraCalibrationAsset);
-FootageComponent->ShowColorChannel(EABImageViewMode::A);
+    void Construct(const FArguments& InArgs)
+    {
+        // 创建图像查看器控件
+        ChildSlot
+        [
+            SNew(STrackerImageViewer)
+            .Image(FCoreStyle::Get().GetDefaultBrush()) // 使用默认画刷或实际纹理
+            .ShouldDrawPoints(true)
+            .ShouldDrawCurves(true)
+            .DefaultCurvesColor(FLinearColor::Green)
+        ];
+
+        // 在初始化后，设置数据控制器
+        // 假设 InCurveDataController 是从追踪数据创建的
+        TSharedPtr<FMetaHumanCurveDataController> InCurveDataController = ...;
+        TrackerImageViewer->SetDataControllerForCurrentFrame(InCurveDataController);
+        TrackerImageViewer->UpdateDisplayedDataForWidget();
+    }
+
+    TSharedPtr<STrackerImageViewer> TrackerImageViewer;
+};
 ```
 
-**在 Slate 窗口中嵌入带曲线编辑功能的图像查看器**（源自 `STrackerImageViewer` 的构建）：
-
-```cpp
-// 在构建 Slate UI 的函数中
-SNew(STrackerImageViewer)
-    .Image(MyBrushWithTexture)
-    .ShouldDrawPoints(true)
-    .ShouldDrawCurves(true)
-    .DefaultCurvesColor(FLinearColor::Green)
-    // ... 其他属性
-```
+**来源文件路径**: `Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanImageViewerEditor/Public/STrackerImageViewer.h`
 
 ### 进阶用法
 
-**实现自定义的曲线拖拽操作**（源自 `IMetaHumanEditorDragOperation` 接口和 `FMetaHumanCurveEditorDelayedDrag`）：
+结合 `UMetaHumanFootageComponent` 和 `UMetaHumanDepthMeshComponent`，在编辑器工具中构建一个带有深度网格叠加的预览窗口。
 
 ```cpp
-// 自定义拖拽操作
-class FMyCustomDragOp : public IMetaHumanEditorDragOperation
-{
-public:
-    virtual void OnBeginDrag(const FVector2D& InGeometry, const FPointerEvent& InMouseEvent) override { /* ... */ }
-    virtual void OnDrag(const FVector2D& InGeometry, const FPointerEvent& InMouseEvent) override { /* ... */ }
-    virtual void OnEndDrag() override { /* ... */ }
-    virtual void OnDragOperationPaint(const FGeometry& InAllottedGeometry, FSlateWindowElementList& OutDrawElements, int32 InPaintOnLayerId) override { /* ... */ }
-    // 可能还需要持有 FMetaHumanCurveDataController 的指针来实际修改数据
-};
+// 来源：假设的编辑器预览 Actor 代码，基于多个组件头文件
+#include "MetaHumanFootageComponent.h"
+#include "MetaHumanDepthMeshComponent.h"
+#include "Engine/TextureRenderTarget2D.h"
 
-// 在某个 Slate Widget 处理鼠标按下时，创建延迟拖拽
-FVector2D MousePos = InMouseEvent.GetScreenSpacePosition();
-DragOperation = FMetaHumanCurveEditorDelayedDrag(MousePos, EKeys::LeftMouseButton);
-DragOperation.DragImpl = MakeUnique<FMyCustomDragOp>();
-// ... 在 OnMouseMove 中调用 DragImpl->OnDrag()
+class AMetaHumanPreviewActor : public AActor
+{
+    UPROPERTY(VisibleAnywhere)
+    UMetaHumanFootageComponent* FootageComponent;
+
+    UPROPERTY(VisibleAnywhere)
+    UMetaHumanDepthMeshComponent* DepthMeshComponent;
+
+public:
+    void SetupPreview(UTexture* ColorTexture, UTexture* DepthTexture, UCameraCalibration* Calibration)
+    {
+        FootageComponent = CreateDefaultSubobject<UMetaHumanFootageComponent>(TEXT("Footage"));
+        DepthMeshComponent = CreateDefaultSubobject<UMetaHumanDepthMeshComponent>(TEXT("DepthMesh"));
+
+        // 配置画面组件
+        FootageComponent->SetCameraCalibration(Calibration);
+        FootageComponent->SetMediaTextures(ColorTexture, DepthTexture, true);
+        FootageComponent->SetDepthRange(10, 50);
+
+        // 配置深度网格组件
+        DepthMeshComponent->SetCameraCalibration(Calibration);
+        DepthMeshComponent->SetDepthTexture(DepthTexture);
+        DepthMeshComponent->SetDepthRange(10.0f, 55.5f);
+        // 根据深度纹理的分辨率设置网格大小
+        if (DepthTexture->GetResource())
+        {
+            int32 Width = DepthTexture->GetSizeX();
+            int32 Height = DepthTexture->GetSizeY();
+            DepthMeshComponent->SetSize(Width, Height);
+        }
+    }
+};
 ```
+
+**来源文件路径**:
+- `Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanImageViewerEditor/Public/MetaHumanFootageComponent.h`
+- `Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanImageViewerEditor/Public/MetaHumanDepthMeshComponent.h`
 
 ## Demo 示例
 
-一个最小示例，展示如何在编辑器工具中创建一个 `UMetaHumanFootageComponent` 并设置其属性。
+以下是一个最小化的 C++ 示例，演示了如何创建一个显示 MetaHuman 面部追踪曲线的 Slate 控件。
 
+**头文件 (MyFaceViewerWidget.h):**
 ```cpp
-// MyEditorTool.h
 #pragma once
-#include "Components/ActorComponent.h"
-#include "MyEditorTool.generated.h"
 
-class UMetaHumanFootageComponent;
-class UCameraCalibration;
+#include "CoreMinimal.h"
+#include "Widgets/SCompoundWidget.h"
 
-UCLASS(Blueprintable, BlueprintType)
-class UMyEditorTool : public UActorComponent
+class STrackerImageViewer;
+class FMetaHumanCurveDataController;
+
+class SMyFaceViewerWidget : public SCompoundWidget
 {
-    GENERATED_BODY()
-
 public:
-    UMyEditorTool();
+    SLATE_BEGIN_ARGS(SMyFaceViewerWidget) {}
+    SLATE_END_ARGS()
 
-    virtual void BeginPlay() override;
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-    UFUNCTION(BlueprintCallable, Category = "MyTool")
-    void SetupFootageDisplay(UCameraCalibration* InCalibration, UTexture* InColorTex, UTexture* InDepthTex);
+    void Construct(const FArguments& InArgs);
+    void SetCurveData(TSharedPtr<FMetaHumanCurveDataController> InData);
 
 private:
-    UPROPERTY()
-    TObjectPtr<UMetaHumanFootageComponent> FootageDisplay;
+    TSharedPtr<STrackerImageViewer> ImageTracker;
 };
 ```
 
+**源文件 (MyFaceViewerWidget.cpp):**
 ```cpp
-// MyEditorTool.cpp
-#include "MyEditorTool.h"
-#include "MetaHumanFootageComponent.h"
-#include "Engine/CameraCalibration.h"
+#include "MyFaceViewerWidget.h"
+#include "STrackerImageViewer.h"
+#include "MetaHumanCurveDataController.h"
 
-UMyEditorTool::UMyEditorTool()
+void SMyFaceViewerWidget::Construct(const FArguments& InArgs)
 {
-    PrimaryComponentTick.bCanEverTick = false;
+    ChildSlot
+    [
+        SAssignNew(ImageTracker, STrackerImageViewer)
+        .ShouldDrawPoints(true)
+        .ShouldDrawCurves(true)
+    ];
 }
 
-void UMyEditorTool::BeginPlay()
+void SMyFaceViewerWidget::SetCurveData(TSharedPtr<FMetaHumanCurveDataController> InData)
 {
-    Super::BeginPlay();
-
-    // 创建并附加 MetaHuman 素材显示组件
-    FootageDisplay = NewObject<UMetaHumanFootageComponent>(GetOwner());
-    if (FootageDisplay)
+    if (ImageTracker.IsValid() && InData.IsValid())
     {
-        FootageDisplay->RegisterComponent();
-        FootageDisplay->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-        // 可以在此处设置一些默认值
-        FootageDisplay->SetFootageResolution(FVector2D(1920, 1080));
+        ImageTracker->SetDataControllerForCurrentFrame(InData);
+        ImageTracker->UpdateDisplayedDataForWidget();
     }
-}
-
-void UMyEditorTool::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    if (FootageDisplay)
-    {
-        FootageDisplay->DestroyComponent();
-        FootageDisplay = nullptr;
-    }
-    Super::EndPlay(PlayReason);
-}
-
-void UMyEditorTool::SetupFootageDisplay(UCameraCalibration* InCalibration, UTexture* InColorTex, UTexture* InDepthTex)
-{
-    if (!FootageDisplay || !InCalibration)
-    {
-        return;
-    }
-
-    // 设置相机校准以正确定位画面
-    FootageDisplay->SetCameraCalibration(InCalibration);
-    // 设置用于显示的纹理
-    FootageDisplay->SetMediaTextures(InColorTex, InDepthTex, true);
-    // 启用颜色通道显示
-    FootageDisplay->ShowColorChannel(EABImageViewMode::A);
-    // 可以设置深度显示范围
-    FootageDisplay->SetDepthRange(10, 50);
 }
 ```
 
 ## 模块依赖
 
-MetaHuman Animator 插件包含大量模块，以下是当前文档聚焦的 `MetaHumanImageViewerEditor` 模块的依赖情况。请注意，使用该插件的其他部分（如面部求解器）会依赖更多的模块。
+本插件模块众多，且许多依赖于 Epic 内部的专有库（如 `MetaHumanCoreTechLib`）和其他高级插件。以下是 `MetaHumanImageViewerEditor` 模块的一些特殊依赖，这些是使用者在构建依赖于该插件的编辑器工具时需要特别关注的。
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanImageViewerEditor` | 提供本模块的核心查看器控件 |
-| `MetaHumanSDKEditor` | 提供与 MetaHuman SDK 相关的编辑器功能 |
-| `ControlRigDeveloper` | 用于操作和查看 Control Rig 相关资产 |
-| `SkeletalMeshUtilitiesCommon` | 提供骨骼网格体相关的通用工具函数 |
+| `MetaHumanImageViewerEditor` | 提供本模块核心的图像查看控件（如 `SABImage`, `STrackerImageViewer`）。 |
+| `MetaHumanCaptureDataEditor` | 提供捕获数据资产的编辑器支持。 |
+| `MetaHumanSDKEditor` | MetaHuman SDK 的编辑器部分。 |
+| `ControlRigDeveloper` | 用于编辑器中的 Control Rig 开发。 |
+| `SkeletalMeshUtilitiesCommon` | 骨骼网格工具的公共功能。 |
+
+*注意：该插件还深度依赖 `UnrealEd` 等编辑器模块，以及内部项目（如 MetaHuman Core Tech Library）的功能，这些在上述表中已省略，但在实际模块的 `.Build.cs` 文件中会声明。*
 
 ## 维护状态
 
@@ -233,20 +241,23 @@ MetaHuman Animator 插件包含大量模块，以下是当前文档聚焦的 `Me
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 在启用了身体追踪时，禁用关卡序列的导出功能。 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复了 MetaHuman 上的渲染瑕疵。 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在身体追踪期间，过滤掉某些可视化对象。 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MHA] 为已有的网格体导出动画序列。 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复了 Sequencer 的缓存问题。 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 修复身体追踪启用时关卡序列导出功能的禁用问题 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 上的渲染瑕疵。 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在身体追踪时过滤可视化对象，避免干扰。 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MetaHuman Animator] 支持为现有网格体导出动画序列。 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 中的缓存问题。 |
 
 ### 维护评价
 
-MetaHuman Animator 是 Epic Games 官方维护的核心数字人工具集。尽管其确切的创建时间未知，但从最近的提交记录来看，该插件仍在**非常活跃地维护和更新**。最近的更新集中在修复渲染问题、优化身体追踪集成以及改进动画导出流程，表明其功能仍在不断丰富和完善。
+MetaHuman Animator 是 Epic Games 官方维护的、面向未来的数字人类核心创作工具。
 
-对于需要创建高质量 MetaHuman 动画的项目，**强烈推荐使用**。这是一个成熟且得到官方持续支持的大型工具链。需要注意的是，由于其庞大的模块结构和复杂的管线，初次学习和集成可能需要投入较多时间。
+-   **活跃维护**：从最近的提交记录来看，插件在**2026年5月**仍有频繁且实质性的功能更新和 Bug 修复（如导出、渲染修复、身体追踪集成）。
+-   **持续进化**：提交信息表明该插件正在积极整合新的工作流（如身体追踪），并不断优化现有功能（如 Sequencer 集成）。
+-   **官方支持**：作为 Epic 的官方工具，拥有最高的维护优先级和长期支持保障。
+-   **状态稳定**：`.uplugin` 中未标记为 Beta 或 Experimental，表明其核心功能已达到生产就绪状态。
+-   **推荐使用**：强烈推荐所有需要创建高质量数字人类角色的虚幻引擎项目使用此插件。它是实现该目标最直接、最强大的官方解决方案。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档]() (无公开链接)
-- [测试用例]() (通常位于引擎测试目录，如 `Engine/Tests/`)
+- [官方文档](https://docs.unrealengine.com/5.0/en-US/meta-human-animator-in-unreal-engine/) (请访问 Epic 官方文档网站获取最新信息)

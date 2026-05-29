@@ -1,203 +1,272 @@
 # MetaHuman Animator
 
-> The official MetaHuman Unreal Engine toolkit（照抄，不翻译）
+> The official MetaHuman Unreal Engine toolkit
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman动画师 |
+| 中文名 | 数字人动画师 |
 | 分类 | MetaHuman |
-| 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、神经网络模型、配置数据） |
-| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
+| 默认启用 | ✅ 是 |
+| 包含内容 | ✅ 有（数据流处理管道） |
+| 模块 | `MetaHumanPipeline` (Runtime) |
 | 实验性 | 否 |
-| 创建时间 | 2021-02-25 |
-| 年龄标签 | 👴 老古董（约 5 年） |
+| 创建时间 | 2013-02-12 |
+| 年龄标签 | 🏛️ 文物（约 14 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
 
 ## 用途
-该插件是 Epic Games 官方提供的 MetaHuman 创作核心工具套件。它解决的核心问题是：**如何将原始的表演捕捉数据（如 iPhone 视频、立体摄像头视频、音频）转化为高质量、逼真的 MetaHuman 面部动画**。它不仅仅是一个单一工具，而是一个完整的处理流水线（Pipeline），涵盖了从数据导入、面部关键点追踪（Hyprsense）、深度图生成、动画求解（Animation Solver）、后处理到最终序列导出的全流程。其存在意义在于为影视、游戏、虚拟人等领域的制作提供一个标准化、自动化且高质量的动画生产管线。
+
+`MetaHuman Pipeline` 是 MetaHuman Animator 插件的核心模块，提供了一个灵活的 **数据流处理管道（Pipeline）框架**。它并非直接提供动画功能，而是定义了一套标准化的节点（`FNode`）和数据（`FPipelineData`）流转机制。各类面部追踪、深度生成、语音转动画等具体功能被封装为不同类型的节点，并通过这个管道框架进行组合、调度和执行。其核心价值在于解决了实时或离线面部动画处理中的**数据流调度、并发控制和节点化组合**问题，使得复杂的工作流程（如从 iPhone 视频到最终动画数据的全链路处理）能够被清晰、高效地构建和执行。
 
 ## 使用场景
-- 你是一名影视或游戏开发者，拥有一段演员的 iPhone 深感摄像头录制的面部表演视频，希望快速、自动地将其转换为 MetaHuman 角色可用的面部动画序列。
-- 你录制了立体（双眼）视频，需要插件中的 `FFaceTrackerStereoNode` 进行深度图计算和面部追踪，以生成更精确的动画数据。
-- 你有一段角色说话的音频文件，想要使用 `FSpeechToAnimNode` 来驱动 MetaHuman 的口型和面部表情，实现音频驱动动画。
-- 你需要对已有的面部追踪动画数据进行平滑、过滤或后处理（`FFaceTrackerPostProcessingNode`），以修复追踪错误或提升动画质量。
-- 你需要批量处理大量表演数据，使用 `MetaHumanBatchProcessor` 模块自动化完成从追踪到导出的整个流程。
+
+- 你需要从 iPhone 录制的视频中实时提取面部动画数据（使用 `FFaceTrackerIPhoneNode`）。
+- 你需要从立体相机（Stereo）的视频流中计算面部深度图并进行追踪（使用 `FDepthGenerateNode` 和 `FFaceTrackerStereoNode`）。
+- 你需要根据音频文件（如 WAV）自动生成面部口型和表情动画（使用 `FSpeechToAnimNode`）。
+- 你需要构建一个包含多个处理步骤（如追踪、后处理、滤波、动画合并）的自定义动画处理流程。
+- 你需要对动画数据进行批量处理、测试或导出到 JSON 文件（使用 `FJsonTrackerNode`, `FSaveContoursToJsonNode`）。
 
 ## 蓝图用法
-该插件主要提供C++ API，其核心功能封装在复杂的 `Pipeline` 节点中，**较少直接暴露给蓝图**。它更多地作为其他 MetaHuman 相关蓝图资产（如 `MetaHumanPerformance`）的底层驱动引擎。用户通常在编辑器中使用 MetaHuman Toolkit 的 UI 来操作，或通过C++代码构建自定义管线。
+
+本模块主要是 C++ 框架，但其中一些节点（如 `FSpeechToAnimNode`）的配置参数在更上层的编辑器工具（如 MetaHuman Performance 工具）中暴露给蓝图和编辑器 UI。直接在蓝图中构建 `MetaHumanPipeline` 管道较为复杂，通常由 C++ 驱动。
+
+### 核心节点
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `SetTrackers` | 为 HyprSense 人脸追踪节点设置具体的 NNE 神经网络模型实例。 | `FHyprsenseNode`, `FHyprsenseSparseNode` |
+| `LoadModels` | 为语音转动画节点加载所需的音频驱动动画模型。 | `FSpeechToAnimNode` |
+| `SetMood` | 设置语音驱动动画的目标情绪（如开心、悲伤）。 | `FSpeechToAnimNode` |
+| `SetMoodIntensity` | 设置情绪的强度。 | `FSpeechToAnimNode` |
+| `SetOutputControls` | 设置语音动画的输出范围（全脸或仅口型）。 | `FSpeechToAnimNode` |
+
+### 使用示例（蓝图描述）
+
+虽然不能直接在蓝图中拖拽连接 `FNode`，但可以通过理解数据流来使用。例如，一个典型的处理流程可以被想象为：
+
+1.  **数据源**：一个 `FFaceTrackerIPhoneNode` 节点从视频文件中读取图像帧。
+2.  **主处理**：该图像数据被送入一个 `FHyprsenseNode`（或 `FHyprsenseSparseNode`），它使用预先加载的 NNE 模型（通过 `SetTrackers` 设置）来提取面部特征点。
+3.  **后处理**：特征点数据可能被送入一个 `FFaceTrackerPostProcessingNode` 进行平滑和优化。
+4.  **输出**：最终的动画数据（`FFrameAnimationData`）可以被收集、保存，或送入 `FSaveContoursToJsonNode` 转换为 JSON 文件。
+
+整个流程由一个 `FPipeline` 对象管理，它负责按顺序或并发地执行这些节点。
 
 ## C++ 用法
-此插件的核心是其模块化的**处理流水线（Pipeline）** 系统。开发者通过组合不同的处理节点（Node）来构建从原始数据到最终动画的转换流程。
 
 ### 头文件引入
-要使用特定的管线节点，需要引入对应的头文件。例如，使用面部追踪节点：
+
 ```cpp
-#include "Nodes/FaceTrackerNode.h"
-// 或
-#include "Nodes/HyprsenseNode.h"
+// 引入管道核心
+#include "MetaHumanPipeline/Public/MetaHumanPipeline.h"
+// 引入你需要使用的具体节点，例如：
+#include "MetaHumanPipeline/Public/Nodes/FaceTrackerNode.h"
+#include "MetaHumanPipeline/Public/Nodes/HyprsenseNode.h"
+#include "MetaHumanPipeline/Public/Nodes/SpeechToAnimNode.h"
+#include "MetaHumanPipeline/Public/Nodes/TestNodes.h" // 用于测试示例
 ```
 
 ### 基本用法
-以下是一个简化的概念性代码，展示了如何使用管线节点。实际使用中，节点的配置和连接由 `MetaHumanToolkit` 或更高级的API管理。
+
+以下示例基于 `TestNodes.h` 中的节点，展示一个最简单的数据处理管道，模拟整数累加。
 
 ```cpp
-// 示例：创建并配置一个基于iPhone深度感数据的面部追踪节点
-#include "Nodes/FaceTrackerNode.h"
+// 文件：MetaHumanPipeline/Tests/MetaHumanPipelineTest.cpp (简化版)
+void CreateSimpleSumPipeline()
+{
+    // 1. 创建管道数据容器
+    TSharedPtr<FPipelineData> PipelineData = MakeShared<FPipelineData>();
 
-// 假设已通过某种方式获取到必要的配置数据和模型
-FString SolverConfigPath = TEXT("/Game/MetaHuman/Config/...");
-TArray<uint8> PredictiveSolverData;
+    // 2. 创建节点
+    TSharedPtr<FIntSrcNode> SrcNode = MakeShared<FIntSrcNode>(TEXT("Source"));
+    SrcNode->Value = 5;
+    SrcNode->NumberOfFrames = 3; // 生成3帧数据
 
-// 1. 创建节点实例
-UE::MetaHuman::Pipeline::FFaceTrackerIPhoneNode IPhoneTrackerNode(TEXT("MyIPhoneTracker"));
+    TSharedPtr<FIntIncNode> IncNode = MakeShared<FIntIncNode>(TEXT("Increment"));
+    TSharedPtr<FIntSumNode> SumNode = MakeShared<FIntSumNode>(TEXT("Sum"));
+    TSharedPtr<FIntLogNode> LogNode = MakeShared<FIntLogNode>(TEXT("Log"));
 
-// 2. 配置节点属性（这些数据通常从资产加载）
-IPhoneTrackerNode.SolverConfigData = SolverConfigPath;
-IPhoneTrackerNode.PredictiveSolvers = PredictiveSolverData;
-// ... 设置其他配置，如 Calibrations, DNAReader 等
+    // 3. 定义处理顺序（简单串联）
+    TArray<TSharedPtr<FNode>> Nodes;
+    Nodes.Add(SrcNode);
+    Nodes.Add(IncNode);
+    Nodes.Add(SumNode);
+    Nodes.Add(LogNode);
 
-// 3. 模拟流水线执行
-TSharedPtr<UE::MetaHuman::Pipeline::FPipelineData> PipelineData = MakeShared<UE::MetaHuman::Pipeline::FPipelineData>();
+    // 4. 执行管道
+    FPipeline Pipeline;
+    Pipeline.SetNodes(Nodes);
+    Pipeline.Start(PipelineData); // 初始化所有节点
 
-// 启动节点（加载模型、初始化）
-IPhoneTrackerNode.Start(PipelineData);
+    for (int32 Frame = 0; Frame < SrcNode->NumberOfFrames; ++Frame)
+    {
+        Pipeline.Process(PipelineData); // 处理一帧
+        // 此时，LogNode 可能已经将每一帧递增后的结果输出到日志
+    }
 
-// 处理第一帧数据
-PipelineData->SetData<UE::MetaHuman::Pipeline::FUEImageDataType>(... /* 包含第一帧图像 */);
-IPhoneTrackerNode.Process(PipelineData);
-
-// 从流水线数据中获取结果
-const TArray<FFrameTrackingContourData>& TrackingResults = PipelineData->GetData<TArray<FFrameTrackingContourData>>(...);
-
-// 结束节点，清理资源
-IPhoneTrackerNode.End(PipelineData);
+    Pipeline.End(PipelineData); // 清理所有节点
+}
 ```
 
 ### 进阶用法
-进阶用法涉及使用 `FAsyncNode` 进行多线程并行处理，或构建完整的、包含多个节点的复杂流水线。
+
+使用 `FAsyncNode` 实现并行处理，结合混合数据类型节点。
 
 ```cpp
-#include "Nodes/AsyncNode.h"
-#include "Nodes/FaceTrackerNode.h"
+void CreateAsyncAndMixedPipeline()
+{
+    // 创建混合数据源节点（同时产生整数和浮点数）
+    TSharedPtr<FMixSrcNode> MixSrc = MakeShared<FMixSrcNode>(TEXT("MixSource"));
+    MixSrc->NumberOfFrames = 5;
 
-// 创建一个异步版本的iPhone追踪节点，允许并行处理多帧
-// 这可以显著提升处理速度
-UE::MetaHuman::Pipeline::FAsyncNode<UE::MetaHuman::Pipeline::FFaceTrackerIPhoneNode> AsyncIPhoneTracker(
-    /* NumberOfNodes */ 4, // 并行实例数
-    /* ConstructorArgs */ TEXT("AsyncIPhoneTracker")
-);
+    // 创建一个异步节点，它内部会并发运行多个 FIntIncNode 实例
+    // 参数 3 表示内部创建 3 个实例并发工作
+    TSharedPtr<FAsyncNode<FIntIncNode>> AsyncInc = MakeShared<FAsyncNode<FIntIncNode>>(3, TEXT("AsyncInc"));
+    TSharedPtr<FMixLogNode> MixLog = MakeShared<FMixLogNode>(TEXT("MixLog"));
 
-// 配置和运行方式与普通节点类似，但其内部管理多个实例进行异步处理
-AsyncIPhoneTracker.Start(PipelineData);
-// 循环处理帧...
-AsyncIPhoneTracker.End(PipelineData);
+    TArray<TSharedPtr<FNode>> Nodes;
+    Nodes.Add(MixSrc);
+    Nodes.Add(AsyncInc);
+    Nodes.Add(MixLog);
 
-// 要构建完整管线，需要将多个节点（如 FFmpegMediaReaderNode -> FFaceTrackerIPhoneNode -> FFaceTrackerPostProcessingNode）串联或并联。
-// 通常使用 MetaHumanPipeline 或 MetaHumanToolkit 模块提供的更高级封装来实现。
+    TSharedPtr<FPipelineData> PipelineData = MakeShared<FPipelineData>();
+    FPipeline Pipeline;
+    Pipeline.SetNodes(Nodes);
+
+    Pipeline.Start(PipelineData);
+    for (int32 i = 0; i < 10; ++i) // 处理多帧，演示异步缓冲
+    {
+        Pipeline.Process(PipelineData);
+    }
+    Pipeline.End(PipelineData);
+}
 ```
 
 ## Demo 示例
-一个最小的演示，展示如何实例化一个面部追踪节点（概念性）。
 
+一个完整的、可编译的 C++ 类，演示如何创建一个执行整数加法并输出日志的最小管道。
+
+**头文件 (MySimplePipeline.h)**
 ```cpp
-// MyMetaHumanDemo.h
+// MySimplePipeline.h
 #pragma once
 #include "CoreMinimal.h"
-#include "Nodes/HyprsenseNode.h" // 或其他追踪节点头文件
 
-class UMyMetaHumanDemo
+// 前向声明
+namespace UE::MetaHuman { namespace Pipeline { class FPipeline; class FPipelineData; class FNode; } }
+
+class FMySimplePipeline
 {
 public:
+    FMySimplePipeline();
+    ~FMySimplePipeline();
+
+    /** 执行一次演示性的管道处理 */
     void RunDemo();
 
 private:
-    // 持有一个Hyprsense追踪节点的实例
-    UE::MetaHuman::Pipeline::FHyprsenseNode HyprsenseTracker;
+    void SetupNodes();
+
+    TSharedPtr<UE::MetaHuman::Pipeline::FPipeline> Pipeline;
+    TSharedPtr<UE::MetaHuman::Pipeline::FPipelineData> PipelineData;
+    TArray<TSharedPtr<UE::MetaHuman::Pipeline::FNode>> Nodes;
 };
 ```
 
+**实现文件 (MySimplePipeline.cpp)**
 ```cpp
-// MyMetaHumanDemo.cpp
-#include "MyMetaHumanDemo.h"
-#include "Nodes/HyprsenseNode.h"
+// MySimplePipeline.cpp
+#include "MySimplePipeline.h"
+#include "MetaHumanPipeline/Public/MetaHumanPipeline.h"
+#include "MetaHumanPipeline/Public/Nodes/TestNodes.h" // 使用测试节点
 
-UMyMetaHumanDemo::UMyMetaHumanDemo()
-    : HyprsenseTracker(TEXT("DemoHyprsenseTracker"))
+FMySimplePipeline::FMySimplePipeline()
 {
+    Pipeline = MakeShared<UE::MetaHuman::Pipeline::FPipeline>();
+    PipelineData = MakeShared<UE::MetaHuman::Pipeline::FPipelineData>();
+    SetupNodes();
 }
 
-void UMyMetaHumanDemo::RunDemo()
+FMySimplePipeline::~FMySimplePipeline()
 {
-    // 1. 加载必要的神经网络模型 (NNE模型)
-    // 这些模型通常是MetaHuman插件资产的一部分
-    TSharedPtr<UE::NNE::IModelInstanceRunSync> FaceTrackerModel = /* 从资产加载 */;
-    TSharedPtr<UE::NNE::IModelInstanceRunSync> FaceDetectorModel = /* 从资产加载 */;
-    // ... 加载其他部件的模型
+    if (Pipeline.IsValid())
+    {
+        Pipeline->End(PipelineData); // 确保清理
+    }
+}
 
-    // 2. 将模型设置给追踪节点
-    HyprsenseTracker.SetTrackers(
-        FaceTrackerModel,
-        FaceDetectorModel,
-        nullptr, // EyebrowTracker
-        nullptr, // EyeTracker
-        nullptr, // LipsTracker
-        nullptr, // LipzipTracker
-        nullptr, // NasolabialNoseTracker
-        nullptr, // ChinTracker
-        nullptr, // TeethTracker
-        nullptr  // TeethConfidenceTracker
-    );
+void FMySimplePipeline::SetupNodes()
+{
+    using namespace UE::MetaHuman::Pipeline;
 
-    // 3. 创建流水线数据容器
-    TSharedPtr<UE::MetaHuman::Pipeline::FPipelineData> Data = MakeShared<UE::MetaHuman::Pipeline::FPipelineData>();
+    // 1. 创建一个整数源节点，从10开始，生成2帧
+    TSharedPtr<FIntSrcNode> Source = MakeShared<FIntSrcNode>(TEXT("MySource"));
+    Source->Value = 10;
+    Source->NumberOfFrames = 2;
 
-    // 4. 模拟处理一帧图像数据
-    // UE::MetaHuman::Pipeline::FUEImageDataType ImageData = ...; // 准备图像数据
-    // Data->SetData<UE::MetaHuman::Pipeline::FUEImageDataType>(/* Pin */, ImageData);
-    //
-    // if (HyprsenseTracker.Start(Data))
-    // {
-    //     if (HyprsenseTracker.Process(Data))
-    //     {
-    //         // 成功获取追踪结果
-    //         const FFrameTrackingContourData& Contours = Data->GetData<FFrameTrackingContourData>(/* OutputPin */);
-    //         UE_LOG(LogTemp, Log, TEXT("追踪完成，得到 %d 条曲线"), Contours.Num());
-    //     }
-    //     HyprsenseTracker.End(Data);
-    // }
+    // 2. 创建一个整数递增节点
+    TSharedPtr<FIntIncNode> Increment = MakeShared<FIntIncNode>(TEXT("MyIncrement"));
+
+    // 3. 创建一个整数求和节点 (累加)
+    TSharedPtr<FIntSumNode> Summator = MakeShared<FIntSumNode>(TEXT("MySummator"));
+
+    // 4. 创建一个日志节点，输出结果
+    TSharedPtr<FIntLogNode> Logger = MakeShared<FIntLogNode>(TEXT("MyLogger"));
+
+    // 5. 设置执行顺序：Source -> Increment -> Summator -> Logger
+    Nodes.Add(Source);
+    Nodes.Add(Increment);
+    Nodes.Add(Summator);
+    Nodes.Add(Logger);
+
+    Pipeline->SetNodes(Nodes);
+}
+
+void FMySimplePipeline::RunDemo()
+{
+    // 初始化
+    Pipeline->Start(PipelineData);
+
+    // 处理每一帧（模拟）
+    for (int32 Frame = 0; Frame < 2; ++Frame)
+    {
+        UE_LOG(LogTemp, Log, TEXT("--- Processing Frame %d ---"), Frame);
+        Pipeline->Process(PipelineData);
+    }
+
+    // 清理
+    Pipeline->End(PipelineData);
+    UE_LOG(LogTemp, Log, TEXT("Pipeline demo finished."));
 }
 ```
 
 ## 模块依赖
-`MetaHumanAnimator` 插件包含众多模块，它们之间存在依赖关系。以下是 `MetaHumanPipeline` 模块（本文档分析的核心模块）的直接依赖，以及一些关键的外部依赖。
+
+要使用 `MetaHumanPipeline` 模块，你的模块需要在 `.Build.cs` 文件中添加以下依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `UnrealEd` | 用于编辑器扩展和资产访问。MetaHumanPipeline 在编辑器环境下运行依赖此模块。 |
-| `NNE` (Neural Network Engine) | 提供加载和运行神经网络模型（如 Hyprsense 面部追踪模型）的接口。这是面部追踪功能的基础。 |
-| `Core` / `CoreUObject` / `Engine` | 引擎核心基础模块，所有插件都依赖。 |
-
-**注意**：其他模块（如 `MetaHumanCore`, `MetaHumanSpeech2Face`, `MetaHumanFaceFittingSolver`）也有其自身的依赖链，例如对 `ControlRig`, `MediaUtils`, `Json` 等模块的依赖。完整依赖关系需查阅各模块的 `.Build.cs` 文件。
+| `NNE` | 用于加载和运行神经网络推理模型（NNE Models），是 `HyprsenseNode` 等追踪节点的核心。 |
+| `MetaHumanSpeech2Face` | 用于加载和执行音频驱动的面部动画模型（S2F），是 `SpeechToAnimNode` 的核心。 |
 
 ## 维护状态
 
 ### 近期更新
+
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能，避免冲突。 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复了MetaHuman角色身上的渲染瑕疵（伪影）。 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在身体追踪模式下过滤掉调试可视化对象，保持视图整洁。 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MetaHuman Animator] 支持将动画序列导出到已有的网格体上。 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复了与Sequencer相关的缓存问题，提升了稳定性。 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时，禁用关卡序列导出功能。 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复了 MetaHuman 身体上的渲染伪影问题。 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在身体追踪时过滤掉用于可视化的辅助对象。 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 新增功能：可以为已有的网格体导出动画序列。 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复了与 Sequencer（序列器）相关的缓存问题。 |
 
 ### 维护评价
-- **活跃维护**：从近期提交记录看，该插件在**2026年5月**仍有频繁的功能更新和错误修复（如渲染修复、新功能、Sequencer问题修复），表明其处于**非常活跃的维护状态**。
-- **核心地位**：作为 Epic Games 官方维护的 MetaHuman 核心创作工具，其长期维护和更新有保障。
-- **复杂度高**：插件包含大量模块和复杂的处理流水线，使用门槛较高，主要面向需要深度定制动画流程的开发者或技术美术。
-- **实验性功能**：当前版本未标记为实验性或Beta版，表明其主要功能已趋于稳定。
-- **推荐使用**：**强烈推荐**所有需要进行基于表演捕捉或音频驱动的 MetaHuman 面部动画制作的团队使用。它是实现高质量、流程化生产的官方标准解决方案。
+
+- **活跃维护**：插件创建于 2013 年，历史悠久，但最近的提交记录显示仍在 2026 年 5 月持续更新，专注于修复渲染问题、优化功能并添加新特性（如身体追踪兼容、导出功能）。
+- **核心组件**：`MetaHuman Pipeline` 是 MetaHuman 动画功能的基础框架，其稳定性和性能至关重要。从提交历史看，维护重点在于完善功能（如身体追踪集成）和修复具体问题（渲染、缓存），表明它仍处于积极开发和维护中。
+- **推荐使用**：作为 Epic Games 官方数字人工具套件的核心组成部分，此模块是进行程序化面部动画处理和构建自定义动画工作流的首选基础。虽然底层实现复杂，但遵循其框架可以高效构建可靠的处理管道。
 
 ## 相关链接
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/) (在文档站搜索 “MetaHuman Animator”)
+
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanPipeline)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanPipeline/Tests)

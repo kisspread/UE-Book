@@ -4,271 +4,426 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | MetaHuman动画师 |
+| 中文名 | MetaHuman 动画工具 |
 | 分类 | MetaHuman |
-| 默认启用 | ✅ 是 |
-| 包含内容 | ✅ 有（蓝图资产， 材质， 控制器， 动画资产等） |
-| 模块 | `MeshTrackerInterface` (Runtime), `MetaHumanBatchProcessor` (Runtime), `MetaHumanCaptureDataEditor` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureUtils` (Runtime), `MetaHumanConfig` (Runtime), `MetaHumanConfigEditor` (Runtime), `MetaHumanControlsConversionTest` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanCoreEditor` (Runtime), `MetaHumanDepthGenerator` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceAnimationSolverEditor` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanFaceContourTrackerEditor` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceFittingSolverEditor` (Runtime), `MetaHumanFootageIngest` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanIdentityEditor` (Runtime), `MetaHumanImageViewerEditor` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanPlatform` (Runtime), `MetaHumanSequencer` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime) |
+| 默认启用 | ❌ 否 |
+| 包含内容 | ✅ 有（蓝图资产、配置资源） |
+| 模块 | `MetaHumanCaptureUtils` (Runtime), `MetaHumanCaptureSource` (Runtime), `MetaHumanCaptureProtocolStack` (Runtime), `MetaHumanCore` (Runtime), `MetaHumanIdentity` (Runtime), `MetaHumanPerformance` (Runtime), `MetaHumanPipeline` (Runtime), `MetaHumanFaceAnimationSolver` (Runtime), `MetaHumanFaceFittingSolver` (Runtime), `MetaHumanFaceContourTracker` (Runtime), `MetaHumanSpeech2Face` (Runtime), `MetaHumanToolkit` (Runtime), 等共 28 个模块 |
 | 实验性 | 否 |
-| 创建时间 | 未知 |
-| 年龄标签 | 🏛️ 文物（约 10 年） |
+| 创建时间 | 2021-05-13 |
+| 年龄标签 | 🆕（约 5 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator) | |
+
+## ⚠️ 重要废弃提示
+
+**MetaHumanCaptureUtils 模块已在 UE 5.7 中标记为废弃**，其全部功能已迁移至 `CaptureManagerCore/CaptureUtils` 模块。本文档基于废弃前的源码进行记录，新项目应直接使用替代模块。
+
+涉及废弃的类包括：
+- `FCaptureEventSourceBase`、`FCaptureEventSource`、`FCaptureEventSourceWithLimiter`
+- `FCallbackSynchronizer`
+- `FCaptureEvent`、`ICaptureEventSource`
+- `FStopToken`
 
 ## 用途
 
-MetaHuman Animator 是 Epic Games 官方提供的完整 MetaHuman 角色创建与动画工具集。它不仅仅是一个插件，而是一个包含 29 个模块的庞大生态系统，旨在解决从真实人类表演到数字角色驱动的端到端流程。其核心功能包括：
-1.  **捕获与导入**：从 iPhone (Live Link Face) 或其他设备捕获面部表演数据、音频以及身体动作数据。
-2.  **解算与追踪**：将捕获的视频/深度数据解算为面部控制点，追踪面部轮廓，并拟合成最终的 MetaHuman 面部骨骼动画。
-3.  **资产生成与管理**：基于一张或多张照片创建 MetaHuman Identity（身份资产），管理不同角色的配置。
-4.  **动画驱动**：将解算后的动画数据应用到 MetaHuman 角色骨骼上，支持从音频生成面部动画（Speech2Face），并可在 Sequencer 中进行精细编辑。
-5.  **批处理与流水线**：提供批量处理和自定义流水线的能力，适用于需要处理大量数据的生产环境。
+**MetaHumanCaptureUtils** 是 MetaHuman Animator 插件的底层工具模块，为面部捕捉和动画处理流水线提供通用基础设施。它解决的核心问题是：在多线程的面部捕捉工作流中，如何安全地进行异步任务管理、事件发布/订阅、回调同步和错误处理。
 
-该插件存在的意义是提供一个统一、高效且高质量的工具链，让艺术家和开发者能够大规模地将真实世界的人物和表演转化为虚幻引擎中的高保真数字角色。
+该模块不直接面向最终用户，而是被 MetaHuman Animator 插件内部的其他模块（如 MetaHumanCaptureSource、MetaHumanFaceAnimationSolver 等）作为基础依赖使用。
+
+主要功能包括：
+- **异步事件系统**：线程安全的事件发布/订阅机制，支持限流发布
+- **错误处理**：类似 Rust 的 `Result<T, E>` 模式，优雅处理成功/失败双态结果
+- **委托管理**：自动在指定线程（游戏线程/工作线程）执行的委托封装
+- **回调同步**：等待多个异步回调全部完成后触发统一完成回调
+- **可中止异步任务**：支持外部取消的异步任务框架
+- **作用域守卫**：RAII 风格的资源清理工具
 
 ## 使用场景
 
--   你正在开发一款需要大量高保真 NPC 对话的游戏 → 使用 **MetaHumanAnimator** 捕获演员的面部表演，并批量驱动游戏中的 MetaHuman 角色。
--   你正在制作一个虚拟人直播或演示项目 → 使用 **MetaHumanAnimator** 通过 iPhone 的实时视频流驱动一个 MetaHuman 虚拟形象。
--   你有一段现成的音频文件，需要为一个 MetaHuman 角色生成匹配的口型和面部表情动画 → 使用 **MetaHumanSpeech2Face** 模块。
--   你需要为多个角色创建数字分身，照片素材有限（甚至只有一张正面照） → 使用 **MetaHumanIdentity** 模块来创建和优化角色身份。
--   你的工作室需要建立一套标准化的面部动画生产流程，从数据采集到最终动画导出 → 使用 **MetaHumanPipeline** 和 **MetaHumanBatchProcessor** 来定制和自动化整个流程。
+- 你需要构建自定义的面部捕捉数据处理流水线 → 使用事件系统和回调同步器
+- 你需要在捕捉流程中处理可能的失败场景 → 使用 `TResult<T, E>` 模式
+- 你需要从工作线程安全地通知游戏线程 → 使用 `TManagedDelegate`
+- 你需要运行可被外部取消的长时间异步任务 → 使用 `FAbortableAsyncTask`
+- 你需要确保在函数退出时执行清理操作 → 使用 `TScopeGuard` / `SCOPE_EXIT`
 
 ## 蓝图用法
 
-由于 MetaHuman Animator 模块众多，其蓝图接口分布在多个模块中。以下是按功能分组的核心节点概览。具体节点需在对应模块的头文件（`Public/` 目录）中查找 `UFUNCTION(BlueprintCallable)` 和 `UPROPERTY(BlueprintReadWrite)` 定义。
-
-### 核心节点
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `Create MetaHuman Identity` | 从照片资产创建新的 MetaHuman Identity 身份资产 | `UMetaHumanIdentity` |
-| `Solve Facial Animation` | 对捕获的面部数据运行解算流程，生成骨骼动画 | `UMetaHumanFaceAnimationSolver` |
-| `Apply Animation to MetaHuman` | 将解算后的动画数据应用到目标 MetaHuman 骨骼网格体组件 | `UMetaHumanPerformance` |
-| `Generate Face Mesh from Images` | 从一组图像生成面部网格（用于轮廓追踪和拟合） | `UMetaHumanFaceContourTracker` |
-| `Batch Process Capture Data` | 对指定文件夹内的捕获数据运行批处理流水线 | `UMetaHumanBatchProcessor` |
-| `Start/Stop Live Capture` | 控制从 Live Link Face 等源开始或停止实时捕获 | `UMetaHumanCaptureSource` |
-
-### 使用示例（蓝图描述）
-
-1.  **创建身份资产**：在 Content Browser 中右键，选择 `Animation > MetaHuman > Identity`。在打开的编辑器面板中导入正面照片，系统将自动生成基础面部网格和身份资产。
-2.  **实时驱动角色**：将一个 MetaHuman 角色拖入场景。在该角色的 Details 面板中，找到 `Animation > MetaHuman` 分类，指定其使用的 `MetaHuman Identity` 资产。然后，打开 `Live Link Face` 应用连接设备，角色便会实时跟随你的面部表情。
-3.  **从视频解算动画**：导入一段面部表演的视频文件。右键点击视频资产，选择 `MetaHuman > Create Capture Data`。在新创建的捕获数据资产上右键，选择 `Solve Facial Animation`。解算完成后，即可将生成的动画序列应用到角色上。
+**本模块不包含蓝图可调用 API。** MetaHumanCaptureUtils 是纯 C++ 工具模块，所有类和函数均无 `BlueprintCallable` 标记。蓝图层面的 MetaHuman 功能由其他模块（如 MetaHumanPerformance、MetaHumanIdentity 等）提供。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-// 引入结果处理工具
-#include "MetaHumanCaptureUtils/Error/Result.h"
+// 核心工具类
+#include "Error/Result.h"
+#include "Error/ScopeGuard.h"
 
-// 引入异步任务工具
-#include "MetaHumanCaptureUtils/Async/Task.h"
-
-// 引入作用域守卫工具
-#include "MetaHumanCaptureUtils/Error/ScopeGuard.h"
+// 异步工具类（均已废弃）
+#include "Async/Event.h"
+#include "Async/EventSourceUtils.h"
+#include "Async/ManagedDelegate.h"
+#include "Async/CallbackSynchronizer.h"
+#include "Async/Task.h"
+#include "Async/StopToken.h"
 ```
 
-### 基本用法
+> **注意**：所有 `Async/` 下的头文件在 UE 5.7+ 中已废弃，应使用 `CaptureManagerCore/CaptureUtils` 中的等价替代。
 
-`MetaHumanCaptureUtils` 模块提供了许多底层的、与捕获无关的实用工具类，被插件其他模块广泛使用。
+### 基本用法 — TResult 错误处理
 
-**使用 `TResult` 进行错误处理**（来源：`Public/Error/Result.h`）
-`TResult` 是一个轻量级的“结果或错误”返回值包装器，类似于 Rust 的 `Result`。
+`TResult<ResultType, ErrorType>` 提供了类型安全的成功/失败双态返回值，类似 Rust 的 `Result` 类型。
 
 ```cpp
-#include "MetaHumanCaptureUtils/Error/Result.h"
+#include "Error/Result.h"
 
-// 定义一个可能失败的操作
-TResult<FString, FText> LoadConfiguration(const FString& Path)
+// 自定义错误类型
+struct FMyError
 {
-    // 模拟加载
-    if (Path.IsEmpty())
+    FString Message;
+    int32 ErrorCode;
+};
+
+// 返回成功值
+TResult<int32, FMyError> Divide(int32 A, int32 B)
+{
+    if (B == 0)
     {
-        // 返回错误
-        return FText::FromString(TEXT("配置文件路径为空"));
+        return FMyError{ TEXT("Division by zero"), -1 };
     }
-    
-    // 加载成功，返回结果
-    return TEXT("ConfigData");
+    return A / B;  // 隐式构造为成功结果
 }
 
-void UseResult()
+// 使用结果
+void Example()
 {
-    TResult<FString, FText> Result = LoadConfiguration(TEXT("/Game/Config.json"));
-    
+    auto Result = Divide(10, 2);
+
     if (Result.IsValid())
     {
-        // 使用 Result.GetResult() 获取结果
-        UE_LOG(LogTemp, Log, TEXT("配置加载成功: %s"), *Result.GetResult());
+        int32 Value = Result.GetResult();  // 5
     }
-    else if (Result.IsError())
+    if (Result.IsError())
     {
-        // 使用 Result.GetError() 获取错误信息
-        UE_LOG(LogTemp, Error, TEXT("配置加载失败: %s"), *Result.GetError().ToString());
+        const FMyError& Error = Result.GetError();
+        UE_LOG(LogTemp, Error, TEXT("%s (Code: %d)"), *Error.Message, Error.ErrorCode);
+    }
+
+    // 移动语义取出结果（避免拷贝）
+    int32 Value = Result.ClaimResult();
+}
+```
+
+**void 特化** — 用于不需要返回值的场景：
+
+```cpp
+// 无需返回值时使用 void 特化
+TResult<void, FString> SaveFile(const FString& Path)
+{
+    if (!FPaths::FileExists(Path))
+    {
+        return FString(TEXT("File not found"));
+    }
+    // ... 保存逻辑
+    return ResultOk;  // 使用全局 constexpr FVoidResultTag
+}
+```
+
+### 基本用法 — SCOPE_EXIT 作用域守卫
+
+```cpp
+#include "Error/ScopeGuard.h"
+
+void ProcessData()
+{
+    FScopeLock Lock(&CriticalSection);
+    AllocateResources();
+
+    // 确保函数退出时释放资源，无论正常返回还是异常
+    SCOPE_EXIT
+    {
+        ReleaseResources();
+        UE_LOG(LogTemp, Log, TEXT("Resources released"));
+    };
+
+    DoWork();  // 即使这里抛出异常，SCOPE_EXIT 也会执行
+
+    // 手动创建守卫
+    auto Guard = MakeScopeGuard([]()
+    {
+        FPlatformProcess::Sleep(0.01f);  // 延迟清理
+    });
+
+    // 条件性取消守卫
+    if (bSkipCleanup)
+    {
+        Guard.Dismiss();
     }
 }
 ```
 
-### 进阶用法
+### 进阶用法 — 事件发布/订阅系统
 
-**使用 `FAbortableAsyncTask` 执行可中止的后台任务**（来源：`Public/Async/Task.h`）
-这个类封装了 UE 的异步任务系统，并添加了停止令牌（`FStopToken`），允许在任务运行时请求中止。
+> ⚠️ 以下代码已在 UE 5.7 废弃
 
 ```cpp
-#include "MetaHumanCaptureUtils/Async/Task.h"
+#include "Async/Event.h"
+#include "Async/EventSourceUtils.h"
 
-// 定义一个耗时的后台任务函数
-void LongRunningBackgroundWork(const FStopToken& StopToken)
+// 定义自定义事件
+METAHUMAN_CAPTURE_DEFINE_EMPTY_EVENT(FMyFrameEvent, "MyFrameEvent")
+
+// 自定义带数据的事件
+struct FMyProgressEvent : public FCaptureEvent
 {
-    for (int32 i = 0; i < 1000000; ++i)
+    FMyProgressEvent(float InProgress)
+        : FCaptureEvent(TEXT("MyProgressEvent"))
+        , Progress(InProgress)
+    {}
+
+    float Progress;
+};
+
+// 创建事件源
+class FMyCaptureService : public FCaptureEventSource
+{
+public:
+    FMyCaptureService()
     {
-        // 在循环中检查是否请求了停止
-        if (StopToken.IsStopRequested())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("任务被中止，已处理 %d 项"), i);
-            return;
-        }
-        
-        // ... 执行一些工作 ...
+        // 注册可订阅的事件
+        RegisterEvent(FMyFrameEvent::Name);
+        RegisterEvent(TEXT("MyProgressEvent"));
     }
-    UE_LOG(LogTemp, Log, TEXT("后台任务完成"));
-}
 
-void StartAndPotentiallyAbortTask()
+    void ProcessFrame()
+    {
+        // 发布事件给所有订阅者（线程安全）
+        PublishEvent<FMyFrameEvent>();
+
+        float Progress = 0.5f;
+        PublishEvent<FMyProgressEvent>(Progress);
+    }
+};
+
+// 创建带限流的事件源（最多每 100ms 发布一次）
+class FMyThrottledSource : public FCaptureEventSourceWithLimiter
 {
-    // 创建一个可中止的异步任务
-    TUniquePtr<FAbortableAsyncTask> AsyncTask = MakeUnique<FAbortableAsyncTask>(LongRunningBackgroundWork);
-    
-    // 启动后台任务
-    AsyncTask->StartAsync();
-    
-    // 在某些条件下（例如用户取消操作），可以中止任务
-    // AsyncTask->Abort();
-    
-    // 确保任务在销毁前完成或已中止
-    // AsyncTask 会在其析构函数中自动处理， 但也可以手动调用
+public:
+    FMyThrottledSource() : FCaptureEventSourceWithLimiter(100) {}
+
+    void OnFrameUpdate(float InProgress)
+    {
+        // 大部分调用会被跳过，仅在距上次发布超过 100ms 时才发布
+        PublishIfThresholdReached<FMyProgressEvent>(false, InProgress);
+    }
+
+    void OnFinalFrame(float InProgress)
+    {
+        // 强制发布最终事件（忽略限流）
+        PublishIfThresholdReached<FMyProgressEvent>(true, InProgress);
+    }
+};
+```
+
+### 进阶用法 — 回调同步器
+
+> ⚠️ 已在 UE 5.7 废弃
+
+等待多个异步操作全部完成后执行汇总操作：
+
+```cpp
+#include "Async/CallbackSynchronizer.h"
+
+void ProcessMultipleAssets()
+{
+    auto Sync = FCallbackSynchronizer::Create();
+
+    // 创建受管理的回调（会自动计数）
+    auto OnTextureLoaded = Sync->CreateCallback([](UTexture2D* Texture)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Texture loaded: %s"), *Texture->GetName());
+    });
+
+    auto OnMeshLoaded = Sync->CreateCallback([](UStaticMesh* Mesh)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Mesh loaded: %s"), *Mesh->GetName());
+    });
+
+    // 所有回调完成后执行
+    Sync->AfterAll(FCallbackSynchronizer::FAfterAllDelegate::CreateLambda([]()
+    {
+        UE_LOG(LogTemp, Log, TEXT("All assets loaded!"));
+    }));
+
+    // 发起异步操作，将受管理的回调作为完成通知
+    LoadTextureAsync(OnTextureLoaded);
+    LoadMeshAsync(OnMeshLoaded);
+}
+```
+
+### 进阶用法 — 线程管理委托
+
+> ⚠️ 已在 UE 5.7 废弃
+
+```cpp
+#include "Async/ManagedDelegate.h"
+
+void SetupCaptureCallbacks()
+{
+    // 创建在游戏线程执行的委托
+    TManagedDelegate<FString> OnCaptureComplete(
+        [](const FString& Result)
+        {
+            // 这段代码保证在游戏线程执行
+            UE_LOG(LogTemp, Log, TEXT("Capture complete: %s"), *Result);
+        },
+        EDelegateExecutionThread::GameThread
+    );
+
+    // 创建在调用线程执行的委托
+    TManagedDelegate<int32> OnProgress(
+        [](int32 Percent)
+        {
+            // 在工作线程直接执行，不跳转游戏线程
+            UpdateProgress(Percent);
+        },
+        EDelegateExecutionThread::InternalThread
+    );
+
+    // 多播委托版本
+    TManagedMulticastDelegate<float> OnFrameProcessed;
+    OnFrameProcessed.Add([](float DeltaTime)
+    {
+        // 注册多个处理器
+    });
+
+    // 从任意线程调用，委托会自动切换到指定线程执行
+    OnCaptureComplete(TEXT("Success"));
+    OnFrameProcessed(0.016f);
+}
+```
+
+### 进阶用法 — 可中止异步任务
+
+> ⚠️ 已在 UE 5.7 废弃
+
+```cpp
+#include "Async/Task.h"
+
+void StartLongRunningTask()
+{
+    // 创建可中止的异步任务
+    auto Task = MakeUnique<FAbortableAsyncTask>(
+        [](const FStopToken& StopToken)
+        {
+            for (int32 i = 0; i < 1000000; ++i)
+            {
+                // 检查是否被请求停止
+                if (StopToken.IsStopRequested())
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("Task aborted at iteration %d"), i);
+                    return;
+                }
+                ProcessFrame(i);
+            }
+        }
+    );
+
+    // 后台线程异步执行
+    Task->StartAsync();
+
+    // ... 某个时刻取消任务
+    Task->Abort();
+
+    // Task 析构时会自动 Abort + EnsureCompletion
 }
 ```
 
 ## Demo 示例
 
-以下是一个最小可编译的 C++ 类示例，演示如何使用 `MetaHumanCaptureUtils` 模块中的核心工具。
+完整的、可编译的最小示例，演示 `TResult` 错误处理和 `TScopeGuard` 作用域守卫的使用：
 
-**MetaHumanDemoActor.h**
 ```cpp
+// MyCaptureHelper.h
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "MetaHumanCaptureUtils/Error/Result.h"
-#include "MetaHumanCaptureUtils/Async/Task.h"
-#include "MetaHumanDemoActor.generated.h"
+#include "Error/Result.h"
+#include "Error/ScopeGuard.h"
 
-UCLASS()
-class MYPROJECT_API AMetaHumanDemoActor : public AActor
+struct FCaptureError
 {
-	GENERATED_BODY()
-	
-public:	
-	AMetaHumanDemoActor();
+    FString Message;
+    int32 Code;
+};
 
-protected:
-	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+class FMyCaptureHelper
+{
+public:
+    // 带错误处理的数据处理函数
+    TResult<FString, FCaptureError> ProcessCaptureData(const FString& InputPath);
 
-public:	
-	// 一个使用 TResult 的蓝图可调用函数
-	UFUNCTION(BlueprintCallable, Category = "MetaHumanDemo")
-	FString TryLoadAsset(bool bShouldSucceed);
-
-private:
-	// 后台任务
-	TUniquePtr<FAbortableAsyncTask> BackgroundTask;
-
-	// 后台任务函数
-	static void ProcessDataInBackground(const FStopToken& StopToken);
+    // 演示 SCOPE_EXIT 的资源管理
+    bool InitializeCaptureDevice();
 };
 ```
 
-**MetaHumanDemoActor.cpp**
 ```cpp
-#include "MetaHumanDemoActor.h"
+// MyCaptureHelper.cpp
+#include "MyCaptureHelper.h"
 
-AMetaHumanDemoActor::AMetaHumanDemoActor()
+TResult<FString, FCaptureError> FMyCaptureHelper::ProcessCaptureData(const FString& InputPath)
 {
-	PrimaryActorTick.bCanEverTick = false;
+    // 验证输入
+    if (!FPaths::FileExists(InputPath))
+    {
+        return FCaptureError{ FString::Printf(TEXT("File not found: %s"), *InputPath), 404 };
+    }
+
+    // 读取数据
+    FString RawData;
+    if (!FFileHelper::LoadFileToString(RawData, *InputPath))
+    {
+        return FCaptureError{ TEXT("Failed to read file"), 500 };
+    }
+
+    // 处理成功
+    return FString::Printf(TEXT("Processed %d characters"), RawData.Len());
 }
 
-void AMetaHumanDemoActor::BeginPlay()
+bool FMyCaptureHelper::InitializeCaptureDevice()
 {
-	Super::BeginPlay();
+    void* DeviceHandle = FPlatformMisc::GetDeviceHandle();
+    if (!DeviceHandle)
+    {
+        return false;
+    }
 
-	// 启动一个后台处理任务
-	BackgroundTask = MakeUnique<FAbortableAsyncTask>(ProcessDataInBackground);
-	BackgroundTask->StartAsync();
-}
+    // 使用 SCOPE_EXIT 确保设备句柄在函数退出时释放
+    auto DeviceGuard = MakeScopeGuard([DeviceHandle]()
+    {
+        FPlatformMisc::ReleaseDeviceHandle(DeviceHandle);
+    });
 
-void AMetaHumanDemoActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	// 确保在 Actor 销毁时安全停止后台任务
-	if (BackgroundTask.IsValid() && !BackgroundTask->IsDone())
-	{
-		BackgroundTask->Abort();
-		// 析构函数会确保任务完成
-	}
+    // 初始化设备（可能失败）
+    if (!FPlatformMisc::InitializeDevice(DeviceHandle))
+    {
+        return false;  // DeviceGuard 自动释放句柄
+    }
 
-	Super::EndPlay(EndPlayReason);
-}
-
-FString AMetaHumanDemoActor::TryLoadAsset(bool bShouldSucceed)
-{
-	TResult<FString, FText> Result = bShouldSucceed
-		? TResult<FString, FText>(TEXT("AssetData"))
-		: TResult<FString, FText>(FText::FromString(TEXT("加载失败！")));
-
-	if (Result.IsValid())
-	{
-		return Result.ClaimResult(); // 使用 ClaimResult 转移所有权
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s"), *Result.GetError().ToString());
-		return TEXT("");
-	}
-}
-
-void AMetaHumanDemoActor::ProcessDataInBackground(const FStopToken& StopToken)
-{
-	UE_LOG(LogTemp, Log, TEXT("开始后台数据处理..."));
-	for (int i = 0; i < 1000; ++i)
-	{
-		if (StopToken.IsStopRequested())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("后台处理已被取消"));
-			return;
-		}
-		// 模拟工作
-		FPlatformProcess::Sleep(0.001f);
-	}
-	UE_LOG(LogTemp, Log, TEXT("后台数据处理完成。"));
+    // 正常路径也自动释放
+    return true;
 }
 ```
 
 ## 模块依赖
 
-此插件拥有庞大的模块依赖网络。以下列出的是除了标准 Core/Engine/Slate 等之外，使用者（尤其是编写自定义解算器、处理器或扩展时）可能需要关注的独特依赖模块。实际依赖请查阅各子模块的 `.Build.cs` 文件。
+本模块（MetaHumanCaptureUtils）的依赖关系简洁，无特殊依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `MetaHumanCoreTechLib` | MetaHuman 核心技术库， 包含面部解算、网格处理等底层算法。 |
-| `SkeletalMeshUtilitiesCommon` | 骨骼网格体通用工具函数。 |
-| `ControlRigDeveloper` | 用于开发和控制 Control Rig（MetaHuman 面部动画基于此）。 |
-| `MetaHumanSDKEditor` | MetaHuman SDK 的编辑器端功能， 用于资产创建和编辑。 |
-| `MediaUtils` | 媒体工具， 用于处理视频/图像序列等捕获数据。 |
-| `MeshTrackerInterface` | 网格追踪接口， 用于深度摄像头等设备的网格数据。 |
-| `HTTP` | HTTP 模块， 可能用于在线资源获取或设备通信。 |
-| `CaptureManagerCore` | **注意**： `MetaHumanCaptureUtils` 模块已在 5.7 版本标记为废弃，其功能已迁移至此模块。新项目应直接依赖 `CaptureManagerCore` 及其子模块 `CaptureUtils`。 |
+| 无特殊依赖 | 仅标准 Core/Engine 等基础模块 |
+
+注：使用 MetaHuman Animator 插件的其他模块时有更复杂的依赖，例如 MetaHumanIdentity 依赖 `ControlRigDeveloper`、`MetaHumanSDKEditor`、`SkeletalMeshUtilitiesCommon` 等。
 
 ## 维护状态
 
@@ -276,22 +431,28 @@ void AMetaHumanDemoActor::ProcessDataInBackground(const FStopToken& StopToken)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 当启用身体追踪时， 禁用关卡序列导出功能。 |
-| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 角色上的渲染伪影问题。 |
-| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 在身体追踪时过滤可视化对象。 |
-| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | [MHA] 为现有网格体导出动画序列。 |
-| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 中的缓存问题。 |
+| 2026-05-22 | `7a048bf4` | Disable level sequence export when body tracking enabled | 启用身体追踪时禁用关卡序列导出 |
+| 2026-05-21 | `9c78518c` | Fix rendering artefacts on MH. | 修复 MetaHuman 渲染瑕疵 |
+| 2026-05-21 | `1396cbbf` | Filter visualization objects when body tracking | 身体追踪时过滤可视化对象 |
+| 2026-05-21 | `0d185763` | [MHA] Export animation sequence for existing mesh | 支持为已有网格体导出动画序列 |
+| 2026-05-20 | `35537544` | Fix sequencer caching issues | 修复 Sequencer 缓存问题 |
 
 ### 维护评价
 
-**积极维护**。
-- **活跃度**：该插件在最近一周内有多次提交（截至提供的 git log），表明 Epic Games 的开发团队正在积极开发和维护。
-- **内容**：更新内容包括新功能（身体追踪相关的导出与过滤）、重要 Bug 修复（渲染问题、缓存问题）以及功能改进（为现有网格导出动画），说明这是一个处于核心开发阶段的产品。
-- **稳定性**：虽然部分底层模块（如 `MetaHumanCaptureUtils`）已标记为废弃并进行迁移，但这是正常的架构演进过程，不影响整体插件的可用性。
-- **推荐度**：作为 Epic Games 官方提供的、功能完备且持续更新的 MetaHuman 创作工具链，**强烈推荐**用于任何涉及高保真 MetaHuman 角色动画的项目。
+**MetaHuman Animator 插件整体处于活跃维护状态**，但 **MetaHumanCaptureUtils 模块本身已废弃**。
+
+- 插件整体仍被 Epic 积极维护，近期有功能更新和 bug 修复
+- MetaHumanCaptureUtils 模块在 UE 5.7 中被标记为废弃，所有功能迁移至 `CaptureManagerCore/CaptureUtils`
+- 模块内的 `Async/` 子目录下的类（事件源、回调同步器、停止令牌等）均标注了废弃宏
+- `TResult` 和 `TScopeGuard` 等通用工具类未标注废弃，可能仍在使用或尚待迁移
+
+**建议**：
+- 🟢 如果使用 MetaHuman Animator 的完整功能 → 继续使用，插件活跃维护中
+- 🔴 如果需要直接使用 MetaHumanCaptureUtils 中的底层工具 → **不要使用**，改用 `CaptureManagerCore/CaptureUtils`
+- 🟡 `TResult` 和 `TScopeGuard` 是通用模式，可参考但建议使用 UE 标准库或独立实现
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
-- [官方文档](https://docs.unrealengine.com/en-US/AnimatingObjects/MetaHumans/InEngine/MetaHumanAnimator/) （虚幻引擎文档站）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanControlsConversionTest) （位于插件源码内）
+- [源码（MetaHumanCaptureUtils）](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureUtils)
+- [源码（MetaHuman Animator 插件根目录）](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator)
+- [替代模块（CaptureManagerCore/CaptureUtils）](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/MetaHuman/MetaHumanAnimator/Source/MetaHumanCaptureUtils) — UE 5.7+ 推荐使用
