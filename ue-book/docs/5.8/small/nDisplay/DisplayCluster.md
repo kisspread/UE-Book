@@ -7,64 +7,70 @@
 | 中文名 | 集群显示 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产、材质模板、编辑器工具） |
+| 包含内容 | ✅ 有（配置资产、组件蓝图、材质模板、着色器、ThirdParty 库） |
 | 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
-| 年龄标签 | 🏛️ 文物（约 8 年） |
+| 年龄标签 | 👴 老古董（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay) | |
 
 ## 用途
 
-nDisplay 是 UE5 中用于**多 PC 集群同步渲染**的核心插件，解决的是"如何让多台电脑协同渲染同一场景，并将画面拼接/投影到复杂的物理显示结构上"的问题。
+nDisplay 是 UE5 中用于**多机集群同步渲染**的核心系统。它解决的核心问题是：当一台 PC 无法满足超大分辨率或多投影面的渲染需求时，需要多台 PC 协同工作，各自渲染画面的一部分，最终拼接成一个完整的、帧同步的视觉输出。
 
-核心能力包括：
+其主要应用领域包括：
 
-- **集群同步**：多台 PC（节点）通过 TCP 网络同步游戏时间、对象状态、输入事件，确保所有节点的场景模拟完全一致
-- **多视口渲染**：每个集群节点可拥有多个独立视口（Viewport），每个视口有独立的投影策略（Projection Policy）用于将 3D 场景投射到物理屏幕上
-- **投影变形混合（Warp & Blend）**：支持 MPCDI、EasyBlend 等多种投影数据格式，实现多投影仪画面的几何校正和边缘融合
-- **ICVFX（In-Camera VFX）**：影视虚拟制片核心功能，支持内嵌画面（Inner Frustum）和外层画面（Outer Frustum）的分离渲染，用于 LED 墙虚拟拍摄
-- **容错机制**：支持主节点故障转移（Failover），集群可自动选举新主节点继续运行
-- **自定义状态同步**：提供分布式状态（Custom State）系统，允许用户自定义数据在集群间同步
-- **Light Card 系统**：用于在 LED 墙上叠加可控光源卡片，调整虚拟环境照明
-- **自动曝光统一**：跨集群节点的多视口自动曝光协调，避免相邻屏幕亮度不一致
+- **虚拟制片 (ICVFX / In-Camera VFX)**：LED 墙幕拍摄场景，需要多台渲染节点驱动 LED 面板，与摄影机视角同步渲染虚拟环境，这是 nDisplay 最核心的使用场景
+- **沉浸式显示系统**：CAVE（洞穴自动虚拟环境）、穹顶投影、多屏拼接显示器、飞行模拟器等需要多台 PC 驱动多个显示面的场景
+- **大规模可视化**：建筑设计可视化、汽车设计评审等需要超高分辨率或超宽视场角的应用
 
-简而言之：nDisplay 让你用多台电脑 + 多个显示器/投影仪，搭建一个大型的沉浸式显示环境，比如 CAVE 洞穴系统、LED 虚拟摄影棚、赛车模拟器多屏、主题公园飞行影院等。
+nDisplay 通过网络通信实现集群节点间的时间同步、渲染同步和数据复制，确保所有节点在同一帧上保持一致。它内置了故障转移机制，在主节点失效时能自动选举新的主节点继续运行。
+
+**重要提示**：该插件默认未启用（`EnabledByDefault: false`），需要在项目设置中手动启用。
 
 ## 使用场景
 
-- 你在搭建 **LED 虚拟摄影棚**（ICVFX） → 用 nDisplay 管理内嵌画面渲染、色键（Chromakey）、边缘融合
-- 你需要**多台 PC 同步渲染**一个场景并投射到 CAVE/穹顶/弧幕 → 用 nDisplay 的集群模式
-- 你在做**多投影仪拼接**（投影映射） → 用 nDisplay 的 MPCDI 投影策略和 Warp&Blend
-- 你需要**虚拟制片**中的实时预览 → 用 nDisplay 的编辑器预览功能
-- 你在做**主题公园/展览装置**需要多屏同步播放 → 用 nDisplay 的集群同步和 Movie Pipeline 集成
-- 你需要**多 PC 间发送自定义事件** → 用 nDisplay 的集群事件系统
+- 你正在搭建 **LED 虚拟制片片场**（如 Unreal Stage）→ 用 nDisplay 配置 ICVFX 摄影机和 LED 面板
+- 你需要用多台 PC 驱动一个 **多面投影 CAVE 系统** → 用 nDisplay 配置各节点的投影策略
+- 你在做 **飞行/驾驶模拟器**，需要多台 PC 同步渲染不同视角 → 用 nDisplay 集群模式
+- 你需要在多台 PC 间 **精确同步游戏状态和时间** → 用 nDisplay 的集群管理器
+- 你需要将 nDisplay 视口的渲染结果通过 **共享内存** 传递给其他进程 → 用 SharedMemoryMedia 模块
+- 你需要在 **Movie Render Queue** 中录制多视口的多层 EXR 输出 → 用 DisplayClusterMoviePipeline 模块
 
 ## 蓝图用法
 
-> **注意**：nDisplay 的蓝图 API 已从 `IDisplayClusterBlueprintAPI`（旧接口，UE 5.4 废弃）迁移至 `UDisplayClusterBlueprintLib` 静态函数库。以下列出的节点在蓝图搜索中位于 **"nDisplay"** 分类下。
+> **注意**：从 UE 5.4 开始，`IDisplayClusterBlueprintAPI` 中的大部分函数已被废弃，功能迁移到 `UDisplayClusterBlueprintLib` 的静态函数中。以下节点均为新 API。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `GetOperationMode` | 获取当前 nDisplay 操作模式（Cluster/Editor/Disabled） | `UDisplayClusterBlueprintLib` |
+| `GetOperationMode` | 获取当前操作模式（Cluster/Editor/Disabled） | `UDisplayClusterBlueprintLib` |
 | `GetRootActor` | 获取当前 nDisplay 根 Actor | `UDisplayClusterBlueprintLib` |
 | `GetNodeId` | 获取当前集群节点 ID | `UDisplayClusterBlueprintLib` |
-| `GetActiveNodeIds` | 获取所有活跃集群节点 ID 列表 | `UDisplayClusterBlueprintLib` |
+| `GetActiveNodeIds` | 获取所有活跃节点 ID 列表 | `UDisplayClusterBlueprintLib` |
 | `GetActiveNodesAmount` | 获取活跃节点数量 | `UDisplayClusterBlueprintLib` |
 | `IsPrimary` | 当前节点是否为主节点 | `UDisplayClusterBlueprintLib` |
 | `IsSecondary` | 当前节点是否为从节点 | `UDisplayClusterBlueprintLib` |
-| `IsBackup` | 当前节点是否为备份节点 | `UDisplayClusterBlueprintLib` |
-| `GetClusterRole` | 获取当前节点角色 | `UDisplayClusterBlueprintLib` |
-| `EmitClusterEventJson` | 发送 JSON 格式集群事件 | `UDisplayClusterBlueprintLib` |
-| `EmitClusterEventBinary` | 发送二进制集群事件 | `UDisplayClusterBlueprintLib` |
-| `AddClusterEventListener` | 注册集群事件监听器 | `UDisplayClusterBlueprintLib` |
+| `IsBackup` | 当前节点是否为备用节点 | `UDisplayClusterBlueprintLib` |
+| `GetClusterRole` | 获取当前节点的集群角色 | `UDisplayClusterBlueprintLib` |
+| `AddClusterEventListener` | 添加集群事件监听器 | `UDisplayClusterBlueprintLib` |
 | `RemoveClusterEventListener` | 移除集群事件监听器 | `UDisplayClusterBlueprintLib` |
-| `SendClusterEventJsonTo` | 向指定地址发送 JSON 事件 | `UDisplayClusterBlueprintLib` |
-| `SendClusterEventBinaryTo` | 向指定地址发送二进制事件 | `UDisplayClusterBlueprintLib` |
+| `EmitClusterEventJson` | 发射 JSON 格式集群事件 | `UDisplayClusterBlueprintLib` |
+| `EmitClusterEventBinary` | 发射二进制格式集群事件 | `UDisplayClusterBlueprintLib` |
+| `SendClusterEventJsonTo` | 向指定地址发送 JSON 集群事件 | `UDisplayClusterBlueprintLib` |
+| `SendClusterEventBinaryTo` | 向指定地址发送二进制集群事件 | `UDisplayClusterBlueprintLib` |
 
-### 相机组件节点
+### 集群数据同步节点
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `RegisterSyncObject` | 注册同步对象到指定同步组（PreTick/Tick/PostTick） | `IDisplayClusterClusterManager` |
+| `UnregisterSyncObject` | 取消注册同步对象 | `IDisplayClusterClusterManager` |
+| `RegisterCustomState` | 注册自定义状态变量，自动跨节点复制 | `IDisplayClusterClusterManager` |
+| `CreateGenericBarriersClient` | 创建通用屏障同步客户端 | `IDisplayClusterClusterManager` |
+
+### 相机组件节点（UDisplayClusterCameraComponent）
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
@@ -72,355 +78,380 @@ nDisplay 是 UE5 中用于**多 PC 集群同步渲染**的核心插件，解决�
 | `SetInterpupillaryDistance` | 设置瞳距 | `UDisplayClusterCameraComponent` |
 | `GetSwapEyes` | 获取左右眼交换状态 | `UDisplayClusterCameraComponent` |
 | `SetSwapEyes` | 设置左右眼交换 | `UDisplayClusterCameraComponent` |
-| `ToggleSwapEyes` | 切换左右眼 | `UDisplayClusterCameraComponent` |
-| `GetStereoOffset` | 获取立体偏移类型 | `UDisplayClusterCameraComponent` |
+| `ToggleSwapEyes` | 切换左右眼交换 | `UDisplayClusterCameraComponent` |
+| `GetStereoOffset` | 获取立体偏移类型（左/右/默认） | `UDisplayClusterCameraComponent` |
 | `SetStereoOffset` | 设置立体偏移类型 | `UDisplayClusterCameraComponent` |
 
-### ICVFX 相机节点
+### ICVFX 摄影机节点（UDisplayClusterICVFXCameraComponent）
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `GetActualCineCameraComponent` | 获取实际引用的 CineCamera 组件 | `UDisplayClusterICVFXCameraComponent` |
-| `IsICVFXEnabled` | 当前相机在此节点是否激活 | `UDisplayClusterICVFXCameraComponent` |
+| `GetActualCineCameraComponent` | 获取实际引用的电影摄影机组件 | `UDisplayClusterICVFXCameraComponent` |
+| `IsICVFXEnabled` | 当前节点上该 ICVFX 摄影机是否启用 | `UDisplayClusterICVFXCameraComponent` |
 | `SetDepthOfFieldParameters` | 设置景深参数并更新补偿 LUT | `UDisplayClusterICVFXCameraComponent` |
+
+### Light Card 节点（ADisplayClusterLightCardActor）
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `MakeFlushToWall` | 使 Light Card 贴合墙面 | `ADisplayClusterLightCardActor` |
+| `SetIsLightCardFlag` | 设置为标志类型 Light Card | `ADisplayClusterLightCardActor` |
+| `SetIsUVActor` | 设置为 UV 空间中的 Light Card | `ADisplayClusterLightCardActor` |
+| `AddToRootActor` | 将 Light Card 添加到指定 Root Actor | `ADisplayClusterLightCardActor` |
+| `RemoveFromRootActor` | 从 Root Actor 移除 Light Card | `ADisplayClusterLightCardActor` |
 
 ### 使用示例（蓝图描述）
 
 **发送集群事件**：
-1. 创建一个 `FDisplayClusterClusterEventJson` 结构体，设置 `Category` 和 `Type`
-2. 将事件数据写入 `Parameters` Map
-3. 连接到 `EmitClusterEventJson` 节点，设置 `bPrimaryOnly` 为 false 以广播给所有节点
-4. 在接收端，通过 `AddClusterEventListener` 注册监听器，或使用委托回调处理事件
+1. 创建 `FDisplayClusterClusterEventJson` 结构体，设置 Category、Type、Description 等字段
+2. 调用 `EmitClusterEventJson` 节点，传入事件和 `bPrimaryOnly=false` 表示广播给所有节点
+3. 在需要接收的 Actor 中调用 `AddClusterEventListener`，绑定一个实现了 `IDisplayClusterClusterEventListener` 接口的对象
 
-**检测节点角色**：
-1. 调用 `GetClusterRole` 获取角色枚举值
-2. 分支判断：Primary（主节点控制画面输出）、Secondary（从节点跟随同步）、Backup（备份节点待命）
+**获取当前节点信息**：
+1. 调用 `GetOperationMode` 确认当前为 Cluster 模式
+2. 调用 `IsPrimary` 判断是否为主节点
+3. 调用 `GetNodeId` 获取本机节点名称
+4. 根据节点角色执行不同的渲染逻辑
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-// 核心模块
 #include "DisplayClusterModule.h"
 #include "IDisplayCluster.h"
-
-// 集群管理
 #include "Cluster/IDisplayClusterClusterManager.h"
-
-// 渲染管理
 #include "Render/IDisplayClusterRenderManager.h"
-
-// 视口管理
-#include "Render/Viewport/IDisplayClusterViewportManager.h"
-
-// 投影策略
-#include "Render/Projection/IDisplayClusterProjectionPolicy.h"
-
-// 回调系统
-#include "IDisplayClusterCallbacks.h"
-
-// 自定义状态
-#include "Cluster/CustomStates/DisplayClusterCustomStateDistributed.h"
-
-// 根 Actor
-#include "DisplayClusterRootActor.h"
-
-// 相机组件
+#include "Blueprints/IDisplayClusterBlueprintAPI.h"
 #include "Components/DisplayClusterCameraComponent.h"
 #include "Components/DisplayClusterICVFXCameraComponent.h"
+#include "DisplayClusterRootActor.h"
+#include "DisplayClusterLightCardActor.h"
+#include "IDisplayClusterCallbacks.h"
 ```
 
 ### 基本用法
 
-**获取 nDisplay 模块并访问管理器**（来源：`Private/DisplayClusterModule.h`）：
-
 ```cpp
-#include "IDisplayCluster.h"
+// 获取 nDisplay 模块单例
+IDisplayCluster& DisplayCluster = IDisplayCluster::Get();
 
-// 检查 nDisplay 是否可用
-if (IDisplayCluster::IsAvailable())
+// 获取各管理器接口
+IDisplayClusterClusterManager* ClusterMgr = DisplayCluster.GetClusterMgr();
+IDisplayClusterRenderManager*  RenderMgr  = DisplayCluster.GetRenderMgr();
+IDisplayClusterGameManager*    GameMgr    = DisplayCluster.GetGameMgr();
+
+// 检查当前操作模式
+EDisplayClusterOperationMode OpMode = DisplayCluster.GetOperationMode();
+if (OpMode == EDisplayClusterOperationMode::Cluster)
 {
-    // 获取模块实例
-    IDisplayCluster& DisplayCluster = IDisplayCluster::Get();
+    // 正在集群模式下运行
+}
 
-    // 获取操作模式
-    EDisplayClusterOperationMode Mode = DisplayCluster.GetOperationMode();
-
-    // 访问集群管理器
-    IDisplayClusterClusterManager* ClusterMgr = DisplayCluster.GetClusterMgr();
-    if (ClusterMgr)
-    {
-        FString NodeId = ClusterMgr->GetNodeId();
-        bool bIsPrimary = ClusterMgr->IsPrimary();
-        EDisplayClusterNodeRole Role = ClusterMgr->GetClusterRole();
-    }
-
-    // 访问渲染管理器
-    IDisplayClusterRenderManager* RenderMgr = DisplayCluster.GetRenderMgr();
-    if (RenderMgr)
-    {
-        IDisplayClusterViewportManager* ViewportMgr = RenderMgr->GetViewportManager();
-    }
+// 获取集群信息
+if (ClusterMgr)
+{
+    bool bIsPrimary = ClusterMgr->IsPrimary();
+    FString NodeId  = ClusterMgr->GetNodeId();
+    uint32 NodeCount = ClusterMgr->GetNodesAmount();
+    
+    TArray<FString> AllNodeIds;
+    ClusterMgr->GetNodeIds(AllNodeIds);
 }
 ```
 
-**监听集群事件**（来源：`Public/Cluster/IDisplayClusterClusterManager.h`）：
+### 集群事件通信
 
 ```cpp
-// 注册 JSON 事件监听
+// 注册事件监听器
 FOnClusterEventJsonListener JsonListener;
 JsonListener.BindLambda([](const FDisplayClusterClusterEventJson& Event)
 {
-    UE_LOG(LogTemp, Log, TEXT("Received cluster event: Category=%s, Type=%s"),
+    UE_LOG(LogTemp, Log, TEXT("Received event: Category=%s Type=%s"), 
         *Event.Category, *Event.Type);
 });
 ClusterMgr->AddClusterEventJsonListener(JsonListener);
 
-// 发送 JSON 事件
+// 发射 JSON 集群事件
 FDisplayClusterClusterEventJson Event;
-Event.Category = TEXT("MyCategory");
-Event.Type = TEXT("MyType");
-Event.Parameters.Add(TEXT("Key"), TEXT("Value"));
-Event.bPrimaryOnly = false; // 广播给所有节点
-ClusterMgr->EmitClusterEventJson(Event, false);
+Event.Category    = TEXT("MyPlugin");
+Event.Type        = TEXT("StateChange");
+Event.Description = TEXT("Player entered zone");
+Event.bIsSystemEvent = false;
 
-// 记得在结束时移除监听
+ClusterMgr->EmitClusterEventJson(Event, /*bPrimaryOnly=*/false);
+
+// 向特定地址发送事件（集群外通信）
+ClusterMgr->SendClusterEventTo(
+    TEXT("192.168.1.100"), 8090, Event, false);
+
+// 清理
 ClusterMgr->RemoveClusterEventJsonListener(JsonListener);
 ```
 
-**注册同步对象**（来源：`Public/Cluster/IDisplayClusterClusterManager.h`）：
+### 数据同步对象注册
 
 ```cpp
-// 将对象注册到同步组，集群会自动同步其状态
-// EDisplayClusterSyncGroup: PreTick, Tick, PostTick
-ClusterMgr->RegisterSyncObject(MySyncObject, EDisplayClusterSyncGroup::PreTick);
+// 假设你有一个需要跨节点同步的对象
+// 实现 IDisplayClusterClusterSyncObject 接口
+
+// 注册到指定同步组
+// EDisplayClusterSyncGroup::PreTick - 在 PreTick 阶段同步
+// EDisplayClusterSyncGroup::Tick    - 在 Tick 阶段同步
+// EDisplayClusterSyncGroup::PostTick - 在 PostTick 阶段同步
+ClusterMgr->RegisterSyncObject(MySyncObject, EDisplayClusterSyncGroup::Tick);
+
+// 取消注册
+ClusterMgr->UnregisterSyncObject(MySyncObject);
 ```
 
-### 进阶用法
-
-**自定义分布式状态**（来源：`Public/Cluster/CustomStates/DisplayClusterCustomStateDistributed.h`）：
+### 自定义分布式状态
 
 ```cpp
-// 创建一个自定义分布式状态，数据类型为 FVector
-// 集群会自动在所有节点间同步此状态
-TSharedPtr<TDistributedCustomState<FVector>> MyState = 
-    TDistributedCustomState<FVector>::Create(FName("MyDistributedPosition"));
+// 使用模板类创建跨节点自动复制的状态变量
+#include "Cluster/CustomStates/DisplayClusterCustomStateDistributed.h"
 
-if (MyState.IsValid())
+// 创建一个 float 类型的分布式状态
+TSharedPtr<TDistributedCustomState<float>> SharedScore;
+
+void InitSharedState()
 {
-    // 设置本地数据（下一帧生效）
-    MyState->SetData(FVector(100, 200, 300));
+    // 通过工厂方法创建并自动注册
+    SharedScore = TDistributedCustomState<float>::Create(FName("SharedScore"), 0.0f);
+}
 
-    // 读取本地数据
-    const FVector& LocalData = MyState->GetData();
+void UpdateScore(float NewScore)
+{
+    if (SharedScore)
+    {
+        // 设置新值，下一帧自动同步到所有节点
+        SharedScore->SetData(NewScore);
+    }
+}
 
-    // 读取特定节点的数据
-    const FVector& NodeData = MyState->GetData(FName("Node2"));
-
-    // 获取所有可用节点
-    TSet<FName> Nodes = MyState->GetAvailableNodes();
-
-    // 配置上游节点（自定义哪些节点的数据会传播到此状态）
-    MyState->SetCustomUpstreamsEnabled(true);
-    MyState->SetUpstreams({ FName("PrimaryNode") });
+void ReadScore()
+{
+    if (SharedScore)
+    {
+        // 获取当前帧的本地值
+        float CurrentScore = SharedScore->GetData();
+        
+        // 获取特定节点的值
+        float PrimaryScore = SharedScore->GetData(FName("PrimaryNode"));
+        
+        // 获取所有可用节点
+        TSet<FName> AvailableNodes = SharedScore->GetAvailableNodes();
+    }
 }
 ```
 
-**注册自定义投影策略工厂**（来源：`Public/Render/IDisplayClusterRenderManager.h`）：
+### 注册回调
 
 ```cpp
-// 实现自定义投影策略
-class FMyProjectionPolicy : public IDisplayClusterProjectionPolicy
-{
-    // ... 实现接口方法
-};
+#include "IDisplayClusterCallbacks.h"
 
-// 实现工厂
-class FMyProjectionPolicyFactory : public IDisplayClusterProjectionPolicyFactory
-{
-public:
-    virtual TSharedPtr<IDisplayClusterProjectionPolicy> Create(
-        const FString& ViewportId,
-        const FDisplayClusterConfigurationProjection& Configuration) override
-    {
-        return MakeShared<FMyProjectionPolicy>();
-    }
-};
-
-// 注册
-TSharedPtr<IDisplayClusterProjectionPolicyFactory> Factory = 
-    MakeShared<FMyProjectionPolicyFactory>();
-RenderMgr->RegisterProjectionPolicyFactory(TEXT("MyProjection"), Factory);
-```
-
-**使用回调系统**（来源：`Public/IDisplayClusterCallbacks.h`）：
-
-```cpp
 IDisplayClusterCallbacks& Callbacks = IDisplayCluster::Get().GetCallbacks();
 
-// 会话开始回调
+// 监听会话开始事件
 Callbacks.OnDisplayClusterStartSession().AddLambda([]()
 {
     UE_LOG(LogTemp, Log, TEXT("nDisplay session started"));
 });
 
-// 帧渲染前回调
+// 监听渲染线程 warp 前事件
 Callbacks.OnDisplayClusterPreWarp_RenderThread().AddLambda(
     [](FRHICommandListImmediate& RHICmdList, const IDisplayClusterViewportManagerProxy* Proxy)
-    {
-        // 在 warp blend 之前执行自定义渲染操作
-    });
+{
+    // 在 warp 处理前插入自定义渲染逻辑
+});
 
-// 主节点变更回调（容错系统）
+// 监听节点故障
+Callbacks.OnDisplayClusterFailoverNodeDown().AddLambda(
+    [](const FString& FailedNodeId)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Cluster node failed: %s"), *FailedNodeId);
+});
+
+// 监听主节点变更
 Callbacks.OnDisplayClusterFailoverPrimaryNodeChanged().AddLambda(
     [](const FString& NewPrimaryId)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("New primary node: %s"), *NewPrimaryId);
-    });
+{
+    UE_LOG(LogTemp, Log, TEXT("New primary node: %s"), *NewPrimaryId);
+});
+```
+
+### 注册自定义投影策略工厂
+
+```cpp
+#include "Render/IDisplayClusterRenderManager.h"
+
+IDisplayClusterRenderManager* RenderMgr = IDisplayCluster::Get().GetRenderMgr();
+if (RenderMgr)
+{
+    // 注册自定义投影策略
+    TSharedPtr<IDisplayClusterProjectionPolicyFactory> MyFactory = 
+        MakeShared<FMyProjectionPolicyFactory>();
+    RenderMgr->RegisterProjectionPolicyFactory(TEXT("MyProjection"), MyFactory);
+    
+    // 注册自定义后处理工厂
+    TSharedPtr<IDisplayClusterPostProcessFactory> MyPPFactory = 
+        MakeShared<FMyPostProcessFactory>();
+    RenderMgr->RegisterPostProcessFactory(TEXT("MyPostProcess"), MyPPFactory);
+    
+    // 注册自定义 warp 策略
+    TSharedPtr<IDisplayClusterWarpPolicyFactory> MyWarpFactory = 
+        MakeShared<FMyWarpPolicyFactory>();
+    RenderMgr->RegisterWarpPolicyFactory(TEXT("MyWarp"), MyWarpFactory);
+}
 ```
 
 ## Demo 示例
 
-以下是一个最小的 nDisplay 集群事件发送与接收示例：
-
-### MyDisplayClusterExample.h
+以下是一个完整的自定义同步状态组件示例，用于在集群中同步一个 float 值：
 
 ```cpp
+// MyClusterSyncComponent.h
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Cluster/IDisplayClusterClusterManager.h"
-#include "MyDisplayClusterExample.generated.h"
+#include "Cluster/CustomStates/DisplayClusterCustomStateDistributed.h"
+#include "MyClusterSyncComponent.generated.h"
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UMyDisplayClusterExample : public UActorComponent
+class MYPROJECT_API UMyClusterSyncComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
+    UMyClusterSyncComponent();
+
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+    virtual void TickComponent(float DeltaTime, ELevelTick TickType,
+        FActorComponentTickFunction* ThisTickFunction) override;
 
-    UFUNCTION(BlueprintCallable)
-    void SendTestEvent(const FString& Message);
+    /** 设置要同步的值 */
+    UFUNCTION(BlueprintCallable, Category = "Cluster Sync")
+    void SetSyncedValue(float InValue);
+
+    /** 获取当前同步值 */
+    UFUNCTION(BlueprintCallable, Category = "Cluster Sync")
+    float GetSyncedValue() const;
+
+    /** 获取主节点的同步值 */
+    UFUNCTION(BlueprintCallable, Category = "Cluster Sync")
+    float GetPrimaryNodeValue() const;
 
 private:
-    // JSON 事件监听委托
-    FOnClusterEventJsonListener JsonEventListener;
-
-    // 二进制事件监听委托
-    FOnClusterEventBinaryListener BinaryEventListener;
-
-    void OnJsonEventReceived(const FDisplayClusterClusterEventJson& Event);
-    void OnBinaryEventReceived(const FDisplayClusterClusterEventBinary& Event);
+    TSharedPtr<TDistributedCustomState<float>> SyncState;
 };
 ```
 
-### MyDisplayClusterExample.cpp
-
 ```cpp
-#include "MyDisplayClusterExample.h"
+// MyClusterSyncComponent.cpp
+#include "MyClusterSyncComponent.h"
 #include "IDisplayCluster.h"
+#include "Cluster/IDisplayClusterClusterManager.h"
 
-void UMyDisplayClusterExample::BeginPlay()
+UMyClusterSyncComponent::UMyClusterSyncComponent()
+{
+    PrimaryComponentTick.bCanEverTick = true;
+}
+
+void UMyClusterSyncComponent::BeginPlay()
 {
     Super::BeginPlay();
 
+    // 确保 nDisplay 已加载
     if (!IDisplayCluster::IsAvailable())
     {
+        UE_LOG(LogTemp, Warning, TEXT("nDisplay not available, sync disabled"));
         return;
     }
 
-    IDisplayClusterClusterManager* ClusterMgr = IDisplayCluster::Get().GetClusterMgr();
-    if (!ClusterMgr)
+    // 创建分布式状态
+    SyncState = TDistributedCustomState<float>::Create(
+        FName("MySyncedFloat"), 0.0f);
+
+    if (SyncState)
     {
-        return;
+        UE_LOG(LogTemp, Log, TEXT("Cluster sync state created successfully"));
     }
-
-    // 注册事件监听
-    JsonEventListener.BindUObject(this, &UMyDisplayClusterExample::OnJsonEventReceived);
-    ClusterMgr->AddClusterEventJsonListener(JsonEventListener);
-
-    BinaryEventListener.BindUObject(this, &UMyDisplayClusterExample::OnBinaryEventReceived);
-    ClusterMgr->AddClusterEventBinaryListener(BinaryEventListener);
-
-    UE_LOG(LogTemp, Log, TEXT("nDisplay cluster event listeners registered. Node: %s, Role: %s"),
-        *ClusterMgr->GetNodeId(),
-        *UEnum::GetValueAsString(ClusterMgr->GetClusterRole()));
 }
 
-void UMyDisplayClusterExample::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void UMyClusterSyncComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    if (IDisplayCluster::IsAvailable())
-    {
-        IDisplayClusterClusterManager* ClusterMgr = IDisplayCluster::Get().GetClusterMgr();
-        if (ClusterMgr)
-        {
-            ClusterMgr->RemoveClusterEventJsonListener(JsonEventListener);
-            ClusterMgr->RemoveClusterEventBinaryListener(BinaryEventListener);
-        }
-    }
-
+    SyncState.Reset();
     Super::EndPlay(EndPlayReason);
 }
 
-void UMyDisplayClusterExample::SendTestEvent(const FString& Message)
+void UMyClusterSyncComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+    FActorComponentTickFunction* ThisTickFunction)
 {
-    if (!IDisplayCluster::IsAvailable())
+    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+    if (!SyncState) return;
+
+    // 在主节点上更新值（例如基于游戏逻辑）
+    IDisplayClusterClusterManager* ClusterMgr = 
+        IDisplayCluster::Get().GetClusterMgr();
+    
+    if (ClusterMgr && ClusterMgr->IsPrimary())
     {
-        return;
-    }
-
-    IDisplayClusterClusterManager* ClusterMgr = IDisplayCluster::Get().GetClusterMgr();
-    if (!ClusterMgr)
-    {
-        return;
-    }
-
-    FDisplayClusterClusterEventJson Event;
-    Event.Category = TEXT("Test");
-    Event.Type = TEXT("Message");
-    Event.Parameters.Add(TEXT("NodeId"), ClusterMgr->GetNodeId());
-    Event.Parameters.Add(TEXT("Message"), Message);
-    Event.bPrimaryOnly = false; // 广播到所有节点
-
-    ClusterMgr->EmitClusterEventJson(Event, false);
-
-    UE_LOG(LogTemp, Log, TEXT("Sent cluster event: %s"), *Message);
-}
-
-void UMyDisplayClusterExample::OnJsonEventReceived(const FDisplayClusterClusterEventJson& Event)
-{
-    if (Event.Category == TEXT("Test") && Event.Type == TEXT("Message"))
-    {
-        FString SenderNodeId = Event.Parameters.FindRef(TEXT("NodeId"));
-        FString ReceivedMessage = Event.Parameters.FindRef(TEXT("Message"));
-        UE_LOG(LogTemp, Log, TEXT("Received cluster event from %s: %s"),
-            *SenderNodeId, *ReceivedMessage);
+        float NewValue = SyncState->GetData() + DeltaTime;
+        SyncState->SetData(NewValue);
     }
 }
 
-void UMyDisplayClusterExample::OnBinaryEventReceived(const FDisplayClusterClusterEventBinary& Event)
+void UMyClusterSyncComponent::SetSyncedValue(float InValue)
 {
-    // 处理二进制事件
+    if (SyncState)
+    {
+        SyncState->SetData(InValue);
+    }
+}
+
+float UMyClusterSyncComponent::GetSyncedValue() const
+{
+    return SyncState ? SyncState->GetData() : 0.0f;
+}
+
+float UMyClusterSyncComponent::GetPrimaryNodeValue() const
+{
+    if (!SyncState) return 0.0f;
+
+    IDisplayClusterClusterManager* ClusterMgr = 
+        IDisplayCluster::Get().GetClusterMgr();
+    
+    if (ClusterMgr)
+    {
+        return SyncState->GetData(FName(*ClusterMgr->GetPrimaryNodeId()));
+    }
+    
+    return SyncState->GetData();
 }
 ```
 
 ## 模块依赖
 
-nDisplay 插件内部模块众多，模块间依赖复杂。以下是使用该插件时需要关注的关键外部依赖：
+nDisplay 是一个大型插件，其自身模块众多。以下是使用 nDisplay 时你的项目模块需要的**特殊依赖**：
 
 | 模块 | 用途 |
 |---|---|
-| `D3D12RHI` | Direct3D 12 渲染硬件接口（DisplayClusterMedia、SharedMemoryMedia 依赖） |
-| `MediaUtils` | 媒体框架工具（媒体输入输出支持） |
-| `MPCDI` | MPCDI 投影数据格式支持（可选） |
-| `OpenColorIO` | OCIO 色彩管理支持（可选） |
-| `MovieRenderPipeline` | 影片渲染管线集成（MoviePipeline 模块依赖） |
+| `DisplayCluster` | nDisplay 核心运行时，提供集群管理、渲染设备、视口管理等基础 API |
+| `DisplayClusterConfiguration` | 配置数据资产和配置类，用于定义集群拓扑、视口布局等 |
+| `DisplayClusterProjection` | 投影策略实现（简单投影、MPCDI、Mesh 投影等） |
+| `DisplayClusterWarp` | Warp/Blend 校正策略，用于几何变形和边缘融合 |
+| `DisplayClusterShaders` | nDisplay 专用着色器（ICVFX、WarpBlend、UV LightCard 等） |
+| `DisplayClusterColorGrading` | ICVFX 色彩分级支持 |
+| `DisplayClusterMedia` | 媒体输入输出集成（MediaCapture、MediaPlayer） |
+| `DisplayClusterMultiUser` | 多用户编辑支持 |
+| `DisplayClusterReplication` | 网络复制支持 |
+| `SharedMemoryMedia` | 基于共享内存的媒体传输，用于进程间帧数据传递 |
+| `DisplayClusterMoviePipeline` | Movie Render Queue 集成，支持多层 EXR 输出 |
+| `ScalableMPCDI` | 第三方 MPCDI 库（外部依赖） |
 
-> **注意**：该插件自身大量模块之间存在内部依赖。如仅使用基础集群功能，通常只需链接 `DisplayCluster` 和 `DisplayClusterConfiguration` 模块。
+> 无特殊依赖（仅标准 Core/Engine/Slate 等）——如果只使用蓝图 API，不需要额外引用这些模块。
 
 ## 维护状态
 
@@ -428,25 +459,26 @@ nDisplay 插件内部模块众多，模块间依赖复杂。以下是使用该�
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | MovieGraph 节点支持 EXR 多层输出 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | MoviePipeline 合并 WarpBlendAlpha 模式到 WarpBlend |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 拓扑感知相机命名和 MPCDI 着色器不透明 alpha |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 输出帧编码回退时尊重非默认 DisplayGamma 设置 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理小于视口尺寸时的闪烁问题 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | MovieGraph 支持 nDisplay 多层 EXR 输出 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并 WarpBlendAlpha 模式到 WarpBlend |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知摄影机命名及 MPCDI/ICVFX 着色器透明度问题 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 输出帧编码回退时支持非默认 DisplayGamma |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理尺寸小于视口尺寸时的闪烁问题 |
 
 ### 维护评价
 
-**活跃维护** ✅
+**活跃维护中**。nDisplay 是 Epic Games 虚拟制片（Virtual Production）战略的核心组件，自 2018 年创建以来持续获得大量功能性更新。最近的提交记录显示 2026 年仍在积极开发新功能（如 MovieGraph 多层 EXR 支持）并修复各类渲染问题。
 
-- **创建时间**：2018 年 6 月（约 8 年前），是 UE 企业级功能的核心组件
-- **更新频率**：极其活跃，每周都有多次功能性更新和 bug 修复
-- **维护团队**：Epic Games 核心团队持续维护
-- **已知问题**：插件默认关闭（`EnabledByDefault: false`），需手动启用；模块标记为 Runtime 但大量依赖 UnrealEd，说明混有编辑器功能
-- **已废弃 API**：UE 5.4 时大量 API 从 `IDisplayClusterBlueprintAPI` 迁移至 `UDisplayClusterBlueprintLib`，旧接口带有 deprecated 标记
-- **推荐使用**：如果你需要多 PC 集群渲染、ICVFX 虚拟制片或多投影仪场景，这是 UE5 中唯一且官方推荐的解决方案。非常成熟稳定，文档和社区资源丰富。
+关键特点：
+- **模块众多**（29 个模块），架构复杂但分工明确
+- 集群通信、故障转移、多视口渲染、ICVFX、WarpBlend 等子系统持续演进
+- 蓝图 API 从旧接口迁移到 `UDisplayClusterBlueprintLib`（5.4+），有大量 `UE_DEPRECATED` 标记
+- 与 Movie Render Queue、Media Framework、Remote Control 等系统深度集成
+- 支持 Windows 和 Linux 平台
+
+**强烈推荐使用**：如果你的项目涉及虚拟制片、LED 墙幕拍摄或任何需要多 PC 同步渲染的场景，nDisplay 是 UE5 中唯一的官方解决方案，且处于高度活跃的维护状态。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- 官方文档：[nDisplay Overview](https://docs.unrealengine.com/5.8/en-US/ndisplay-overview-in-unreal-engine/)（.uplugin 中未提供 DocsURL，链接为通用文档地址）
-- [nDisplay 配置参考](https://docs.unrealengine.com/5.8/en-US/ndisplay-config-file-reference-for-unreal-engine/)
+- 官方文档：https://docs.unrealengine.com/5.0/en-US/n-display-in-unreal-engine/（.uplugin 中未提供 DocsURL，请参考 Unreal 官方文档站）

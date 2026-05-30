@@ -4,260 +4,191 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 空间音频 |
+| 中文名 | 音频空间化 |
 | 分类 | Audio |
-| 默认启用 | ❌ 否 |
+| 默认启用 | ✅ 是 |
 | 包含内容 | ❌ 无 |
 | 模块 | `Spatialization` (Runtime), `SpatializationEditor` (Editor) |
 | 实验性 | 否 |
 | 创建时间 | 2019-01-25 |
-| 年龄标签 | 👴 老古董（约 6 年） |
+| 年龄标签 | 👴 老古董（约 7 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/Spatialization) | |
 
 ## 用途
 
-此插件为虚幻引擎提供了一套基础的音频空间化解决方案。其核心功能是实现了一种基于**双耳时间差（Interaural Time Difference, ITD）** 和**双耳声级差（Interaural Level Difference, ILD）** 的简单立体声声像（Panning）算法。它通过为每个声源创建延迟线和增益调节器，模拟声音到达左右耳的时间和强度差异，从而在立体声输出中创造声音的方向感和距离感。插件主要面向需要基础空间音频效果，但无需复杂头部相关传输函数（HRTF）处理的项目。
+该插件提供了一套基础的音频空间化解决方案，核心是实现了简单的 **ITD (Interaural Time Difference，到达时间差)** 空间化算法。它通过为左右声道添加不同的延迟和增益差异，来模拟声音在人头部两侧到达耳朵的时间差和强度差，从而让玩家感知声音的方位。它解决的是在UE项目中快速实现基本3D音频定位的问题，适用于对空间化精度要求不高的场景。
 
 ## 使用场景
 
-- 你的游戏项目需要基础的立体声空间音频效果来增强沉浸感，例如简单的左右声场定位。
-- 你正在开发一个原型或小型项目，需要快速集成空间音频功能，而无需处理复杂的HRTF滤波或物理声学模拟。
-- 你希望为游戏中的UI音效、环境音效或非关键战斗音效提供方向感，但对精确的3D空间化要求不高。
-- 你的目标平台主要使用立体声输出（如耳机或双声道扬声器），而非多声道环绕声系统。
+- 你的项目只需要简单的左右声道声像（Panning）定位，而不需要复杂的HRTF头部相关传输函数。
+- 你正在开发一个性能受限（如移动端）的游戏，需要轻量级的音频空间化方案。
+- 你需要快速原型化一个支持基本3D音频的游戏，而不需要依赖外部插件。
 
 ## 蓝图用法
 
-此插件的大部分核心功能是通过C++接口和工厂模式暴露的，**没有设计为蓝图友好**。经过源码分析，未发现任何标记为 `UFUNCTION(BlueprintCallable)` 或 `UPROPERTY(BlueprintReadWrite)` 的函数或属性。空间化器的创建、配置和生命周期管理主要在C++层面进行。
+### 核心节点
 
-唯一的蓝图可配置项来自 `UITDSpatializationSourceSettings` 类，它继承自 `USpatializationPluginSourceSettingsBase`，允许在编辑器中为特定音频组件调整空间化参数。
-
-### 可配置属性（在音频组件上）
-
-| 属性 | 说明 | 所在类 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `bEnableILD` | 是否启用基于声级差（ILD）的声像控制。 | `UITDSpatializationSourceSettings` |
-| `PanningIntensityOverDistance` | 一个距离-强度曲线，控制声像效果随距离变化的强度（Y轴 0.0-1.0）。 | `UITDSpatializationSourceSettings` |
+| `bEnableILD` | 是否启用基于声强差（Interaural Level Difference）的声像调节。 | `UITDSpatializationSourceSettings` |
+| `PanningIntensityOverDistance` | 一条浮点曲线，用于根据声源距离（横轴）调整声像强度（纵轴，0.0-1.0）。 | `UITDSpatializationSourceSettings` |
 
-**配置说明**：这些属性通常需要在音频组件的 `Spatialization Settings` 或项目设置中进行调整。由于插件默认未启用，需要先通过代码或项目设置激活相关的空间化插件。
+### 使用示例（蓝图描述）
+
+1.  在你的音频组件（Audio Component）或声音衰减（Sound Attenuation）设置中，找到“空间化插件”（Spatialization Plugin）选项。
+2.  从下拉菜单中选择 **“Simple ITD”** 空间化插件。
+3.  为了进一步配置该声源的空间化行为，可以创建一个 `UITDSpatializationSourceSettings` 资产。
+4.  在该设置资产中，勾选 **“启用电平声像”（Enable Level Panning）** 来同时考虑响度差异。
+5.  调整 **“随距离变化的声像强度”（PanningIntensityOverDistance）** 曲线，例如，你可以让声音在近距离时声像效果更明显，在远距离时效果减弱，模拟距离对声音方位感的影响。
 
 ## C++ 用法
-
-### 核心概念
-
-插件通过两个关键接口工作：
-1.  `IAudioSpatialization`: 空间化算法的具体实现（例如 `FITDSpatialization`）。
-2.  `IAudioSpatializationFactory`: 用于创建空间化算法实例的工厂（例如 `FITDSpatializationPluginFactory`）。
-
-引擎通过工厂查找并实例化合适的空间化器。
 
 ### 头文件引入
 
 ```cpp
-#include "ITDSpatializer.h"
-#include "ITDSpatializationSourceSettings.h"
 #include "SpatializationModule.h"
+#include "ITDSpatializer.h"
 ```
 
-### 基本用法：实现自定义空间化器
+### 基本用法
 
-以下代码展示了如何创建一个基于该插件框架的自定义空间化器。核心是继承 `IAudioSpatialization` 接口并实现其方法。
-
-**来源文件**: `Public/ITDSpatializer.h`
-
+该插件主要通过UE的音频插件系统工作。通常在`IAudioSpatialization`接口的生命周期内使用。
 ```cpp
-// MyCustomSpatializer.h
-#pragma once
+// 1. 初始化空间化插件实例（通常由音频设备管理，但展示了初始化流程）
+FITDSpatialization Spatializer;
+FAudioPluginInitializationParams InitParams; // 需要填充设备、采样率等信息
+Spatializer.Initialize(InitParams);
 
-#include "IAudioSpatialization.h"
+// 2. 当音频源开始播放时，通知插件
+uint32 SourceId = 123;
+FName ComponentName = TEXT("MyAudioComponent");
+Spatializer.OnInitSource(SourceId, ComponentName, nullptr); // Settings可传nullptr使用默认
 
-class FMyCustomSpatializer : public IAudioSpatialization
-{
-public:
-    FMyCustomSpatializer() = default;
-    virtual ~FMyCustomSpatializer() = default;
+// 3. 在音频渲染线程中处理音频数据
+FAudioPluginSourceInputData InputData;
+// ... 填充 InputData 的音频样本、位置等信息 ...
+FAudioPluginSourceOutputData OutputData;
+// ... 准备 OutputData 的缓冲区 ...
+Spatializer.ProcessAudio(InputData, OutputData);
+// 处理后的立体声数据在 OutputData 中。
 
-    // IAudioSpatialization interface
-    virtual void Initialize(const FAudioPluginInitializationParams InitializationParams) override
-    {
-        // 初始化你的资源，如采样率、缓冲区大小等
-        UE_LOG(LogAudio, Log, TEXT("Custom Spatializer Initialized. Sample Rate: %f, Num Sources: %d"),
-            InitializationParams.SampleRate, InitializationParams.NumSources);
-    }
+// 4. 当音频源停止时释放
+Spatializer.OnReleaseSource(SourceId);
 
-    virtual void Shutdown() override
-    {
-        // 清理资源
-    }
-
-    virtual void OnInitSource(const uint32 SourceId, const FName& AudioComponentUserId, USpatializationPluginSourceSettingsBase* InSettings) override
-    {
-        // 当一个音频源开始播放时调用，可以在这里为其初始化特定数据
-    }
-
-    virtual void OnReleaseSource(const uint32 SourceId) override
-    {
-        // 当一个音频源停止播放时调用，清理其特定数据
-    }
-
-    virtual void ProcessAudio(const FAudioPluginSourceInputData& InputData, FAudioPluginSourceOutputData& OutputData) override
-    {
-        // 核心处理函数，将单声道输入混合到立体声输出
-        // InputData包含输入音频数据、声源位置、监听器位置等
-        // OutputData包含输出缓冲区（通常是左声道和右声道）
-        
-        // 简单示例：直接将单声道输入复制到左右声道（无空间化）
-        if (InputData.NumInputChannels == 1 && OutputData.NumOutputChannels == 2)
-        {
-            const float* InputAudio = InputData.AudioBuffer->GetData();
-            float* LeftOutput = OutputData.AudioBuffer->GetData();
-            float* RightOutput = LeftOutput + InputData.AudioBuffer->Num(); // 假设输出缓冲区是交错或连续排列的
-
-            for (int32 i = 0; i < InputData.AudioBuffer->Num(); ++i)
-            {
-                LeftOutput[i] = InputAudio[i];  // 实际应加入空间化计算
-                RightOutput[i] = InputAudio[i]; // 实际应加入空间化计算
-            }
-        }
-    }
-};
+// 5. 关闭插件
+Spatializer.Shutdown();
 ```
+*(基于 `FITDSpatialization` 类的接口实现推断)*
 
-### 进阶用法：注册自定义空间化器工厂
+### 进阶用法
 
-要让引擎识别并使用你的自定义空间化器，你需要创建一个对应的工厂类，并通过模块的 `StartupModule` 函数注册它。
-
-**来源文件**: `Public/SpatializationModule.h`, `Public/ITDSpatializer.h`
-
+可以使用自定义的 `UITDSpatializationSourceSettings` 来为不同的声源配置独特的空间化行为。
 ```cpp
-// MyCustomSpatializerFactory.h
-#pragma once
+// 假设你有一个 UPROPERTY 指向设置对象
+UPROPERTY(EditAnywhere, Category = "Audio")
+UITDSpatializationSourceSettings* MySpatialSettings;
 
-#include "IAudioSpatialization.h"
+// 当初始化音频源时，将此设置传递给插件
+Spatializer.OnInitSource(SourceId, ComponentName, MySpatialSettings);
 
-class FMyCustomSpatializerFactory : public IAudioSpatializationFactory
+// 也可以动态修改设置中的曲线，这会影响后续 ProcessAudio 的计算
+FRuntimeFloatCurve NewCurve;
+// ... 构建你自己的距离-声像强度曲线 ...
+if (MySpatialSettings)
 {
-public:
-    virtual FString GetDisplayName() override
-    {
-        return TEXT("My Custom Spatializer");
-    }
-
-    virtual bool SupportsPlatform(const FString& PlatformName) override
-    {
-        return true; // 或根据平台进行过滤
-    }
-
-    virtual TAudioSpatializationPtr CreateNewSpatializationPlugin(FAudioDevice* OwningDevice) override
-    {
-        return MakeShared<FMyCustomSpatializer, ESPMode::ThreadSafe>();
-    }
-
-    virtual int32 GetMaxSupportedChannels() override
-    {
-        return 2; // 支持立体声输出
-    }
-};
-
-// 在你的游戏模块或音频模块的StartupModule中注册工厂
-void FMyGameModule::StartupModule()
-{
-    // ... 其他初始化 ...
-    
-    if (FSpatializationModule* SpatializationModule = FModuleManager::GetModulePtr<FSpatializationModule>(“Spatialization”))
-    {
-        // SpatializationModule 可能提供了注册接口，或者你需要直接与音频设备交互
-        // 具体注册方式取决于引擎版本和插件设计，通常需要获取音频设备并注册工厂。
-        // 以下是伪代码逻辑：
-        // if (GEngine && GEngine->GetMainAudioDevice())
-        // {
-        //     GEngine->GetMainAudioDevice()->RegisterSpatializationPluginFactory(MakeShared<FMyCustomSpatializerFactory>());
-        // }
-    }
+    MySpatialSettings->PanningIntensityOverDistance = NewCurve;
 }
 ```
+*(基于 `ITDSpatializationSourceSettings.h` 和 `OnInitSource` 接口推断)*
 
 ## Demo 示例
 
-一个最小化但完整的自定义空间化器实现示例。
-
-**MySimpleSpatializer.h**
+一个最小的演示如何创建并使用 `FITDSpatialization` 类的C++示例。
 ```cpp
+// MinimalSpatializationDemo.h
 #pragma once
+#include "CoreMinimal.h"
 
-#include "IAudioSpatialization.h"
-
-class FMySimpleSpatializer : public IAudioSpatialization
+class FMinimalSpatializationDemo
 {
 public:
-    virtual void Initialize(const FAudioPluginInitializationParams InitializationParams) override;
-    virtual void Shutdown() override;
-    virtual void OnInitSource(const uint32 SourceId, const FName& AudioComponentUserId, USpatializationPluginSourceSettingsBase* InSettings) override;
-    virtual void OnReleaseSource(const uint32 SourceId) override;
-    virtual void ProcessAudio(const FAudioPluginSourceInputData& InputData, FAudioPluginSourceOutputData& OutputData) override;
+    void Initialize();
+    void ProcessSomeAudio(const float* InputSamples, int32 NumInputSamples, float* OutputLeft, float* OutputRight);
+    void Shutdown();
+
+private:
+    // 我们使用的空间化插件实例
+    TUniquePtr<class FITDSpatialization> SpatializationPlugin;
+    uint32 DemoSourceId = 0;
 };
 ```
 
-**MySimpleSpatializer.cpp**
 ```cpp
-#include "MySimpleSpatializer.h"
+// MinimalSpatializationDemo.cpp
+#include "MinimalSpatializationDemo.h"
+#include "ITDSpatializer.h" // 包含FITDSpatialization定义
 
-void FMySimpleSpatializer::Initialize(const FAudioPluginInitializationParams InitializationParams)
+void FMinimalSpatializationDemo::Initialize()
 {
-    // 初始化
+    // 创建空间化实例
+    SpatializationPlugin = MakeUnique<FITDSpatialization>();
+
+    // 初始化参数 (在实际音频引擎中，这些参数由系统提供)
+    FAudioPluginInitializationParams InitParams;
+    InitParams.AudioDevicePtr = nullptr; // 实际需要一个有效的音频设备指针
+    InitParams.SampleRate = 48000.0f;
+    InitParams.NumSources = 1;
+    InitParams.AudioMixerModuleName = TEXT("AudioMixer"); // 通常有固定值
+
+    SpatializationPlugin->Initialize(InitParams);
+
+    // 初始化一个虚拟音频源
+    DemoSourceId = 1;
+    SpatializationPlugin->OnInitSource(DemoSourceId, FName(TEXT("DemoComponent")), nullptr);
 }
 
-void FMySimpleSpatializer::Shutdown()
+void FMinimalSpatializationDemo::ProcessSomeAudio(const float* InputSamples, int32 NumInputSamples, float* OutputLeft, float* OutputRight)
 {
-    // 清理
+    if (!SpatializationPlugin) return;
+
+    // 准备输入输出数据结构 (这是一个高度简化的示例)
+    FAudioPluginSourceInputData InputData;
+    InputData.SourceId = DemoSourceId;
+    InputData.AudioData = InputSamples; // 单声道输入
+    InputData.NumChannels = 1;
+    InputData.NumFrames = NumInputSamples;
+    // InputData.Position 需要设置声源的世界坐标
+
+    FAudioPluginSourceOutputData OutputData;
+    // 为立体声输出分配缓冲区
+    TArray<float> OutputBuffer;
+    OutputBuffer.SetNumUninitialized(NumInputSamples * 2); // 左+右
+    OutputData.AudioData = OutputBuffer.GetData();
+    OutputData.NumChannels = 2;
+    OutputData.NumFrames = NumInputSamples;
+
+    // 调用处理
+    SpatializationPlugin->ProcessAudio(InputData, OutputData);
+
+    // 将结果拷贝出来 (实际应用中，OutputData的缓冲区通常直接混音到主输出)
+    FMemory::Memcpy(OutputLeft, OutputData.AudioData, sizeof(float) * NumInputSamples);
+    FMemory::Memcpy(OutputRight, OutputData.AudioData + NumInputSamples, sizeof(float) * NumInputSamples);
 }
 
-void FMySimpleSpatializer::OnInitSource(const uint32 SourceId, const FName& AudioComponentUserId, USpatializationPluginSourceSettingsBase* InSettings)
+void FMinimalSpatializationDemo::Shutdown()
 {
-    // 初始化声源
-}
-
-void FMySimpleSpatializer::OnReleaseSource(const uint32 SourceId)
-{
-    // 释放声源
-}
-
-void FMySimpleSpatializer::ProcessAudio(const FAudioPluginSourceInputData& InputData, FAudioPluginSourceOutputData& OutputData)
-{
-    // 一个极其简单的声像控制示例：基于声源的X坐标计算左右声道增益
-    if (InputData.NumInputChannels < 1 || OutputData.NumOutputChannels < 2 || !InputData.AudioBuffer || !OutputData.AudioBuffer)
+    if (SpatializationPlugin)
     {
-        return;
-    }
-
-    const FVector& SourcePosition = InputData.SpatializationParams.Position;
-    // 归一化X坐标到[-1, 1]范围（假设声场宽度为200单位）
-    const float Pan = FMath::Clamp(SourcePosition.X / 100.0f, -1.0f, 1.0f);
-
-    // 计算左右声道增益（简单线性平移）
-    const float LeftGain = FMath::Clamp(0.5f - Pan * 0.5f, 0.0f, 1.0f);
-    const float RightGain = FMath::Clamp(0.5f + Pan * 0.5f, 0.0f, 1.0f);
-
-    const float* InputDataPtr = InputData.AudioBuffer->GetData();
-    float* OutputBufferPtr = OutputData.AudioBuffer->GetData();
-    const int32 NumSamples = InputData.AudioBuffer->Num();
-
-    // 假设输出缓冲区是交错存储的 [L0, R0, L1, R1, ...]
-    for (int32 i = 0; i < NumSamples; ++i)
-    {
-        const float Sample = InputDataPtr[i];
-        OutputBufferPtr[i * 2] = Sample * LeftGain;      // 左声道
-        OutputBufferPtr[i * 2 + 1] = Sample * RightGain; // 右声道
+        SpatializationPlugin->OnReleaseSource(DemoSourceId);
+        SpatializationPlugin->Shutdown();
+        SpatializationPlugin.Reset();
     }
 }
 ```
 
 ## 模块依赖
 
-从 Build.cs 分析，依赖非常基础。
-
-| 模块 | 用途 |
-|---|---|
-| 无特殊依赖（仅标准 Core/Engine/Slate 等） | `Spatialization` 模块仅依赖核心引擎模块。`SpatializationEditor` 模块额外依赖 `UnrealEd`。 |
+无特殊依赖（仅标准 Core/Engine/AudioMixer 等）。
 
 ## 维护状态
 
@@ -265,21 +196,17 @@ void FMySimpleSpatializer::ProcessAudio(const FAudioPluginSourceInputData& Input
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-04-14 | `01c9ce5d` | [ContentBrowser] New Add Menu Audio Menu | 本次改动涉及内容浏览器菜单，与本插件核心功能无关。 |
-| 2025-06-26 | `a2e75189` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. (Applie... | 代码生成宏的现代化更新，属于引擎通用代码维护，未改变插件功能。 |
-| 2025-04-23 | `93a13080` | Used LyraGame build target to find and convert all files to have dllstorage on methods/staticvar ins... | 进行DLL导出符号标准化，属于底层构建和二进制兼容性维护，未改变功能。 |
+| 2026-04-14 | `01c9ce5d` | [ContentBrowser] New Add Menu Audio Menu | 内容浏览器的“添加”菜单中音频相关菜单项更新，插件可能被关联。 |
+| 2025-06-26 | `a2e75189` | Added UE_INLINE_GENERATED_CPP_BY_NAME to source files that has corresponding .gen.cpp files. (Applie… | 为生成的代码文件添加内联宏，属于引擎底层代码现代化维护。 |
+| 2025-04-23 | `93a13080` | Used LyraGame build target to find and convert all files to have dllstorage on methods/staticvar ins… | 进行DLL导出符号规范化，属于引擎构建系统和代码规范维护。 |
+| 2023-01-16 | `bbc37aa2` | [Engine/Plugins] | 引擎插件目录的常规提交，具体内容不明确。 |
+| 2022-10-21 | `610c4676` | Update vendor links for built-in plugins to use secure protocol. | 更新插件内链接至HTTPS协议，属于安全合规性维护。 |
 
 ### 维护评价
 
-该插件**创建于2019年**，已有约6年历史。从最近的提交记录看，近期的更新（2025-2026年）均为引擎通用的代码维护和现代化工作（如宏更新、符号导出），**并未对插件自身的核心空间化功能进行实质性更新或改进**。最后一次有意义的功能性提交要追溯到更早之前。
-
-**评价**：
-- **维护状态**：**维护不活跃**。该插件的核心功能在近几年没有演进，似乎处于“无人管理”的状态。
-- **推荐程度**：**谨慎使用**。它提供了一个可用且基础的立体声空间化方案，适合学习原理或用于对音频质量要求不高的简单原型项目。对于正式或商业项目，尤其是需要更高质量空间音频效果（如HRTF、遮挡、混响等）的项目，**强烈建议使用更新的、更活跃维护的音频空间化插件或解决方案**。
-- **已知限制**：功能非常基础，仅支持双声道输出，算法简单，且缺乏现代空间音频特性。
+该插件创建于2019年，已有超过7年历史。从近期提交记录看，2025年仍有与引擎构建系统相关的底层维护更新，表明它作为引擎内置基础组件仍被纳入维护范围。然而，这些更新主要涉及代码规范和构建系统，而非插件功能本身。其核心空间化算法（ITD）自创建以来似乎没有重大功能更新或增强。鉴于它是引擎官方提供的基础解决方案，稳定性和兼容性有保障，但功能相对简单和古老。**推荐用于需要快速实现基本、轻量级空间化效果的项目**，但对于高质量的3D音频需求，建议评估更现代的解决方案。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/Spatialization)
-- [官方文档]() (无)
-- [测试用例]() (在提供的源码信息中未发现明确的测试文件)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/Spatialization/Tests) （如果存在）

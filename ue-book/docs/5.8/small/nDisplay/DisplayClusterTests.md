@@ -4,10 +4,10 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 多屏/集群渲染 |
+| 中文名 | nDisplay 集群渲染 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产、蓝图） |
+| 包含内容 | ✅ 有（配置资产） |
 | 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
@@ -16,186 +16,157 @@
 
 ## 用途
 
-nDisplay 是一个用于实现**同步集群渲染**的高级框架。它解决的核心问题是：如何让多台计算机（PC）协同工作，将 Unreal Engine 的渲染输出**精确同步**并分发到多个显示器、投影仪或 LED 墙上，从而构建一个统一的、高分辨率的、沉浸式的视觉环境。
+nDisplay 是 Unreal Engine 用于实现多 PC 同步集群渲染的核心插件。它解决的核心问题是：如何让多台计算机（节点）协同工作，将一个 UE 场景拆分并同步渲染到由多块屏幕组成的复杂显示系统上（例如大型 LED 墙、CAVE 洞穴系统、穹顶投影等）。通过该插件，可以实现：
+* **单目 (Mono)** 或 **立体 (Stereo)** 渲染。
+* **帧同步**：确保所有渲染节点在完全相同的时间点渲染并输出画面，消除撕裂和延迟。
+* **视锥体拆分与管理**：根据物理屏幕的布局和投影方式，为每个渲染节点自动计算和应用正确的相机视锥体。
+* **复杂的几何与色彩校正**：处理投影仪或屏幕带来的几何变形（Warping）和色彩不均（Blending）问题。
 
-其主要应用场景包括：
-- **虚拟制片 (Virtual Production)**：驱动 LED 墙（如 The Volume），将 CG 环境实时投射到物理舞台上，供演员和摄影机实时交互。
-- **多通道/CAVE 环境**：构建由多个投影平面（如三面墙、地板、天花板）组成的沉浸式房间。
-- **大型主题公园景点**：为骑乘设施、球幕影院等提供同步的多视口渲染。
-- **专业 AV 与模拟**：用于飞行模拟器、驾驶模拟器、大型指挥控制中心等需要高保真和同步视觉的场合。
-
-它通过一个中心化的**集群配置**来定义整个渲染拓扑，包括哪些节点（PC）负责渲染哪些视口，以及视口之间如何拼接和变形。每个节点运行一个 UE 实例，通过高速网络进行通信和帧同步，确保所有画面在时间上完全一致。
-
-**注意**：此插件默认未启用 (`EnabledByDefault: false`)，需要在项目设置中手动启用。
+简而言之，它是构建大规模、沉浸式视觉体验的底层技术基础。
 
 ## 使用场景
 
-- 你在为电影拍摄构建一个实时 LED 墙虚拟环境 → 使用 nDisplay 来配置墙的拓扑、投影和色彩管理。
-- 你需要为一个科学可视化项目构建一个四面 CAVE 洞穴系统 → 使用 nDisplay 定义四个投影通道及其几何关系。
-- 你正在开发一个大型游乐场的 360 度球幕影院体验 → 使用 nDisplay 进行多机同步渲染和边缘融合。
-- 你的需求是让多台 PC 同步渲染同一个场景，以支持超高清或超高性能渲染 → 使用 nDisplay 作为底层同步和分发框架。
+* **虚拟制片 (Virtual Production)**：在配备大型 LED 屏的舞台上，使用 nDisplay 将虚拟环境实时渲染到 LED 墙和天花板上，为演员提供逼真的背景，并实现前景元素的实时合成。
+* **沉浸式显示与仿真**：构建 CAVE (Cave Automatic Virtual Environment) 系统、穹顶影院、多通道投影驾驶舱模拟器等，提供环绕式的视觉体验。
+* **主题公园与大型活动**：为游乐设施、展览馆、音乐会等打造由数百块屏幕组成的巨型显示墙。
+* **专业级可视化**：用于汽车设计、建筑漫游、科学数据可视化等领域，需要高分辨率、高帧率多屏输出的场景。
 
 ## 蓝图用法
 
-由于 nDisplay 主要是一个配置和管理系统，其核心蓝图交互围绕**配置资产**和**运行时控制**。基于测试工具和典型用法，可以推断以下核心功能：
-
-### 核心节点
-
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `Create Display Cluster Asset` | 创建一个新的 nDisplay 配置蓝图资产 | `UDisplayClusterBlueprint` (通过工厂) |
-| `Add Cluster Node` | 向集群配置中添加一个代表物理 PC 的节点 | `UDisplayClusterConfigurationCluster` |
-| `Add Viewport` | 向一个集群节点添加一个渲染视口（对应一个输出显示器） | `UDisplayClusterConfigurationClusterNode` |
-| 各种属性设置 | 配置视口的尺寸、投影矩阵、变形网格等 | `UDisplayClusterConfigurationViewport` 及其子对象 |
-
-### 使用示例（蓝图描述）
-
-1.  **创建配置资产**：在内容浏览器中右键，选择创建 `Display Cluster` 蓝图资产。
-2.  **编辑集群拓扑**：打开该蓝图，进入专用的 nDisplay 配置编辑器。在“集群”面板中，可以添加/删除代表每台渲染 PC 的“集群节点”。
-3.  **配置视口**：选中一个集群节点，为其添加“视口”。在视口属性中设置输出显示器、分辨率、投影方式（如平面、圆柱、网格）。
-4.  **分配相机**：将场景中的相机（通常是一个 `DisplayClusterRootActor` 或普通 `CameraActor`）分配给特定的视口。
-5.  **启动集群**：在编辑器或通过命令行，使用 `-dc_cluster` 等参数启动多个 UE 实例，它们会自动读取配置并开始同步渲染。
+nDisplay 的核心运行时逻辑和配置主要通过 C++ 和其专用的配置资产 (`UDisplayClusterBlueprint`) 进行管理。**当前分析的模块 `DisplayClusterTests` 是一个内部测试模块，不包含公开的蓝图可调用函数或属性。** 要使用 nDisplay 的功能，通常通过其配置资产和编辑器工具进行设置，而非直接调用蓝图节点。更高级的蓝图集成（如通过 Remote Control 等）可能存在于其他关联模块中。
 
 ## C++ 用法
 
-虽然 nDisplay 的主要使用场景通过编辑器配置和蓝图完成，但其底层 API 可用于程序化控制和扩展。测试模块 `DisplayClusterTests` 展示了如何程序化创建和修改配置资产。
+`DisplayClusterTests` 模块提供了一套用于单元测试和功能测试的工具函数，展示了如何以编程方式与 nDisplay 的配置系统交互。虽然这些是测试工具，但它们揭示了操作 nDisplay 配置对象的 C++ API 核心模式。
 
 ### 头文件引入
 
 ```cpp
-#include "DisplayClusterConfiguration/Public/DisplayClusterConfigurationTypes.h"
-#include "DisplayCluster/Public/DisplayClusterBlueprint.h"
-// 注意：对于测试工具，需要引入测试模块的头文件
-#include "DisplayClusterTests/Private/DisplayClusterTestUtils.h"
+#include "DisplayClusterTestUtils.h"
 ```
 
-### 基本用法（程序化创建配置）
+### 基本用法
 
-以下示例演示了如何使用测试工具函数创建一个基本的 nDisplay 配置资产。
-*来源：基于 `DisplayClusterTestUtils.h` 中的函数说明推导。*
+以下代码展示了如何使用测试工具创建一个 nDisplay 配置资产并为其添加集群节点。这反映了通过代码动态构建或修改 nDisplay 配置的基本流程。
+**来源文件：`Source/DisplayClusterTests/Private/DisplayClusterTestUtils.h`**
 
 ```cpp
-// 假设在某个 Editor 模块或自定义工具中
-#include "DisplayClusterTestUtils.h"
-// 需要链接 DisplayClusterTests 模块 (仅用于开发/测试)
-
-// 1. 创建一个新的 nDisplay 资产
+// 创建一个新的 nDisplay 配置资产
 UDisplayClusterBlueprint* MyClusterAsset = DisplayClusterTestUtils::CreateDisplayClusterAsset();
-if (!MyClusterAsset)
-{
-    UE_LOG(LogTemp, Error, TEXT("Failed to create nDisplay asset"));
-    return;
-}
 
-// 2. 获取资产的集群根配置
+// 获取资产中的默认集群配置
 UDisplayClusterConfigurationCluster* ClusterRoot = MyClusterAsset->GetCluster();
-check(ClusterRoot);
 
-// 3. 添加一个集群节点 (代表一台 PC)
-const FString NodeName = TEXT("RenderNode01");
-UDisplayClusterConfigurationClusterNode* ClusterNode = DisplayClusterTestUtils::AddClusterNodeToCluster(
-    MyClusterAsset, ClusterRoot, NodeName
-);
+// 向集群中添加一个名为 “Node_01” 的渲染节点
+UDisplayClusterConfigurationClusterNode* NewNode = DisplayClusterTestUtils::AddClusterNodeToCluster(MyClusterAsset, ClusterRoot, TEXT(“Node_01”));
 
-// 4. 为该节点添加一个视口
-const FString ViewportName = TEXT("MainViewport");
-UDisplayClusterConfigurationViewport* Viewport = DisplayClusterTestUtils::AddViewportToClusterNode(
-    MyClusterAsset, ClusterNode, ViewportName
-);
+// 向这个新节点添加一个视口
+UDisplayClusterConfigurationViewport* NewViewport = DisplayClusterTestUtils::AddViewportToClusterNode(MyClusterAsset, NewNode, TEXT(“Viewport_01”));
 
-// 5. (可选) 通过属性接口修改视口参数
-TArray<FName> FieldNames = {GET_MEMBER_NAME_CHECKED(UDisplayClusterConfigurationViewport, ViewportRect)};
-FIntRect NewRect(0, 0, 1920, 1080);
-DisplayClusterTestUtils::SetBlueprintPropertyValue<FIntRect>(Viewport, MyClusterAsset, FieldNames, NewRect);
+// ... 进行其他配置或保存资产 ...
 
-// 6. 保存资产
-FAssetRegistryModule::AssetCreated(MyClusterAsset);
-MyClusterAsset->MarkPackageDirty();
+// 测试结束后清理资源
+DisplayClusterTestUtils::CleanUpAssetAndPackage(MyClusterAsset);
 ```
 
 ### 进阶用法
 
-更高级的用法涉及直接操作 `IDisplayClusterClusterManager`、`IDisplayClusterRenderManager` 等运行时接口，通常用于开发自定义的渲染节点、同步逻辑或插件。这些接口需要在运行时获取，通常通过 `IDisplayCluster::Get()` 来访问。
+测试工具还提供了操作配置对象属性的高级模板函数，这些函数模拟了在编辑器属性面板中修改属性的行为。
+**来源文件：`Source/DisplayClusterTests/Private/DisplayClusterTestUtils.h`**
+
+```cpp
+// 假设我们已经有一个节点配置对象 `NodeConfig`
+UDisplayClusterConfigurationClusterNode* NodeConfig = ...;
+
+// 定义要修改的属性路径：一个结构体成员内的字段
+TArray<FName> FieldNames;
+FieldNames.Add(TEXT(“ScreenInfo”)); // 第一个字段是“ScreenInfo”结构体
+FieldNames.Add(TEXT(“Width”));     // 第二个字段是该结构体内的“Width”
+
+// 通过属性系统设置一个浮点值 (例如屏幕宽度)
+float NewWidth = 3840.0f;
+bool bSuccess = DisplayClusterTestUtils::SetBlueprintPropertyValue(NodeConfig, nullptr, FieldNames, NewWidth);
+
+// 同样，获取一个线性颜色值（需要特殊处理）
+TArray<FName> ColorFieldNames;
+ColorFieldNames.Add(TEXT(“Color”));
+FLinearColor CurrentColor;
+if (DisplayClusterTestUtils::GetBlueprintPropertyValue(NodeConfig, ColorFieldNames, CurrentColor))
+{
+    // 使用 CurrentColor
+}
+```
 
 ## Demo 示例
 
-下面是一个最小化的 C++ 示例，展示如何在编辑器模块中程序化创建并保存一个简单的 nDisplay 资产。此代码需要放在 Editor 模块中，并且项目已启用 nDisplay 插件。
+一个最小化示例，演示如何创建一个简单的 nDisplay 配置，用于单节点单视口的渲染，并最后进行清理。这可以作为编写 nDisplay 自动化测试或工具的起点。
 
 ```cpp
-// MyEditorTool.h
+// MyNDisplayConfigTool.h
 #pragma once
-#include "CoreMinimal.h"
-#include "Toolkits/AssetEditorManager.h" // 用于保存资产
 
-class FMyEditorTool
+#include “CoreMinimal.h”
+
+class UDisplayClusterBlueprint;
+
+class FMyNDisplayConfigTool
 {
 public:
-    static void CreateSimpleNDisplayConfig();
+    /** 创建并配置一个最基本的单节点 nDisplay 资产 */
+    static UDisplayClusterBlueprint* CreateBasicSingleNodeConfig();
 };
-```
 
-```cpp
-// MyEditorTool.cpp
-#include "MyEditorTool.h"
-#include "DisplayClusterBlueprint.h"
-#include "DisplayClusterConfiguration/Public/DisplayClusterConfigurationTypes.h"
-#include "DisplayClusterTests/Public/DisplayClusterTestUtils.h" // 引入测试工具
-#include "AssetRegistryModule.h"
+// MyNDisplayConfigTool.cpp
+#include “MyNDisplayConfigTool.h”
+#include “DisplayClusterTestUtils.h”
 
-void FMyEditorTool::CreateSimpleNDisplayConfig()
+UDisplayClusterBlueprint* FMyNDisplayConfigTool::CreateBasicSingleNodeConfig()
 {
-    // 创建资产
-    UDisplayClusterBlueprint* Blueprint = DisplayClusterTestUtils::CreateDisplayClusterAsset();
-    if (!Blueprint)
+    // 1. 创建资产
+    UDisplayClusterBlueprint* ConfigAsset = DisplayClusterTestUtils::CreateDisplayClusterAsset();
+    if (!ConfigAsset)
     {
-        UE_LOG(LogTemp, Error, TEXT("无法创建 nDisplay 资产"));
-        return;
+        return nullptr;
     }
 
-    // 获取集群配置
-    UDisplayClusterConfigurationCluster* Cluster = Blueprint->GetCluster();
+    // 2. 获取集群根
+    UDisplayClusterConfigurationCluster* Cluster = ConfigAsset->GetCluster();
     if (!Cluster)
     {
-        UE_LOG(LogTemp, Error, TEXT("资产中没有集群配置"));
-        return;
+        DisplayClusterTestUtils::CleanUpAssetAndPackage(ConfigAsset);
+        return nullptr;
     }
 
-    // 添加两个节点，模拟双机同步
-    UDisplayClusterConfigurationClusterNode* Node1 = DisplayClusterTestUtils::AddClusterNodeToCluster(Blueprint, Cluster, TEXT("PC_Left"));
-    UDisplayClusterConfigurationClusterNode* Node2 = DisplayClusterTestUtils::AddClusterNodeToCluster(Blueprint, Cluster, TEXT("PC_Right"));
-
-    // 为每个节点添加一个视口
-    if (Node1 && Node2)
+    // 3. 添加一个节点
+    UDisplayClusterConfigurationClusterNode* Node = DisplayClusterTestUtils::AddClusterNodeToCluster(ConfigAsset, Cluster, TEXT(“PrimaryNode”));
+    if (!Node)
     {
-        DisplayClusterTestUtils::AddViewportToClusterNode(Blueprint, Node1, TEXT("Display_Left"));
-        DisplayClusterTestUtils::AddViewportToClusterNode(Blueprint, Node2, TEXT("Display_Right"));
+        DisplayClusterTestUtils::CleanUpAssetAndPackage(ConfigAsset);
+        return nullptr;
     }
 
-    // 触发蓝图编辑器更新并保存
-    FBlueprintEditorUtils::PostEditChangeBlueprintActors(Blueprint);
-    FAssetRegistryModule::AssetCreated(Blueprint);
-    Blueprint->MarkPackageDirty();
+    // 4. 向该节点添加一个视口
+    UDisplayClusterConfigurationViewport* Viewport = DisplayClusterTestUtils::AddViewportToClusterNode(ConfigAsset, Node, TEXT(“MainViewport”));
+    if (!Viewport)
+    {
+        DisplayClusterTestUtils::CleanUpAssetAndPackage(ConfigAsset);
+        return nullptr;
+    }
 
-    UE_LOG(LogTemp, Log, TEXT("已创建包含两个节点的 nDisplay 配置资产"));
+    // 5. 配置完成，返回资产。调用者负责后续的保存或清理。
+    UE_LOG(LogTemp, Log, TEXT(“Created basic nDisplay config: %s”), *ConfigAsset->GetName());
+    return ConfigAsset;
 }
 ```
 
 ## 模块依赖
 
-要使用 nDisplay 的完整功能，你的项目模块可能需要依赖以下一个或多个模块，具体取决于你的使用场景。
+要使用 `DisplayClusterTests` 模块的功能，你的模块需要在 `.Build.cs` 文件中声明以下依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `DisplayCluster` | 核心运行时框架，提供集群管理、渲染和同步API |
-| `DisplayClusterConfiguration` | 处理 `.ndisplay` 配置资产的数据结构和逻辑 |
-| `DisplayClusterProjection` | 负责各种投影模式（平面、圆柱、网格等）和变形 |
-| `DisplayClusterMedia` | 集成媒体框架，支持从外部源（如摄像机、视频文件）捕获帧 |
-| `DisplayClusterWarp` | 处理复杂的几何校正和边缘融合 (Warp & Blend) |
-| `DisplayClusterMoviePipeline` | 与影片渲染队列集成，用于离线渲染 nDisplay 场景 |
-| `DisplayClusterMultiUser` | 支持多人协作编辑 nDisplay 配置 |
-| `DisplayClusterReplication` | 处理集群内部的状态复制和同步 |
-| `MovieSceneCapture` | (常见依赖) 用于影片渲染和捕获 |
-| `MediaFrameworkUtilities` | (常见依赖) 用于媒体输入输出 |
+| `UnrealEd` | 使用 `FBlueprintEditorUtils` 等编辑器功能来模拟属性修改和蓝图更新 |
+| `DisplayClusterConfiguration` | 访问 `UDisplayClusterConfigurationClusterNode`, `UDisplayClusterConfigurationViewport` 等 nDisplay 核心配置类 |
 
 ## 维护状态
 
@@ -203,22 +174,22 @@ void FMyEditorTool::CreateSimpleNDisplayConfig()
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 nDisplay 的影片渲染管道添加了 EXR 多层输出支持。 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 在影片渲染管道中合并了 WarpBlend 和 WarpBlendAlpha 两种混合模式。 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了媒体渲染图中的相机命名问题，并修复了 MPCDI/ICVFX 着色器的不透明 Alpha 问题。 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复了在备用编码路径下未使用正确显示 Gamma 值的问题。 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理尺寸小于视口尺寸时会导致画面闪烁的 Bug。 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 MovieGraph 和 nDisplay 添加了 EXR 多层图像支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并了 MoviePipeline 中的 WarpBlendAlpha 模式到 WarpBlend 模式。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了 MRG 中拓扑感知相机命名问题，以及 MPCDI/ICVFX 着色器中不透明 Alpha 的问题。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 在输出帧编码回退时尊重非默认的显示 Gamma 值。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理尺寸小于视口尺寸时出现的闪烁问题。 |
 
 ### 维护评价
 
-- **活跃维护**：根据 Git 日志，nDisplay 在 2026 年 5 月仍有密集的功能性更新和 Bug 修复，表明 Epic Games 将其作为虚拟制片和沉浸式体验的核心技术在**积极维护**。
-- **复杂性与成熟度**：这是一个拥有 29 个子模块、超过 1300 个文件的大型插件，架构复杂。它自 2018 年随 UE 4.20 起存在，已经历多年迭代，属于成熟产品。
-- **推荐使用**：对于需要同步集群渲染、虚拟制片或多通道投影的项目，**强烈推荐**使用 nDisplay。它是 Epic 官方提供的解决方案，与 UE 引擎深度集成，功能全面且得到持续支持。但请注意其学习曲线较陡，需要对渲染管线和网络同步有一定了解。
+nDisplay 是 Unreal Engine 中一个成熟且活跃维护的大型功能插件。
+* **活跃维护**：从近期提交记录看，它持续获得功能增强（如与 MovieGraph 集成）和重要的 Bug 修复，最近一次更新在 2026 年 5 月，表明 Epic Games 团队仍在积极投入。
+* **长期存在**：该插件自 2018 年（UE 4.20 时期）引入，经历了多年的迭代，已经成为虚拟制片和大型显示项目的基石。
+* **功能全面**：其庞大的模块列表覆盖了从核心渲染、投影校正、媒体输入输出、编辑器工具到多用户协作的完整工作流。
+* **注意事项**：作为一项高度专业化的技术，其学习曲线较陡，且对硬件和网络环境有特定要求。默认未启用 (`EnabledByDefault: false`)。
+* **推荐使用**：对于任何涉及多机同步渲染、LED 虚拟制片或复杂投影显示的项目，**nDisplay 是首选且推荐使用的官方解决方案**。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/n-display-in-unreal-engine/) (UE5 文档)
 - [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)
-
-**重要提示**：这是一个 **xlarge** 规模的插件。本文档仅提供总览和索引。要深入了解特定子模块（如投影、媒体、影片渲染等），请参阅各子模块的详细文档。

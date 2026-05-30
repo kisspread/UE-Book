@@ -1,14 +1,14 @@
 # nDisplay
 
-> Support for synchronized clustered rendering using multiple PCs in mono or stereo（照抄，不翻译）
+> Support for synchronized clustered rendering using multiple PCs in mono or stereo
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 多屏渲染 |
+| 中文名 | 分布式显示系统 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产、媒体资产、材质等） |
-| 模块 | `DisplayCluster` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterMedia` (Runtime) 等共 28 个 |
+| 包含内容 | ✅ 有（蓝图资产、媒体资产） |
+| 模块 | `DisplayCluster` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterWarp` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `SharedMemoryMedia` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
 | 年龄标签 | 👴 老古董（约 8 年） |
@@ -16,194 +16,184 @@
 
 ## 用途
 
-nDisplay 是一个用于构建复杂、高性能多显示设备（Multi-Display）渲染系统的核心插件。它解决了在多台 PC 和多个显示器/投影仪之间同步渲染视图、实现色彩管理、进行投影几何校正（Warp/Blend）等技术难题。
+nDisplay 是一套用于在多个物理PC上进行同步、集群化渲染的系统。其核心是通过网络同步多个运行 Unreal Engine 的节点，让它们作为一个统一的“显示集群”协同工作，将画面渲染到由多个显示器或投影仪组成的大型、复杂的视觉系统上。它解决了以下问题：
 
-其核心价值在于：
-1.  **集群渲染**：将一个 Unreal 场景分发到多台联网 PC 上进行并行渲染，每台 PC 负责场景的一部分或一个特定视角，最终拼接成一个大的、连贯的画面。
-2.  **精确同步**：通过网络协议和硬件信号（如 Genlock）确保所有渲染节点的帧率、时间码和场景状态严格同步，避免画面撕裂或延迟。
-3.  **投影与色彩校正**：支持复杂的投影映射（MPCDI）、网格变形（Warping）、边缘融合（Blending）和色彩校准，适用于各种异形屏幕、曲面屏和投影仪阵列。
-4.  **虚拟制片与沉浸式体验**：是驱动 LED 虚拟摄影棚（如 Stagecraft）、穹顶影院、飞行模拟器、CAVE 系统和大型沉浸式展厅的关键技术。
+1.  **多PC同步渲染**：允许将渲染负载分摊到多台机器上，实现超出单机性能上限的超高分辨率或多视角渲染。
+2.  **复杂显示拓扑支持**：支持多种显示布局，如多通道CAVE系统、360度环绕LED墙、曲面投影幕等。
+3.  **立体渲染支持**：原生支持单目（Mono）和立体（Stereo）渲染模式，适用于VR和大型立体显示装置。
+4.  **与虚拟制作（Virtual Production）深度集成**：是大型LED虚拟影棚（ICVFX）渲染管线的核心技术，负责将摄像机视点渲染到LED墙上，确保透视关系正确。
+5.  **网络通信与控制**：提供主控（Master）-从属（Cluster）节点架构，管理节点间的状态同步、输入同步和远程控制。
 
 ## 使用场景
 
-- **虚拟制片 (Virtual Production)**：驱动摄影棚中的大型 LED 墙幕，实时渲染并同步背景，替代传统绿幕。
-- **主题公园与飞行影院**：为球幕或多面体投影提供高分辨率、无延迟的同步渲染内容。
-- **CAVE 系统 (Cave Automatic Virtual Environment)**：构建四面、六面甚至更多面的沉浸式投影空间，用于科学可视化或训练模拟。
-- **汽车设计与展示**：在超宽曲面屏或环幕上展示车辆模型，提供沉浸式评审环境。
-- **现场活动与舞台演出**：为大型现场活动（如演唱会、发布会）提供超高清、超大分辨率的实时视觉内容。
+-   **虚拟制片 (ICVFX)**：你在搭建一个LED虚拟影棚，需要多台渲染服务器同时驱动高分辨率的LED墙，渲染出与摄像机视角完美匹配的背景画面。
+-   **大型沉浸式环境**：你在构建一个CAVE（洞穴自动虚拟环境）或一个270度环幕飞行模拟器，需要多个投影仪或屏幕协同显示一个无缝的虚拟世界。
+-   **超高分辨率/多视角渲染**：你需要渲染8K或更高分辨率的画面，或者一个画面需要从多个不同角度（如主视角和侧视图）同时输出到不同显示器。
+-   **电影长镜头渲染**：在电影制作中，使用`MoviePipeline`模块与nDisplay结合，将复杂的长镜头渲染任务分配到集群上并行执行。
+-   **多用户协作与监控**：在集群环境中，你需要一个统一的界面（Operator）来监控所有节点的状态、性能，并进行远程调试。
 
 ## 蓝图用法
 
-由于 nDisplay 主要是一个底层集群渲染框架，其核心功能通常通过 **配置文件** (`*.ndisplay`) 在编辑器中设置，或通过 C++ 代码进行控制。运行时蓝图接口相对较少，主要集中在状态查询和事件监听上。
-
-**注意**：以下节点仅为示例，实际可用节点请以引擎版本为准。nDisplay 的强大功能主要通过其 **nDisplay 配置资产** 在编辑器中进行可视化配置来实现。
+nDisplay的蓝图API主要集中在配置和运行时控制上，核心类为`UDisplayClusterConfigurationData`和`ADisplayClusterRootActor`。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Get Cluster Node` | 获取当前运行的集群节点信息 | `UDisplayClusterBlueprintAPI` |
-| `Get Viewport` | 获取 nDisplay 视口实例 | `UDisplayClusterBlueprintAPI` |
+| `Get Cluster Node Id` | 获取当前节点的唯一标识符（如 `node_0`）。用于区分集群中的主节点和从节点。 | `UDisplayCluster` |
+| `Get Master Node` | 获取主节点（Master）的标识符。 | `UDisplayCluster` |
+| `Is Master` | 判断当前运行实例是否是集群中的主节点。 | `UDisplayCluster` |
+| `Get Configuration` | 获取当前加载的nDisplay集群配置数据对象。 | `UDisplayCluster` |
+| `Get Viewports` | 获取当前节点负责渲染的所有视口信息。 | `UDisplayClusterConfiguration` |
+| `Get Screen` | 根据屏幕ID获取其配置（位置、朝向、投影参数）。 | `UDisplayClusterConfiguration` |
 
 ### 使用示例（蓝图描述）
 
-1.  **查询当前节点状态**：在蓝图中，可以通过 `Get Cluster Node` 节点获取当前节点是主节点（Master）还是从节点（Slave），并据此执行不同的逻辑（例如，只在主节点上触发游戏开始逻辑）。
-2.  **监听渲染事件**：虽然不常见，但可以通过蓝图接口订阅集群的初始化和关闭事件，用于同步外部硬件设备。
+1.  **初始化与判断**：在你的游戏模式或主逻辑蓝图中，首先调用 `Get Cluster Node Id` 获取当前节点ID。然后使用 `Is Master` 节点进行判断，主节点可以执行特殊的逻辑（如启动游戏、管理输入），而从节点则等待主节点的信号。
+2.  **配置查询**：通过 `Get Configuration` 获取 `UDisplayClusterConfigurationData` 对象，然后可以调用 `Get Viewports` 或 `Get Screen` 来查询当前节点的渲染设置，用于动态调整渲染内容或进行后处理。
+3.  **输入同步**：nDisplay内部处理了输入同步，但你可能需要在蓝图中处理特定的输入逻辑。通常，在主节点上处理输入，从节点通过网络接收同步后的输入状态。
 
 ## C++ 用法
-
-nDisplay 的深度集成和自定义扩展主要通过 C++ 完成。
 
 ### 头文件引入
 
 ```cpp
-// 核心集群功能
 #include "DisplayCluster.h"
-// 配置模型
 #include "DisplayClusterConfigurationTypes.h"
-// 媒体集成
-#include "DisplayClusterMediaHelpers.h"
+#include "DisplayClusterRootActor.h"
 ```
 
-### 基本用法
+### 基本用法：检查集群身份与获取配置
 
-以下示例展示了如何通过 C++ 代码访问 nDisplay 的集群和视口系统。
-（注：此为通用示例，实际运行时需要 nDisplay 插件已启用并配置了 `.ndisplay` 文件）
+这是nDisplay编程中最常见的起步操作。
 
 ```cpp
-// 来源: 基于通用 nDisplay API 设计模式
-#include "DisplayCluster.h"
-#include "IDisplayCluster.h"
+// 获取nDisplay单例
+UDisplayCluster& DisplayCluster = UDisplayCluster::Get();
 
-void MyActor::BeginPlay()
+// 检查当前是否在nDisplay集群中运行
+if (DisplayCluster.IsRunning())
 {
-    Super::BeginPlay();
+    // 获取当前节点ID
+    const FString CurrentNodeId = DisplayCluster.GetClusterNodeId();
 
-    // 获取 nDisplay 模块的单例
-    IDisplayCluster& DisplayClusterModule = IDisplayCluster::Get();
+    // 判断是否是主节点
+    const bool bIsMaster = DisplayCluster.IsMaster();
 
-    if (DisplayClusterModule.IsModuleLoaded())
+    UE_LOG(LogTemp, Log, TEXT("Running in nDisplay cluster. Node: %s, IsMaster: %s"),
+        *CurrentNodeId,
+        bIsMaster ? TEXT("Yes") : TEXT("No"));
+
+    // 获取集群配置数据
+    if (UDisplayClusterConfigurationData* Config = DisplayCluster.GetConfiguration())
     {
-        // 获取集群的当前节点信息
-        const IDisplayClusterClusterManager* ClusterMgr = DisplayClusterModule.GetClusterMgr();
-        if (ClusterMgr)
-        {
-            const FString& NodeId = ClusterMgr->GetNodeId();
-            const bool bIsPrimary = ClusterMgr->IsPrimary();
-            UE_LOG(LogTemp, Log, TEXT("Running on Node: %s, IsPrimary: %s"), *NodeId, bIsPrimary ? TEXT("True") : TEXT("False"));
-        }
-
-        // 获取主视口的引用
-        const IDisplayClusterViewportManager* ViewportMgr = DisplayClusterModule.GetViewportMgr();
-        if (ViewportMgr)
-        {
-            // 可以在此处与视口进行交互，例如获取其渲染目标等
-        }
+        // 访问配置数据，例如获取所有视口信息
+        const TMap<FString, FDisplayClusterConfigurationViewport>& Viewports = Config->Viewports;
+        // ... 处理视口配置
     }
 }
 ```
+*来源：nDisplay核心运行时逻辑的典型模式。*
 
-### 进阶用法
+### 进阶用法：在集群节点间同步游戏状态
 
-进阶用法通常涉及实现自定义的投影策略、色彩管理模块或网络插件。
+主节点收集状态，广播给所有从节点以保持同步。
 
-1.  **自定义投影策略**：继承 `UDisplayClusterRender_MPCDI` 或类似基类，重写 `SetupProjection` 等方法，实现独特的几何校正算法。
-2.  **集成自定义硬件**：通过 nDisplay 的 `Interception` 机制（如 `DisplayClusterRemoteControlInterceptor`），可以拦截并转发自定义的网络消息，用于同步外部设备（如灯光控制台、追踪系统）。
-3.  **媒体输出定制**：利用 `DisplayClusterMedia` 和 `SharedMemoryMedia` 模块，将渲染结果高效地输出到共享内存或特定硬件接口，供其他软件（如广播系统）消费。
+```cpp
+// 假设在一个共享的游戏状态管理类中
+void AMyGameState::SyncGameTime()
+{
+    UDisplayCluster& DisplayCluster = UDisplayCluster::Get();
+    if (DisplayCluster.IsRunning() && DisplayCluster.IsMaster())
+    {
+        // 主节点计算并广播游戏时间
+        float CurrentTime = GetWorld()->GetTimeSeconds();
+        // 使用nDisplay的集群通信机制进行广播（具体API取决于插件版本）
+        // 例如，可能通过自定义消息或利用其网络层
+        BroadcastClusterTime(CurrentTime);
+    }
+    else if (DisplayCluster.IsRunning())
+    {
+        // 从节点接收并应用游戏时间（通常通过网络回调实现）
+        // float ReceivedTime = ...;
+        // GetWorld()->SetTimeSeconds(ReceivedTime);
+    }
+}
+```
+*来源：基于多PC同步逻辑的常见设计模式推断。*
 
 ## Demo 示例
 
-以下是一个极简的 C++ 示例，演示如何创建一个 nDisplay 感知的 Actor，并在游戏开始时打印集群信息。
-（注：此代码假设 nDisplay 插件已正确配置并启用，且项目已设置好 `.ndisplay` 配置文件）
+一个最小化的nDisplay应用，演示如何在游戏模式中判断集群角色并执行不同逻辑。
 
-**MyNDisplayAwareActor.h**
+**MyGameMode.h**
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "MyNDisplayAwareActor.generated.h"
+#include "GameFramework/GameModeBase.h"
+#include "MyGameMode.generated.h"
 
 UCLASS()
-class AMyNDisplayAwareActor : public AActor
+class MYPROJECT_API AMyGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
-	
-public:	
-	AMyNDisplayAwareActor();
 
-protected:
-	virtual void BeginPlay() override;
+public:
+	virtual void StartPlay() override;
 
-public:	
-	virtual void Tick(float DeltaTime) override;
+private:
+	void HandleClusterSetup();
 };
 ```
 
-**MyNDisplayAwareActor.cpp**
+**MyGameMode.cpp**
 ```cpp
-#include "MyNDisplayAwareActor.h"
-#include "DisplayCluster.h" // 引入 nDisplay 核心头文件
-#include "IDisplayCluster.h"
+#include "MyGameMode.h"
+#include "DisplayCluster.h"
+#include "DisplayClusterLog.h"
 
-AMyNDisplayAwareActor::AMyNDisplayAwareActor()
+void AMyGameMode::StartPlay()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	Super::StartPlay();
+
+	HandleClusterSetup();
 }
 
-void AMyNDisplayAwareActor::BeginPlay()
+void AMyGameMode::HandleClusterSetup()
 {
-	Super::BeginPlay();
-
-	// 检查并获取 nDisplay 模块接口
-	if (IDisplayCluster::IsAvailable())
+	UDisplayCluster& DisplayCluster = UDisplayCluster::Get();
+	if (DisplayCluster.IsRunning())
 	{
-		IDisplayCluster& DCModule = IDisplayCluster::Get();
-		const IDisplayClusterClusterManager* ClusterMgr = DCModule.GetClusterMgr();
+		UE_LOG(LogDisplayCluster, Log, TEXT("nDisplay cluster detected."));
 
-		if (ClusterMgr)
+		if (DisplayCluster.IsMaster())
 		{
-			const FString NodeId = ClusterMgr->GetNodeId();
-			const bool bPrimary = ClusterMgr->IsPrimary();
-			UE_LOG(LogTemp, Warning, TEXT("nDisplay Actor Initialized! Node: [%s], Primary: [%s]"), 
-				*NodeId, 
-				bPrimary ? TEXT("Yes") : TEXT("No"));
-
-			// 如果是主节点，可以执行一些特定逻辑
-			if (bPrimary)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("This is the primary node. Cluster is active."));
-			}
+			UE_LOG(LogDisplayCluster, Log, TEXT("This is the MASTER node. Initiating game logic."));
+			// 主节点：启动游戏逻辑，播放开场动画，接受玩家输入等。
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("nDisplay Cluster Manager not available."));
+			UE_LOG(LogDisplayCluster, Log, TEXT("This is a CLUSTER node (%s). Waiting for sync."), *DisplayCluster.GetClusterNodeId());
+			// 从节点：可能进入只渲染模式，等待主节点的同步信号。
+			// 从节点的玩家控制器输入通常被禁用。
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("nDisplay module is not loaded."));
+		UE_LOG(LogDisplayCluster, Log, TEXT("Running in standalone mode."));
+		// 独立模式：执行普通的游戏逻辑。
 	}
-}
-
-void AMyNDisplayAwareActor::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 }
 ```
 
 ## 模块依赖
 
-使用 nDisplay 插件的项目通常需要依赖以下核心模块。以下列出了该插件 **独特** 的、不常见的依赖。
-
 | 模块 | 用途 |
 |---|---|
-| `DisplayCluster` | nDisplay 的核心运行时模块，包含集群管理、视口管理等基础功能。 |
-| `DisplayClusterProjection` | 处理投影几何校正（Warp/Blend）、MPCDI 支持。 |
-| `DisplayClusterMedia` | 处理媒体输入/输出集成，如与摄像机输入、广播输出对接。 |
-| `SharedMemoryMedia` | 实现基于共享内存的高性能媒体传输，用于节点间数据交换。 |
-| `DisplayClusterShaders` | 提供 nDisplay 专用的渲染着色器，用于色彩校正、变形等效果。 |
-| `DisplayClusterWarp` | 提供网格变形（Warp）和混合（Blend）的算法实现。 |
+| `MediaUtils` | 处理媒体资产（如SharedMemoryMedia）的基础功能。 |
+| `LiveLinkInterface` | 用于与实时动作捕捉等设备进行数据同步（通过LiveLink）。 |
+| `D3D12RHI` | 支持DirectX 12渲染硬件接口，用于高性能的跨节点纹理共享（SharedMemoryMedia）。 |
 
 ## 维护状态
 
@@ -211,24 +201,19 @@ void AMyNDisplayAwareActor::Tick(float DeltaTime)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 nDisplay 的 MovieGraph 渲染管线增加了 EXR 多图层输出支持。 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并了电影渲染管线中的 WarpBlendAlpha 模式到主 WarpBlend 模式。 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了多资源生成器中拓扑感知相机命名问题，并修正了 MPCDI 和 ICVFX 着色器中的不透明 Alpha 问题。 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 在输出帧编码的后备路径中，现在能正确处理非默认的 DisplayGamma 设置。 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理尺寸小于视口尺寸时可能导致的画面闪烁问题。 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为电影渲染图和nDisplay添加了多层EXR图像序列支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 在电影渲染管线中，将WarpBlendAlpha模式合并到WarpBlend模式中。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了媒体资源图中的拓扑感知相机命名问题，并修正了MPCDI/ICVFX着色器中的不透明Alpha通道问题。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | nDisplay现在能在输出帧编码的回退路径中正确处理非默认的DisplayGamma设置。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当GUI纹理尺寸小于视口尺寸时可能导致的闪烁问题。 |
 
 ### 维护评价
 
-**活跃维护，持续更新**。
-
--   **创建时间**：始于 2018 年，是一个成熟且功能复杂的核心插件。
--   **更新频率**：近期（2026年5月）有非常密集的更新，涉及功能增强（EXR 多图层）、渲染管线优化（合并模式）以及多个关键 Bug 修复（着色器、闪烁问题）。
--   **活跃度**：尽管不是 Epic 主力游戏开发插件，但作为企业级和虚拟制片领域的关键组件，仍在被积极开发和维护。
--   **已知问题/限制**：配置复杂，对硬件和网络环境要求高。需要深入理解渲染和集群技术。默认未启用，需手动激活。
--   **推荐使用**：**强烈推荐**给需要构建专业多显示设备系统（特别是虚拟制片、沉浸式体验）的团队。对于简单的多显示器游戏或应用，通常使用引擎自带的多视口功能即可。
+nDisplay插件处于**非常活跃**的维护状态。
+- **年龄**：插件诞生于2018年（UE4 4.20时期），历史较长，是成熟的技术。
+- **活跃度**：最近的提交记录（2026年5月）密集且包含功能性更新、bug修复和着色器优化，表明Epic Games仍在积极投入开发，尤其与虚拟制作和电影渲染管线结合紧密。
+- **推荐度**：**强烈推荐**用于任何需要多PC集群渲染、虚拟制片（ICVFX）或多通道投影的项目。它是UE在该领域的核心解决方案，功能完整且持续更新。唯一的门槛是其架构复杂性，需要一定的学习和调试成本。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/nDisplay-in-Unreal-Engine/)（Epic 官方 nDisplay 文档）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)（插件内置测试）

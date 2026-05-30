@@ -1,81 +1,101 @@
-# nDisplay Configuration
+# nDisplay
 
 > Support for synchronized clustered rendering using multiple PCs in mono or stereo
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 多机集群渲染配置 |
+| 中文名 | 多机集群渲染 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产、JSON 模板、测试资源） |
-| 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
+| 包含内容 | ✅ 有（配置资产、编辑器工具、着色器） |
+| 模块 | `DisplayCluster` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
-| 年龄标签 | 🏛️ 文物（约 8 年） |
+| 年龄标签 | 👴 老古董（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay) | |
 
 ## 用途
 
-nDisplay 是 UE5 的**多机集群同步渲染**系统，用于将一个 Unreal 场景分布到多台 PC 上进行同步渲染，支持单目和立体（Stereo）模式。它的核心应用场景是 **虚拟制片（Virtual Production / ICVFX）**——通过 LED Volume 墙幕实时渲染场景背景，让实体摄影机拍摄到的画面与虚拟环境无缝融合。
+nDisplay 是 Unreal Engine 的专业级多机集群渲染解决方案。它解决的核心问题是：**如何让多台 PC 同步渲染并组成一个统一的大型显示系统**。
 
-本模块（DisplayClusterConfiguration）是 nDisplay 的**配置数据层**，定义了整个集群系统的所有数据结构：
+典型应用场景包括：
 
-- **场景层级**：相机、屏幕、变换节点
-- **集群拓扑**：主节点、从节点、网络端口、视口分配
-- **ICVFX 相机配置**：内视锥（Inner Frustum）、色度键（Chromakey）、光卡（Light Cards）、OCIO 色彩管理
-- **渲染设置**：分辨率、缓冲比例、GPU 分配、Overscan、立体渲染
-- **媒体输出**：Media I/O、分块输出（Tiled）、Texture Share
-- **后处理**：色度分级、模糊、MIP 生成、输出重映射
-- **配置文件版本管理**：支持 4.26、4.27、5.00 三种 JSON 格式的加载和迁移
+- **LED 虚拟摄影棚（ICVFX / In-Camera VFX）**：在 LED 墙上实时渲染虚拟场景，让真实摄像机拍摄前景演员与 LED 屏幕上的虚拟背景完美融合，这是 nDisplay 最核心的用途。支持内视锥（Inner Frustum）渲染、色键（Chromakey）、灯卡（Light Cards）、分块渲染（Tile Rendering）等高级功能。
+- **CAVE / 环幕投影**：多台 PC 驱动多个投影仪，组成环形或弧形沉浸式显示环境。
+- **多屏同步输出**：任何需要多个 GPU 或多台机器同步渲染到不同显示器/投影仪的场景。
+- **立体（Stereo）渲染**：支持 Side-by-Side 和 Top-Bottom 立体渲染模式。
+- **电影管线输出**：通过 DisplayClusterMoviePipeline 模块支持多机同步的离线渲染。
 
-简单来说：如果你需要搭建一个 LED Volume 摄影棚或 CAVE 系统，nDisplay 就是引擎提供的基础设施，而这个配置模块是它运行的"蓝图图纸"。
+该插件 `EnabledByDefault=false`，需要在项目设置中手动启用。
 
 ## 使用场景
 
-- **LED Volume 虚拟制片**：多台渲染 PC 驱动 LED 墙幕，实体摄影机通过 ICVFX 系统与虚拟场景实时合成
-- **CAVE / 洞穴式沉浸显示**：多面投影墙围绕用户，每面墙由独立 PC 渲染
-- **多屏拼接显示**：将一个大型场景分布到多个显示器/投影仪上
-- **立体 3D 显示**：Side-by-Side 或 Top-Bottom 立体渲染
-- **虚拟现实剧场**：同步多台 PC 的渲染输出，保持帧同步
-- **线下渲染（Movie Pipeline）**：通过 nDrive MoviePipeline 模块批量渲染集群输出
+- 你在搭建一个 LED 虚拟摄影棚用于影视拍摄 → 使用 nDisplay 配置 ICVFX 摄像机、色键、灯卡
+- 你需要多台 PC 组成 CAVE 环境进行 VR 体验 → 使用 nDisplay 配置多节点集群和投影策略
+- 你想让多个显示器显示同一个 3D 场景的不同视角 → 使用 nDisplay 配置多个视口（Viewport）
+- 你需要从多个摄像机视角同步录制虚拟场景 → 使用 nDisplay + MoviePipeline 模块
+- 你需要在 LED 墙上实现实时色键抠像 → 使用 nDisplay 的 Chromakey 和 Light Card 功能
 
 ## 蓝图用法
 
-nDisplay 的配置数据层大量使用 `BlueprintReadWrite`/`BlueprintCallable`，可通过蓝图直接操作集群配置。
+nDisplay 的蓝图 API 主要集中在配置数据访问和运行时控制。以下是 DisplayClusterConfiguration 模块中暴露的关键蓝图接口。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `GetViewportIds` | 获取集群节点上所有视口 ID 列表 | `UDisplayClusterConfigurationClusterNode` |
-| `GetViewport` | 根据视口 ID 获取视口配置对象 | `UDisplayClusterConfigurationClusterNode` |
-| `GetReferencedMeshNames` | 获取投影策略引用的所有 Mesh 名称 | `UDisplayClusterConfigurationClusterNode` |
+| `GetViewportIds` | 获取集群节点的所有视口 ID 列表 | `UDisplayClusterConfigurationClusterNode` |
+| `GetViewport` | 根据 ID 获取指定视口的配置对象 | `UDisplayClusterConfigurationClusterNode` |
+| `GetReferencedMeshNames` | 获取策略中引用的所有网格名称 | `UDisplayClusterConfigurationClusterNode` |
 | `GetNodeIds` | 获取集群中所有节点 ID | `UDisplayClusterConfigurationCluster` |
-| `GetNode` | 根据节点 ID 获取节点配置对象 | `UDisplayClusterConfigurationCluster` |
-| `GetViewportIds` (全局) | 获取集群所有视口 ID | `UDisplayClusterConfigurationData` |
-| `GetViewport` (全局) | 根据视口 ID 获取视口对象 | `UDisplayClusterConfigurationData` |
-| `GetCameraIds` | 获取所有 ICVFX 相机 ID | `UDisplayClusterConfigurationData` |
-| `GetCamera` | 根据 ID 获取 ICVFX 相机配置 | `UDisplayClusterConfigurationData` |
-| `GetNodeIds` (全局) | 获取所有集群节点 ID | `UDisplayClusterConfigurationData` |
-| `GetNode` (全局) | 根据节点 ID 获取节点对象 | `UDisplayClusterConfigurationData` |
-| `AssignPostprocess` | 为节点分配后处理效果 | `UDisplayClusterConfigurationData` |
-| `RemovePostprocess` | 移除节点上的后处理效果 | `UDisplayClusterConfigurationData` |
-| `GetProjectionPolicy` | 获取视口的投影策略配置 | `UDisplayClusterConfigurationData` |
-| `GetReferencedMeshNames` | 获取所有引用的 Mesh 名称 | `UDisplayClusterConfigurationData` |
+| `GetNode` | 根据 ID 获取指定节点的配置对象 | `UDisplayClusterConfigurationCluster` |
+| `GetViewportIds` (根) | 获取整个集群所有视口 ID | `UDisplayClusterConfigurationData` |
+| `GetNodeIds` (根) | 获取整个集群所有节点 ID | `UDisplayClusterConfigurationData` |
+| `AssignPostprocess` | 为指定节点分配后处理效果 | `UDisplayClusterConfigurationData` |
+| `RemovePostprocess` | 移除指定节点的后处理效果 | `UDisplayClusterConfigurationData` |
+| `GetPostprocess` | 获取指定节点的后处理配置 | `UDisplayClusterConfigurationData` |
+| `GetProjectionPolicy` | 获取指定视口的投影策略 | `UDisplayClusterConfigurationData` |
+
+### 配置数据结构
+
+nDisplay 使用 `.ndisplay` 文件（JSON 格式）描述整个集群配置。核心数据结构层次如下：
+
+```
+UDisplayClusterConfigurationData（根容器）
+├── Info                  - 配置元信息（描述、版本、资产路径）
+├── Scene                 - 场景层级（摄像机、屏幕、变换）
+│   ├── Cameras           - 摄像机定义（IPD、立体偏移等）
+│   ├── Screens           - 屏幕定义（位置、大小）
+│   └── Xforms            - 变换节点
+├── Cluster               - 集群配置
+│   ├── PrimaryNode       - 主节点定义（ID、端口）
+│   ├── Sync              - 同步策略（渲染同步、输入同步）
+│   ├── Network           - 网络设置（重试、超时）
+│   ├── Failover          - 故障转移设置
+│   └── Nodes             - 所有集群节点
+│       └── Viewports     - 每个节点的视口列表
+├── StageSettings         - ICVFX 舞台设置
+│   ├── DefaultFrameSize  - 默认帧分辨率
+│   ├── Lightcard         - 灯卡设置
+│   ├── HideList          - 隐藏列表
+│   └── GlobalChromakey   - 全局色键设置
+├── RenderFrameSettings   - 渲染帧设置（RTT 缩放、缓冲比率）
+└── CustomParameters      - 自定义参数
+```
 
 ### 使用示例（蓝图描述）
 
-**遍历集群节点并获取视口信息：**
-1. 使用 `UDisplayClusterConfigurationData::GetNodeIds` 获取所有节点 ID 数组
-2. 对每个节点 ID 调用 `GetNode` 获取节点对象
-3. 在节点对象上调用 `GetViewportIds` 获取视口列表
-4. 对每个视口 ID 调用 `GetViewport` 获取视口配置
-5. 从视口配置中读取 `ProjectionPolicy`、`Region`、`Camera` 等属性
+**获取集群中所有视口并遍历：**
+1. 从 nDisplay 根 Actor 获取配置数据
+2. 调用 `GetNodeIds` 获取所有节点 ID
+3. 对每个节点调用 `GetNode` 获取节点对象
+4. 对每个节点调用 `GetViewportIds` 获取视口 ID
+5. 对每个视口调用 `GetViewport` 获取视口配置
 
-**动态修改后处理效果：**
-1. 获取 `UDisplayClusterConfigurationData` 引用
-2. 调用 `AssignPostprocess(NodeId, PostprocessId, Type, Parameters)` 为指定节点添加后处理
-3. 使用 `RemovePostprocess(NodeId, PostprocessId)` 移除效果
+**动态分配后处理：**
+1. 获取配置数据引用
+2. 调用 `AssignPostprocess`，传入节点 ID、后处理 ID、类型字符串和参数 Map
+3. 后处理会在下一帧生效
 
 ## C++ 用法
 
@@ -85,303 +105,181 @@ nDisplay 的配置数据层大量使用 `BlueprintReadWrite`/`BlueprintCallable`
 #include "DisplayClusterConfigurationTypes.h"
 #include "DisplayClusterConfigurationTypes_ICVFX.h"
 #include "DisplayClusterConfigurationTypes_Viewport.h"
+#include "DisplayClusterConfigurationTypes_Media.h"
 #include "DisplayClusterConfigurationTypes_Postprocess.h"
 #include "IDisplayClusterConfiguration.h"
 ```
 
-### 基本用法：加载 nDisplay 配置文件
+### 基本用法
+
+从源码中提取的配置数据加载和访问示例：
 
 ```cpp
-// 通过模块接口加载 .ndisplay 配置文件
-// 来源: Public/IDisplayClusterConfiguration.h
+// 从 IDisplayClusterConfiguration 模块接口加载配置
+// 来源: DisplayClusterConfigurationModule.h
 
 #include "IDisplayClusterConfiguration.h"
 
-void LoadDisplayConfig()
+// 获取配置模块
+IDisplayClusterConfiguration& ConfigModule = IDisplayClusterConfiguration::Get();
+
+// 检查配置文件版本
+EDisplayClusterConfigurationVersion Version = ConfigModule.GetConfigVersion(TEXT("path/to/config.ndisplay"));
+
+// 加载配置数据
+UDisplayClusterConfigurationData* ConfigData = ConfigModule.LoadConfig(TEXT("path/to/config.ndisplay"), GetTransientPackage());
+if (ConfigData)
 {
-    if (IDisplayClusterConfiguration::IsAvailable())
-    {
-        IDisplayClusterConfiguration& ConfigModule = IDisplayClusterConfiguration::Get();
-        
-        // 获取配置文件版本
-        FString ConfigPath = TEXT("MyConfig.ndisplay");
-        EDisplayClusterConfigurationVersion Version = ConfigModule.GetConfigVersion(ConfigPath);
-        
-        // 加载配置数据
-        UDisplayClusterConfigurationData* ConfigData = ConfigModule.LoadConfig(ConfigPath);
-        
-        if (ConfigData)
-        {
-            // 获取集群节点数量
-            uint32 NodeCount = ConfigData->GetNumberOfClusterNodes();
-            
-            // 获取主节点地址
-            FString PrimaryAddr = ConfigData->GetPrimaryNodeAddress();
-            
-            // 遍历所有节点
-            TArray<FString> NodeIds;
-            ConfigData->GetNodeIds(NodeIds);
-            
-            for (const FString& NodeId : NodeIds)
-            {
-                UDisplayClusterConfigurationClusterNode* Node = ConfigData->GetNode(NodeId);
-                if (Node)
-                {
-                    // 获取该节点上的所有视口
-                    TArray<FString> ViewportIds;
-                    Node->GetViewportIds(ViewportIds);
-                    
-                    UE_LOG(LogTemp, Log, TEXT("Node %s has %d viewports, host: %s"),
-                        *NodeId, ViewportIds.Num(), *Node->Host);
-                }
-            }
-        }
-    }
-}
-```
-
-### 进阶用法：访问 ICVFX 相机与色度键配置
-
-```cpp
-// 来源: Public/DisplayClusterConfigurationTypes_ICVFX.h, Public/DisplayClusterConfigurationTypes.h
-
-void ConfigureICVFX(UDisplayClusterConfigurationData* ConfigData)
-{
-    if (!ConfigData || !ConfigData->Cluster)
-        return;
+    // 访问集群配置
+    UDisplayClusterConfigurationCluster* Cluster = ConfigData->Cluster;
     
-    // 获取全局 ICVFX Stage 设置
-    const FDisplayClusterConfigurationICVFX_StageSettings& StageSettings = ConfigData->StageSettings;
-    
-    // 检查内视锥是否启用
-    bool bInnerFrustumEnabled = StageSettings.bEnableInnerFrustums;
-    
-    // 获取默认 ICVFX 帧分辨率
-    int32 DefaultWidth = StageSettings.DefaultFrameSize.Width;
-    int32 DefaultHeight = StageSettings.DefaultFrameSize.Height;
-    
-    // 遍历所有相机，检查 OCIO 配置
-    TArray<FString> CameraIds;
-    // (通过 ConfigData 公开的 API 获取相机列表)
-    
-    // 获取指定视口的 OCIO 配置
-    const FOpenColorIOColorConversionSettings* OCIOConfig =
-        StageSettings.FindViewportOCIOConfiguration(TEXT("Viewport_1"));
-    
-    // 检查全局色度键设置
-    const FDisplayClusterConfigurationICVFX_GlobalChromakeySettings& Chromakey = 
-        StageSettings.GlobalChromakey;
-    
-    // 获取视口的渲染设置
-    UDisplayClusterConfigurationClusterNode* Node = ConfigData->Cluster->GetNode(TEXT("Node_1"));
-    if (Node)
-    {
-        UDisplayClusterConfigurationViewport* Viewport = Node->GetViewport(TEXT("Viewport_1"));
-        if (Viewport)
-        {
-            // 检查视口是否启用 ICVFX
-            bool bICVFXEnabled = Viewport->ICVFX.bAllowICVFX;
-            
-            // 获取视口的 ICVFX 标志
-            EDisplayClusterViewportICVFXFlags Flags = 
-                Viewport->GetViewportICVFXFlags(StageSettings);
-            
-            // 获取渲染设置
-            const FDisplayClusterConfigurationViewport_RenderSettings& RenderSettings = 
-                Viewport->RenderSettings;
-            float BufferRatio = RenderSettings.BufferRatio;
-            int32 GPUIndex = Viewport->GPUIndex;
-            
-            // 检查立体渲染模式
-            EDisplayClusterConfigurationViewport_StereoMode StereoMode = 
-                RenderSettings.StereoMode;
-            
-            // 检查 Overscan 设置
-            if (RenderSettings.Overscan.bEnabled)
-            {
-                float LeftOverscan = RenderSettings.Overscan.Left;
-                float RightOverscan = RenderSettings.Overscan.Right;
-            }
-        }
-    }
-}
-```
-
-### 进阶用法：媒体输出配置
-
-```cpp
-// 来源: Public/DisplayClusterConfigurationTypes_Media.h
-
-void CheckMediaOutput(UDisplayClusterConfigurationClusterNode* Node)
-{
-    if (!Node) return;
-    
-    // 检查节点级别的媒体设置
-    const FDisplayClusterConfigurationMediaNodeBackbuffer& MediaSettings = Node->MediaSettings;
-    if (MediaSettings.bEnable)
-    {
-        // 检查是否有媒体输出绑定
-        bool bHasOutput = MediaSettings.IsMediaOutputAssigned();
-        
-        // 检查分块输出布局
-        FIntPoint TileLayout = MediaSettings.TiledSplitLayout;
-    }
-    
-    // 检查视口级别的媒体设置
-    UDisplayClusterConfigurationViewport* Viewport = Node->GetViewport(TEXT("Viewport_1"));
-    if (Viewport)
-    {
-        const FDisplayClusterConfigurationMediaViewport& MediaConfig = 
-            Viewport->RenderSettings.Media;
-        if (MediaConfig.bEnable)
-        {
-            bool bHasInput = MediaConfig.IsMediaInputAssigned();
-            bool bHasOutput = MediaConfig.IsMediaOutputAssigned();
-        }
-    }
-}
-```
-
-## Demo 示例
-
-一个可编译的最小示例：在运行时加载 nDisplay 配置并遍历集群拓扑。
-
-### MyDisplayClusterActor.h
-
-```cpp
-#pragma once
-
-#include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "IDisplayClusterConfiguration.h"
-#include "DisplayClusterConfigurationTypes.h"
-#include "MyDisplayClusterActor.generated.h"
-
-UCLASS()
-class MYGAME_API AMyDisplayClusterActor : public AActor
-{
-    GENERATED_BODY()
-
-public:
-    AMyDisplayClusterActor();
-
-    virtual void BeginPlay() override;
-
-    /** nDisplay 配置文件路径 */
-    UPROPERTY(EditAnywhere, Category = "nDisplay")
-    FString ConfigFilePath;
-
-private:
-    void PrintClusterTopology(UDisplayClusterConfigurationData* ConfigData);
-};
-```
-
-### MyDisplayClusterActor.cpp
-
-```cpp
-#include "MyDisplayClusterActor.h"
-#include "DisplayClusterConfigurationTypes_Viewport.h"
-#include "DisplayClusterConfigurationTypes_ICVFX.h"
-
-AMyDisplayClusterActor::AMyDisplayClusterActor()
-{
-    PrimaryActorTick.bCanEverTick = false;
-}
-
-void AMyDisplayClusterActor::BeginPlay()
-{
-    Super::BeginPlay();
-
-    if (!IDisplayClusterConfiguration::IsAvailable())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("DisplayClusterConfiguration module not available"));
-        return;
-    }
-
-    IDisplayClusterConfiguration& ConfigModule = IDisplayClusterConfiguration::Get();
-    UDisplayClusterConfigurationData* ConfigData = ConfigModule.LoadConfig(ConfigFilePath, this);
-
-    if (ConfigData)
-    {
-        PrintClusterTopology(ConfigData);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to load nDisplay config: %s"), *ConfigFilePath);
-    }
-}
-
-void AMyDisplayClusterActor::PrintClusterTopology(UDisplayClusterConfigurationData* ConfigData)
-{
-    if (!ConfigData || !ConfigData->Cluster)
-        return;
-
-    UE_LOG(LogTemp, Log, TEXT("=== nDisplay Cluster Topology ==="));
-    UE_LOG(LogTemp, Log, TEXT("Description: %s"), *ConfigData->Info.Description);
-    UE_LOG(LogTemp, Log, TEXT("Total Nodes: %u"), ConfigData->GetNumberOfClusterNodes());
-    UE_LOG(LogTemp, Log, TEXT("Primary Node: %s"), *ConfigData->GetPrimaryNodeAddress());
-
-    // 遍历所有集群节点
+    // 获取所有节点 ID
     TArray<FString> NodeIds;
-    ConfigData->Cluster->GetNodeIds(NodeIds);
-
+    Cluster->GetNodeIds(NodeIds);
+    
+    // 遍历每个节点
     for (const FString& NodeId : NodeIds)
     {
-        UDisplayClusterConfigurationClusterNode* Node = ConfigData->Cluster->GetNode(NodeId);
-        if (!Node) continue;
-
-        UE_LOG(LogTemp, Log, TEXT("  Node: %s | Host: %s | Sound: %s | Fullscreen: %s"),
-            *NodeId,
-            *Node->Host,
-            Node->bIsSoundEnabled ? TEXT("Yes") : TEXT("No"),
-            Node->bIsFullscreen ? TEXT("Yes") : TEXT("No"));
-
-        // 遍历该节点的视口
-        TArray<FString> ViewportIds;
-        Node->GetViewportIds(ViewportIds);
-
-        for (const FString& ViewportId : ViewportIds)
+        UDisplayClusterConfigurationClusterNode* Node = Cluster->GetNode(NodeId);
+        if (Node)
         {
-            UDisplayClusterConfigurationViewport* Viewport = Node->GetViewport(ViewportId);
-            if (!Viewport) continue;
-
-            UE_LOG(LogTemp, Log, TEXT("    Viewport: %s | Camera: %s | Region: (%d,%d %dx%d) | ICVFX: %s"),
-                *ViewportId,
-                *Viewport->Camera,
-                Viewport->Region.X, Viewport->Region.Y,
-                Viewport->Region.W, Viewport->Region.H,
-                Viewport->ICVFX.bAllowICVFX ? TEXT("Yes") : TEXT("No"));
+            // 获取节点的视口列表
+            TArray<FString> ViewportIds;
+            Node->GetViewportIds(ViewportIds);
+            
+            UE_LOG(LogTemp, Log, TEXT("Node %s has %d viewports"), *NodeId, ViewportIds.Num());
         }
     }
-
-    // 打印 ICVFX Stage 设置
-    const FDisplayClusterConfigurationICVFX_StageSettings& ICVFX = ConfigData->StageSettings;
-    UE_LOG(LogTemp, Log, TEXT("ICVFX Settings:"));
-    UE_LOG(LogTemp, Log, TEXT("  Inner Frustum: %s"), ICVFX.bEnableInnerFrustums ? TEXT("Enabled") : TEXT("Disabled"));
-    UE_LOG(LogTemp, Log, TEXT("  Default Frame: %dx%d"), ICVFX.DefaultFrameSize.Width, ICVFX.DefaultFrameSize.Height);
-    UE_LOG(LogTemp, Log, TEXT("  Freeze Outer Viewports: %s"), ICVFX.bFreezeRenderOuterViewports ? TEXT("Yes") : TEXT("No"));
 }
+```
+
+### 进阶用法
+
+访问 ICVFX 配置和动态修改后处理：
+
+```cpp
+// 访问 ICVFX 舞台设置
+// 来源: DisplayClusterConfigurationTypes_ICVFX.h, DisplayClusterConfigurationTypes.h
+
+UDisplayClusterConfigurationData* ConfigData = /* 获取配置数据 */;
+
+// 访问舞台设置
+FDisplayClusterConfigurationICVFX_StageSettings& StageSettings = ConfigData->StageSettings;
+
+// 检查内视锥是否启用
+bool bInnerFrustumEnabled = StageSettings.bEnableInnerFrustums;
+
+// 获取默认帧分辨率
+int32 DefaultWidth = StageSettings.DefaultFrameSize.Width;   // 默认 2560
+int32 DefaultHeight = StageSettings.DefaultFrameSize.Height; // 默认 1440
+bool bAdaptSize = StageSettings.DefaultFrameSize.bAdaptSize; // 自适应分辨率
+
+// 访问灯卡设置
+const FDisplayClusterConfigurationICVFX_LightcardSettings& LightcardSettings = StageSettings.Lightcard;
+
+// 访问全局色键设置
+const FDisplayClusterConfigurationICVFX_GlobalChromakeySettings& Chromakey = StageSettings.GlobalChromakey;
+
+// 动态分配后处理到指定节点
+TMap<FString, FString> PostprocessParams;
+PostprocessParams.Add(TEXT("SomeParam"), TEXT("SomeValue"));
+
+bool bSuccess = ConfigData->AssignPostprocess(
+    TEXT("node_1"),            // 节点 ID
+    TEXT("my_postprocess"),    // 后处理 ID
+    TEXT("some_type"),         // 类型
+    PostprocessParams,         // 参数
+    0                          // 渲染顺序
+);
+
+// 获取视口的投影策略
+FDisplayClusterConfigurationProjection Projection;
+if (ConfigData->GetProjectionPolicy(TEXT("node_1"), TEXT("viewport_1"), Projection))
+{
+    UE_LOG(LogTemp, Log, TEXT("Projection type: %s"), *Projection.Type);
+    // Parameters 包含投影策略的具体参数
+    for (const auto& ParamPair : Projection.Parameters)
+    {
+        UE_LOG(LogTemp, Log, TEXT("  %s = %s"), *ParamPair.Key, *ParamPair.Value);
+    }
+}
+```
+
+访问视口级 ICVFX 配置：
+
+```cpp
+// 访问视口的 ICVFX 自定义设置
+// 来源: DisplayClusterConfigurationTypes_Viewport.h
+
+UDisplayClusterConfigurationViewport* Viewport = /* 获取视口 */;
+
+// 检查 ICVFX 相关设置
+const FDisplayClusterConfigurationViewport_ICVFX& ICVFX = Viewport->ICVFX;
+
+bool bAllowICVFX = ICVFX.bAllowICVFX;              // 是否允许 ICVFX
+bool bAllowInnerFrustum = ICVFX.bAllowInnerFrustum; // 是否允许内视锥
+
+// 获取渲染设置
+const FDisplayClusterConfigurationViewport_RenderSettings& RenderSettings = Viewport->RenderSettings;
+float BufferRatio = RenderSettings.BufferRatio;     // 缓冲比率（分辨率缩放）
+int GPUIndex = Viewport->GPUIndex;                  // GPU 索引（-1 表示默认）
+
+// 获取 ICVFX 标志
+EDisplayClusterViewportICVFXFlags Flags = Viewport->GetViewportICVFXFlags(ConfigData->StageSettings);
+```
+
+### 配置序列化
+
+```cpp
+// 保存和序列化配置
+// 来源: IDisplayClusterConfiguration.h, DisplayClusterConfigurationModule.h
+
+IDisplayClusterConfiguration& ConfigModule = IDisplayClusterConfiguration::Get();
+
+// 保存到文件
+ConfigModule.SaveConfig(ConfigData, TEXT("path/to/output.ndisplay"));
+
+// 转换为字符串
+FString ConfigString;
+if (ConfigModule.ConfigAsString(ConfigData, ConfigString))
+{
+    UE_LOG(LogTemp, Log, TEXT("Config JSON:\n%s"), *ConfigString);
+}
+
+// 创建空白配置
+UDisplayClusterConfigurationData* NewConfig = UDisplayClusterConfigurationData::CreateNewConfigData();
+```
+
+### 配置版本兼容
+
+```cpp
+// nDisplay 支持多个配置文件版本
+// 来源: DisplayClusterConfigurationVersion.h
+
+// 版本枚举
+enum class EDisplayClusterConfigurationVersion : uint8
+{
+    Unknown,     // 未知版本
+    Version_426, // 4.26 JSON 配置格式
+    Version_427, // 4.27 JSON 配置格式
+    Version_500, // 5.00 JSON 配置格式（当前版本）
+};
+
+// 当前版本标记为 "5.00"
 ```
 
 ## 模块依赖
 
-从各模块的 Build.cs 分析，以下是该插件**独特**的、不常见的依赖：
+DisplayClusterConfiguration 模块依赖关系非常简洁，几乎全部是标准模块：
 
-| 模块 | 用途 |
-|---|---|
-| `D3D12RHI` | DisplayClusterMedia、SharedMemoryMedia 模块使用 D3D12 资源共享 |
-| `LevelEditor` | DisplayCluster 核心模块的编辑器集成 |
-| `EditorWidgets` | DisplayCluster 核心模块的编辑器 UI 组件 |
+无特殊依赖（仅标准 Core/Engine/Slate 等）。
 
-无其他特殊依赖（其余均为标准 Core/Engine/Slate 等）。使用者的 Build.cs 需要根据具体使用的子模块添加对应依赖，例如：
-
-```cpp
-// 仅使用配置数据类型
-PublicDependencyModuleNames.Add("DisplayClusterConfiguration");
-
-// 使用完整 nDisplay 功能
-PublicDependencyModuleNames.Add("DisplayCluster");
-```
+> 其他 nDisplay 子模块有一些特殊依赖：
+> 
+> | 模块 | 用途 |
+> |---|---|
+> | `D3D12RHI` | DisplayClusterMedia / SharedMemoryMedia 模块使用 D3D12 进行跨 GPU 纹理传输 |
+> | `ScalableMPCDI` (External) | MPCDI 投影格式的第三方库支持 |
 
 ## 维护状态
 
@@ -389,26 +287,31 @@ PublicDependencyModuleNames.Add("DisplayCluster");
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | MovieGraph 支持 EXR 多层输出 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | MoviePipeline 合并 WarpBlendAlpha 到 WarpBlend 模式 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知相机命名；修复 MPCDI/ICVFX 着色器不透明度 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 输出帧编码回退时尊重非默认 DisplayGamma 设置 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | MovieGraph 中新增 nDisplay EXR 多层支持 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并 WarpBlendAlpha 渲染模式到 WarpBlend |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知摄像机命名和 MPCDI/ICVFX 着色器不透明度问题 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 输出帧编码回退时尊重非默认的 DisplayGamma 设置 |
 | 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理尺寸小于视口尺寸时的闪烁问题 |
 
 ### 维护评价
 
-**活跃维护** ⭐⭐⭐⭐⭐
+nDisplay 是 Epic Games **重点维护**的活跃插件，属于虚幻引擎企业级/虚拟制作核心功能之一。
 
-- **创建时间**：2018 年 6 月（UE 4.20 企业版功能），至今约 8 年
-- **更新频率**：极高，最近提交日期为 2026 年 5 月，每周都有多次功能性更新和 bug 修复
-- **维护状态**：由 Epic Games 专人团队持续维护，是 Unreal 虚拟制片（Virtual Production）的核心基础设施
-- **代码规模**：28 个模块、1351 个源文件，是引擎最大的插件之一
-- **配置版本演进**：支持 4.26→4.27→5.00 三代配置格式的向后兼容和自动迁移
-- **已知限制**：需要手动启用（`EnabledByDefault = false`）；仅支持 Win64 和 Linux 平台
-- **推荐使用**：如果你的项目涉及虚拟制片、LED Volume、CAVE 显示或多屏拼接，这是**官方唯一推荐**的解决方案，生态成熟，文档和社区支持完善
+**优势：**
+- 持续活跃更新，近几个月每周都有功能改进和 bug 修复
+- 模块数量达 28 个，功能覆盖面极广（配置、投影、媒体、色彩、着色器、监控、多用户协作等）
+- 配置格式从 4.26 起持续演进（4.26 → 4.27 → 5.00），保持向后兼容
+- 支持 Win64 和 Linux 平台
+
+**注意事项：**
+- `EnabledByDefault=false`，需要手动在项目设置中启用
+- 插件总源码文件数超过 1300 个，属于超大型插件，学习曲线较陡
+- 主要面向虚拟制作（Virtual Production）和主题公园等专业领域，普通游戏项目通常不需要
+- 部分功能（如 RenderFamilyMode、RenderTargetAtlasing）标记为实验性但尚未实现
+
+**推荐使用：** 如果你的项目涉及 LED 虚拟摄影棚、CAVE 环境、多机集群渲染或任何多显示器同步渲染需求，nDisplay 是唯一的官方解决方案，强烈推荐使用。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/ndisplay-in-unreal-engine/)（Unreal Engine 官方 nDisplay 文档）
 - [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)

@@ -1,190 +1,453 @@
-# DisplayClusterWarp
+# nDisplay Warp
 
-> Support for synchronized clustered rendering using multiple PCs in mono or stereo
+> Support for synchronized clustered rendering using multiple PCs in mono or stereo（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 显示器集群扭曲映射 |
-| 分类 | Rendering |
+| 中文名 | nDisplay 视图扭曲模块 |
+| 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、材质模板） |
+| 包含内容 | ✅ 有（扭曲策略、数学计算、MPCDI支持、几何数据加载器、UI预览组件） |
 | 模块 | `DisplayClusterWarp` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
-| 年龄标签 | 👴 老古董（约 8 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay) | |
+| 年龄标签 | 👴 老古董（约 7 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterWarp) | |
 
 ## 用途
-`DisplayClusterWarp` 模块是 nDisplay 插件的核心子模块之一，专门负责处理投影几何的扭曲（Warp）与混合（Blend）计算。它解决了在多显示器、投影映射和沉浸式环境（如 VR/CAVE）中，如何根据非标准的屏幕几何形状（例如曲面、不规则形状）正确渲染画面，使得图像在这些屏幕上看起来是连贯且不失真的问题。其核心功能是读取标准的 MPCDI 校准文件、PFM 文件或直接使用 UE 中的网格体作为几何源，计算出正确的投影矩阵和视锥体，从而实现像素级别的精确映射和混合。
+
+DisplayClusterWarp 模块是 nDisplay 插件的核心组成部分，专门负责处理多显示器集群渲染中的**视图扭曲与融合**（Warp & Blend）功能。
+
+**核心问题**：当使用多台 PC 或多个显示器创建沉浸式环境（如 CAVE、LED 墙、穹顶投影）时，每个显示器的物理位置、方向和曲率都不同。如果不进行校正，投影图像会出现几何失真、亮度不均和接缝。
+
+**模块存在目的**：
+1.  **几何校正**：将标准相机视图扭曲到符合物理屏幕几何形状（平面、曲面、任意网格）
+2.  **边缘融合**：处理相邻显示器重叠区域的亮度混合，消除接缝
+3.  **立体支持**：为单眼（Mono）和立体（Stereo）渲染提供正确的投影矩阵
+4.  **标准格式支持**：支持行业标准的 MPCDI（Multi-Projector Common Data Interchange）校准文件格式
+5.  **实时预览**：在编辑器中提供扭曲网格和融合区域的可视化预览
+
+该模块通过加载外部校准数据（MPCDI文件、PFM文件或UE网格）来定义物理屏幕的真实几何形状，然后在渲染时实时计算每个像素的正确位置和颜色。
 
 ## 使用场景
-- 你需要构建一个由多台投影机组成的曲面屏幕或 CAVE 系统，需要进行像素级精确的投影校正和边缘融合。
-- 你正在使用基于 MPCDI 或 PFM 格式的第三方硬件校准软件（如 Scalable Display Technologies）的结果来驱动 UE 内的渲染。
-- 你希望在编辑器内直接使用一个静态网格体或程序化网格体的几何形状作为投影表面，并实时预览扭曲效果。
+
+- **CAVE虚拟现实系统**：多面投影墙环境，需要精确的几何校正和边缘融合
+- **LED视频墙**：大型LED屏幕拼接显示，每个面板有独立的几何和亮度特性
+- **穹顶/圆幕投影**：沉浸式穹顶影院，需要球面或柱面投影校正
+- **汽车设计评审**：在物理比例的屏幕墙前进行车辆设计审查
+- **飞行/驾驶模拟器**：多屏幕环绕显示器，提供连续的视野
+- **舞台LED背景**：现场活动或演唱会的大型LED背景墙
+- **虚拟制作（Virtual Production）**：LED Volume（如The Volume）中的屏幕校准
 
 ## 蓝图用法
-本模块主要提供底层的 C++ 接口，供 nDisplay 的其他系统（如投影策略）调用。直接暴露给蓝图的接口集中在特定的组件和数据结构上。
+
+### 核心组件
+
+| 组件 | 说明 | 蓝图可创建 |
+|---|---|---|
+| `UDisplayClusterInFrustumFitCameraComponent` | 视锥体适配相机组件，用于计算整个屏幕组的联合视锥体 | ✅ 是 |
 
 ### 核心节点
+
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `NDisplay Frustum Fit View Point` | 一个可生成的场景组件，用于定义投影视点，并配置“视锥体适配”策略。 | `UDisplayClusterInFrustumFitCameraComponent` |
-| `FDisplayClusterWarpGeometryPFM` | 一个蓝图结构体，用于以类似 PFM 格式存储一个可扭曲的 3D 顶点网格。 | `FDisplayClusterWarpGeometryPFM` |
-| `FDisplayClusterWarpGeometryOBJ` | 一个蓝图结构体，用于以类似 OBJ 格式存储一个可扭曲的 3D 网格（包含顶点、法线、UV 和三角形索引）。 | `FDisplayClusterWarpGeometryOBJ` |
-| `EDisplayClusterWarpCameraProjectionMode` | 枚举，定义了相机投影是“适配”（Fit）几何体还是“填充”（Fill）几何体。 | `EDisplayClusterWarpCameraProjectionMode` |
-| `EDisplayClusterWarpCameraViewTarget` | 枚举，定义了视锥体适配时相机的目标朝向是“几何中心”还是“匹配视点”。 | `EDisplayClusterWarpCameraViewTarget` |
+| `GetWarpPolicy` | 获取当前视口的扭曲策略对象 | `UDisplayClusterInFrustumFitCameraComponent` |
+| `ShouldUseEntireClusterViewports` | 检查是否应使用整个集群的视口进行计算 | `UDisplayClusterInFrustumFitCameraComponent` |
+| `ExportWarpMapGeometry` | 将扭曲几何导出为OBJ格式（用于调试） | `IDisplayClusterWarpBlend` |
+| `ReadMPCDFileStructure` | 读取MPCDI文件的结构（缓冲区/区域信息） | `IDisplayClusterWarp` |
 
 ### 使用示例（蓝图描述）
-1.  **配置视点**：在你的 `ADisplayClusterRootActor` 或任何 `AActor` 上，添加一个 `UDisplayClusterInFrustumFitCameraComponent` 组件。
-2.  **设置投影模式**：在组件的细节面板中，找到 **Frustum Fit** 分类。
-    - 勾选 **Enable Frustum Fit** 以启用该策略。
-    - 选择 **Frustum Fit Mode**（`EDisplayClusterWarpCameraProjectionMode`），决定是让整个几何体适配进相机视锥（`Fit`），还是让相机视锥填满几何体（`Fill`）。
-    - 选择 **Frustum Fit Target**（`EDisplayClusterWarpCameraViewTarget`），决定相机朝向是基于几何中心还是匹配到你放置组件的位置。
-3.  **获取几何数据**：通过 C++ 或其他 nDisplay 系统，你可以创建一个 `FDisplayClusterWarpBlend` 对象，然后调用 `ExportWarpMapGeometry` 方法将当前的扭曲几何数据导出到 `FDisplayClusterWarpGeometryOBJ` 蓝图结构体中，用于调试或后续处理。
+
+1. **设置视锥体适配相机**：
+   - 在 nDisplay 根角色（Root Actor）中添加 `InFrustumFitCameraComponent`
+   - 设置 `bEnableCameraProjection = true`
+   - 选择 `CameraProjectionMode`：Fit（适合几何）或 Fill（填充视锥）
+   - 设置 `CameraViewTarget`：GeometricCenter（几何中心）或 MatchViewOrigin（匹配原点）
+
+2. **读取MPCDI文件信息**：
+   ```cpp
+   // 获取Warp模块
+   IDisplayClusterWarp& WarpModule = IDisplayClusterWarp::Get();
+   
+   // 读取MPCDI文件结构
+   TMap<FString, TMap<FString, FDisplayClusterWarpMPCDIAttributes>> MPCDIFileStructure;
+   WarpModule.ReadMPCDFileStructure(TEXT("Calibration.mpcdi"), MPCDIFileStructure);
+   
+   // 遍历结构获取缓冲区/区域信息
+   for (auto& BufferPair : MPCDIFileStructure)
+   {
+       for (auto& RegionPair : BufferPair.Value)
+       {
+           // 获取特定区域的属性
+           FDisplayClusterWarpMPCDIAttributes Attributes = RegionPair.Value;
+           // 处理属性...
+       }
+   }
+   ```
 
 ## C++ 用法
-该模块的核心 API 是工厂模式，用于创建 `IDisplayClusterWarpBlend` 接口实例。实际计算逻辑封装在这些实例内部。
 
 ### 头文件引入
+
 ```cpp
-#include "DisplayClusterWarp/Public/IDisplayClusterWarp.h"
-#include "DisplayClusterWarp/Public/IDisplayClusterWarpBlend.h"
-#include "DisplayClusterWarp/Public/Containers/DisplayClusterWarpInitializer.h"
+// 核心模块接口
+#include "IDisplayClusterWarp.h"
+
+// 扭曲混合接口
+#include "IDisplayClusterWarpBlend.h"
+
+// 数据容器
+#include "Containers/DisplayClusterWarpContainers.h"
+#include "Containers/DisplayClusterWarpInitializer.h"
+#include "Containers/DisplayClusterWarpEnums.h"
+
+// 蓝图类型
+#include "Blueprints/DisplayClusterWarpGeometry.h"
+#include "Components/DisplayClusterInFrustumFitCameraComponent.h"
 ```
 
 ### 基本用法
-从 MPCDI 文件创建扭曲混合接口。
-（来源：`Public/IDisplayClusterWarp.h` 及 `Private/DisplayClusterWarpModule.h`）
+
+**创建扭曲混合实例**（来源：`IDisplayClusterWarp.h`）：
+
 ```cpp
-// 获取 DisplayClusterWarp 模块接口
+// 获取扭曲模块实例
 IDisplayClusterWarp& WarpModule = IDisplayClusterWarp::Get();
 
-// 准备从 MPCDI 文件创建的初始化参数
-FDisplayClusterWarpInitializer_MPCDIFile InitParams;
-InitParams.MPCDIFileName = TEXT("Path/To/Your/calibration.mpcdi");
-InitParams.BufferId = TEXT("buffer_name");
-InitParams.RegionId = TEXT("region_name");
+// 1. 从MPCDI文件创建
+FDisplayClusterWarpInitializer_MPCDIFile MPCDIParams;
+MPCDIParams.MPCDIFileName = TEXT("Path/To/Calibration.mpcdi");
+MPCDIParams.BufferId = TEXT("BufferName");
+MPCDIParams.RegionId = TEXT("RegionName");
 
-// 创建 WarpBlend 实例
-TSharedPtr<IDisplayClusterWarpBlend> WarpBlendInterface = WarpModule.Create(InitParams);
+TSharedPtr<IDisplayClusterWarpBlend, ESPMode::ThreadSafe> WarpBlend = WarpModule.Create(MPCDIParams);
 
-if (WarpBlendInterface.IsValid())
+// 2. 从静态网格创建
+FDisplayClusterWarpInitializer_StaticMesh MeshParams;
+MeshParams.OriginComponent = OriginSceneComponent;
+MeshParams.WarpMeshComponent = StaticMeshComponent;
+MeshParams.PreviewMeshComponent = PreviewMeshComponent;
+MeshParams.BaseUVIndex = 0;
+
+TSharedPtr<IDisplayClusterWarpBlend, ESPMode::ThreadSafe> MeshWarpBlend = WarpModule.Create(MeshParams);
+```
+
+**计算视锥体**（来源：`IDisplayClusterWarpBlend.h`）：
+
+```cpp
+// 初始化场景
+WarpBlend->HandleStartScene(Viewport);
+
+// 更新几何上下文（世界缩放）
+WarpBlend->UpdateGeometryContext(WorldScale);
+
+// 创建视点数据
+TSharedPtr<FDisplayClusterWarpEye> WarpEye = MakeShared<FDisplayClusterWarpEye>(Viewport, ContextNum);
+WarpEye->ViewPoint.Location = CameraLocation;
+WarpEye->ViewPoint.Rotation = CameraRotation;
+WarpEye->ViewPoint.EyeOffset = EyeOffset; // 立体眼间距
+
+// 计算视锥体上下文
+bool bSuccess = WarpBlend->CalcFrustumContext(WarpEye);
+
+if (bSuccess)
 {
-    // 成功创建，可以使用 WarpBlendInterface 进行后续操作
-    // 例如，在合适的时机调用其接口方法
+    // 获取扭曲数据
+    const FDisplayClusterWarpData& WarpData = WarpBlend->GetWarpData(ContextNum);
+    const FDisplayClusterWarpContext& WarpContext = WarpData.WarpContext;
+    
+    // 使用投影矩阵
+    FMatrix ProjectionMatrix = WarpContext.ProjectionMatrix;
+    FMatrix UVMatrix = WarpContext.UVMatrix;
+    
+    // 获取纹理资源
+    FRHITexture* WarpMapTexture = WarpBlend->GetTexture(EDisplayClusterWarpBlendTextureType::WarpMap);
+    FRHITexture* AlphaMapTexture = WarpBlend->GetTexture(EDisplayClusterWarpBlendTextureType::AlphaMap);
 }
 ```
 
 ### 进阶用法
-使用自定义网格体作为扭曲几何源。
-（来源：`Public/IDisplayClusterWarp.h` 及 `Public/Containers/DisplayClusterWarpInitializer.h`）
+
+**自定义扭曲策略**（来源：`DisplayClusterWarpPolicyBase.h`）：
+
 ```cpp
-IDisplayClusterWarp& WarpModule = IDisplayClusterWarp::Get();
-
-// 假设你已经有一个 UStaticMeshComponent 指针：MyWarpMeshComp
-FDisplayClusterWarpInitializer_StaticMesh MeshInitParams;
-MeshInitParams.WarpMeshComponent = MyWarpMeshComp;
-MeshInitParams.OriginComponent = MyWarpMeshComp->GetOwner()->GetRootComponent(); // 设置原点组件
-MeshInitParams.StaticMeshComponentLODIndex = 0; // 使用指定 LOD 级别
-
-TSharedPtr<IDisplayClusterWarpBlend> MeshWarpBlend = WarpModule.Create(MeshInitParams);
-
-if (MeshWarpBlend.IsValid())
+// 创建自定义扭曲策略
+class FMyCustomWarpPolicy : public FDisplayClusterWarpPolicyBase
 {
-    // 使用网格体初始化的 WarpBlend 接口
-    // 它会读取网格体的顶点数据来计算扭曲
+public:
+    FMyCustomWarpPolicy(const FString& InPolicyName)
+        : FDisplayClusterWarpPolicyBase(TEXT("MyCustomPolicy"), InPolicyName)
+    {}
+    
+    // 实现策略接口
+    virtual void HandleNewFrame(const TArray<TSharedPtr<IDisplayClusterViewport, ESPMode::ThreadSafe>>& InViewports) override
+    {
+        // 自定义每帧处理逻辑
+    }
+    
+    virtual void Tick(IDisplayClusterViewportManager* InViewportManager, float DeltaSeconds) override
+    {
+        // 自定义更新逻辑
+    }
+    
+    virtual void BeginCalcFrustum(IDisplayClusterViewport* InViewport, const uint32 ContextNum) override
+    {
+        // 视锥体计算前的准备工作
+    }
+    
+    virtual void EndCalcFrustum(IDisplayClusterViewport* InViewport, const uint32 ContextNum) override
+    {
+        // 视锥体计算后的清理工作
+    }
+};
+
+// 注册策略工厂
+FDisplayClusterWarpInFrustumFitPolicyFactory PolicyFactory;
+// 通过工厂创建策略实例
+TSharedPtr<IDisplayClusterWarpPolicy> Policy = PolicyFactory.Create(TEXT("MyCustomPolicy"), TEXT("MyPolicyInstance"));
+```
+
+**导出扭曲几何用于调试**（来源：`IDisplayClusterWarpBlend.h`）：
+
+```cpp
+// 导出扭曲几何为OBJ格式
+FDisplayClusterWarpGeometryOBJ ExportedGeometry;
+uint32 MaxDimension = 64; // 降低分辨率用于快速预览
+
+if (WarpBlend->ExportWarpMapGeometry(ExportedGeometry, MaxDimension))
+{
+    // ExportedGeometry 包含顶点、法线、UV和三角形
+    // 可以用于可视化调试或导出到其他工具
+    
+    // 保存为OBJ文件
+    FString OBJContent;
+    OBJContent += TEXT("# nDisplay Warp Geometry Export\n");
+    
+    for (const FVector& Vertex : ExportedGeometry.Vertices)
+    {
+        OBJContent += FString::Printf(TEXT("v %f %f %f\n"), Vertex.X, Vertex.Y, Vertex.Z);
+    }
+    
+    for (const FVector2D& UV : ExportedGeometry.UV)
+    {
+        OBJContent += FString::Printf(TEXT("vt %f %f\n"), UV.X, UV.Y);
+    }
+    
+    // ... 写入面数据
 }
 ```
 
 ## Demo 示例
-一个创建基于网格的扭曲混合对象并获取其 AABB 的最小示例。
-**DisplayClusterWarpDemo.h**
+
+### 头文件：MyWarpController.h
+
 ```cpp
 #pragma once
-#include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "DisplayClusterWarpDemo.generated.h"
 
-class UStaticMeshComponent;
-class IDisplayClusterWarpBlend;
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "IDisplayClusterWarp.h"
+#include "IDisplayClusterWarpBlend.h"
+#include "MyWarpController.generated.h"
 
 UCLASS()
-class UDisplayClusterWarpDemo : public UObject
+class MYPROJECT_API AMyWarpController : public AActor
 {
-	GENERATED_BODY()
-
+    GENERATED_BODY()
+    
 public:
-    /** 在提供的网格体组件上初始化一个扭曲混合对象，并获取其包围盒 */
-    void InitializeWithMeshComponent(UStaticMeshComponent* MeshComponent);
-
+    AMyWarpController();
+    
+    virtual void BeginPlay() override;
+    virtual void Tick(float DeltaTime) override;
+    
+    UFUNCTION(BlueprintCallable, Category = "nDisplay|Warp")
+    void InitializeWarpFromMPCDI(const FString& MPCDIFile, const FString& BufferId, const FString& RegionId);
+    
+    UFUNCTION(BlueprintCallable, Category = "nDisplay|Warp")
+    void CalculateFrustumForViewport(class UDisplayClusterViewportComponent* Viewport, const FVector& EyeLocation, const FRotator& EyeRotation);
+    
+    UFUNCTION(BlueprintCallable, Category = "nDisplay|Warp")
+    FMatrix GetProjectionMatrix() const;
+    
 private:
-    TSharedPtr<IDisplayClusterWarpBlend> CurrentWarpBlend;
+    TSharedPtr<IDisplayClusterWarpBlend, ESPMode::ThreadSafe> WarpBlend;
+    
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    USceneComponent* OriginComponent;
+    
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    UStaticMeshComponent* WarpMeshComponent;
+    
+    FDisplayClusterWarpData CurrentWarpData;
+    bool bIsInitialized = false;
 };
 ```
-**DisplayClusterWarpDemo.cpp**
-```cpp
-#include "DisplayClusterWarpDemo.h"
-#include "DisplayClusterWarp/Public/IDisplayClusterWarp.h"
-#include "DisplayClusterWarp/Public/Containers/DisplayClusterWarpInitializer.h"
-#include "Components/StaticMeshComponent.h"
 
-void UDisplayClusterWarpDemo::InitializeWithMeshComponent(UStaticMeshComponent* MeshComponent)
+### 实现文件：MyWarpController.cpp
+
+```cpp
+#include "MyWarpController.h"
+#include "Components/DisplayClusterViewportComponent.h"
+#include "Containers/DisplayClusterWarpInitializer.h"
+#include "DisplayClusterRootActor.h"
+
+AMyWarpController::AMyWarpController()
 {
-    if (!MeshComponent || !IDisplayClusterWarp::IsAvailable())
+    PrimaryActorTick.bCanEverTick = true;
+    
+    // 创建组件
+    OriginComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Origin"));
+    RootComponent = OriginComponent;
+    
+    WarpMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WarpMesh"));
+    WarpMeshComponent->SetupAttachment(RootComponent);
+}
+
+void AMyWarpController::BeginPlay()
+{
+    Super::BeginPlay();
+    
+    // 自动初始化（如果有MPCDI文件）
+    InitializeWarpFromMPCDI(
+        TEXT("Content/Calibrations/MyScreen.mpcdi"),
+        TEXT("DefaultBuffer"),
+        TEXT("DefaultRegion")
+    );
+}
+
+void AMyWarpController::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+    
+    // 在 Tick 中更新扭曲数据（如果需要）
+    if (bIsInitialized && WarpBlend.IsValid())
     {
+        WarpBlend->UpdateGeometryContext(GetWorld()->GetWorldSettings()->WorldToMeters / 100.0f);
+    }
+}
+
+void AMyWarpController::InitializeWarpFromMPCDI(const FString& MPCDIFile, const FString& BufferId, const FString& RegionId)
+{
+    // 获取扭曲模块
+    if (!IDisplayClusterWarp::IsAvailable())
+    {
+        UE_LOG(LogTemp, Error, TEXT("DisplayClusterWarp module not available"));
         return;
     }
-
+    
     IDisplayClusterWarp& WarpModule = IDisplayClusterWarp::Get();
-
+    
     // 设置初始化参数
-    FDisplayClusterWarpInitializer_StaticMesh InitParams;
-    InitParams.WarpMeshComponent = MeshComponent;
-    // 假设网格组件的拥有者 Actor 的根组件作为原点
-    InitParams.OriginComponent = MeshComponent->GetOwner()->GetRootComponent();
-
-    // 创建实例
-    CurrentWarpBlend = WarpModule.Create(InitParams);
-
-    if (CurrentWarpBlend.IsValid())
+    FDisplayClusterWarpInitializer_MPCDIFile Params;
+    Params.MPCDIFileName = MPCDIFile;
+    Params.BufferId = BufferId;
+    Params.RegionId = RegionId;
+    
+    // 创建扭曲混合实例
+    WarpBlend = WarpModule.Create(Params);
+    
+    if (WarpBlend.IsValid())
     {
-        // 为了进行几何计算，通常需要更新几何上下文
-        const float WorldScale = 1.0f; // 世界缩放因子
-        CurrentWarpBlend->UpdateGeometryContext(WorldScale);
-
-        // 获取几何上下文以访问 AABB 等信息
-        const FDisplayClusterWarpGeometryContext& GeomContext = CurrentWarpBlend->GetGeometryContext();
-        const FBox& WarpAABB = GeomContext.AABBox.GetBox();
-
-        UE_LOG(LogTemp, Log, TEXT("Warp Blend AABB Min: %s, Max: %s"),
-            *WarpAABB.Min.ToString(), *WarpAABB.Max.ToString());
+        // 初始化场景
+        WarpBlend->HandleStartScene(nullptr); // Viewport 可以为空
+        bIsInitialized = true;
+        
+        UE_LOG(LogTemp, Log, TEXT("Warp blend initialized from MPCDI: %s"), *MPCDIFile);
     }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create warp blend from MPCDI: %s"), *MPCDIFile);
+    }
+}
+
+void AMyWarpController::CalculateFrustumForViewport(UDisplayClusterViewportComponent* Viewport, const FVector& EyeLocation, const FRotator& EyeRotation)
+{
+    if (!bIsInitialized || !WarpBlend.IsValid())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Warp not initialized"));
+        return;
+    }
+    
+    // 创建视点数据
+    TSharedPtr<FDisplayClusterWarpEye> WarpEye = MakeShared<FDisplayClusterWarpEye>(nullptr, 0); // Viewport 可以为空
+    
+    // 设置视点参数
+    WarpEye->ViewPoint.Location = EyeLocation;
+    WarpEye->ViewPoint.Rotation = EyeRotation;
+    WarpEye->ViewPoint.EyeOffset = FVector::ZeroVector; // 单眼模式
+    WarpEye->WorldScale = GetWorld()->GetWorldSettings()->WorldToMeters / 100.0f;
+    
+    // 计算视锥体
+    bool bSuccess = WarpBlend->CalcFrustumContext(WarpEye);
+    
+    if (bSuccess)
+    {
+        // 获取扭曲数据
+        CurrentWarpData = WarpBlend->GetWarpData(0); // Context 0
+        
+        UE_LOG(LogTemp, Log, TEXT("Frustum calculation successful"));
+        UE_LOG(LogTemp, Log, TEXT("Projection Matrix: %s"), *CurrentWarpData.WarpContext.ProjectionMatrix.ToString());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Frustum calculation failed"));
+    }
+}
+
+FMatrix AMyWarpController::GetProjectionMatrix() const
+{
+    return CurrentWarpData.WarpContext.ProjectionMatrix;
 }
 ```
 
 ## 模块依赖
-本模块在构建时依赖以下非通用模块。在你的项目或模块的 `.Build.cs` 文件中，如果需要链接或使用 `DisplayClusterWarp` 的类型，需要添加对应的依赖。
+
+从 Build.cs 的依赖项分析，DisplayClusterWarp 模块主要依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `UnrealEd` | 提供编辑器功能支持，如属性编辑、场景组件预览等。 |
+| `DisplayCluster` | nDisplay 核心模块，提供视口、根角色等基础架构 |
+| `DisplayClusterProjection` | 投影基础设施，提供投影策略接口 |
+| `DisplayClusterShaders` | 扭曲相关的渲染着色器 |
+| `MPCDI` | 第三方 MPCDI 库，用于解析校准文件格式 |
+| `RenderCore` | UE 渲染核心，用于纹理和网格操作 |
+| `RHI` | 渲染硬件接口，用于纹理资源管理 |
+
+**注意**：该模块需要在 `Build.cs` 中添加以下依赖才能使用：
+```csharp
+PublicDependencyModuleNames.AddRange(new string[] { "DisplayClusterWarp" });
+```
 
 ## 维护状态
 
 ### 近期更新
+
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为电影图表和nDisplay添加了对EXR多层输出的支持。 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 将电影渲染管线中的WarpBlendAlpha模式合并到通用的WarpBlend功能中。 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了混合现实生成器中的拓扑感知相机命名问题，并修复了MPCDI/ICVFX着色器中的不透明度混合。 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 使输出帧编码回退路径能够正确处理非默认的DisplayGamma值。 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当GUI纹理尺寸小于视口尺寸时出现的闪烁问题。 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 MovieGraph 添加多层 EXR 支持 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并 MoviePipeline 中的 WarpBlendAlpha 模式 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复拓扑感知相机命名和 MPCDI 着色器中的不透明 Alpha 问题 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 在输出帧编码回退时遵守非默认 DisplayGamma 设置 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理尺寸小于视口尺寸时的闪烁问题 |
 
 ### 维护评价
-- **活跃维护**：该模块在最近6个月内（2026年5月）有多次实质性功能更新和问题修复，涵盖了核心渲染管线、电影渲染、混合现实等多个方面。
-- **成熟度高**：作为自2018年就存在的企业级功能，其架构非常成熟和稳定。
-- **推荐使用**：是构建专业级多显示/投影系统（如虚拟制片、CAVE、大型投影映射）不可或缺的核心模块。建议结合最新的UE版本和文档使用。
+
+**维护状态**：**活跃维护中**
+
+**详细分析**：
+- **创建时间**：2018年6月，作为 nDisplay 的核心组件，已有7年历史
+- **最近更新**：最近一个月（2026年5月）有多次实质性更新，涉及功能增强和bug修复
+- **活跃度**：持续有新功能添加（如多层EXR支持、MoviePipeline集成）和问题修复
+- **功能成熟度**：支持多种校准格式（MPCDI、PFM）、多种投影类型（2D、3D、A3D、SL），功能完善
+- **问题限制**：作为专业渲染模块，需要特定的校准数据和硬件配置
+
+**推荐使用**：✅ **强烈推荐**
+
+DisplayClusterWarp 是一个成熟、稳定且持续维护的专业渲染模块。虽然创建于2018年，但最近仍有频繁的功能更新和bug修复。对于需要多显示器集群渲染、沉浸式投影系统或虚拟制作的项目，这是一个不可或缺的模块。对于简单的单显示器项目则不需要使用。
 
 ## 相关链接
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- 官方文档：(无)
+
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterWarp)
+- [nDisplay 官方文档](https://docs.unrealengine.com/en-US/ProductionPipelines/DisplayCluster/Overview/index.html)（UE官方文档）
+- [MPCDI 规范](https://mpcdi.org/)（校准文件格式标准）

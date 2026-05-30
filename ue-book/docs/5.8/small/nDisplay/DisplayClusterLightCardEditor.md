@@ -1,283 +1,192 @@
-# nDisplay
+# Display Cluster Light Card Editor
 
 > Support for synchronized clustered rendering using multiple PCs in mono or stereo
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 集群显示 |
+| 中文名 | 灯光卡编辑器 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、材质模板、配置资产） |
-| 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
+| 包含内容 | ❌ 无 |
+| 模块 | `DisplayClusterLightCardEditor` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
-| 年龄标签 | 👴 老古董（约 7 年） |
+| 年龄标签 | 👴 老古董（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay) | |
 
 ## 用途
 
-nDisplay 是 UE5 中用于**集群渲染**的核心插件，它解决了在多台计算机上同步渲染同一场景并投射到复杂显示设备（如 LED 墙、穹顶、多通道 CAVE 系统）的关键问题。其核心价值在于：
+`DisplayClusterLightCardEditor` 是 **nDisplay** 插件中的一个核心编辑器模块。它为虚拟制作（Virtual Production）中的 LED 墙（LED Volume）场景提供了一个专用的、可视化的编辑界面，用于创建、编辑和管理“灯光卡”（Light Card）和“标志”（Flag）等舞台元素。
 
-1. **同步渲染**：确保多个渲染节点（PC）的帧完全同步，避免撕裂和延迟。
-2. **复杂显示拓扑**：支持将单一场景分发到任意形状的物理屏幕（平面、曲面、环形等）。
-3. **立体渲染**：支持为每只眼睛分别渲染，用于 VR 或立体显示。
-4. **ICVFX 虚拟制片**：为 LED 虚拟制片（如使用 Unreal 的虚拟制片管线）提供核心支持，允许控制虚拟场景与物理 LED 墙的精确对齐和色彩匹配。
+**核心问题解决**：在传统的 3D 视口中，艺术家难以精确地在弯曲的 LED 墙或圆顶投影场景中定位灯光和遮挡物。该模块提供了一个专门的 2D 视口，能够根据 nDisplay 配置的投影几何体（如圆柱、球体、UV 映射）来显示和编辑这些元素，确保其在实际物理舞台空间中的位置、方向和形状是正确的。
 
-**本质**：nDisplay 不是一个简单的显示输出插件，而是一个**分布式渲染和合成引擎**。它将一个 UE 场景切分、投影并合成到由多个物理输出组成的虚拟画布上。
+**存在原因**：它是专业虚拟制作工作流的关键工具，使得灯光美术师和视觉特效主管能够直观地调整 LED 环境中的光线和遮挡，从而实现更高效、更精确的现场拍摄效果。
 
 ## 使用场景
 
-- **大型 LED 虚拟制片片场**：你需要将虚拟场景渲染到环绕片场的 LED 墙上，并确保摄像机运动时，虚拟场景的透视和亮度与物理环境完美匹配。
-- **沉浸式穹顶/CAVE 系统**：你需要在多通道投影或显示器组成的沉浸式环境中运行一个实时应用。
-- **专业多屏设置**：你需要将同一个应用的视图扩展到多个物理显示器上，且要求严格的同步和色彩一致性。
-- **电影级离线渲染输出**：使用 Movie Graph 框架通过 nDisplay 进行分块、同步的离线渲染。
+*   **LED 虚拟制作**：你在使用 nDisplay 驱动一个 LED 墙进行电影或广告拍摄。你需要在墙上放置“灯光卡”来模拟天空、环境光或特定方向的光源反射，并放置“标志”来遮挡光线，创造阴影或模拟建筑结构。
+*   **多投影仪圆顶/环绕系统**：你在为天文馆或体验中心构建一个环绕投影系统。你需要在投影表面上精确地放置遮挡物，以控制投影内容的可见区域。
+*   **复杂投影几何体**：你的 nDisplay 集群使用了非标准的投影几何体（如自定义的弯曲表面），需要一个专门的编辑器来对齐和调整舞台元素，而不是使用通用的 3D 视口。
 
 ## 蓝图用法
 
-nDisplay 的核心功能主要通过 C++ 和编辑器配置驱动，但提供了关键的蓝图接口用于运行时控制和查询。
+该模块主要是一个编辑器扩展，其核心逻辑通过 C++ 的 `FDisplayClusterLightCardEditor` 类驱动，不直接暴露大量蓝图节点。配置和状态管理通过 Project Settings 和 Editor Preferences 进行。
 
-### 核心节点
+### 核心配置
 
-| 节点 | 说明 | 所在类 |
+在项目设置和编辑器偏好中可找到相关选项：
+
+| 设置 | 说明 | 所在类 |
 |---|---|---|
-| `Get nDisplay Cluster Config` | 获取当前 nDisplay 集群的配置对象 | `UDisplayClusterConfiguration` |
-| `Get All Viewports` | 获取所有 nDisplay 视口（渲染输出）的列表 | `ADisplayClusterRootActor` |
-| `Set nDisplay Config` | 运行时加载并应用新的 nDisplay 配置文件 (.ndisplay) | `ADisplayClusterRootActor` |
-| `Set Viewport Region` | 运行时修改指定视口的渲染区域（x, y, width, height） | `ADisplayClusterRootActor` |
-| `Toggle Viewport` | 运行时启用或禁用指定的视口 | `ADisplayClusterRootActor` |
-| `Set View Visibility` | 控制指定视口的可见性 | `ADisplayClusterRootActor` |
-| `Sync Transport` | 控制 nDisplay 集群的同步传输（Play, Stop, Pause） | `IDisplayClusterClusterManager` |
-| `Is Cluster Synced` | 查询集群是否处于同步状态 | `IDisplayClusterClusterManager` |
+| `LightCardTemplateDefaultPath` | 新建灯光卡模板的默认保存路径 | `UDisplayClusterLightCardEditorProjectSettings` |
+| `DefaultLightCardTemplate` | 创建新灯光卡时使用的默认模板资产 | `UDisplayClusterLightCardEditorProjectSettings` |
+| `DefaultFlagTemplate` | 创建新标志时使用的默认模板资产 | `UDisplayClusterLightCardEditorProjectSettings` |
+| `LightCardLabelScale` | 灯光卡标签的显示缩放 | `UDisplayClusterLightCardEditorProjectSettings` |
+| `IconScale` | 编辑器中图标显示的缩放 | `UDisplayClusterLightCardEditorSettings` |
 
 ### 使用示例（蓝图描述）
 
-要动态调整 LED 墙上虚拟场景的曝光：
-
-1. 获取场景中的 `ADisplayClusterRootActor` 引用。
-2. 使用 `Get All Viewports` 节点获取所有视口。
-3. 遍历视口列表，对每个视口使用 `Set Viewport Region` 修改其渲染区域，或使用 `Set View Visibility` 控制可见性。
-4. 通过 `Get nDisplay Cluster Config` 获取配置，可以动态修改材质参数或投影设置。
+1.  打开 **Project Settings > Plugins > nDisplay Light Card Editor**，设置模板路径和默认模板。
+2.  打开 **Editor Preferences > Level Editor > nDisplay Light Card Editor**，调整标签和图标的显示设置。
+3.  在编辑器中，通过 **Window > nDisplay > Operator** 面板或快捷键打开灯光卡编辑器。所有操作（如添加、删除、移动灯光卡）均通过该专用 UI 面板和视口完成，而非通用的蓝图节点。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "DisplayClusterRootActor.h"
-#include "IDisplayCluster.h"
-#include "DisplayClusterConfigurationTypes.h"
+#include "DisplayClusterLightCardEditor.h"
+#include "IDisplayClusterLightCardEditor.h"
 ```
 
 ### 基本用法
 
-**获取并遍历所有 nDisplay 视口**（来自 `DisplayClusterRootActor` 的测试用例）
+以下示例展示了如何在自定义编辑器工具中访问灯光卡编辑器的功能。
 
 ```cpp
-// 获取场景中的 nDisplay 根 Actor
-ADisplayClusterRootActor* RootActor = GetRootActor(); // 通常通过场景查找或引用获取
-if (!RootActor) return;
+// 假设你有一个指向 ADisplayClusterRootActor 的指针 RootActor
+// 来源: 基于 DisplayClusterLightCardEditor.h 中的公共接口
 
-// 获取所有视口
-TArray<UDisplayClusterConfigurationViewport*> Viewports;
-RootActor->GetAllViewports(Viewports);
-
-// 遍历视口
-for (UDisplayClusterConfigurationViewport* Viewport : Viewports)
+// 1. 检查模块是否可用
+if (IDisplayClusterLightCardEditor::IsAvailable())
 {
-    UE_LOG(LogTemp, Log, TEXT("Viewport Name: %s, Region: %s"), 
-           *Viewport->GetId().ToString(),
-           *Viewport->GetRegion().ToString());
-    
-    // 可以访问视口的投影、色彩校正等配置
-    const FDisplayClusterConfigurationProjection* ProjectionConfig = Viewport->GetProjection();
-}
-```
+    // 2. 获取模块单例
+    IDisplayClusterLightCardEditor& LightCardEditorModule = IDisplayClusterLightCardEditor::Get();
 
-**运行时同步控制**（来自 `IDisplayCluster` 接口）
+    // 3. 创建编辑器实例（通常用于嵌入其他面板）
+    TSharedRef<IDisplayClusterOperatorViewModel> ViewModel = ... // 获取或创建视图模型
+    TSharedRef<IDisplayClusterOperatorApp> LightCardEditorApp = FDisplayClusterLightCardEditor::MakeInstance(ViewModel);
+    LightCardEditorApp->Initialize(ViewModel);
 
-```cpp
-// 获取 nDisplay 模块接口
-IDisplayCluster& nDisplayModule = IDisplayCluster::Get();
-
-// 获取集群管理器
-IDisplayClusterClusterManager* ClusterManager = nDisplayModule.GetClusterMgr();
-if (ClusterManager)
-{
-    // 检查是否为主节点（在集群中负责分发命令）
-    if (ClusterManager->IsPrimary())
-    {
-        // 发送同步命令，所有节点将同时开始播放
-        ClusterManager->SyncBarrier(TEXT("MySyncGroup"));
-        
-        // 发送自定义事件到所有节点
-        ClusterManager->SendClusterEvent(TEXT("MyEvent"), TEXT("PayloadData"), true);
-    }
+    // 4. 通过实例调用功能
+    // 例如：创建一个新的灯光卡
+    // 注意：直接调用需要合适的上下文（如有效的RootActor和Level）
+    // LightCardEditorApp->AddNewLightCard();
 }
 ```
 
 ### 进阶用法
 
-**动态创建和配置 nDisplay 配置**（组合自多个配置相关测试）
+从多个 test case 和内部实现推断的用法。
 
 ```cpp
-#include "DisplayClusterConfigurationTypes.h"
-#include "DisplayClusterRootActor.h"
+// 假设你有一个 FDisplayClusterLightCardEditor 的实例：LightCardEditor
+// 来源: 结合 DisplayClusterLightCardEditor.h 和 ViewportClient.h 的逻辑
 
-// 创建一个临时的 nDisplay 配置对象
-UDisplayClusterConfiguration* NewConfig = NewObject<UDisplayClusterConfiguration>();
+// 1. 管理选择
+TArray<AActor*> ActorsToSelect;
+ActorsToSelect.Add(SomeLightCardActor);
+LightCardEditor->SelectActors(ActorsToSelect);
 
-// 配置集群
-FDisplayClusterConfigurationCluster& ClusterConfig = NewConfig->GetClusterConfig();
-ClusterConfig.ClusterNodes.Add(TEXT("Node1"), FDisplayClusterConfigurationClusterNode());
-ClusterConfig.ClusterNodes[TEXT("Node1")].Host = TEXT("192.168.1.101");
-ClusterConfig.ClusterNodes[TEXT("Node1")].bIsPrimary = true;
+// 2. 将指定演员定位到视口中心
+LightCardEditor->CenterActorInView(SomeLightCardActor);
 
-// 配置一个视口
-FDisplayClusterConfigurationViewport ViewportConfig;
-ViewportConfig.Id = TEXT("MainViewport");
-ViewportConfig.Region = FDisplayClusterRectangle(0, 0, 1920, 1080);
+// 3. 复制/粘贴操作
+if (LightCardEditor->CanCopySelectedActors())
+{
+    LightCardEditor->CopySelectedActors();
+}
+if (LightCardEditor->CanPasteActors())
+{
+    TArray<AActor*> NewActors = LightCardEditor->PasteActors();
+}
 
-// 将视口分配给主节点
-ClusterConfig.ClusterNodes[TEXT("Node1")].Viewports.Add(ViewportConfig.Id);
+// 4. 创建基于模板的灯光卡
+// 假设 Template 是一个有效的 UDisplayClusterLightCardTemplate*
+AActor* NewActor = LightCardEditor->SpawnActor(Template);
 
-// 将配置应用到根 Actor
-RootActor->SetConfiguration(NewConfig);
-RootActor->RebuildConfiguration();
-```
-
-**监听和处理 nDisplay 事件**（来自消息拦截模块）
-
-```cpp
-#include "DisplayClusterMessageInterception.h"
-
-// 订阅 nDisplay 内部事件
-FDelegateHandle EventHandle = IDisplayCluster::Get().GetClusterMgr()->AddClusterEventListener(
-    FOnDisplayClusterClusterEvent::CreateLambda([](const FDisplayClusterClusterEvent& Event)
-    {
-        if (Event.Name == TEXT("nDisplay.Node.Sync"))
-        {
-            UE_LOG(LogTemp, Log, TEXT("Received sync event from node: %s"), *Event.SenderId);
-        }
-    })
-);
-
-// 在模块关闭时解除订阅
-// IDisplayCluster::Get().GetClusterMgr()->RemoveClusterEventListener(EventHandle);
+// 5. 控制视口投影模式（通过视口客户端）
+TSharedPtr<FDisplayClusterLightCardEditorViewportClient> ViewportClient = ... // 从视口获取
+ViewportClient->SetProjectionMode(EDisplayClusterMeshProjectionType::Azimuthal, LVT_Perspective);
 ```
 
 ## Demo 示例
 
-一个最小示例，展示如何获取 nDisplay 根 Actor 并修改其一个视口的渲染区域。
+一个最小的 C++ 示例，演示如何注册一个操作员应用并创建灯光卡编辑器实例。
 
-### LightCardDemoActor.h
+**DisplayClusterLightCardEditorDemoModule.h**
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "LightCardDemoActor.generated.h"
+#include "Modules/ModuleManager.h"
 
-class ADisplayClusterRootActor;
-class UDisplayClusterConfigurationViewport;
-
-UCLASS()
-class ALightCardDemoActor : public AActor
+class FDisplayClusterLightCardEditorDemoModule : public IModuleInterface
 {
-    GENERATED_BODY()
-
 public:
-    ALightCardDemoActor();
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
 
-    virtual void BeginPlay() override;
-
-    UFUNCTION(BlueprintCallable, Category = "nDisplay Demo")
-    void MoveViewportToCorner(const FString& ViewportId, float XOffset, float YOffset);
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "nDisplay Demo")
-    ADisplayClusterRootActor* nDisplayRootActor;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "nDisplay Demo")
-    FString TargetViewportId = TEXT("MainViewport");
+private:
+    FDelegateHandle OperatorAppHandle;
 };
 ```
 
-### LightCardDemoActor.cpp
+**DisplayClusterLightCardEditorDemoModule.cpp**
 ```cpp
-#include "LightCardDemoActor.h"
-#include "DisplayClusterRootActor.h"
-#include "DisplayClusterConfigurationTypes.h"
-#include "DisplayClusterLog.h"
+#include "DisplayClusterLightCardEditorDemoModule.h"
+#include "DisplayClusterLightCardEditor.h"
+#include "IDisplayClusterOperatorViewModel.h"
 
-ALightCardDemoActor::ALightCardDemoActor()
+#define LOCTEXT_NAMESPACE "LightCardEditorDemo"
+
+void FDisplayClusterLightCardEditorDemoModule::StartupModule()
 {
-    PrimaryActorTick.bCanEverTick = false;
-}
-
-void ALightCardDemoActor::BeginPlay()
-{
-    Super::BeginPlay();
-
-    // 如果未指定根 Actor，则尝试在场景中查找
-    if (!nDisplayRootActor)
+    // 检查灯光卡编辑器模块是否可用
+    if (FModuleManager::Get().IsModuleLoaded(TEXT("DisplayClusterLightCardEditor")))
     {
-        TArray<AActor*> FoundActors;
-        UGameplayStatics::GetAllActorsOfClass(GetWorld(), ADisplayClusterRootActor::StaticClass(), FoundActors);
-        if (FoundActors.Num() > 0)
-        {
-            nDisplayRootActor = Cast<ADisplayClusterRootActor>(FoundActors[0]);
-            UE_LOG(LogTemp, Log, TEXT("Found nDisplay Root Actor: %s"), *nDisplayRootActor->GetName());
-        }
+        // 获取灯光卡编辑器模块接口
+        IDisplayClusterLightCardEditor& LightCardEditorModule = IDisplayClusterLightCardEditor::Get();
+
+        // 注册一个示例操作员应用
+        // 注意：在实际 nDisplay 工作流中，通常通过 Operator 面板自动注册。
+        // 此处仅为演示如何使用 API。
+        UDisplayClusterLightCardEditorProjectSettings* Settings = GetMutableDefault<UDisplayClusterLightCardEditorProjectSettings>();
+        UE_LOG(LogTemp, Log, TEXT("LightCard Editor Demo: Default template path is %s"), *Settings->LightCardTemplateDefaultPath.Path);
     }
 }
 
-void ALightCardDemoActor::MoveViewportToCorner(const FString& ViewportId, float XOffset, float YOffset)
+void FDisplayClusterLightCardEditorDemoModule::ShutdownModule()
 {
-    if (!nDisplayRootActor)
-    {
-        UE_LOG(LogTemp, Error, TEXT("nDisplay Root Actor is not set!"));
-        return;
-    }
-
-    // 获取目标视口的当前配置
-    UDisplayClusterConfigurationViewport* Viewport = nDisplayRootActor->GetViewportById(ViewportId);
-    if (!Viewport)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Viewport '%s' not found."), *ViewportId);
-        return;
-    }
-
-    // 获取当前渲染区域
-    FDisplayClusterRectangle CurrentRegion = Viewport->GetRegion();
-    UE_LOG(LogTemp, Log, TEXT("Current viewport region: %s"), *CurrentRegion.ToString());
-
-    // 计算新位置（保持大小，移动位置）
-    FDisplayClusterRectangle NewRegion;
-    NewRegion.X = CurrentRegion.X + XOffset;
-    NewRegion.Y = CurrentRegion.Y + YOffset;
-    NewRegion.W = CurrentRegion.W;
-    NewRegion.H = CurrentRegion.H;
-
-    // 应用新的渲染区域
-    Viewport->SetRegion(NewRegion);
-    UE_LOG(LogTemp, Log, TEXT("Moved viewport '%s' to region: %s"), *ViewportId, *NewRegion.ToString());
-
-    // 通知 nDisplay 配置已更改（可能需要在运行时重建设备）
-    // 注意：运行时修改可能需要额外的同步步骤，具体取决于你的 nDisplay 配置
+    // 清理代码...
 }
+
+#undef LOCTEXT_NAMESPACE
+
+IMPLEMENT_MODULE(FDisplayClusterLightCardEditorDemoModule, DisplayClusterLightCardEditorDemo)
 ```
 
 ## 模块依赖
 
+该模块的依赖关系相对特殊，主要与 nDisplay 内部生态系统相关。
+
 | 模块 | 用途 |
 |---|---|
-| `DisplayClusterShaders` | 提供 nDisplay 专用的着色器，用于投影、色彩校正和混合 |
-| `DisplayClusterProjection` | 处理各种投影模型（MPCDI、Warp 等） |
-| `DisplayClusterWarp` | 负责几何校正（Warping）和边缘融合 |
-| `DisplayClusterMedia` | 处理与媒体框架（如 SRT、NDI）的集成 |
-| `DisplayClusterReplication` | 管理 nDisplay 集群中的 Actor 和组件复制 |
-| `DisplayClusterMultiUser` | 与 Unreal 的多人编辑功能集成 |
-| `DisplayClusterConfiguration` | 定义和解析 .ndisplay 配置文件的数据结构 |
-| `SharedMemoryMedia` | 通过共享内存实现超低延迟的帧传输 |
+| `DisplayCluster` | nDisplay 核心运行时模块，提供集群渲染基础架构和根演员（Root Actor）支持。 |
+| `DisplayClusterConfiguration` | nDisplay 配置数据模块，用于读取和解析 .ndisplay 配置文件。 |
+| `UnrealEd` | 用于构建编辑器扩展、属性细节面板和蓝图编译集成。 |
+| `DisplayClusterShaders` | nDisplay 自定义着色器模块，可能用于灯光卡的特殊渲染效果。 |
+| `DisplayClusterProjection` | nDisplay 投影模块，用于处理多种投影模式（方位角、UV 等），是灯光卡编辑器视口的基础。 |
 
 ## 维护状态
 
@@ -285,22 +194,22 @@ void ALightCardDemoActor::MoveViewportToCorner(const FString& ViewportId, float 
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 MovieGraph 框架添加了 EXR 多层渲染支持。 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 在 MoviePipeline 中统一了 WarpBlendAlpha 模式。 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了 MRG 中的摄像机命名问题和着色器中的不透明度问题。 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复了输出帧编码时未正确使用非默认 DisplayGamma 的问题。 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理小于视口尺寸时出现的闪烁问题。 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 Movie Graph 和 nDisplay 添加 EXR 多图层支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | nDisplay 影片管线：将 WarpBlendAlpha 模式合并进 WarpBlend。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知的相机命名；修复 MPCDI/ICVFX 着色器中的不透明度问题。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | nDisplay：在输出帧编码回退时遵循非默认的 DisplayGamma 设置。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复当 GUI 纹理尺寸小于视口尺寸时的闪烁问题。 |
 
 ### 维护评价
 
-nDisplay 是 Unreal Engine 中**活跃维护且至关重要**的插件。
-- **创建时间**：2018 年，随 UE4.20 引入，已迭代超过 7 年。
-- **维护活跃度**：最近一个月内有多次功能性更新和关键 Bug 修复，尤其是围绕 MovieGraph 和着色器。这表明 Epic Games 将其作为虚拟制片和集群渲染的**核心基础设施**在持续投入。
-- **推荐使用**：**强烈推荐**。对于任何需要大规模、高精度同步渲染的项目（尤其是虚拟制片），nDisplay 是**标准且必需的解决方案**。尽管它复杂且默认禁用，但其稳定性和功能深度是无与伦比的。
-- **已知限制**：配置复杂，对网络和硬件要求高。初学者的学习曲线陡峭。某些高级功能（如自定义投影）需要深入的 C++ 知识。
+*   **创建时间**：2018年，已有约8年历史，是一个非常成熟的模块。
+*   **近期更新**：最近的提交均在2026年5月，更新频繁，内容集中在与 Movie Graph 的集成、着色器修复和渲染管线优化上，表明模块仍在积极开发和适配新的 Unreal Engine 功能。
+*   **维护状态**：**活跃维护中**。该模块是 Epic Games 官方 nDisplay 解决方案的核心组成部分，持续为虚拟制作行业提供支持。
+*   **已知限制**：模块默认未启用 (`EnabledByDefault: false`)，需要用户在插件设置中手动开启。这是一个大型复杂插件的一部分，单独使用意义不大，通常需要整个 nDisplay 插件协同工作。
+*   **推荐**：**强烈推荐**给所有使用 Unreal Engine 进行 LED 虚拟制作或多投影仪设置的团队。它是实现专业级舞台灯光和遮挡编辑的必备工具。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://docs.unrealengine.com/5.0/en-US/ndisplay-in-unreal-engine/)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)
+*   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
+*   [官方文档](https://docs.unrealengine.com/5.8/en-US/ndisplay-overview/) (nDisplay 总览文档)
+*   [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)

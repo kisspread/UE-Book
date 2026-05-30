@@ -4,302 +4,225 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 集群显示 |
+| 中文名 | 集群投影 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（投影校准、媒体资产、编辑器工具） |
-| 模块 | `DisplayCluster` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterWarp` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterConfigurator` (Runtime), `SharedMemoryMedia` (Runtime), 等共 30 个模块 |
+| 包含内容 | ✅ 有（蓝图资产、测试资源、材质模板） |
+| 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
 | 年龄标签 | 👴 老古董（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay) | |
 
-> **注意**：这是一个超大型插件（xlarge，1351 源文件，30 个模块），本文档聚焦于核心子模块 **DisplayClusterProjection** 的详细分析，其余子模块需单独文档覆盖。
-
----
-
 ## 用途
+nDisplay 是 Unreal Engine 中用于构建大型沉浸式可视化和虚拟制作环境的高级插件。它的核心功能是**将 Unreal Engine 的渲染画面同步、无损地输出到多个物理显示设备上**，这些设备通常由多台联网的 PC（集群）驱动。与简单的多显示器扩展不同，nDisplay 专注于解决以下专业问题：
+- **精确几何校正与边缘融合**：支持对非平面（如曲面屏、穹顶）和多平面屏幕组合进行精确的几何扭曲（Warp）和边缘融合（Blend），以消除投影缝隙并实现无缝画面。
+- **多通道立体渲染**：支持为立体（Stereo）显示（如 VR 头显、被动式立体投影）独立渲染左右眼视图。
+- **集群同步**：确保集群中所有 PC 的渲染状态（时间、动画、物理等）完全同步，避免画面撕裂或不同步。
+- **灵活的投影策略**：通过可扩展的“投影策略”（Projection Policy）系统，集成第三方硬件校准解决方案（如 MPCDI、EasyBlend、VIOSO、Domeprojection）或使用手动/相机/网格等多种方式定义视口和视锥体。
 
-nDisplay 是 UE5 的多机集群同步渲染系统，用于在多台 PC 上驱动多屏幕、投影仪和 LED 墙等显示设备，实现同步的单目或立体渲染。
-
-**DisplayClusterProjection** 模块是 nDisplay 的投影策略核心，负责：
-
-1. **投影策略管理**：提供统一的投影策略接口（`IDisplayClusterProjectionPolicy`），支持多种第三方投影校准/变形/融合方案的无缝集成
-2. **视锥体计算**：根据不同的投影策略（相机、手动矩阵、校准文件等）为每个视口计算正确的视图位置、旋转和投影矩阵
-3. **Warp & Blend**：在渲染线程中执行图像变形（Warp）和融合（Blend），将渲染输出校正为投影仪/显示器的几何形状
-4. **多 RHI 支持**：针对 DX11/DX12 等不同图形 API 提供适配器，确保第三方 SDK 正确初始化和渲染
-
-简而言之，这个模块解决了"如何在非平面、非规则形状的显示设备上正确投影 Unreal 画面"的核心问题。
+简而言之，当你的项目需要将 UE 画面输出到由多块屏幕组成的复杂物理显示系统（如 CAVE 洞穴、飞行模拟器视景系统、环幕影院、大型 LED 墙）时，nDisplay 是官方提供的核心解决方案。
 
 ## 使用场景
-
-- **CAVE 系统 / 穹顶投影**：多面投影系统需要复杂的几何校正 → 用 MPCDI / EasyBlend / VIOSO / Domeprojection 策略
-- **LED Volume 拍摄 (ICVFX)**：虚拟制片中的 LED 墙需要精确的投影映射 → 用 MPCDI / Mesh 策略
-- **多屏拼接显示**：多台投影仪拼接一个大画面 → 用 MPCDI 配置 warp mesh 和 blend 区域
-- **固定 FOV 显示**：直接用相机或手动设置视锥体 → 用 Camera / Manual 策略
-- **视口复用**：多个视口共享同一投影参数 → 用 Link / Reference 策略
-
-### 支持的投影策略类型
-
-| 策略类型 | 说明 | 适用场景 |
-|---|---|---|
-| `camera` | 基于场景中的相机组件 | 简单的固定视角显示 |
-| `manual` | 手动指定投影矩阵或视锥角度 | 完全自定义的投影需求 |
-| `mpcdi` | 从 MPCDI 文件加载变形/融合数据 | 行业标准校准文件（投影仪拼接） |
-| `mesh` | 基于场景中的网格几何体 | LED Volume / 任意形状屏幕 |
-| `link` | 继承父视口的投影参数 | 视口间的投影参数复用 |
-| `reference` | 引用另一个视口的完整投影 | 多视口共享同一投影源 |
-| `easyblend` | Scalable Display 的 EasyBlend 校准 | 专业投影仪校准系统 |
-| `vioso` | VIOSO Warping & Blending | 穹顶/曲面投影系统 |
-| `domeprojection` | domeprojection.com 校准系统 | 专业穹顶投影 |
+- **虚拟制片（Virtual Production）**：在 LED Volume 墙幕上实时渲染并同步显示背景画面，用于电影和电视制作。
+- **建筑与工程可视化**：在 CAVE 系统或沉浸式房间里，以第一人称视角交互式地浏览大型建筑或工业模型。
+- **驾驶/飞行模拟器**：将模拟器的多个屏幕（前视、侧视）无缝连接，形成广阔的视景环境。
+- **主题公园与大型娱乐设施**：控制环幕、穹顶等特殊投影形状的同步渲染和几何校正。
+- **科学数据可视化**：在多显示器阵列上同步展示和交互大规模科学计算或仿真结果。
 
 ## 蓝图用法
+nDisplay 提供蓝图接口以动态控制投影策略，尤其是用于虚拟制片中的相机管理。
 
 ### 核心节点
-
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `CameraPolicySetCamera` | 为指定视口设置相机投影策略的相机组件 | `UDisplayClusterProjectionBlueprintLib` |
+| `Set Camera` | 为指定的 nDisplay 视口设置摄像机投影策略使用的 `UCameraComponent`。常用于虚拟制片中，动态将 LED Volume 屏幕内容“聚焦”到场景中的特定摄影机上。 | `UDisplayClusterProjectionBlueprintLib` |
 
-### 使用示例
-
-**设置相机投影策略的目标相机：**
-
-1. 获取对 nDisplay 配置的引用（通常在 BeginPlay 时）
-2. 调用 `CameraPolicySetCamera`，传入视口 ID（如 `"ICVFX_Stage"`）、相机组件引用和 FOV 乘数
-
-蓝图连接示意：
-```
-[Event BeginPlay] → [CameraPolicySetCamera]
-                        ├─ ViewportId: "viewport_0"
-                        ├─ NewCamera: [CameraComponent 引用]
-                        └─ FOVMultiplier: 1.0
-```
-
-> **注意**：旧版 `IDisplayClusterProjectionBlueprintAPI::CameraPolicySetCamera` 已在 5.4 中废弃，功能已移至 `UDisplayClusterProjectionBlueprintLib`，在蓝图函数列表的 "nDisplay" 分类下可直接找到。
+### 使用示例（蓝图描述）
+1.  在你的角色蓝图或关卡蓝图中，添加一个 `UCameraComponent` 作为虚拟制作摄像机。
+2.  使用 `Set Camera` 蓝图节点。
+3.  将 `Viewport ID` 参数连接到你想要控制的 nDisplay 视口名称（在 nDisplay 配置文件中定义，例如 `"vp_1"`）。
+4.  将 `New Camera` 参数连接到你的 `UCameraComponent` 引用。
+5.  （可选）调整 `FOV Multiplier` 参数以微调摄像机视场角对投影的影响。
+6.  当该节点执行时，指定视口的投影将跟随你设置的摄像机移动和旋转。
 
 ## C++ 用法
-
 ### 头文件引入
-
+要使用 nDisplay 的投影策略系统，主要需要引入投影模块的头文件。
 ```cpp
-#include "DisplayClusterProjectionModule.h"
 #include "IDisplayClusterProjection.h"
-#include "IDisplayClusterProjectionPolicy.h"
 ```
 
-### 基本用法
-
-**获取投影模块接口并查询支持的投影类型：**
+### 基本用法：获取投影模块并查询策略
+以下代码展示了如何检查 nDisplay 投影模块是否可用，并获取支持的投影类型列表。
+（来源：基于 `IDisplayClusterProjection` 接口和 `FDisplayClusterProjectionModule` 实现推断）
 
 ```cpp
-// 来源: Public/IDisplayClusterProjection.h
-// 获取投影模块单例
+// 检查模块是否可用
 if (IDisplayClusterProjection::IsAvailable())
 {
+    // 获取模块单例
     IDisplayClusterProjection& ProjectionModule = IDisplayClusterProjection::Get();
-    
-    // 查询所有支持的投影策略类型
+
+    // 查询所有已注册的投影策略类型
     TArray<FString> SupportedTypes;
     ProjectionModule.GetSupportedProjectionTypes(SupportedTypes);
-    // SupportedTypes 包含: "camera", "manual", "mpcdi", "mesh", "link", 
-    //                      "reference", "easyblend", "vioso", "domeprojection"
+
+    // 输出支持的类型
+    for (const FString& TypeName : SupportedTypes)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Supported Projection Type: %s"), *TypeName);
+    }
+    // 输出可能包括: "mpcdi", "camera", "manual", "easyblend", "vioso", "domeprojection" 等
 }
 ```
 
-**通过工厂创建投影策略实例：**
+### 进阶用法：应用 MPCDI 投影策略
+以下代码片段展示了如何在 C++ 中配置并应用一个 MPCDI 投影策略到视口上。这是 nDisplay 最常用的高级投影校准方式之一。
+（来源：基于 `FDisplayClusterProjectionMPCDIPolicy` 和 `IDisplayClusterProjectionPolicy` 接口推断）
 
 ```cpp
-// 来源: Private/DisplayClusterProjectionModule.h
+// 假设我们已经有了一个指向 IDisplayClusterViewport 的指针 InViewport
+// 以及从 nDisplay 配置解析出的投影参数 Map
+
+// 1. 从配置中构建 MPCDI 策略参数
+TMap<FString, FString> MPCDIParams;
+MPCDIParams.Add(TEXT("type"), TEXT("mpcdi"));
+MPCDIParams.Add(TEXT("file"), TEXT("path/to/your/calibration.mpcdi"));
+MPCDIParams.Add(TEXT("buffer"), TEXT("default"));
+MPCDIParams.Add(TEXT("region"), TEXT("region_1"));
+MPCDIParams.Add(TEXT("origin"), TEXT("camera_origin_component")); // 指定原点场景组件
+
+// 2. 通过 nDisplay 的工厂系统创建策略实例
+// 通常在 nDisplay 的内部初始化流程中自动完成，但理解其原理很重要。
 IDisplayClusterProjection& ProjectionModule = IDisplayClusterProjection::Get();
+TSharedPtr<IDisplayClusterProjectionPolicyFactory> MPCDIFactory = ProjectionModule.GetProjectionFactory(TEXT("mpcdi"));
 
-// 获取 MPCDI 投影策略的工厂
-TSharedPtr<IDisplayClusterProjectionPolicyFactory> Factory = 
-    ProjectionModule.GetProjectionFactory(TEXT("mpcdi"));
-
-if (Factory.IsValid())
+if (MPCDIFactory.IsValid())
 {
-    // 工厂根据配置创建策略实例
-    // (实际调用在 nDisplay 内部的视口管理流程中自动完成)
+    // 创建策略实例 (实际使用中，策略会通过更高级的接口与视口绑定)
+    TSharedPtr<IDisplayClusterProjectionPolicy> MPCDIPolicy = MPCDIFactory->Create(TEXT("MyViewport_MPCDI_Policy"), nullptr /* ConfigProjectionPolicy */);
+
+    if (MPCDIPolicy.IsValid())
+    {
+        // 策略在视口初始化时（HandleStartScene）会根据提供的参数（MPCDIParams）加载校准文件。
+        // 之后，视口的渲染管线会在每帧调用策略的 CalculateView 和 GetProjectionMatrix 来获取正确的视图和投影矩阵。
+        // 并在需要时调用 ApplyWarpBlend_RenderThread 进行后处理扭曲融合。
+        UE_LOG(LogTemp, Log, TEXT("MPCDI Projection Policy created successfully."));
+    }
 }
-```
-
-**运行时切换相机投影的目标相机：**
-
-```cpp
-// 来源: Public/DisplayClusterProjectionBlueprintLib.h
-// 通过蓝图库函数（也可在 C++ 中直接调用）
-UDisplayClusterProjectionBlueprintLib::CameraPolicySetCamera(
-    TEXT("viewport_0"),    // 视口 ID
-    MyCameraComponent,     // UCameraComponent*
-    1.5f                   // FOV 乘数
-);
-```
-
-### 进阶用法
-
-**投影策略的生命周期管理（nDisplay 内部流程）：**
-
-```cpp
-// 来源: Private/Policy/DisplayClusterProjectionPolicyBase.h
-// 投影策略通过以下生命周期回调工作：
-
-// 1. 场景启动时初始化
-bool HandleStartScene(IDisplayClusterViewport* InViewport);
-
-// 2. 每帧计算视图（GameThread）
-bool CalculateView(
-    IDisplayClusterViewport* InViewport,
-    const uint32 InContextNum,
-    FVector& InOutViewLocation,
-    FRotator& InOutViewRotation,
-    const FVector& ViewOffset,
-    const float WorldToMeters,
-    const float NCP,
-    const float FCP
-);
-
-// 3. 获取投影矩阵
-bool GetProjectionMatrix(
-    IDisplayClusterViewport* InViewport,
-    const uint32 InContextNum,
-    FMatrix& OutPrjMatrix
-);
-
-// 4. 渲染线程应用 Warp & Blend
-void ApplyWarpBlend_RenderThread(
-    FRHICommandListImmediate& RHICmdList,
-    const IDisplayClusterViewportProxy* InViewportProxy
-);
-
-// 5. 场景结束时清理
-void HandleEndScene(IDisplayClusterViewport* InViewport);
-```
-
-**MPCDI 配置参数常量（用于 .cfg 配置文件）：**
-
-```cpp
-// 来源: Public/DisplayClusterProjectionStrings.h
-// 使用预定义的字符串常量配置投影策略参数
-
-// MPCDI 配置示例
-TMap<FString, FString> Parameters;
-Parameters.Add(DisplayClusterProjectionStrings::cfg::mpcdi::File, TEXT("calibration.mpcdi"));
-Parameters.Add(DisplayClusterProjectionStrings::cfg::mpcdi::Buffer, TEXT("default"));
-Parameters.Add(DisplayClusterProjectionStrings::cfg::mpcdi::Region, TEXT("region_0"));
-Parameters.Add(DisplayClusterProjectionStrings::cfg::mpcdi::Origin, TEXT("camera_origin"));
-Parameters.Add(DisplayClusterProjectionStrings::cfg::mpcdi::WorldScale, TEXT("1000"));
-
-// Manual 配置示例
-Parameters.Add(DisplayClusterProjectionStrings::cfg::manual::Rendering, 
-               DisplayClusterProjectionStrings::cfg::manual::RenderingType::Stereo);
-Parameters.Add(DisplayClusterProjectionStrings::cfg::manual::Type, 
-               DisplayClusterProjectionStrings::cfg::manual::FrustumType::Angles);
-Parameters.Add(DisplayClusterProjectionStrings::cfg::manual::AngleL, TEXT("-45"));
-Parameters.Add(DisplayClusterProjectionStrings::cfg::manual::AngleR, TEXT("45"));
-Parameters.Add(DisplayClusterProjectionStrings::cfg::manual::AngleT, TEXT("30"));
-Parameters.Add(DisplayClusterProjectionStrings::cfg::manual::AngleB, TEXT("-30"));
 ```
 
 ## Demo 示例
+一个最小的可运行示例，展示如何创建一个简单的 nDisplay 集群节点（模拟）。
 
-以下演示如何在运行时通过代码管理 nDisplay 相机投影策略。
-
-### MyNDisplayManager.h
-
+### nDisplaySimulatorNode.h
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "MyNDisplayManager.generated.h"
-
-class UCameraComponent;
+#include "IDisplayClusterProjection.h" // 引入投影模块接口
+#include "nDisplaySimulatorNode.generated.h"
 
 UCLASS()
-class AMyNDisplayManager : public AActor
+class AnDisplaySimulatorNode : public AActor
 {
     GENERATED_BODY()
 
 public:
-    AMyNDisplayManager();
+    AnDisplaySimulatorNode();
 
 protected:
     virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-    /** 在运行时切换 nDisplay 视口的投影相机 */
-    UFUNCTION(BlueprintCallable)
-    void SwitchProjectionCamera(const FString& ViewportId, UCameraComponent* NewCamera);
+private:
+    // 模拟的 nDisplay 视口 ID
+    FString SimulatedViewportId = TEXT("SimViewport_0");
 
-protected:
-    UPROPERTY(EditAnywhere, Category = "nDisplay")
-    FString TargetViewportId = TEXT("viewport_0");
+    // 持有的投影策略指针（示例中未实际创建，演示生命周期）
+    TSharedPtr<IDisplayClusterProjectionPolicy> ProjectionPolicy;
 
-    UPROPERTY(EditAnywhere, Category = "nDisplay")
-    TObjectPtr<UCameraComponent> DefaultCamera;
-
-    UPROPERTY(EditAnywhere, Category = "nDisplay", meta = (ClampMin = "0.1", ClampMax = "5.0"))
-    float FOVMultiplier = 1.0f;
+    // 初始化 nDisplay 投影子系统（示例）
+    void InitializeProjectionSystem();
+    // 清理资源
+    void CleanupProjectionSystem();
 };
 ```
 
-### MyNDisplayManager.cpp
-
+### nDisplaySimulatorNode.cpp
 ```cpp
-#include "MyNDisplayManager.h"
-#include "Camera/CameraComponent.h"
-#include "DisplayClusterProjectionBlueprintLib.h"
+#include "nDisplaySimulatorNode.h"
+#include "IDisplayClusterProjection.h"
 
-AMyNDisplayManager::AMyNDisplayManager()
+AnDisplaySimulatorNode::AnDisplaySimulatorNode()
 {
     PrimaryActorTick.bCanEverTick = false;
-
-    DefaultCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("DefaultCamera"));
-    RootComponent = DefaultCamera;
 }
 
-void AMyNDisplayManager::BeginPlay()
+void AnDisplaySimulatorNode::BeginPlay()
 {
     Super::BeginPlay();
-
-    // 在场景开始时设置默认投影相机
-    if (DefaultCamera)
-    {
-        SwitchProjectionCamera(TargetViewportId, DefaultCamera);
-    }
+    InitializeProjectionSystem();
 }
 
-void AMyNDisplayManager::SwitchProjectionCamera(const FString& ViewportId, UCameraComponent* NewCamera)
+void AnDisplaySimulatorNode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    if (!NewCamera)
+    CleanupProjectionSystem();
+    Super::EndPlay(EndPlayReason);
+}
+
+void AnDisplaySimulatorNode::InitializeProjectionSystem()
+{
+    // 步骤 1: 检查 nDisplay 投影模块是否已加载
+    if (!IDisplayClusterProjection::IsAvailable())
     {
-        UE_LOG(LogTemp, Warning, TEXT("SwitchProjectionCamera: NewCamera is null"));
+        UE_LOG(LogTemp, Error, TEXT("nDisplay Projection module is not loaded! Ensure the nDisplay plugin is enabled."));
         return;
     }
 
-    // 通过蓝图库设置投影相机
-    UDisplayClusterProjectionBlueprintLib::CameraPolicySetCamera(
-        ViewportId,
-        NewCamera,
-        FOVMultiplier
-    );
+    IDisplayClusterProjection& ProjectionModule = IDisplayClusterProjection::Get();
+    UE_LOG(LogTemp, Log, TEXT("nDisplay Projection module is available."));
 
-    UE_LOG(LogTemp, Log, TEXT("nDisplay projection camera set for viewport '%s'"), *ViewportId);
+    // 步骤 2: (模拟) 查询支持的投影类型
+    TArray<FString> SupportedTypes;
+    ProjectionModule.GetSupportedProjectionTypes(SupportedTypes);
+    for (const FString& Type : SupportedTypes)
+    {
+        UE_LOG(LogTemp, Log, TEXT(" - Supported Projection Type: %s"), *Type);
+    }
+
+    // 步骤 3: (模拟) 尝试获取一个“manual”投影策略的工厂
+    TSharedPtr<IDisplayClusterProjectionPolicyFactory> ManualFactory = ProjectionModule.GetProjectionFactory(TEXT("manual"));
+    if (ManualFactory.IsValid())
+    {
+        UE_LOG(LogTemp, Log, TEXT("Manual projection policy factory found."));
+        // 在实际应用中，这里会调用 ManualFactory->Create(...) 来创建一个策略实例，
+        // 并将其绑定到由 nDisplay 配置定义的视口上。此处仅为演示模块接口。
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Manual projection policy factory not found. This simulation is incomplete."));
+    }
+}
+
+void AnDisplaySimulatorNode::CleanupProjectionSystem()
+{
+    // 释放任何创建的投影策略资源
+    ProjectionPolicy.Reset();
+    UE_LOG(LogTemp, Log, TEXT("nDisplay Simulator Node cleanup complete."));
 }
 ```
 
 ## 模块依赖
-
-DisplayClusterProjection 模块依赖说明：
+`DisplayClusterProjection` 模块的直接依赖。要在你的模块中使用其功能，需要在 `Build.cs` 中添加依赖。
 
 | 模块 | 用途 |
 |---|---|
-| `UnrealEd` | 编辑器集成（预览网格、编辑器工具） |
-| `DisplayClusterWarp` | Warp & Blend 核心接口（`IDisplayClusterWarpBlend`、`IDisplayClusterWarpPolicy`） |
-| `DisplayClusterShaders` | 投影校正相关的 GPU 着色器 |
-| `ScalableMPCDI` | 第三方 MPCDI 文件解析库（外部依赖） |
+| `UnrealEd` | 该模块内部依赖，用于编辑器内操作（如预览网格体）。使用者的 Runtime 模块通常不需要直接依赖它。 |
 
-> 该模块同时依赖标准 Core/Engine/Slate 等基础模块。多个第三方 SDK（EasyBlend、VIOSO、Domeprojection）通过动态加载 DLL 集成，运行时按需加载，不影响无 SDK 环境的编译。
+**无特殊依赖（仅标准 Core/Engine/Slate 等）**：对于纯运行时功能，你的模块通常只需依赖 `DisplayCluster` 或 `DisplayClusterProjection`，它们会带来核心依赖。如果你在编辑器工具中使用，则需要依赖 `UnrealEd`。
 
 ## 维护状态
 
@@ -307,23 +230,20 @@ DisplayClusterProjection 模块依赖说明：
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | MovieGraph 集成中新增 EXR 多图层输出支持 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | MoviePipeline 中将 WarpBlendAlpha 模式合并入 WarpBlend |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知相机命名及 MPCDI/ICVFX 着色器的不透明 alpha 问题 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 输出帧编码回退时正确处理非默认的 DisplayGamma 值 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理尺寸小于视口尺寸时的闪烁问题 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 nDisplay 的电影渲染管线添加了 EXR 多层输出支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并了电影管线中的扭曲混合 Alpha 模式，简化了相关设置。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了媒体注册图中的拓扑感知相机命名问题，并修正了 MPCDI/ICVFX 着色器中的不透明 Alpha 通道问题。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 使 nDisplay 在输出帧编码回退路径中能正确处理非默认的显示伽马值。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理尺寸小于视口尺寸时可能出现的闪烁问题。 |
 
 ### 维护评价
-
-- **活跃维护** ✅：最近 5 次 commit 集中在 2026 年 5 月，更新非常频繁
-- **持续功能开发**：持续添加 MovieGraph/EXR 多图层等新特性，不仅仅是 bug 修复
-- **长期项目**：自 2018 年创建以来（约 8 年），一直是 Epic 的企业级功能重点，服务于虚拟制片和专业 AV 行业
-- **平台支持**：Win64 和 Linux 双平台
-- **推荐使用**：如果项目涉及多屏投影、LED Volume 虚拟制片或 CAVE 系统，nDisplay 是官方推荐且唯一支持的方案。由于默认未启用（`EnabledByDefault=false`），需在项目设置中手动启用插件
+- **创建时间**：2018年，已维护超过8年。
+- **近期更新**：最近一次提交在2026年5月，**更新非常活跃**。提交记录显示持续进行功能增强（如 EXR 多层）、bug 修复和着色器优化。
+- **维护状态**：**活跃维护中**。作为 Unreal Engine 虚拟制作工具链的核心组件，Epic Games 持续投入开发资源。
+- **已知问题/限制**：插件非常复杂，配置调试需要专业知识（如校准文件、网络设置）。`EnabledByDefault: false` 表明它是一个需要用户主动启用的高级功能。
+- **推荐使用**：如果你的项目涉及**多屏幕同步渲染、非标准投影几何校正或虚拟制片**，那么 nDisplay 是**官方推荐且必须使用的解决方案**。它功能强大且受到官方持续支持，但学习曲线较陡峭。
 
 ## 相关链接
-
-- [源码（插件根目录）](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [源码（DisplayClusterProjection 模块）](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterProjection)
-- [官方文档](https://docs.unrealengine.com/en-US/ProductionPipelines/MediaComposure/nDisplay/index.html)（无 .uplugin 内置链接，此为 UE 文档站点地址）
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/nDisplay-in-Unreal-Engine/)
 - [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)

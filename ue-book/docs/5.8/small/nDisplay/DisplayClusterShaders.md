@@ -1,320 +1,186 @@
-# DisplayClusterShaders
+# nDisplay
 
-> 支持多 PC 同步集群渲染的着色器模块，用于 nDisplay 的单目/立体渲染管线。
+> Support for synchronized clustered rendering using multiple PCs in mono or stereo
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 显示集群着色器 |
+| 中文名 | 集群渲染 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
-| 模块 | `DisplayClusterShaders` (Runtime) |
+| 包含内容 | ✅ 有（测试资源、示例配置） |
+| 模块 | `DisplayCluster` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), ... (共 27 个) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
-| 年龄标签 | 🏛️ 文物（约 8 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterShaders) | |
+| 年龄标签 | 👴 老古董（约 8 年） |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay) | |
 
 ## 用途
 
-DisplayClusterShaders 是 nDisplay 插件的核心渲染着色器模块，提供**纹理操作工具链**和**渲染管线着色器**。它解决了以下问题：
+nDisplay 是 Unreal Engine 中用于驱动大规模 LED 虚拟制片摄影棚、多通道投影模拟器（如 CAVE、穹顶）以及多 PC 集群渲染系统的核心插件。其核心功能是实现**多个渲染 PC（或同一 PC 的多个视口）之间高度同步、低延迟的画面输出**，并能精确地将渲染内容映射到复杂的非平面物理屏幕上（如弯曲的 LED 墙、穹幕）。
 
-1. **Warp & Blend 渲染**：将渲染画面通过网格变形（warp）和混合（blend）投射到各种物理屏幕配置上，支持 MPCDI 标准格式和 ICVFX（虚拟制片内部摄影机）两种模式
-2. **ICVFX 合成**：在虚拟制片场景中，将多个内部摄影机画面、色度键（chromakey）、LightCard（光卡）层合成为最终外视口画面
-3. **纹理工具链**：提供跨 RHI/RDG 的统一纹理拷贝、重采样、颜色编码转换等工具
-4. **后处理着色器**：包括模糊（高斯/膨胀）、输出重映射、Mip 生成、PQ HDR 编解码、叠加层混合、纹理旋转/翻转等
-
-**为什么需要单独的着色器模块**：nDisplay 需要在渲染线程执行大量自定义 GPU 操作（warp、blend、ICVFX 合成），这些操作不适合放在标准渲染管线中，因此抽离为独立模块，便于维护和跨平台适配。
+它不仅仅是简单的多视口渲染，而是一个完整的集群渲染管理框架，解决了以下关键问题：
+1.  **帧同步**：确保所有渲染节点在同一时间点渲染并显示画面，避免撕裂和延迟差异。
+2.  **投影映射与扭曲混合**：通过 MPCDI（多投影仪校准数据交换）等标准，将渲染画面无缝贴合到任意形状的物理屏幕几何体上，并进行边缘融合。
+3.  **摄像机内视效**：在虚拟制片场景中，将 CG 内容实时合成到 LED 墙前的实景摄像机画面中，并处理色度键、光卡等复杂合成逻辑。
+4.  **资源管理**：高效地分配、同步和管理分布在不同机器上的纹理、网格和渲染资源。
+5.  **色彩校正**：支持通过 Color Grading 模块对多通道输出进行统一的色彩管理。
 
 ## 使用场景
 
-- 你在搭建 LED 虚拟制片摄影棚（如 The Volume） → 使用 ICVFX 模式进行多摄像机画面合成
-- 你需要将 UE 画面投射到曲面屏幕或多屏拼接墙 → 使用 MPCDI Warp & Blend
-- 你正在构建多 PC 集群渲染系统，需要在输出端应用畸变校正 → 使用 Output Remap
-- 你需要在 nDisplay 视口间传递纹理并进行颜色空间转换 → 使用 TextureUtils
-- 你在做 HDR 工作流，需要 PQ/Linear 之间的编码转换 → 使用 Media PQ 着色器
+- **虚拟制片 LED 摄影棚**：你需要一个实时驱动整面 LED 墙显示 CG 环境的系统，且需要与实景摄像机画面（ICVFX）精确合成。
+- **多投影仪沉浸式环境**：你在搭建一个 CAVE（洞穴自动虚拟环境）或穹幕影院，需要多台 PC 分别驱动多个投影仪，并将它们融合成一个无缝的整体。
+- **高性能驾驶/飞行模拟器**：你需要环绕驾驶舱的多个高分辨率显示器同步渲染同一场景的不同视角。
+- **大规模显示墙**：你需要将一个高分辨率图像或视频分布到由多个物理显示器拼接而成的大型显示墙上，并保证同步和色彩一致。
+- **需要精确输出映射的场景**：你的显示器或投影仪经过了复杂的几何校正，需要导入 MPCDI 等校准文件来匹配渲染输出。
 
 ## 蓝图用法
 
-DisplayClusterShaders 主要是 C++ 渲染管线模块，直接暴露的蓝图节点有限。但通过 `FMPCDIGeometryImportData` 和 `FMPCDIGeometryExportData` 结构体可与蓝图交互。
+nDisplay 的核心功能主要通过 C++ 接口和数据资产（`.ndisplay` 配置文件）驱动，但也提供了一些用于数据交互的蓝图暴露结构体。
 
-### 核心结构体
+### 核心节点
 
-| 结构体 | 说明 | 所在类 |
+| 节点 | 说明 | 所在类 |
 |---|---|---|
-| `FMPCDIGeometryImportData` | MPCDI 几何体导入数据（顶点+网格尺寸） | `MPCDIGeometryData.h` |
-| `FMPCDIGeometryExportData` | MPCDI 几何体导出数据（顶点+法线+UV+三角形） | `MPCDIGeometryData.h` |
+| `FMPCDIGeometryImportData` | 用于从蓝图向引擎导入 MPCDI 几何数据（顶点网格）的结构体。 | `FMPCDIGeometryImportData` |
+| `FMPCDIGeometryExportData` | 用于从引擎向蓝图导出 MPCDI 几何数据（顶点、法线、UV、三角形索引）的结构体。 | `FMPCDIGeometryExportData` |
 
 ### 使用示例（蓝图描述）
 
-1. **导入 MPCDI 几何体**：创建 `FMPCDIGeometryImportData` 结构体，设置 `Width`/`Height` 网格尺寸和 `Vertices` 顶点数组，传入 nDisplay 配置系统
-2. **导出 MPCDI 几何体**：从 `FMPCDIGeometryExportData` 获取 `Vertices`/`Normal`/`UV`/`Triangles` 数据，可用于自定义几何体渲染
+在蓝图中，你主要通过以下方式与 nDisplay 交互：
+1.  **创建/修改 `.ndisplay` 配置资产**：这些资产定义了整个集群的拓扑结构、屏幕布局、视口分配等。这通常在编辑器中通过专用的配置器 UI 完成，而非纯蓝图节点。
+2.  **加载和使用 MPCDI 数据**：你可以通过蓝图加载 MPCDI 文件，获取其中的几何数据 (`FMPCDIGeometryImportData`)，或者将引擎内生成的几何数据导出 (`FMPCDIGeometryExportData`) 用于校准流程。
+3.  **触发运行时事件**：通过 C++ 暴露的事件（如集群连接状态变化、同步信号等），在蓝图中响应集群系统的状态。
 
 ## C++ 用法
+
+nDisplay 的强大功能主要通过 C++ 接口 `IDisplayClusterShaders` 和相关参数结构体来实现。
 
 ### 头文件引入
 
 ```cpp
-// 核心接口
 #include "IDisplayClusterShaders.h"
-
-// 纹理工具
-#include "IDisplayClusterShadersTextureUtils.h"
-#include "Containers/DisplayClusterShaderContainers_TextureUtils.h"
-
-// ICVFX 参数
-#include "ShaderParameters/DisplayClusterShaderParameters_ICVFX.h"
-
-// WarpBlend 参数
-#include "ShaderParameters/DisplayClusterShaderParameters_WarpBlend.h"
+#include "DisplayClusterShaderParameters_WarpBlend.h"
+#include "DisplayClusterShaderParameters_ICVFX.h"
+#include "DisplayClusterShadersTextureUtils.h"
 ```
 
-### 基本用法 — 获取着色器模块接口
+### 基本用法
 
+获取 `IDisplayClusterShaders` 模块实例并执行一个基础的扭曲混合（Warp&Blend）渲染操作。这通常在渲染线程中调用。
 ```cpp
 // 来源: Public/IDisplayClusterShaders.h
-// 获取 IDisplayClusterShaders 单例
-IDisplayClusterShaders& ShadersModule = IDisplayClusterShaders::Get();
-
-// 检查模块是否可用
 if (IDisplayClusterShaders::IsAvailable())
 {
-    IDisplayClusterShaders& Shaders = IDisplayClusterShaders::Get();
-    // 使用着色器功能...
+    IDisplayClusterShaders& ShadersModule = IDisplayClusterShaders::Get();
+    
+    // 准备扭曲混合参数
+    FDisplayClusterShaderParameters_WarpBlend WarpBlendParams;
+    WarpBlendParams.Src.Set(SourceTexture, SourceRect);
+    WarpBlendParams.Dest.Set(DestTexture, DestRect);
+    // ... 设置WarpInterface和Context
+    
+    // 在渲染线程执行
+    ShadersModule.RenderWarpBlend_MPCDI(RHICmdList, WarpBlendParams);
 }
 ```
 
-### 基本用法 — 执行 Warp & Blend 渲染
+### 进阶用法
 
+使用 `IDisplayClusterShadersTextureUtils` 进行复杂的纹理操作，例如带色彩编码转换和 Alpha 混合的上下文解析。这是一个链式调用 API。
 ```cpp
-// 来源: Public/IDisplayClusterShaders.h, Public/ShaderParameters/DisplayClusterShaderParameters_WarpBlend.h
-FRHICommandListImmediate& RHICmdList = /* ... */;
-
-// 构造 WarpBlend 参数
-FDisplayClusterShaderParameters_WarpBlend WarpBlendParams;
-WarpBlendParams.Src.Set(SourceTexture, SourceRect);
-WarpBlendParams.Dest.Set(DestTexture, DestRect);
-WarpBlendParams.WarpInterface = MyWarpBlendInterface;
-WarpBlendParams.bRenderAlphaChannel = true;
-
-// 执行 MPCDI warp blend
-bool bSuccess = IDisplayClusterShaders::Get().RenderWarpBlend_MPCDI(RHICmdList, WarpBlendParams);
-```
-
-### 基本用法 — 纹理拷贝工具链
-
-```cpp
-// 来源: Public/IDisplayClusterShadersTextureUtils.h, Private/DisplayClusterShadersTextureUtils.h
-// 创建 RHI 模式的纹理工具
-TSharedRef<IDisplayClusterShadersTextureUtils> TextureUtils =
-    IDisplayClusterShaders::Get().CreateTextureUtils_RenderThread(RHICmdList);
-
-// 设置输入输出纹理
-FDisplayClusterShadersTextureViewport InputViewport(SourceTexture, SourceRect);
-FDisplayClusterShadersTextureViewport OutputViewport(DestTexture, DestRect);
-
-TextureUtils->SetInput(InputViewport)
-             ->SetOutput(OutputViewport)
-             ->Resolve();
-
-// 使用 RDG 模式
-TSharedRef<IDisplayClusterShadersTextureUtils> RDGTextureUtils =
-    IDisplayClusterShaders::Get().CreateTextureUtils_RenderThread(GraphBuilder);
-
-FDisplayClusterShadersTextureViewport RDGInput(RDGInputTexture, InputRect);
-FDisplayClusterShadersTextureViewport RDGOutput(RDGOutputTexture, OutputRect);
-
-RDGTextureUtils->SetInput(RDGInput)
-                ->SetOutput(RDGOutput)
-                ->Resolve();
-```
-
-### 进阶用法 — ICVFX 多摄像机合成
-
-```cpp
-// 来源: Public/ShaderParameters/DisplayClusterShaderParameters_ICVFX.h
-FRHICommandListImmediate& RHICmdList = /* ... */;
-
-// 构造 WarpBlend 参数（外视口）
-FDisplayClusterShaderParameters_WarpBlend WarpBlendParams;
-WarpBlendParams.Src.Set(OuterViewportTexture, OuterViewportRect);
-WarpBlendParams.Dest.Set(OutputTexture, OutputRect);
-
-// 构造 ICVFX 参数
-FDisplayClusterShaderParameters_ICVFX ICVFXParams;
-
-// 添加内部摄像机
-FDisplayClusterShaderParameters_ICVFX::FCameraSettings Camera;
-Camera.Resource.ViewportId = TEXT("camera_inner_1");
-Camera.ChromakeySource = EDisplayClusterShaderParametersICVFX_ChromakeySource::FrameColor;
-Camera.ChromakeyColor = FLinearColor::Green;
-Camera.RenderOrder = 0;
-ICVFXParams.Cameras.Add(Camera);
-
-// 设置 LightCard
-ICVFXParams.LightCardOver.ViewportId = TEXT("lightcard_over");
-ICVFXParams.LightCardGamma = 2.2f;
-
-// 设置摄像机投影数据
-FDisplayClusterShaderParametersICVFX_CameraViewProjection ViewProj;
-ViewProj.ViewRotation = FRotator(0, 90, 0);
-ViewProj.ViewLocation = FVector(0, 0, 100);
-ViewProj.PrjMatrix = FTranslationMatrix(FVector::ZeroVector) * ProjectionMatrix;
-ICVFXParams.Cameras[0].SetViewProjection(ViewProj, Origin2WorldTransform);
-
-// 执行 ICVFX warp blend
-bool bSuccess = IDisplayClusterShaders::Get().RenderWarpBlend_ICVFX(
-    RHICmdList, WarpBlendParams, ICVFXParams);
-```
-
-### 进阶用法 — 纹理变换与 HDR 编码
-
-```cpp
-// 来源: Public/ShaderParameters/DisplayClusterShaderParameters_TransformTexture.h
-// 纹理旋转/翻转
-FDisplayClusterShaderParameters_TransformTexture TransformParams;
-TransformParams.InputTexture = InputRDGTexture;
-TransformParams.TranformationType =
-    FDisplayClusterShaderParameters_TransformTexture::ETranformation::Rotation_90;
-
-IDisplayClusterShaders::Get().AddTransformTexturePass(GraphBuilder, TransformParams);
-// 结果在 TransformParams.OutputTexture 中
-
-// 来源: Public/ShaderParameters/DisplayClusterShaderParameters_Media.h
-// PQ HDR 编码（Linear → PQ）
-FDisplayClusterShaderParameters_MediaPQ PQParams;
-PQParams.InputTexture = LinearTexture;
-PQParams.InputRect = InputRect;
-PQParams.OutputTexture = PQTexture;
-PQParams.OutputRect = OutputRect;
-
-IDisplayClusterShaders::Get().AddLinearToPQPass(GraphBuilder, PQParams);
-
-// PQ HDR 解码（PQ → Linear）
-IDisplayClusterShaders::Get().AddPQToLinearPass(GraphBuilder, PQParams);
-```
-
-### 进阶用法 — 自定义纹理上下文迭代
-
-```cpp
-// 来源: Public/IDisplayClusterShadersTextureUtils.h
-// 使用 ForEachContextByPredicate 进行自定义上下文处理
-TSharedRef<IDisplayClusterShadersTextureUtils> Utils =
-    IDisplayClusterShaders::Get().CreateTextureUtils_RenderThread(RHICmdList);
-
-Utils->SetInput(InputViewport)
-      ->SetOutput(OutputViewport)
-      ->ForEachContextByPredicate(
-          [](const FDisplayClusterShadersTextureViewportContext& Input,
-             const FDisplayClusterShadersTextureViewportContext& Output)
-          {
-              // 对每一对输入/输出上下文执行自定义操作
-              // 例如：立体渲染中对左右眼分别处理
-          });
-```
-
-### 进阶用法 — 纹理工具设置选项
-
-```cpp
-// 来源: Public/Containers/DisplayClusterShaderContainers_TextureUtils.h
-FDisplayClusterShadersTextureUtilsSettings Settings;
-
-// 仅写入特定颜色通道
-Settings.ColorMask = EColorWriteMask::CW_RED | EColorWriteMask::CW_GREEN;
-
-// 使用输出纹理作为输入（原地操作）
-Settings.Flags = EDisplayClusterShaderTextureUtilsFlags::UseOutputTextureAsInput;
-
-// 禁用重采样着色器，仅执行简单拷贝
-Settings.Flags = EDisplayClusterShaderTextureUtilsFlags::DisableResampleShader;
-
-// 线性 alpha 羽化（边缘淡出）
-Settings.Flags = EDisplayClusterShaderTextureUtilsFlags::EnableLinearAlphaFeather;
-
-// 覆盖 alpha 通道
-Settings.OverrideAlpha = EDisplayClusterShaderTextureUtilsOverrideAlpha::Set_Alpha_One;
-
-Utils->SetInput(InputViewport)
-      ->SetOutput(OutputViewport)
-      ->Resolve(Settings);
+// 来源: Public/IDisplayClusterShaders.h, Public/IDisplayClusterShadersTextureUtils.h
+// 假设我们在渲染线程
+if (IDisplayClusterShaders::IsAvailable())
+{
+    IDisplayClusterShaders& ShadersModule = IDisplayClusterShaders::Get();
+    
+    // 1. 创建纹理工具实例
+    TSharedRef<IDisplayClusterShadersTextureUtils> TextureUtils = ShadersModule.CreateTextureUtils_RenderThread(RHICmdList);
+    
+    // 2. 配置输入输出纹理
+    TextureUtils->SetInput(InputTextureViewport, 0);
+    TextureUtils->SetOutput(OutputTextureViewport, 0);
+    
+    // 3. 设置色彩空间转换
+    TextureUtils->SetInputEncoding(FDisplayClusterColorEncoding(EColorSpace::sRGB));
+    TextureUtils->SetOutputEncoding(FDisplayClusterColorEncoding(EColorSpace::Rec2020));
+    
+    // 4. 使用设置进行解析（拷贝+可能的色彩转换）
+    FDisplayClusterShadersTextureUtilsSettings Settings;
+    Settings.ColorMask = EColorWriteMask::CW_RGBA;
+    Settings.Flags = EDisplayClusterShaderTextureUtilsFlags::EnableSmoothAlphaFeather;
+    // ... 设置边缘融合参数
+    
+    TextureUtils->Resolve(Settings);
+}
 ```
 
 ## Demo 示例
 
-### ICVFX 外视口合成的最小示例
+一个最小的示例，演示如何在渲染线程使用 `IDisplayClusterShadersTextureUtils` 进行一个简单的纹理拷贝操作。
 
+**MyNDisplayDemo.h**
 ```cpp
-// NDShadersDemo.h
 #pragma once
 
 #include "CoreMinimal.h"
 
-class FNDShadersDemo
+class FMyNDisplayDemo
 {
 public:
-    static bool RenderICVFXDemo(FRHICommandListImmediate& RHICmdList,
-        FRHITexture* OuterViewportTexture, const FIntRect& OuterViewportRect,
-        FRHITexture* OutputTexture, const FIntRect& OutputRect,
-        FRHITexture* InnerCameraTexture, const FIntRect& InnerCameraRect,
-        FRHITexture* LightCardTexture);
+    // 模拟一个渲染过程
+    static void RenderDemo(FRHICommandListImmediate& RHICmdList, FRHITexture* SourceTexture, FRHITexture* DestTexture);
 };
 ```
 
+**MyNDisplayDemo.cpp**
 ```cpp
-// NDShadersDemo.cpp
-#include "NDShadersDemo.h"
-
+#include "MyNDisplayDemo.h"
 #include "IDisplayClusterShaders.h"
-#include "ShaderParameters/DisplayClusterShaderParameters_WarpBlend.h"
-#include "ShaderParameters/DisplayClusterShaderParameters_ICVFX.h"
+#include "DisplayClusterShadersTextureUtils.h"
 
-bool FNDShadersDemo::RenderICVFXDemo(
-    FRHICommandListImmediate& RHICmdList,
-    FRHITexture* OuterViewportTexture, const FIntRect& OuterViewportRect,
-    FRHITexture* OutputTexture, const FIntRect& OutputRect,
-    FRHITexture* InnerCameraTexture, const FIntRect& InnerCameraRect,
-    FRHITexture* LightCardTexture)
+void FMyNDisplayDemo::RenderDemo(FRHICommandListImmediate& RHICmdList, FRHITexture* SourceTexture, FRHITexture* DestTexture)
 {
     if (!IDisplayClusterShaders::IsAvailable())
     {
-        return false;
+        return;
     }
 
-    // 1. 设置 WarpBlend 参数
-    FDisplayClusterShaderParameters_WarpBlend WarpBlendParams;
-    WarpBlendParams.Src.Set(OuterViewportTexture, OuterViewportRect);
-    WarpBlendParams.Dest.Set(OutputTexture, OutputRect);
+    IDisplayClusterShaders& ShadersModule = IDisplayClusterShaders::Get();
 
-    // 2. 设置 ICVFX 参数
-    FDisplayClusterShaderParameters_ICVFX ICVFXParams;
+    // 创建纹理工具 (在渲染线程)
+    TSharedRef<IDisplayClusterShadersTextureUtils> TextureUtils = ShadersModule.CreateTextureUtils_RenderThread(RHICmdList);
 
-    // 内部摄像机设置
-    FDisplayClusterShaderParameters_ICVFX::FCameraSettings Camera;
-    Camera.Resource.ViewportId = TEXT("inner_camera");
-    Camera.Resource.Texture = InnerCameraTexture;
-    Camera.ChromakeySource = EDisplayClusterShaderParametersICVFX_ChromakeySource::FrameColor;
-    Camera.ChromakeyColor = FLinearColor::Green;
-    Camera.RenderOrder = 0;
-    ICVFXParams.Cameras.Add(Camera);
+    // 定义输入和输出区域（整个纹理）
+    FIntRect TextureRect(FIntPoint::ZeroValue, FIntPoint(SourceTexture->GetSizeXYZ().X, SourceTexture->GetSizeXYZ().Y));
+    
+    // 设置输入纹理
+    FDisplayClusterShadersTextureViewport InputViewport(SourceTexture, TextureRect, TEXT("DemoInput"));
+    TextureUtils->SetInput(InputViewport);
 
-    // LightCard 设置
-    ICVFXParams.LightCardOver.ViewportId = TEXT("lightcard");
-    ICVFXParams.LightCardOver.Texture = LightCardTexture;
-    ICVFXParams.LightCardGamma = 2.2f;
+    // 设置输出纹理
+    FDisplayClusterShadersTextureViewport OutputViewport(DestTexture, TextureRect, TEXT("DemoOutput"));
+    TextureUtils->SetOutput(OutputViewport);
 
-    // 3. 执行渲染
-    return IDisplayClusterShaders::Get().RenderWarpBlend_ICVFX(
-        RHICmdList, WarpBlendParams, ICVFXParams);
+    // 执行一个默认设置的解析（拷贝）
+    FDisplayClusterShadersTextureUtilsSettings DefaultSettings;
+    TextureUtils->Resolve(DefaultSettings);
+    // TextureUtils 析构时，所有挂起的操作（如 RDG 执行）会自动完成。
 }
 ```
 
 ## 模块依赖
 
+要使用 `DisplayClusterShaders` 模块，你的模块需要依赖以下关键模块：
+
 | 模块 | 用途 |
 |---|---|
-| `DisplayClusterConfiguration` | nDisplay 配置数据访问 |
-| `DisplayClusterWarp` | Warp & Blend 网格变形接口（`IDisplayClusterWarpBlend`） |
-| `MPCDI` | MPCDI 标准格式支持 |
-| `RHI` / `RenderCore` | 底层 GPU 命令和 RDG 构建 |
+| `DisplayCluster` | nDisplay 核心运行时模块 |
+| `DisplayClusterConfiguration` | 读取和管理 `.ndisplay` 配置文件 |
+| `DisplayClusterProjection` | 投影矩阵计算和 MPCDI 支持 |
+| `DisplayClusterWarp` | 扭曲网格和扭曲混合逻辑 |
+| `MPCDI` | (ThirdParty) MPCDI 格式解析库 |
+| `RHI`, `RenderCore` | 底层渲染硬件接口和核心渲染功能 |
 
 ## 维护状态
 
@@ -322,25 +188,22 @@ bool FNDShadersDemo::RenderICVFXDemo(
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 支持 MoviePipeline EXR 多图层导出 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并 WarpBlendAlpha 模式到 WarpBlend 主流程 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知摄影机命名和 MPCDI/ICVFX 不透明 alpha 问题 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 输出帧编码回退时支持非默认 DisplayGamma |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理尺寸小于视口尺寸时的闪烁问题 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 Movie Graph 添加 EXR 多层输出支持，增强渲染流程灵活性。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并电影管线中的 Alpha 模式，简化相关配置。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复多渲染图层中的相机命名问题及 MPCDI/ICVFX 着色器中的不透明 Alpha 错误。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 在输出帧编码回退时，尊重非默认的显示 Gamma 设置，改善色彩准确性。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复当 GUI 纹理尺寸小于视口尺寸时可能出现的闪烁问题。 |
 
 ### 维护评价
 
-- **创建时间**：2018-06-07，随 UE 4.20 企业版功能分支引入，已有约 8 年历史
-- **更新频率**：**非常活跃**。近期更新密集（2026 年 5 月多周内有多次功能性更新），持续在修复 bug 和增加新功能（EXR 多图层、HDR gamma 支持等）
-- **维护状态**：**活跃维护中**。Epic Games 持续投入资源，这是虚拟制片（Virtual Production）和 LED 墙渲染的核心模块
-- **已知限制**：
-  - 依赖 UnrealEd（即使标记为 Runtime 模块，Build.cs 中包含 UnrealEd 依赖）
-  - 需要特定硬件配置（多 GPU、Sync 卡等）才能发挥全部功能
-  - 文档和学习曲线较陡峭
-- **推荐程度**：⭐⭐⭐⭐⭐ — 如果你在做虚拟制片、LED 墙或大规模集群渲染，这是必用模块
+nDisplay 是一个成熟且活跃维护的**企业级**插件。虽然创建于 2018 年，但近期（2026 年）仍有密集的功能更新和重要的 bug 修复，表明 Epic 对其持续投入资源以满足虚拟制片行业的需求。
+
+- **活跃维护**：最近更新集中在提升工作流效率（如 Movie Graph 集成）、修复边缘案例下的渲染错误（Alpha、Gamma）以及提高稳定性。
+- **核心地位**：它是 Unreal Engine 虚拟制片（In-Camera VFX）工作流的核心支柱之一，被大量专业制作团队依赖。
+- **复杂性高**：插件本身包含大量模块和深度渲染技术，学习曲线较陡，建议参考官方文档和示例项目。
+- **推荐使用**：对于任何涉及多屏、多PC集群渲染或 LED 墙虚拟制片的项目，nDisplay 是**首选且必不可少**的解决方案。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterShaders)
-- [官方文档](https://docs.unrealengine.com/en-US/ProductionPipelines/VirtualProduction/nDisplay/)
-- [nDisplay 插件根目录](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
+- [官方文档](https://docs.unrealengine.com/5.0/en-US/n-display-in-unreal-engine/)

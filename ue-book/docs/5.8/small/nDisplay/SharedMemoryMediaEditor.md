@@ -1,14 +1,14 @@
 # nDisplay
 
-> Support for synchronized clustered rendering using multiple PCs in mono or stereo（照抄，不翻译）
+> Support for synchronized clustered rendering using multiple PCs in mono or stereo（支持使用多台PC进行同步的集群渲染，支持单目或立体模式）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 集群同步渲染 |
+| 中文名 | nDisplay集群渲染 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ❌ 无 |
-| 模块 | `SharedMemoryMediaEditor` (Runtime) |
+| 包含内容 | ✅ 有（配置资产、蓝图、编辑器工具、媒体资产、着色器、测试资产） |
+| 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
 | 年龄标签 | 👴 老古董（约 8 年） |
@@ -16,145 +16,187 @@
 
 ## 用途
 
-nDisplay 是 Unreal Engine 的核心集群渲染插件，用于将渲染负载分配到多个物理 PC（节点）上，实现同步的单眼或立体渲染。**SharedMemoryMediaEditor** 是该插件的编辑器扩展模块，专门负责处理 `SharedMemoryMediaSource` 这类资产。它的主要功能是在编辑器环境中为共享内存媒体源提供支持，例如将其正确注册到 nDisplay 的媒体配置系统中，并自动完成特定的初始化（如针对瓦片化渲染的初始化）。该模块是连接“共享内存媒体”底层技术与 nDisplay 复杂渲染拓扑配置之间的关键桥梁。
+nDisplay 是 UE 中用于实现**同步集群渲染**的核心插件。它解决的核心问题是将一个 UE 场景的渲染任务分配给多台联网的 PC（节点），并将每个节点渲染的画面（可能用于投影到不同形状的屏幕或用于不同眼睛的立体视图）同步组合，形成一个统一、连贯的大型或沉浸式显示环境。
+
+**为什么存在？**
+- **虚拟制片 (VP)**: 在 LED 墙拍摄中，需要多块屏幕显示与摄像机运动实时同步的背景环境。
+- **沉浸式环境 & CAVE 系统**: 驱动由多台投影仪或显示器组成的环绕式或房间大小的虚拟现实系统。
+- **大型主题公园或博物馆装置**: 控制分布在多个物理位置的屏幕，保持内容同步。
+- **立体 3D (S3D) 渲染**: 为头戴式显示器 (HMD) 或立体投影系统同步渲染左右眼视图。
+
+其核心价值在于提供了一个统一的框架来管理渲染节点、定义屏幕几何与投影、处理帧同步与数据传输（包括共享内存和媒体框架），使得开发者无需从零开始构建复杂的分布式渲染系统。
 
 ## 使用场景
 
-- 你在使用 nDisplay 搭建一个由多台 PC 组成的 LED 墙虚拟制片环境，需要配置一个媒体源来将渲染内容输出到特定的显示节点。
-- 你的 nDisplay 集群使用了瓦片化（Tiled）渲染模式，需要自动为每个瓦片（Tile）正确初始化共享内存媒体源的参数。
-- 你需要一个在编辑器内可创建和配置的“共享内存媒体源”资产，用于在 nDisplay 的渲染通道间进行高速数据传输。
+-   **你正在搭建一个由多块 LED 屏幕组成的虚拟制片影棚** -> 使用 nDisplay 定义每块屏幕的几何、投影以及对应的渲染节点，实现同步拍摄背景。
+-   **你需要创建一个 CAVE（洞穴自动虚拟环境）系统，房间四面都是投影屏幕** -> 使用 nDisplay 配置投影几何、处理边缘融合，并分配渲染任务到多台渲染主机。
+-   **你要为一个大型博物馆安装一个环绕式交互投影装置** -> 使用 nDisplay 管理分布在多个房间的显示终端的同步渲染和内容更新。
+-   **你需要在 VR 中实现超高分辨率或宽视场角的立体渲染，单台 PC 性能不足** -> 使用 nDisplay 将左右眼视图或画面分块分配到多台 PC 上渲染并同步。
+-   **你想在多屏系统中实现跨屏的颜色校正和统一调色** -> nDisplay 的色彩分级（ColorGrading）模块可以帮助你。
 
 ## 蓝图用法
 
-`SharedMemoryMediaEditor` 模块主要提供底层的模块化特性和资产定义，不直接暴露高频使用的蓝图节点。其核心功能通过 `IDisplayClusterModularFeatureMediaInitializer` 接口被 nDisplay 的媒体子系统调用，以实现自动初始化。用户主要在编辑器内容浏览器中操作其提供的资产类型。
+由于 nDisplay 主要是一个系统级框架，其核心蓝图接口围绕**配置、控制和查询**展开。功能分布在多个子模块中。以下为按功能分组的核心节点。
 
-### 核心资产
+### 核心节点
 
-| 资产类型 | 说明 |
-|---|---|
-| `Shared Memory Media Source` | 通过编辑器创建，用于配置基于共享内存的媒体源。在 nDisplay 的媒体配置中作为“源”使用。 |
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `Get Cluster Node Id` | 获取当前运行的集群节点 ID。 | `UDisplayClusterBlueprintAPI` |
+| `Is Primary Node` | 判断当前节点是否为主节点（控制节点）。 | `UDisplayClusterBlueprintAPI` |
+| `Get Cluster Nodes Ids` | 获取所有集群节点的 ID 列表。 | `UDisplayClusterBlueprintAPI` |
+| `Get Viewport Rect` | 根据视口 ID 获取其在窗口中的矩形区域。 | `UDisplayClusterBlueprintAPI` |
+| `Get Viewport Id` | 根据视口名称获取其 ID。 | `UDisplayClusterBlueprintAPI` |
+| `Is Viewport Rendered On This Node` | 判断指定视口是否在本节点上渲染。 | `UDisplayClusterBlueprintAPI` |
+| `Get All Viewports` | 获取本节点负责渲染的所有视口信息。 | `UDisplayClusterBlueprintAPI` |
 
-### 使用示例（编辑器操作）
+### 使用示例（蓝图描述）
 
-1.  在内容浏览器中右键，选择 **媒体 (Media) -> 媒体源 (Media Sources) -> Shared Memory Media Source** 来创建一个新的资产。
-2.  双击打开资产进行配置。
-3.  在 nDisplay 的配置资产（`.ndisplay` 文件）的媒体配置部分，将此资产设置为某个渲染通道的媒体源。
+1.  **启动时查询本机角色**:
+    -   你可以在 `BeginPlay` 中调用 `Get Cluster Node Id` 和 `Is Primary Node` 来判断当前 PC 是主控机（输出渲染到物理屏幕）还是渲染节点（负责计算特定视口内容）。
+2.  **动态调整渲染**:
+      - 通过 `Get Viewport Rect` 和 `Is Viewport Rendered On This Node`，你可以编写逻辑，在渲染节点上仅对属于自己的视口进行后处理或 UI 叠加，避免无用计算。
+3.  **多用户控制**:
+    -   结合 `DisplayClusterMultiUser` 模块，蓝图可以处理来自多用户的同步输入和控制命令。
+
+**重要提示**: nDisplay 的大量核心配置和渲染逻辑通过 C++ 或配置文件 (.ndisplay) 管理，蓝图主要用于运行时查询、简单控制和集成其他游戏逻辑。
 
 ## C++ 用法
 
-该模块通过注册模块化特性（Modular Feature）来扩展 nDisplay 的媒体初始化逻辑。开发者通常不需要直接调用其 API，而是通过实现自己的媒体初始化器来覆盖或扩展其行为。
+由于 nDisplay 系统庞大，此处的 C++ 用法基于提供的 `SharedMemoryMediaEditor` 模块示例，展示如何扩展其媒体初始化功能。
 
 ### 头文件引入
 
 ```cpp
-#include "SharedMemoryMediaEditorModule.h"
+#include "DisplayClusterMediaModule.h" // 基础媒体模块
+#include "SharedMemoryMediaInitializerFeature.h" // 来自 SharedMemoryMediaEditor 模块的媒体初始化特性
 ```
 
-### 基本用法
+### 基本用法（来自模块结构）
 
-该模块在启动时自动注册其核心的 `FSharedMemoryMediaInitializerFeature`。其生命周期由模块系统管理。
+以下代码展示了如何创建一个自定义的媒体初始化器特性（`IDisplayClusterModularFeatureMediaInitializer` 接口的实现）。此类用于告知 nDisplay 系统如何处理特定类型的媒体对象（如共享内存媒体源/输出）。
 
+**文件路径**: `Engine/Plugins/Runtime/nDisplay/Source/SharedMemoryMediaEditor/Private/ModularFeatures/SharedMemoryMediaInitializerFeature.h`
 ```cpp
-// 文件: Private/SharedMemoryMediaEditorModule.cpp (推断)
-void FSharedMemoryMediaEditorModule::StartupModule()
+// 继承自接口 IDisplayClusterModularFeatureMediaInitializer
+class FSharedMemoryMediaInitializerFeature
+	: public IDisplayClusterModularFeatureMediaInitializer
 {
-    // 创建并注册媒体初始化器的模块化特性
-    MediaInitializer = MakeUnique<FSharedMemoryMediaInitializerFeature>();
-    RegisterModularFeatures();
-}
-
-void FSharedMemoryMediaEditorModule::ShutdownModule()
-{
-    UnregisterModularFeatures();
-    MediaInitializer.Reset();
-}
+public:
+	//~ Begin IDisplayClusterModularFeatureMediaInitializer
+	virtual bool IsMediaObjectSupported(const UObject* MediaObject) override;
+	virtual bool AreMediaObjectsCompatible(const UObject* MediaSource, const UObject* MediaOutput) override;
+	virtual bool GetSupportedMediaPropagationTypes(const UObject* MediaSource, const UObject* MediaOutput, EMediaStreamPropagationType& OutPropagationTypes) override;
+	virtual void InitializeMediaObjectForTile(UObject* MediaObject, const FMediaObjectOwnerInfo& OnwerInfo, const FIntPoint& TilePos) override;
+	virtual void InitializeMediaObjectForFullFrame(UObject* MediaObject, const FMediaObjectOwnerInfo& OnwerInfo) override;
+	//~ End IDisplayClusterModularFeatureMediaInitializer
+};
 ```
 
-### 进阶用法
+### 进阶用法（特性注册）
 
-理解 `FSharedMemoryMediaInitializerFeature` 的接口是理解其核心功能的关键。它决定了“共享内存媒体源”如何与 nDisplay 系统交互。
+nDisplay 通过“模块化特性”（Modular Features）系统来动态发现和注册扩展点。一个典型的模块会这样注册其特性：
 
+**文件路径**: `Engine/Plugins/Runtime/nDisplay/Source/SharedMemoryMediaEditor/Private/SharedMemoryMediaEditorModule.h`
 ```cpp
-// 文件: Private/ModularFeatures/SharedMemoryMediaInitializerFeature.h
-// 这个类实现了 nDisplay 要求的媒体初始化器接口。
-// 主要方法：
-// - IsMediaObjectSupported: 检查给定的媒体对象（如媒体源、媒体输出）是否被此初始化器支持。
-// - InitializeMediaObjectForTile: 为特定的显示瓦片（Tile）初始化媒体对象。
-//   在瓦片化渲染配置中，nDisplay 会调用此方法为每个瓦片设置正确的媒体参数。
+class FSharedMemoryMediaEditorModule : public IModuleInterface
+{
+public:
+	virtual void StartupModule() override;
+	virtual void ShutdownModule() override;
+
+private:
+	void RegisterModularFeatures()
+	{
+		// 创建特性实例并注册到模块化特性系统
+		MediaInitializer = MakeUnique<FSharedMemoryMediaInitializerFeature>();
+		IModularFeatures::Get().RegisterModularFeature(IDisplayClusterModularFeatureMediaInitializer::GetModularFeatureName(), MediaInitializer.Get());
+	}
+
+	void UnregisterModularFeatures()
+	{
+		if (MediaInitializer)
+		{
+			IModularFeatures::Get().UnregisterModularFeature(IDisplayClusterModularFeatureMediaInitializer::GetModularFeatureName(), MediaInitializer.Get());
+		}
+	}
+
+private:
+	TUniquePtr<FSharedMemoryMediaInitializerFeature> MediaInitializer;
+};
 ```
+这段代码在模块启动时将 `FSharedMemoryMediaInitializerFeature` 注册到引擎，使得 nDisplay 核心系统在处理媒体对象时能够找到并调用它。
 
 ## Demo 示例
 
-以下是一个极简的模块实现示例，演示了如何创建一个提供媒体初始化器的编辑器模块。此示例展示了模块的基本结构和对 `IDisplayClusterModularFeatureMediaInitializer` 的实现。
+由于 nDisplay 的部署和运行需要真实的多台PC硬件和特定的网络/投影环境，很难提供一个可在编辑器中直接运行的完整 Demo。
+一个最小的“集成测试”示例通常是在编辑器中配置一个简单的 nDisplay 集群，使用“PIE (多玩家)”模式并开启 nDisplay 插件，指定一个包含多个视口的 `.ndisplay` 配置文件。运行时，主编辑器窗口将模拟主节点，并创建额外的窗口用于其他“节点”的渲染预览。
 
-**SharedMemoryMediaEditorDemo.h**
+一个概念性的 C++ 自定义初始化器骨架如下：
+
+**`MyMediaInitializer.h`**
 ```cpp
-// 文件: SharedMemoryMediaEditorDemo.h
 #pragma once
+#include "DisplayClusterMediaInterfaces.h"
 
-#include "Modules/ModuleManager.h"
-#include "DisplayClusterMediaTypes.h" // 包含 EMediaStreamPropagationType 等类型
-
-class IDisplayClusterModularFeatureMediaInitializer;
-
-class FSharedMemoryMediaEditorDemoModule : public IModuleInterface
+class FMyMediaInitializer : public IDisplayClusterModularFeatureMediaInitializer
 {
 public:
-    virtual void StartupModule() override;
-    virtual void ShutdownModule() override;
-
-private:
-    TUniquePtr<IDisplayClusterModularFeatureMediaInitializer> DemoMediaInitializer;
-};
-
-// 一个简单的初始化器实现示例
-class FDemoMediaInitializer : public IDisplayClusterModularFeatureMediaInitializer
-{
-public:
-    virtual bool IsMediaObjectSupported(const UObject* MediaObject) override;
-    virtual bool AreMediaObjectsCompatible(const UObject* MediaSource, const UObject* MediaOutput) override;
-    virtual bool GetSupportedMediaPropagationTypes(const UObject* MediaSource, const UObject* MediaOutput, EMediaStreamPropagationType& OutPropagationTypes) override;
-    virtual void InitializeMediaObjectForTile(UObject* MediaObject, const FMediaObjectOwnerInfo& OwnerInfo, const FIntPoint& TilePos) override;
-    virtual void InitializeMediaObjectForFullFrame(UObject* MediaObject, const FMediaObjectOwnerInfo& OwnerInfo) override;
+    // 实现所有纯虚函数，决定你的自定义媒体类型如何被处理
+    virtual bool IsMediaObjectSupported(const UObject* MediaObject) override
+    {
+        // 检查 MediaObject 是否是你的自定义媒体源或输出类
+        // 例如: return MediaObject->IsA<UMyCustomMediaSource>();
+        return false;
+    }
+    // ... 实现其他接口函数 ...
 };
 ```
 
-**SharedMemoryMediaEditorDemo.cpp**
+**`MyPluginModule.cpp`** (在你的插件中)
 ```cpp
-// 文件: SharedMemoryMediaEditorDemo.cpp
-#include "SharedMemoryMediaEditorDemo.h"
-#include "DisplayClusterModularFeatureMediaInitializer.h" // 包含注册宏
+#include "MyMediaInitializer.h"
+#include "IModularFeatures.h"
+#include "DisplayClusterMediaInterfaces.h"
 
-// 实现 FSharedMemoryMediaEditorDemoModule
-void FSharedMemoryMediaEditorDemoModule::StartupModule()
+class FMyPluginModule : public IModuleInterface
 {
-    DemoMediaInitializer = MakeUnique<FDemoMediaInitializer>();
-    // 注册模块化特性，关键宏。名称需要与特性ID一致。
-    REGISTER_DISPLAY_CLUSTER_MODULAR_FEATURE(IDisplayClusterModularFeatureMediaInitializer, FDemoMediaInitializer);
-}
+public:
+    virtual void StartupModule() override
+    {
+        MediaInitializer = MakeUnique<FMyMediaInitializer>();
+        IModularFeatures::Get().RegisterModularFeature(IDisplayClusterModularFeatureMediaInitializer::GetModularFeatureName(), MediaInitializer.Get());
+    }
 
-void FSharedMemoryMediaEditorDemoModule::ShutdownModule()
-{
-    UNREGISTER_DISPLAY_CLUSTER_MODULAR_FEATURE(IDisplayClusterModularFeatureMediaInitializer, FDemoMediaInitializer);
-    DemoMediaInitializer.Reset();
-}
+    virtual void ShutdownModule() override
+    {
+        IModularFeatures::Get().UnregisterModularFeature(IDisplayClusterModularFeatureMediaInitializer::GetModularFeatureName(), MediaInitializer.Get());
+    }
 
-// 实现 FDemoMediaInitializer 的空方法体（实际应用中需根据需求填写）
-bool FDemoMediaInitializer::IsMediaObjectSupported(const UObject* MediaObject) { return false; }
-bool FDemoMediaInitializer::AreMediaObjectsCompatible(const UObject* MediaSource, const UObject* MediaOutput) { return false; }
-bool FDemoMediaInitializer::GetSupportedMediaPropagationTypes(const UObject* MediaSource, const UObject* MediaOutput, EMediaStreamPropagationType& OutPropagationTypes) { return false; }
-void FDemoMediaInitializer::InitializeMediaObjectForTile(UObject* MediaObject, const FMediaObjectOwnerInfo& OwnerInfo, const FIntPoint& TilePos) {}
-void FDemoMediaInitializer::InitializeMediaObjectForFullFrame(UObject* MediaObject, const FMediaObjectOwnerInfo& OwnerInfo) {}
-
-// 注册模块
-IMPLEMENT_MODULE(FSharedMemoryMediaEditorDemoModule, SharedMemoryMediaEditorDemo)
+private:
+    TUniquePtr<FMyMediaInitializer> MediaInitializer;
+};
 ```
 
 ## 模块依赖
 
-`SharedMemoryMediaEditor` 模块本身依赖关系简单，主要是 UE 核心模块。它的功能强依赖于运行时模块 `SharedMemoryMedia` 和 nDisplay 的媒体核心 `DisplayClusterMedia`。从其他模块的依赖列表可见，`DisplayClusterMedia` 依赖 `D3D12RHI`，说明其底层使用了 DirectX 12 进行 GPU 内存操作。
+由于 nDisplay 插件规模巨大（包含近30个模块），其自身的模块依赖关系非常复杂。对于**使用者**（你的游戏或应用模块）而言，通常不需要直接依赖所有这些模块。最常见的用法是：
 
-无特殊依赖（仅标准 Core/Engine/Slate 等）
+1.  **启用插件**: 在你的项目的 `.uplugin` 或 `.uproject` 文件中启用 `nDisplay` 插件。
+2.  **依赖核心模块**: 如果你需要通过 C++ 或蓝图与 nDisplay 系统交互（如获取集群信息、视口信息），你的模块通常需要依赖 `DisplayCluster` 或 `DisplayClusterBlueprintAPI`。
+3.  **特定功能依赖**: 如果你需要使用特定的功能（如媒体、监控、电影渲染管线集成），则需要依赖对应的模块。
+
+| 模块 | 用途 |
+|---|---|
+| `DisplayCluster` | nDisplay 的核心运行时模块，包含集群管理、同步、渲染等主要逻辑。**（最常被外部引用）** |
+| `DisplayClusterConfiguration` | 处理 `.ndisplay` 配置文件的加载和解析。 |
+| `DisplayClusterProjection` | 负责将渲染画面投影到各种屏幕几何上（平面、曲面、网格等）。 |
+| `DisplayClusterMedia` | 提供基于 UE Media Framework 的媒体流（如 Spout, NDI, 共享内存）传输框架。 |
+| `DisplayClusterWarp` | 处理几何变形（Warping）和边缘融合（Blending），常用于投影仪校准。 |
+| `DisplayClusterMoviePipeline` | 集成 UE 的 Movie Render Queue/MovieGraph，用于录制 nDisplay 集群的输出。 |
+| `SharedMemoryMedia` | 提供基于共享内存的高性能节点间媒体数据传输实现。 |
+
+**对于文档使用者**：你的项目通常只需要在 `.uproject` 中启用 `nDisplay` 插件，然后就可以使用其蓝图和 C++ API。仅当你要编写深度集成代码或自定义扩展时，才需要在你的 `Build.cs` 中添加对具体子模块（如 `DisplayCluster`）的依赖。
 
 ## 维护状态
 
@@ -162,23 +204,25 @@ IMPLEMENT_MODULE(FSharedMemoryMediaEditorDemoModule, SharedMemoryMediaEditorDemo
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 nDisplay 的电影管线添加了 EXR 多层输出支持。 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 优化了电影管线中的扭曲混合模式，合并了 Alpha 通道处理。 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了媒体关系图中的拓扑感知相机命名和 MPCDI/ICVFX 着色器中的不透明 Alpha 问题。 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复了输出帧编码回退时未正确使用非默认显示伽马值的问题。 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理尺寸小于视口尺寸时出现的闪烁问题。 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 Movie Graph 和 nDisplay 添加了 EXR 多层渲染支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 电影管线功能合并，将 WarpBlendAlpha 模式整合进 WarpBlend。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了 MRG 中拓扑感知相机的命名问题，以及 MPCDI/ICVFX 着色器的不透明 Alpha 通道问题。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复了输出帧编码回退时未正确应用非默认显示 Gamma 值的问题。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理尺寸小于视口尺寸时可能出现的闪烁问题。 |
 
 ### 维护评价
 
-nDisplay 是 Epic Games 用于虚拟制片、CAVE 系统和大型沉浸式体验的核心技术之一，属于活跃维护的核心企业功能。
-- **创建时间**：约 8 年前（2018年），属于老古董插件，但技术复杂度高，仍在持续迭代。
-- **近期更新**：更新非常频繁（最近提交集中在2026年5月），且都是实质性的功能添加（如多层EXR支持）和重要 bug 修复（如着色器、闪烁问题）。
-- **维护状态**：**活跃维护中**。尽管 `SharedMemoryMediaEditor` 模块本身的提交可能被包含在更大的 nDisplay 提交中，但其所属的 nDisplay 生态系统正在被积极开发和改进。
-- **已知限制**：默认未启用（`EnabledByDefault: false`），需要用户手动在项目设置中启用。这表明它面向专业用户和特定硬件/软件环境。
-- **推荐使用**：**推荐**。对于需要进行多机同步渲染、虚拟制片或构建复杂显示墙的用户，这是官方唯一且持续维护的解决方案。开发者应确保目标平台（Win64/Linux）受支持，并准备好应对其复杂的配置。
+-   **活跃度**: **高**。基于最近的 Git 历史，nDisplay 在 **2026年5月** 仍有频繁的功能更新和 Bug 修复。这表明该插件仍在被 Epic Games 积极开发和维护。
+-   **稳定性与成熟度**: 作为服务于虚拟制片等专业领域的工具，经过多年迭代，其核心框架已相当稳定和成熟。
+-   **已知限制**:
+    -   **启用**: 需要手动在项目设置中启用。
+    -   **复杂性**: 配置和部署一个多节点集群需要专业知识和测试。
+    -   **硬件依赖**: 功能和性能高度依赖于网络、GPU 和显示硬件。
+    -   **平台**: 目前主要支持 Windows (Win64) 和 Linux。
+-   **推荐使用**: **强烈推荐**给需要实现多屏幕、投影或集群渲染的项目。虽然学习曲线较陡，但它是 UE 生态中解决此类问题的唯一官方、集成的解决方案，且拥有持续的技术支持。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/n-display-in-unreal-engine/)（nDisplay 总体文档）
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)（nDisplay 核心测试）
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/n-display-in-unreal-engine/) (Unreal Engine Documentation)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests) (位于 `DisplayClusterTests` 模块内)

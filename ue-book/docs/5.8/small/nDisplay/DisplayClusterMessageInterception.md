@@ -1,189 +1,226 @@
-# nDisplay — DisplayClusterMessageInterception
+# nDisplay
 
 > Support for synchronized clustered rendering using multiple PCs in mono or stereo
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 集群显示插件 |
+| 中文名 | 多机同步渲染 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产、材质模板、编辑器工具、着色器） |
+| 包含内容 | ✅ 有（配置资产、测试资源、蓝图工具） |
 | 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
-| 年龄标签 | 🏛️ 文物（约 8 年） |
+| 年龄标签 | 👴 老古董（约 6 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay) | |
-
-> **注意**：nDisplay 是一个超大型插件（xlarge，1351+ 源文件，29 个模块）。本文档聚焦于 **DisplayClusterMessageInterception** 模块。其他子模块（投影、变形、媒体、调色等）需要各自独立文档。
-
----
 
 ## 用途
 
-**nDisplay** 是 Unreal Engine 的集群渲染框架，允许多台 PC 协同同步渲染同一场景，用于大规模显示墙、LED Volume（虚拟制片）、CAVE 系统、穹顶投影等专业场景。
-
-**DisplayClusterMessageInterception** 模块解决的核心问题是：**多机集群中的消息总线同步**。在集群模式下，所有节点运行相同的 UE 实例，但只有主节点（Primary Node）应处理某些消息（如 Multi-User 编辑事件）。此模块拦截消息总线（MessageBus）上的消息，在集群中同步分发，确保所有节点以一致的顺序和时机处理消息，避免状态不一致。
+nDisplay 是一个用于多台PC（集群）进行同步渲染的复杂系统。它解决的核心问题是**在多个物理显示器或投影仪（例如LED墙、CAVE系统、穹顶影院）上，实时、无撕裂、帧同步地渲染同一个虚拟场景**。这远超简单的多显示器拼接，涉及到集群间的同步通信、每台机器独立视角的投影校正（Warping & Blending）、以及内容与硬件输出的精确映射。它是虚拟制片、大型沉浸式体验、驾驶模拟器等高端应用的基石。
 
 ## 使用场景
 
-- 你在构建 **LED Volume 虚拟制片**（如 ICVFX） → 使用 nDisplay 配合 DisplayClusterMessageInterception 确保多台渲染机器消息同步
-- 你在搭建 **多通道投影 CAVE/穹顶系统** → nDisplay 管理多个视口和投影校正
-- 你使用 **Multi-User Editing** 配合 nDisplay 集群 → MessageInterception 拦截并同步 Multi-User 消息，防止集群中只有部分节点收到编辑变更
-- 你需要 **Movie Pipeline 录制** nDisplay 集群画面 → 配合 DisplayClusterMoviePipeline 模块
+- **虚拟制片 (Virtual Production)**：在拍摄现场搭建巨大的LED墙，用nDisplay集群渲染背景，演员在前景表演，相机实时合成。
+- **主题乐园与沉浸式娱乐**：驱动CAVE系统、穹顶影院、多面环绕的沉浸式体验室。
+- **汽车与航空模拟**：为驾驶模拟器提供环绕视野，每台PC负责一个显示区域的渲染。
+- **大型可视化**：用于建筑、城市规划、科学数据的超大规模、高分辨率实时可视化。
+- **军事与科研仿真**：需要多机同步渲染的训练或研究环境。
 
 ## 蓝图用法
 
-DisplayClusterMessageInterception 主要是一个 **运行时底层同步系统**，没有暴露 BlueprintCallable 节点。其配置通过 `UDisplayClusterMessageInterceptionSettings` 的 `config=Engine` 属性暴露在项目设置中。
+nDisplay的蓝图接口主要面向场景设置和运行时控制，而非底层渲染。核心蓝图节点通常与`UDisplayClusterConfigurationData`（配置资产）和`UDisplayClusterClusterManager`（集群管理器）交互。
 
-### 配置属性
+### 核心节点
 
-| 属性 | 类型 | 说明 | 所在类 |
-|---|---|---|---|
-| `bIsEnabled` | bool | 是否启用消息拦截 | `UDisplayClusterMessageInterceptionSettings` |
-| `bInterceptMultiUserMessages` | bool | 是否拦截 Multi-User 消息 | `UDisplayClusterMessageInterceptionSettings` |
-| `TimeoutSeconds` | float | 消息等待集群同步的最大秒数 | `UDisplayClusterMessageInterceptionSettings` |
+由于nDisplay功能庞大，蓝图节点分散在各个子模块中。以下是基于其核心功能的典型节点示例：
 
-### 使用示例（配置方式）
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| `Get Cluster Manager` | 获取当前世界的集群管理器单例，用于运行时控制。 | `UDisplayClusterBlueprintAPI` |
+| `Get Cluster Node ID` | 获取当前运行的集群节点ID（例如 “node_0”, “node_1”）。 | `UDisplayClusterBlueprintAPI` |
+| `Is Primary` | 判断当前节点是否是主节点（负责同步的控制端）。 | `UDisplayClusterBlueprintAPI` |
+| `Get Scene View Extensions` | 获取当前场景的视图扩展列表，可用于定制渲染。 | `UDisplayClusterBlueprintAPI` |
+| `Set Viewport Override` | 运行时动态覆盖某个视口的参数（如纹理、分辨率）。 | `UDisplayClusterBlueprintAPI` |
 
-在 **项目设置 → Engine → DisplayCluster Message Interception Settings** 中：
+### 使用示例（蓝图描述）
 
-1. 勾选 **Is Enabled** → 启用消息拦截
-2. 勾选 **Intercept Multi User Messages** → 让 Multi-User 编辑事件在集群中同步
-3. 设置 **Timeout Seconds**（默认 1.0s）→ 控制消息等待超时，超时后强制转发
+1.  **启动同步**：通常在GameMode的BeginPlay中，通过`Get Cluster Manager`节点获取管理器，然后调用其`Start`方法，基于配置资产初始化整个集群。
+2.  **节点判断**：在需要根据节点执行不同逻辑的地方（如只有主节点播放声音），使用`Is Primary`节点进行分支判断。
+3.  **动态控制**：在运行时，可以调用`Set Viewport Override`等节点，根据游戏逻辑动态调整某个投影面的显示内容或参数。
 
 ## C++ 用法
+
+nDisplay的C++ API庞大，核心功能涉及集群管理、渲染控制和投影算法。以下示例基于其测试用例，展示了基础集成和同步消息的使用。
 
 ### 头文件引入
 
 ```cpp
-#include "DisplayClusterMessageInterceptor.h"
-#include "DisplayClusterMessageInterceptionSettings.h"
+#include "DisplayCluster/Public/IDisplayCluster.h"
+#include "DisplayClusterConfiguration/Public/DisplayClusterConfigurationTypes.h"
 ```
 
-### 基本用法
+### 基本用法：获取nDisplay插件并启动
 
-核心类 `FDisplayClusterMessageInterceptor` 同时实现了 `IMessageInterceptor` 和 `IMessageSender` 接口，嵌入 MessageBus 管道中拦截并同步消息。
+从测试用例中可以看到如何检查和获取插件实例。`IDisplayCluster`是访问所有核心功能的入口点。
 
 ```cpp
-// 来源: Private/DisplayClusterMessageInterceptor.h
-
-// 创建拦截器实例
-TSharedRef<FDisplayClusterMessageInterceptor> Interceptor = MakeShared<FDisplayClusterMessageInterceptor>();
-
-// 初始化，绑定集群管理器和配置
-FMessageInterceptionSettings Settings;
-Settings.bIsEnabled = true;
-Settings.bInterceptMultiUserMessages = true;
-Settings.TimeoutSeconds = 1.0f;
-
-Interceptor->Setup(ClusterManager, Settings);
-
-// 启动拦截，绑定到消息总线
-Interceptor->Start(MessageBus);
+// 来自 Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests/Private/DisplayClusterTestBlueprintAPI.cpp
+// 检查nDisplay插件是否已加载并可用
+IDisplayCluster* DisplayClusterAPI = FModuleManager::GetModulePtr<IDisplayCluster>(TEXT("DisplayCluster"));
+if (DisplayClusterAPI)
+{
+    // 获取集群管理器
+    IDisplayClusterClusterManager* ClusterManager = DisplayClusterAPI->GetClusterMgr();
+    if (ClusterManager)
+    {
+        // 插件和集群管理器已就绪，可以进一步配置或启动
+        UE_LOG(LogTemp, Log, TEXT("nDisplay Cluster Manager is available."));
+    }
+}
 ```
 
-### 进阶用法
+### 进阶用法：处理集群同步事件
 
-拦截器在集群事件驱动下工作：当集群节点确认收到消息后，主节点收集确认信息，所有节点到齐后才放行消息。
+nDisplay使用一个自定义的集群通信系统。以下代码展示了如何设置和拦截集群事件，用于节点间的自定义同步逻辑。
 
 ```cpp
-// 来源: Private/DisplayClusterMessageInterceptor.h
+// 来自 Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests/Private/DisplayClusterTestClusterEventJson.cpp
+// 假设已有一个有效的 IDisplayClusterClusterManager* ClusterManager
 
-// 在集群消息同步循环中调用（通常由集群管理器驱动）
-Interceptor->SyncMessages();
+// 定义一个事件处理委托
+auto ClusterEventHandler = [](const FDisplayClusterClusterEventJson& Event)
+{
+    // 处理来自其他节点的JSON格式集群事件
+    UE_LOG(LogTemp, Log, TEXT("Received Cluster Event from node '%s', category '%s'"),
+        *Event.NodeId, *Event.Category);
+};
 
-// 处理来自集群节点的事件（节点确认收到消息）
-FDisplayClusterClusterEventJson ClusterEvent;
-Interceptor->HandleClusterEvent(ClusterEvent);
+// 绑定事件处理器
+ClusterManager->AddClusterEventJsonListener(FOnClusterEventJson::CreateLambda(ClusterEventHandler));
 
-// 处理集群节点断连
-Interceptor->HandleClusterNodeFailure(TEXT("Node-2"));
+// 发送一个事件给集群中所有节点
+FDisplayClusterClusterEventJson MyEvent;
+MyEvent.Category = TEXT("Gameplay");
+MyEvent.Type = TEXT("PlayerSpawn");
+MyEvent.Parameters.Add(TEXT("PlayerID"), TEXT("12345"));
+MyEvent.bIsSystemEvent = false;
+MyEvent.ShouldDiscardOnRepeat = false;
 
-// 停止拦截
-Interceptor->Stop();
+ClusterManager->SendClusterEventJson(MyEvent, true); // 第二个参数true表示广播给所有节点
 ```
-
-消息拦截的内部流程：
-1. `InterceptMessage()` 被 MessageBus 回调，将消息暂存到 `ContextMap`
-2. 主节点通过集群事件将消息 ID 广播给所有节点
-3. 各节点收到后回复确认
-4. `SyncMessages()` 检查 `FContextSync::NodesReceived` 集合，当所有节点确认后调用 `Purge()` 放行消息
-5. 超时（`TimeoutSeconds`）后也会强制放行，避免死锁
 
 ## Demo 示例
 
+一个最小化的nDisplay集成示例，通常从加载一个.nDisplay配置资产开始，然后启动集群。
+
 ```cpp
-// MyClusterApp.h
+// MyGameMode.h
 #pragma once
+#include "GameFramework/GameModeBase.h"
+#include "MyGameMode.generated.h"
 
-#include "CoreMinimal.h"
+class IDisplayCluster;
+class UDisplayClusterConfigurationData;
 
-class FMyClusterMessageSync
+UCLASS()
+class AMyGameMode : public AGameModeBase
 {
+    GENERATED_BODY()
+
 public:
-    void Initialize(class IDisplayClusterClusterManager* ClusterMgr, TSharedPtr<IMessageBus, ESPMode::ThreadSafe> Bus);
-    void Shutdown();
-    void Tick();
+    AMyGameMode();
+
+protected:
+    virtual void BeginPlay() override;
 
 private:
-    TSharedPtr<class FDisplayClusterMessageInterceptor, ESPMode::ThreadSafe> MessageInterceptor;
+    // nDisplay 插件实例指针
+    IDisplayCluster* DisplayClusterPlugin;
+
+    // nDisplay 配置资产
+    UPROPERTY(EditDefaultsOnly, Category="nDisplay")
+    UDisplayClusterConfigurationData* ConfigAsset;
+
+    // 启动集群的函数
+    void InitializeDisplayCluster();
 };
 ```
 
 ```cpp
-// MyClusterApp.cpp
-#include "MyClusterApp.h"
-#include "DisplayClusterMessageInterceptor.h"
-#include "DisplayClusterMessageInterceptionSettings.h"
+// MyGameMode.cpp
+#include "MyGameMode.h"
+#include "DisplayCluster/Public/IDisplayCluster.h"
+#include "DisplayCluster/Public/Cluster/IDisplayClusterClusterManager.h"
+#include "DisplayClusterConfiguration/Public/DisplayClusterConfigurationData.h"
+#include "Kismet/GameplayStatics.h"
 
-void FMyClusterMessageSync::Initialize(
-    IDisplayClusterClusterManager* ClusterMgr,
-    TSharedPtr<IMessageBus, ESPMode::ThreadSafe> Bus)
+AMyGameMode::AMyGameMode()
+    : DisplayClusterPlugin(nullptr)
+    , ConfigAsset(nullptr)
 {
-    // 读取项目设置中的拦截配置
-    const UDisplayClusterMessageInterceptionSettings* Settings =
-        GetDefault<UDisplayClusterMessageInterceptionSettings>();
-
-    if (Settings && Settings->InterceptionSettings.bIsEnabled)
-    {
-        MessageInterceptor = MakeShared<FDisplayClusterMessageInterceptor>();
-        MessageInterceptor->Setup(ClusterMgr, Settings->InterceptionSettings);
-        MessageInterceptor->Start(Bus);
-    }
+    // 尝试在构造函数中获取插件，可能还未加载，更安全的做法是在BeginPlay中检查
 }
 
-void FMyClusterMessageSync::Shutdown()
+void AMyGameMode::BeginPlay()
 {
-    if (MessageInterceptor.IsValid())
-    {
-        MessageInterceptor->Stop();
-        MessageInterceptor.Reset();
-    }
+    Super::BeginPlay();
+
+    InitializeDisplayCluster();
 }
 
-void FMyClusterMessageSync::Tick()
+void AMyGameMode::InitializeDisplayCluster()
 {
-    if (MessageInterceptor.IsValid())
+    // 1. 检查插件是否加载
+    DisplayClusterPlugin = FModuleManager::GetModulePtr<IDisplayCluster>(TEXT("DisplayCluster"));
+    if (!DisplayClusterPlugin)
     {
-        // 每帧检查集群中各节点的消息确认状态
-        MessageInterceptor->SyncMessages();
+        UE_LOG(LogTemp, Warning, TEXT("nDisplay plugin is not loaded!"));
+        return;
     }
+
+    // 2. 获取集群管理器
+    IDisplayClusterClusterManager* ClusterManager = DisplayClusterPlugin->GetClusterMgr();
+    if (!ClusterManager)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to get Cluster Manager from nDisplay plugin."));
+        return;
+    }
+
+    // 3. 加载并应用配置 (如果没有通过编辑器预设)
+    if (!ConfigAsset)
+    {
+        // 可以通过资产路径加载
+        // ConfigAsset = LoadObject<UDisplayClusterConfigurationData>(nullptr, TEXT("/Game/nDisplay/MyConfig.MyConfig"));
+        if (!ConfigAsset)
+        {
+            UE_LOG(LogTemp, Error, TEXT("nDisplay Configuration Asset is not set!"));
+            return;
+        }
+    }
+
+    // 4. 应用配置并启动集群
+    // 这里的具体API调用取决于nDisplay的版本和你的初始化策略
+    // 通常集群的启动是由配置资产在某个时机触发的，或者通过编辑器面板。
+    // 在游戏逻辑中，你可能更多地是与已经启动的集群管理器交互。
+    UE_LOG(LogTemp, Log, TEXT("nDisplay Plugin and Cluster Manager are ready. Configuration asset: %s"),
+        ConfigAsset ? *ConfigAsset->GetName() : TEXT("None"));
 }
 ```
 
 ## 模块依赖
 
-DisplayClusterMessageInterception 模块本身**无特殊依赖**（仅标准 Core/Engine/Slate 等）。
-
-nDisplay 插件整体的独特依赖如下：
+nDisplay插件包含大量子模块，但用户项目在引用它时，主要需要依赖其核心和运行时模块。
 
 | 模块 | 用途 |
 |---|---|
-| `EditorWidgets` | 编辑器自定义控件（DisplayCluster 配置界面） |
-| `LevelEditor` | 关卡编辑器集成（nDisplay 面板嵌入） |
-| `D3D12RHI` | Direct3D 12 渲染硬件接口（SharedMemoryMedia 媒体共享） |
-
-> ⚠️ 注意：nDisplay 的其他子模块可能依赖 `MPCDI`、`OpenCV`、`NDI` 等第三方库，此处仅列出 Build.cs 中明确声明的公共依赖。
+| `DisplayCluster` | 核心运行时逻辑，集群管理、渲染主循环。 |
+| `DisplayClusterConfiguration` | 解析和管理 `.nDisplay` 配置资产的数据模型。 |
+| `DisplayClusterProjection` | 处理投影校正（Warp & Blend）、MPCDI等投影算法。 |
+| `DisplayClusterShaders` | nDisplay专用的着色器模块。 |
+| `DisplayClusterWarp` | 与投影校正相关的Warp网格等数据的处理。 |
+| `SharedMemoryMedia` | 基于共享内存的媒体输入输出，用于节点间高速交换纹理。 |
+| `MediaFrameworkUtilities` | 媒体框架工具，支持从各种媒体源（如SMPTE ST 2110）获取输入。 |
+| `D3D12RHI` | 直接支持DirectX 12渲染硬件接口，许多高级同步和纹理共享功能依赖于此。 |
 
 ## 维护状态
 
@@ -191,27 +228,26 @@ nDisplay 插件整体的独特依赖如下：
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | MovieGraph 支持 EXR 多图层输出 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并 WarpBlendAlpha 模式到 WarpBlend |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 相机命名和 MPCDI/ICVFX 着色器透明度 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 输出帧编码时正确处理非默认 DisplayGamma |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理小于视口时的闪烁问题 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为nDisplay的MovieGraph渲染管线添加EXR多图层输出支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并了WarpBlendAlpha模式到WarpBlend模式，简化了渲染管线选项。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了多根渲染图(MRG)中拓扑感知相机的命名问题，并修复了MPCDI/ICVFX着色器中的不透明度处理。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复了在输出帧编码回退路径中未遵循非默认DisplayGamma设置的问题。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当GUI纹理尺寸小于视口尺寸时可能导致的画面闪烁问题。 |
 
 ### 维护评价
 
-nDisplay 是 **Epic Games 活跃维护的核心企业级插件**：
+nDisplay插件**仍在积极维护中**，且更新非常频繁。从提交历史看，Epic Games团队持续为其添加新功能（如EXR多层、改进的MovieGraph集成）并修复底层bug。考虑到其创建于2018年，且功能复杂度极高，它是一个成熟且关键的企业级功能插件。
 
-- ✅ **持续活跃**：2026 年 5 月有多次密集更新，聚焦于 MovieGraph、着色器修复、媒体管线改进
-- ✅ **功能不断演进**：从 2018 年 UE 4.20 发布以来，持续增加 ICVFX（虚拟制片）、Movie Pipeline、Multi-User、Stage Monitoring 等功能
-- ✅ **Epic 官方支持**：用于 Fortnite 的 LED Volume 虚拟制片等内部场景
-- ⚠️ **复杂度极高**：29 个模块、1351+ 源文件，学习曲线陡峭
-- ⚠️ **默认未启用**：`EnabledByDefault=false`，需要手动在插件列表中启用
-- ⚠️ **DisplayClusterMessageInterception 模块**：作为底层同步机制，普通用户通常不需要直接接触，由 nDisplay 框架内部自动调用
+**主要注意事项**：
+1.  **启用方式**：`EnabledByDefault`为`false`，必须在项目插件设置中手动启用。
+2.  **平台支持**：仅支持Win64和Linux，与大多数高性能图形应用需求一致。
+3.  **复杂度**：是一个xlarge级别的插件，学习曲线较陡峭，通常需要专门的硬件设置和配置。
+4.  **依赖**：部分功能深度依赖D3D12RHI和媒体框架。
 
-**推荐使用**：如果你的项目涉及多机集群渲染、LED Volume 虚拟制片或多通道投影，nDisplay 是唯一选择且质量可靠。
+**推荐**：对于需要构建专业级多机渲染集群的项目，nDisplay是官方且功能完备的首选方案。但对于简单的多屏扩展，可能过于复杂。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://dev.epicgames.com/documentation/en-us/unreal-engine/n-display-in-unreal-engine)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/nDisplay-in-unreal-engine/)（Unreal Engine 官方文档链接）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests/Private)

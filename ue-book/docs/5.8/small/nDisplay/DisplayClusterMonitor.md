@@ -1,325 +1,253 @@
-# nDisplay
+# DisplayClusterMonitor
 
-> Support for synchronized clustered rendering using multiple PCs in mono or stereo
+> Support for synchronized clustered rendering using multiple PCs in mono or stereo（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | nDisplay 集群渲染 |
+| 中文名 | 集群渲染监控 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产、材质、蓝图） |
+| 包含内容 | ❌ 无 |
 | 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
-| 创建时间 | 2018-06-07 |
-| 年龄标签 | 🏛️ 文物（约 7 年） |
+| 创建时间 | 2018-06-08 |
+| 年龄标签 | 👴 老古董（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay) | |
 
 ## 用途
 
-nDisplay 是 Unreal Engine 的集群渲染解决方案，用于将单个 UE 应用程序的渲染输出同步到多台 PC 上的多个显示设备。它支持单目和立体渲染，适用于大型沉浸式显示环境，如 CAVE（洞穴自动虚拟环境）、穹顶投影、LED 墙和多屏幕设置。
+`DisplayClusterMonitor` 是 nDisplay 插件中的一个模块，专注于**集群渲染环境下的节点状态监控与实时媒体流传输**。
 
-该插件的核心功能包括：
-- **同步渲染**：确保所有集群节点在同一时间点渲染相同的帧，避免视觉撕裂
-- **多投影支持**：处理复杂的投影几何和变形（warp/blend）
-- **媒体输出**：提供将渲染内容流式传输到外部设备的能力
-- **集群监控**：提供对集群节点状态和渲染资源的实时监控
-- **远程控制**：允许通过消息总线对集群进行配置和控制
-- **电影渲染管线集成**：支持使用 nDisplay 进行离线渲染
+它解决了在多台 PC（节点）组成的同步渲染集群中，中央管理工具（或操作员）无法实时查看各个节点渲染状态和输出画面的问题。该模块通过建立一个基于 Message Bus 的通信网络，实现了以下核心功能：
+1.  **节点发现与监控**：自动发现集群中的所有节点，并通过心跳机制监测其是否在线。
+2.  **媒体流输出**：允许从集群中的每个节点捕获特定的渲染输出（如内镜头摄像机视图、视口、UI层、后缓冲等），并通过 NDI 等媒体协议流式传输出来，供外部监控设备（如大型调色台、监视墙）实时查看。
+3.  **远程控制**：支持从监控端向指定的集群节点发送控制指令（如播放、暂停、停止、执行控制台命令）。
+
+本质上，它是一个**集群渲染的“眼睛”和“遥控器”**，是大规模虚拟制片、大型LED墙、多投影融合等项目中不可或缺的运维和调试工具。
 
 ## 使用场景
 
-- **虚拟制片**：使用 LED 墙显示实时背景，演员在前景表演
-- **主题公园娱乐**：在多台投影仪上同步渲染 360 度或穹顶内容
-- **科学可视化**：在 CAVE 环境中进行大规模数据可视化
-- **大型活动**：在多个显示屏上同步显示实时内容
-- **电影级离线渲染**：使用集群进行高分辨率、高质量的最终帧渲染
+-   **虚拟制片（Virtual Production）**：在 LED 墙拍摄现场，DIT（数字影像工程师）需要同时监控组成巨幕的每一块 LED 板（每个节点）的渲染画面，确保色彩、内容同步且无异常。通过 Monitor 模块将各节点的内镜头摄像机（ICVFX Camera）画面流式传输到监视器阵列。
+-   **大型主题公园或展会**：驱动由数十个投影仪组成的复杂投影融合项目时，运维团队需要监控每个投影节点的输出画面，以检查融合带、校准状态或内容同步。
+-   **天文馆/球幕影院**：监控多台渲染服务器输出的球幕画面，确保无缝拼接。
+-   **分布式渲染调试**：开发者在调试 nDisplay 集群渲染时，无需在每个节点显示器前切换，直接从操作终端查看任意节点的视口输出。
 
 ## 蓝图用法
 
-由于 nDisplay 主要是一个配置和管理系统，其蓝图 API 主要集中在监控和控制方面。
+本模块的核心功能主要通过 C++ 的 `FDCMessenger` 类和一系列 USTRUCT 消息体实现。在蓝图中，主要操作这些**类型和消息结构体**。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `StartSession` | 启动对指定可观察对象的监控会话 | `FDCMessenger` |
-| `StopSession` | 停止监控会话 | `FDCMessenger` |
-| `SendCommand` | 向集群节点发送控制命令 | `FDCMessenger` |
-| `GetDiscoveredEndpoints` | 获取已发现的所有集群端点 | `FDCMessenger` |
+| `EDCObservableType` (枚举) | 定义了可被监控的资源类型：后缓冲、UI、视口、内镜头摄像机等。 | `DisplayClusterMonitorTypes.h` |
+| `EDCMessengerRole` (枚举) | 定义了通信网络中端点的角色：`ObservablesProvider`（数据提供者）或 `Monitor`（监控者）。 | `DisplayClusterMonitorTypes.h` |
+| `FDCEndpoint` (结构体) | 包含一个监控端点的所有信息：所在集群/节点、地址、最后活动时间。 | `DisplayClusterMonitorTypes.h` |
+| `FDCMMessageBase` 及其子类 | 所有监控消息的基类及具体消息，如发现请求、心跳、会话控制消息等。 | `DisplayClusterMonitorTypes.h` |
 
 ### 使用示例（蓝图描述）
 
-要监控特定视口的渲染输出：
-1. 获取 `UDisplayClusterMonitorSettings` 实例
-2. 通过消息总线连接到集群监控端点
-3. 发送 `NodeObservablesRequest` 消息获取可用资源列表
-4. 发送 `StartSessionRequest` 开始接收指定资源的媒体流
-5. 在接收到媒体数据后进行处理
+由于该模块没有直接暴露给蓝图的核心功能节点（如 `FDCMessenger` 不是 UObject），其蓝图交互主要围绕**数据定义**。
+1.  **在蓝图中定义消息**：你可以创建继承自 `FDCMMessageBase` 的蓝图结构体，用于自定义监控协议。
+2.  **处理事件**：在 C++ 层绑定 `FDCMessenger` 的委托（如 `OnEndpointJoined`、`OnMessage<FDCMMessage_YourCustom>()`）后，可以通过事件调度器将信息传递到蓝图界面进行显示。
+3.  **配置设置**：`UDisplayClusterMonitorSettings` 是一个 UObject，可以在项目设置或蓝图中配置心跳间隔、无响应时间阈值等运行时参数。
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "DisplayClusterMonitorModule.h"
-#include "DisplayClusterMonitorMessenger.h"
 #include "DisplayClusterMonitorTypes.h"
+#include "DisplayClusterMonitorMessenger.h"
+#include "DisplayClusterMonitorProviderBase.h"
+#include "DisplayClusterMonitorSettings.h"
 ```
 
 ### 基本用法
 
-建立集群监控连接和基础消息处理：
+以下示例展示如何创建一个简单的监控客户端（Monitor 角色），用于发现集群节点并监听其状态。
+*(来源：基于 `FDCMessenger` 和 `FDisplayClusterMonitorProviderBase` 类的设计模式推断)*
 
 ```cpp
-// 来源: DisplayClusterMonitorMessenger.h
-using namespace UE::nDisplay::Monitor;
+// MyMonitorClient.h
+#pragma once
+#include "DisplayClusterMonitorMessenger.h"
 
-// 创建并启动监控信使
-FDCMessenger Messenger;
-TSet<EDCMessengerRole> Roles;
-Roles.Add(EDCMessengerRole::Monitor);
-
-if (Messenger.Start(TEXT("MyMonitor"), Roles))
+class FMyMonitorClient
 {
-    // 监听端点发现
-    Messenger.OnEndpointJoined.AddLambda([](const FDCEndpoint& Endpoint)
-    {
-        UE_LOG(LogTemp, Log, TEXT("新端点加入: %s"), *Endpoint.Endpoint.Name);
-    });
+public:
+    bool Initialize();
+    void Shutdown();
 
-    // 监听心跳超时
-    Messenger.OnEndpointTimeout.AddLambda([](const FDCEndpoint& Endpoint)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("端点超时: %s"), *Endpoint.Endpoint.Name);
-    });
+private:
+    void HandleEndpointJoined(const UE::nDisplay::Monitor::FDCEndpoint& Endpoint);
+    void HandleEndpointTimeout(const UE::nDisplay::Monitor::FDCEndpoint& Endpoint);
 
-    // 注册自定义消息处理
-    Messenger.OnMessage<FDCMMessage_NodeObservablesNotification>().AddLambda(
-        [](const FDCEndpoint& Endpoint, const FDCMMessage_NodeObservablesNotification& Msg)
+private:
+    TUniquePtr<UE::nDisplay::Monitor::FDCMessenger> Messenger;
+};
+```
+
+```cpp
+// MyMonitorClient.cpp
+#include "MyMonitorClient.h"
+
+bool FMyMonitorClient::Initialize()
+{
+    Messenger = MakeUnique<UE::nDisplay::Monitor::FDCMessenger>();
+    
+    // 启动 Messenger，角色为 Monitor
+    if (!Messenger->Start(TEXT("MyMonitor"), { UE::nDisplay::Monitor::EDCMessengerRole::Monitor }))
     {
-        // 处理可观察对象更新
-        for (const FDCMData_ObservableInfo& Info : Msg.Observables.ObservablesAdded)
-        {
-            UE_LOG(LogTemp, Log, TEXT("新增可观察对象: %s"), *Info.Name);
-        }
-    });
+        UE_LOG(LogTemp, Error, TEXT("Failed to start Monitor Messenger"));
+        return false;
+    }
+
+    // 绑定事件委托
+    Messenger->OnEndpointJoined.AddRaw(this, &FMyMonitorClient::HandleEndpointJoined);
+    Messenger->OnEndpointTimeout.AddRaw(this, &FMyMonitorClient::HandleEndpointTimeout);
+
+    UE_LOG(LogTemp, Log, TEXT("Monitor client started successfully"));
+    return true;
+}
+
+void FMyMonitorClient::Shutdown()
+{
+    if (Messenger)
+    {
+        Messenger->Stop(TEXT("Client shutdown"));
+    }
+}
+
+void FMyMonitorClient::HandleEndpointJoined(const UE::nDisplay::Monitor::FDCEndpoint& Endpoint)
+{
+    UE_LOG(LogTemp, Log, TEXT("Endpoint joined: Node '%s' on host '%s'"),
+        *Endpoint.Residence.NodeName, *Endpoint.Residence.Hostname);
+}
+
+void FMyMonitorClient::HandleEndpointTimeout(const UE::nDisplay::Monitor::FDCEndpoint& Endpoint)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Endpoint timeout: Node '%s' on host '%s'"),
+        *Endpoint.Residence.NodeName, *Endpoint.Residence.Hostname);
 }
 ```
 
 ### 进阶用法
 
-控制远程节点的渲染输出：
+向已发现的特定节点发送一个请求，查询其可用的可监控资源列表。
+*(来源：基于 `FDCMessenger::Send` 和 `FDCMMessage_NodeObservablesRequest` 的设计推断)*
 
 ```cpp
-// 来源: DisplayClusterMonitorProviderMedia.h
-// 获取媒体提供者
-FDisplayClusterMonitorProviderMedia MediaProvider;
+// 在 FMyMonitorClient 类中添加成员
+void RequestObservablesFromEndpoint(const UE::nDisplay::Monitor::FDCEndpoint& TargetEndpoint);
 
-// 请求所有可用的可观察对象
-FDCMMessage_NodeObservablesRequest Request;
-TArray<FMessageAddress> Recipients;
-// 填充目标地址...
+void FMyMonitorClient::RequestObservablesFromEndpoint(const UE::nDisplay::Monitor::FDCEndpoint& TargetEndpoint)
+{
+    if (!Messenger || !Messenger->IsRunning())
+    {
+        return;
+    }
 
-MediaProvider.GetMessenger()->Send(Recipients, Request);
+    // 构造请求消息
+    UE::nDisplay::Monitor::FDCMMessage_NodeObservablesRequest RequestMsg;
 
-// 开始特定视口的捕获会话
-FDCMMessage_StartSessionRequest StartRequest;
-StartRequest.ObservableId = SomeObservableGuid;
-MediaProvider.GetMessenger()->Send(Recipients, StartRequest);
+    // 发送给特定节点的地址
+    TArray<FMessageAddress> Recipients = { TargetEndpoint.Address };
+    Messenger->Send(Recipients, RequestMsg);
 
-// 发送播放/暂停控制命令
-FDCMMessage_ObservableControlRequest ControlRequest;
-ControlRequest.ObservableId = SomeObservableGuid;
-ControlRequest.Command = EDCControlCommand::Play;
-MediaProvider.GetMessenger()->Send(Recipients, ControlRequest);
+    // 同时，需要在 Messenger 上绑定对此请求的响应处理
+    // Messenger->OnMessage<UE::nDisplay::Monitor::FDCMMessage_NodeObservablesResponse>()
+    //     .AddRaw(this, &FMyMonitorClient::HandleObservablesResponse);
+}
 ```
 
 ## Demo 示例
 
-一个完整的集群监控客户端示例：
+一个最小的、可运行的 `DisplayClusterMonitorProvider`，用于暴露当前进程的后缓冲（Backbuffer）供监控。
+*(注意：此示例仅为演示结构，实际集成到 nDisplay 会话需要更多回调和数据源。)*
 
 ```cpp
-// DisplayClusterMonitorClient.h
+// MySimpleProvider.h
 #pragma once
-
-#include "CoreMinimal.h"
-#include "DisplayClusterMonitorMessenger.h"
+#include "DisplayClusterMonitorProviderBase.h"
 #include "DisplayClusterMonitorTypes.h"
 
-class FDisplayClusterMonitorClient
+class FMySimpleProvider : public UE::nDisplay::Monitor::FDisplayClusterMonitorProviderBase
 {
 public:
-    FDisplayClusterMonitorClient();
-    ~FDisplayClusterMonitorClient();
-
-    bool Initialize(const FString& ClientName);
-    void Shutdown();
-    
-    void RequestAvailableResources();
-    void StartMonitoring(const FGuid& ObservableId);
-    void StopMonitoring(const FGuid& ObservableId);
+    virtual FString GetMessengerName() const override;
+    virtual bool Start() override;
+    virtual void Stop() override;
 
 private:
-    void OnEndpointDiscovered(const FDCEndpoint& Endpoint);
-    void OnResourcesReceived(const FDCEndpoint& Endpoint, const FDCMMessage_NodeObservablesResponse& Response);
-    void OnSessionStarted(const FDCEndpoint& Endpoint, const FDCMMessage_StartSessionResponse& Response);
-    void OnMediaDataReceived(const FDCEndpoint& Endpoint, const FDCMMessage_NodeObservablesNotification& Notification);
-
-    UE::nDisplay::Monitor::FDCMessenger Messenger;
-    TArray<FGuid> ActiveSessions;
+    // 模拟的资源列表更新和会话管理函数
+    void UpdateResources();
+    // ... 其他私有辅助函数
 };
 ```
 
 ```cpp
-// DisplayClusterMonitorClient.cpp
-#include "DisplayClusterMonitorClient.h"
-#include "DisplayClusterMonitorLog.h"
+// MySimpleProvider.cpp
+#include "MySimpleProvider.h"
+#include "DisplayClusterMonitorMessenger.h"
 
-FDisplayClusterMonitorClient::FDisplayClusterMonitorClient()
+FString FMySimpleProvider::GetMessengerName() const
 {
+    return TEXT("SimpleBackbufferProvider");
 }
 
-FDisplayClusterMonitorClient::~FDisplayClusterMonitorClient()
+bool FMySimpleProvider::Start()
 {
-    Shutdown();
-}
-
-bool FDisplayClusterMonitorClient::Initialize(const FString& ClientName)
-{
-    TSet<UE::nDisplay::Monitor::EDCMessengerRole> Roles;
-    Roles.Add(UE::nDisplay::Monitor::EDCMessengerRole::Monitor);
-    
-    if (!Messenger.Start(ClientName, Roles))
+    // 1. 启动基类的 Messenger
+    if (!Super::Start())
     {
-        UE_LOG(LogDisplayClusterMonitor, Error, TEXT("Failed to start monitor messenger"));
         return false;
     }
 
-    // 绑定事件处理
-    Messenger.OnEndpointJoined.AddRaw(this, &FDisplayClusterMonitorClient::OnEndpointDiscovered);
-    
-    Messenger.OnMessage<UE::nDisplay::Monitor::FDCMMessage_NodeObservablesResponse>().AddRaw(
-        this, &FDisplayClusterMonitorClient::OnResourcesReceived);
-    
-    Messenger.OnMessage<UE::nDisplay::Monitor::FDCMMessage_StartSessionResponse>().AddRaw(
-        this, &FDisplayClusterMonitorClient::OnSessionStarted);
-    
-    Messenger.OnMessage<UE::nDisplay::Monitor::FDCMMessage_NodeObservablesNotification>().AddRaw(
-        this, &FDisplayClusterMonitorClient::OnMediaDataReceived);
+    // 2. 设置角色为数据提供者
+    if (!Messenger->Start(GetMessengerName(), { UE::nDisplay::Monitor::EDCMessengerRole::ObservablesProvider }))
+    {
+        return false;
+    }
 
-    UE_LOG(LogDisplayClusterMonitor, Log, TEXT("Monitor client initialized: %s"), *ClientName);
+    // 3. (在实际插件中) 在这里绑定处理来自 Monitor 的各种请求消息的委托
+    // 例如：Messenger->OnMessage<FDCMMessage_NodeObservablesRequest>().AddRaw(...)
+
+    // 4. 开始模拟资源评估
+    // GetWorld()->GetTimerManager().SetTimer(...)
+    UpdateResources();
+
     return true;
 }
 
-void FDisplayClusterMonitorClient::Shutdown()
+void FMySimpleProvider::Stop()
 {
-    // 停止所有活动会话
-    for (const FGuid& SessionId : ActiveSessions)
-    {
-        UE::nDisplay::Monitor::FDCMMessage_StopSessionRequest StopRequest;
-        StopRequest.ObservableId = SessionId;
-        
-        TArray<FMessageAddress> Recipients;
-        // 填充目标地址...
-        Messenger.Send(Recipients, StopRequest);
-    }
-    
-    ActiveSessions.Empty();
-    Messenger.Stop(TEXT("Client shutdown"));
+    // 停止计时器等...
+    Super::Stop();
 }
 
-void FDisplayClusterMonitorClient::RequestAvailableResources()
+void FMySimpleProvider::UpdateResources()
 {
-    UE::nDisplay::Monitor::FDCMMessage_NodeObservablesRequest Request;
-    
-    // 向所有已发现的端点发送请求
-    TArray<FMessageAddress> Recipients;
-    for (const auto& Endpoint : Messenger.GetDiscoveredEndpoints())
-    {
-        Recipients.Add(Endpoint.Address);
-    }
-    
-    if (Recipients.Num() > 0)
-    {
-        Messenger.Send(Recipients, Request);
-        UE_LOG(LogDisplayClusterMonitor, Log, TEXT("Requested available resources from %d endpoints"), Recipients.Num());
-    }
-}
+    // 模拟：每次“评估”时，我们只有一个固定的“后缓冲”资源
+    UE::nDisplay::Monitor::FDCMData_ObservableInfo BackbufferInfo;
+    BackbufferInfo.Type = UE::nDisplay::Monitor::EDCObservableType::Backbuffer;
+    BackbufferInfo.Id = FGuid::NewGuid(); // 在实际中，这应该是稳定的ID
+    BackbufferInfo.Name = TEXT("Main Backbuffer");
+    BackbufferInfo.Resolution = GEngine->GameViewport->Viewport->GetSizeXY();
 
-void FDisplayClusterMonitorClient::StartMonitoring(const FGuid& ObservableId)
-{
-    UE::nDisplay::Monitor::FDCMMessage_StartSessionRequest Request;
-    Request.ObservableId = ObservableId;
-    
-    TArray<FMessageAddress> Recipients;
-    // 填充目标地址...
-    Messenger.Send(Recipients, Request);
-    
-    UE_LOG(LogDisplayClusterMonitor, Log, TEXT("Started monitoring session: %s"), *ObservableId.ToString());
-}
+    // 构造更新消息
+    UE::nDisplay::Monitor::FDCMData_NodeObservables ObservablesUpdate;
+    // 第一次是“添加”
+    ObservablesUpdate.ObservablesAdded.Add(BackbufferInfo);
 
-void FDisplayClusterMonitorClient::StopMonitoring(const FGuid& ObservableId)
-{
-    UE::nDisplay::Monitor::FDCMMessage_StopSessionRequest Request;
-    Request.ObservableId = ObservableId;
-    
-    TArray<FMessageAddress> Recipients;
-    // 填充目标地址...
-    Messenger.Send(Recipients, Request);
-    
-    ActiveSessions.Remove(ObservableId);
-    UE_LOG(LogDisplayClusterMonitor, Log, TEXT("Stopped monitoring session: %s"), *ObservableId.ToString());
-}
+    // 广播更新通知给所有监控者
+    UE::nDisplay::Monitor::FDCMMessage_NodeObservablesNotification NotificationMsg;
+    NotificationMsg.Observables = ObservablesUpdate;
 
-void FDisplayClusterMonitorClient::OnEndpointDiscovered(const FDCEndpoint& Endpoint)
-{
-    UE_LOG(LogDisplayClusterMonitor, Log, TEXT("Discovered endpoint: %s (%s)"), 
-        *Endpoint.Endpoint.Name, *Endpoint.Residence.Hostname);
-}
-
-void FDisplayClusterMonitorClient::OnResourcesReceived(
-    const FDCEndpoint& Endpoint, 
-    const FDCMMessage_NodeObservablesResponse& Response)
-{
-    UE_LOG(LogDisplayClusterMonitor, Log, TEXT("Received resources from %s:"), *Endpoint.Endpoint.Name);
-    
-    for (const auto& Observable : Response.Observables.ObservablesAdded)
+    if (Messenger)
     {
-        UE_LOG(LogDisplayClusterMonitor, Log, TEXT("  - %s [%s] %dx%d"),
-            *Observable.Name,
-            *UEnum::GetValueAsString(Observable.Type),
-            Observable.Resolution.X, Observable.Resolution.Y);
-    }
-}
-
-void FDisplayClusterMonitorClient::OnSessionStarted(
-    const FDCEndpoint& Endpoint, 
-    const FDCMMessage_StartSessionResponse& Response)
-{
-    if (Response.Result == UE::nDisplay::Monitor::EDCRequestResult::Ok)
-    {
-        ActiveSessions.Add(Response.ObservableId);
-        UE_LOG(LogDisplayClusterMonitor, Log, TEXT("Session started: %s"), *Response.ObservableId.ToString());
-    }
-    else
-    {
-        UE_LOG(LogDisplayClusterMonitor, Warning, TEXT("Failed to start session: %s"), *Response.ObservableId.ToString());
-    }
-}
-
-void FDisplayClusterMonitorClient::OnMediaDataReceived(
-    const FDCEndpoint& Endpoint, 
-    const FDCMMessage_NodeObservablesNotification& Notification)
-{
-    // 处理接收到的媒体数据
-    for (const auto& Observable : Notification.Observables.ObservablesAdded)
-    {
-        UE_LOG(LogDisplayClusterMonitor, Verbose, TEXT("New observable data: %s"), *Observable.Name);
-    }
-    
-    for (const auto& Observable : Notification.Observables.ObservablesUpdated)
-    {
-        UE_LOG(LogDisplayClusterMonitor, Verbose, TEXT("Updated observable: %s"), *Observable.Name);
+        // 使用 Broadcast 发送给所有监控端点
+        Messenger->Broadcast(MoveTemp(NotificationMsg));
     }
 }
 ```
@@ -328,11 +256,12 @@ void FDisplayClusterMonitorClient::OnMediaDataReceived(
 
 | 模块 | 用途 |
 |---|---|
-| `UnrealEd` | 编辑器集成和资产编辑功能 |
-| `D3D12RHI` | DirectX 12 渲染硬件接口，用于媒体输出 |
-| `MediaUtils` | 媒体捕获和输出工具 |
+| `MessageBus` | 用于集群节点间的异步消息通信，是整个 Monitor 模块的通信基石。 |
+| `Media` / `MediaUtils` | 提供 `UMediaCapture`, `UMediaOutput` 等媒体捕获和输出的基础设施。 |
+| `DisplayCluster` | nDisplay 核心插件，提供集群节点管理、视口代理 (`IDisplayClusterViewport`) 等必要接口。 |
+| `NDIMedia` (可选) | 如果使用 NDI 作为流媒体传输协议，则需要依赖此模块。 |
 
-**注意**：nDisplay 插件包含大量模块，不同功能需要不同的依赖。DisplayClusterMonitor 模块主要依赖 UnrealEd 用于编辑器集成。
+**注意**：`Build.cs` 中列出的 `UnrealEd` 依赖通常仅用于编辑器扩展（如 Monitor 面板的 UI），对于纯运行时监控功能，可能并不需要。
 
 ## 维护状态
 
@@ -340,25 +269,25 @@ void FDisplayClusterMonitorClient::OnMediaDataReceived(
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为电影图和 nDisplay 添加 EXR 多层支持 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并电影管线中的变形混合模式 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复拓扑感知相机命名和着色器中的不透明度问题 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 在输出帧编码回退时正确处理非默认显示伽马值 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理尺寸小于视口尺寸时的闪烁问题 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 MovieGraph 添加多层 EXR 支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并了 MoviePipeline 中的扭曲混合 Alpha 模式。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了 MRG 中的拓扑感知摄像机命名，以及 MPCDI/ICVFX 着色器中的不透明 Alpha 问题。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复了在输出帧编码回退时未使用非默认 DisplayGamma 的问题。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理尺寸小于视口尺寸时的闪烁问题。 |
 
 ### 维护评价
 
-**活跃维护** - nDisplay 是 Epic Games 持续维护的核心技术之一：
+**活跃维护**。
 
-1. **创建时间**：2018 年创建，已有 7 年历史，是成熟的工业级解决方案
-2. **更新频率**：非常活跃，2026 年 5 月有多次重要更新，表明持续开发中
-3. **功能范围**：功能不断扩展，包括电影管线集成、新的投影技术、性能优化等
-4. **平台支持**：支持 Win64 和 Linux，适用于各种工业部署环境
-5. **社区使用**：广泛应用于虚拟制片、主题公园、科学可视化等领域
+该插件模块自 2018 年创建以来持续更新，最近的提交记录（2026 年 5 月）表明 Epic Games 仍在积极开发和修复问题。近期更新主要集中在：
+1.  **功能增强**：如为 MovieGraph 添加新特性。
+2.  **Bug 修复**：修复了着色器、渲染、流媒体传输等多个方面的具体问题，显示了对其在复杂项目中应用稳定性的关注。
+3.  **技术整合**：与 Movie Pipeline、MRG（Multi-Resolution Graphics）等其他 UE 子系统的协同工作。
 
-**推荐使用**：对于需要多机同步渲染、大型显示墙或虚拟制片的项目，nDisplay 是官方推荐的解决方案。虽然需要手动启用（`EnabledByDefault: false`），但功能完整、文档完善，适合生产环境使用。
+**推荐使用**：对于需要多 PC 同步渲染和实时监控的大型虚拟制片或沉浸式项目，nDisplay 及其 Monitor 模块是官方且功能完备的解决方案。它仍在积极维护，能够适应最新的引擎功能。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/nDisplay-in-Unreal-Engine/)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/ndisplay-in-unreal-engine/) （nDisplay 总体文档）
+- 测试用例：未在提供的文件路径中直接发现明确的 `DisplayClusterMonitor` 测试文件，通常集成在 nDisplay 的整体自动化测试中。
