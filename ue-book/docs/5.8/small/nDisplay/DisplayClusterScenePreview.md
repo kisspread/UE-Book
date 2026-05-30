@@ -1,294 +1,340 @@
 # nDisplay
 
-> Support for synchronized clustered rendering using multiple PCs in mono or stereo（照抄，不翻译）
+> Support for synchronized clustered rendering using multiple PCs in mono or stereo
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | nDisplay 多机同步渲染 |
+| 中文名 | 集群渲染系统 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（编辑器工具、蓝图资产、着色器） |
-| 模块 | `DisplayCluster` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterMultiUser` (Runtime) |
+| 包含内容 | ✅ 有（配置资产、着色器、蓝图资产） |
+| 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
-| 年龄标签 | 👴 老古董（约 8 年） |
+| 年龄标签 | 🆕（约 8 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay) | |
 
 ## 用途
 
-nDisplay 是一个功能极其强大的 Unreal Engine 插件，其核心目的是实现**多台计算机（PC）的同步集群渲染**，以驱动大规模的显示器阵列、LED 墙幕或穹顶/圆柱投影系统。它并非一个简单的多显示器扩展，而是一个完整的分布式渲染和同步框架。
+nDisplay 是一个用于实现**多台PC同步集群渲染**的系统，支持单声道和立体声模式。它解决的核心问题是：如何将一个虚拟场景同时渲染到多个物理显示器或投影仪上，并保持完美同步。
 
-该插件通过定义一套名为 **nDisplay 配置（.ndisplay）** 的文件来描述整个显示集群的拓扑结构，包括：
-- **节点（Node）**： 每一台参与渲染的计算机。
-- **视口（Viewport）**： 每台计算机上渲染的虚拟“屏幕”区域。
-- **投影（Projection）**： 视口内容如何映射到物理屏幕（平面、圆柱、网格、MPCDI等）。
-- **同步（Sync）**： 确保所有节点在精确的同一时刻渲染同一帧。
+这个插件主要应用于以下场景：
+1. **大型沉浸式显示环境**：如CAVE系统、穹顶影院、大型LED屏幕
+2. **多通道投影**：多台投影仪拼接成一个大的连续画面
+3. **虚拟制片**：在影视制作中使用LED墙实时显示背景
+4. **模拟器训练**：驾驶舱、飞行模拟器等多屏显示系统
+5. **主题公园体验**：多屏幕互动娱乐设施
 
-其存在意义是为**虚拟制片（Virtual Production）**、**大型沉浸式体验**和**专业可视化**等领域提供技术基础，解决单台计算机算力不足以驱动超大分辨率或多角度同步渲染的难题。
+nDisplay通过配置文件定义显示集群的拓扑结构（屏幕位置、形状、投影方式），然后协调所有参与渲染的PC，确保它们同步渲染各自负责的视口部分，最终拼接成一个完整的画面。
 
 ## 使用场景
 
-- **虚拟制片（LED墙拍摄）**： 你在搭建一个 LED 墙影棚，需要多台渲染服务器（称为 Render Nodes）协同工作，实时渲染摄像机视角对应的虚拟场景，并无缝显示在物理 LED 屏幕上，实现演员与虚拟背景的实时互动。→ 使用 nDisplay。
-- **穹顶或圆柱投影**： 你需要一个环绕观众的360度或半球形投影系统，这超出了单张显卡的输出能力。→ 需要 nDisplay 将画面分割并同步到多台投影仪对应的计算机上。
-- **多通道CAVE系统**： 你正在构建一个沉浸式VR CAVE系统，用户身处一个立方体空间内，四面墙壁和地板/天花板都由投影仪覆盖。每个面由一台PC驱动。→ 使用 nDisplay 进行同步和几何校正。
-- **超高清视频墙**： 你需要驱动一个由多个显示器拼接而成的8K或更高分辨率的视频墙。→ 使用 nDisplay 将渲染负载分布到多台PC上，并保证画面拼接准确。
+- 你需要创建一个**3面CAVE系统**用于建筑可视化 → 使用nDisplay配置3个墙面的投影参数
+- 你在制作**虚拟制片**场景，需要将UE场景实时渲染到LED墙上 → 使用nDisplay配置LED墙的几何形状和投影映射
+- 你在开发**驾驶模拟器**，需要同步渲染前、左、右三个屏幕 → 使用nDisplay定义三个屏幕的视角和同步参数
+- 你需要**颜色校准**多个投影仪 → 使用nDisplay的颜色分级模块进行统一调整
+- 你需要**录制多屏幕内容** → 使用nDisplay的MoviePipeline模块进行同步录制
 
 ## 蓝图用法
 
-nDisplay 的核心配置通过 **.ndisplay 配置文件**和编辑器内的 **nDisplay 配置器**完成，而非大量运行时蓝图节点。其主要的蓝图暴露接口集中在**场景预览**和**灯光卡（Light Card）编辑**的辅助功能上。
+nDisplay插件本身是运行时模块，主要通过配置文件和C++ API进行控制。蓝图中可直接使用的节点主要集中在场景预览和灯光卡编辑功能。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Create Scene Preview Renderer` | 创建一个用于在编辑器中预览 nDisplay 场景的渲染器实例，返回渲染器ID。 | `IDisplayClusterScenePreview` |
-| `Set Renderer Root Actor` | 为指定的预览渲染器设置一个 `ADisplayClusterRootActor` 作为预览场景的根。 | `IDisplayClusterScenePreview` |
-| `Add Actor to Renderer` | 将一个 Actor（如灯光卡）添加到预览渲染器的场景中。 | `IDisplayClusterScenePreview` |
-| `Render Preview` | 使用指定的渲染器和设置执行一次即时预览渲染到画布。 | `IDisplayClusterScenePreview` |
-| `Spawn Stage Actor` | 在舞台系统中生成一个新Actor（如灯光卡），并可选地将其添加到根Actor的管理下。 | `FDisplayClusterLightCardEditorHelper` |
-
-**说明**： 上述 `IDisplayClusterScenePreview` 接口通常由 C++ 代码直接调用，而非直接暴露为蓝图节点。它主要服务于 nDisplay 的编辑器工具（如灯光卡编辑器、场景预览窗口）。实际运行时的集群控制逻辑主要由 nDisplay 的主模块和配置系统处理。
+| `SetRendererRootActor` | 为预览渲染器设置根Actor | `IDisplayClusterScenePreview` |
+| `AddActorToRenderer` | 将Actor添加到渲染器场景 | `IDisplayClusterScenePreview` |
+| `RemoveActorFromRenderer` | 从渲染器场景移除Actor | `IDisplayClusterScenePreview` |
+| `RenderQueued` | 排队渲染预览图像 | `IDisplayClusterScenePreview` |
+| `SpawnStageActor` | 在舞台上生成新的Actor | `FDisplayClusterLightCardEditorHelper` |
+| `AddLightCardsToRootActor` | 将灯光卡添加到根Actor | `FDisplayClusterLightCardEditorHelper` |
+| `MoveActorsToPixel` | 将灯光卡移动到屏幕像素位置 | `FDisplayClusterLightCardEditorHelper` |
 
 ### 使用示例（蓝图描述）
 
-一个典型的编辑器工具蓝图用法是**灯光卡编辑器**的一部分。当用户在 nDisplay 预览视口中移动一个灯光卡时：
-1.  蓝图或 C++ 代码通过 `IDisplayClusterScenePreview::Get()` 获取预览模块。
-2.  使用 `CreateRenderer()` 创建一个预览渲染器。
-3.  调用 `SetRendererRootActor()` 将当前关卡中的 `ADisplayClusterRootActor` 设为根。
-4.  调用 `AddActorToRenderer()` 将需要预览的灯光卡 Actor 添加进渲染场景。
-5.  在需要更新预览时（如每帧），调用 `RenderQueued()` 或 `Render()` 来生成投影到特定屏幕几何的预览图像。
-6.  `FDisplayClusterLightCardEditorHelper` 会被用来处理鼠标点击到投影空间坐标的转换，从而实现灯光卡在预览视口中的直观拖拽移动。
+**场景：在编辑器中预览nDisplay配置**
+1. 使用`CreateRenderer`创建预览渲染器实例
+2. 调用`SetRendererRootActor`设置你的nDisplay根Actor
+3. 使用`AddActorToRenderer`添加需要预览的灯光卡Actor
+4. 调用`RenderQueued`请求渲染预览图像
+5. 在委托中接收渲染结果并显示在UI中
+
+**场景：移动灯光卡到球面坐标**
+1. 创建`FDisplayClusterLightCardEditorHelper`实例
+2. 设置投影模式（如球面投影）
+3. 调用`MoveActorsTo`传入球面坐标系参数
+4. 灯光卡会自动移动到指定的球面位置
 
 ## C++ 用法
 
 ### 头文件引入
 
-使用 nDisplay 的场景预览和灯光卡编辑功能，主要包含以下头文件：
 ```cpp
-#include "IDisplayClusterScenePreview.h"
+#include "DisplayClusterScenePreview.h"
 #include "DisplayClusterLightCardEditorHelper.h"
-#include "DisplayClusterScenePreviewEnums.h"
 ```
 
 ### 基本用法
 
-以下代码展示了如何使用 `IDisplayClusterScenePreview` 接口来创建一个简单的预览渲染流程。
-
 ```cpp
+// 来源: DisplayClusterScenePreviewModule.h
+// 创建并配置一个场景预览渲染器
+
 // 获取场景预览模块接口
 IDisplayClusterScenePreview& ScenePreviewModule = IDisplayClusterScenePreview::Get();
-if (!IDisplayClusterScenePreview::IsAvailable())
-{
-    return;
-}
 
-// 1. 创建一个预览渲染器
+// 创建渲染器实例
 int32 RendererId = ScenePreviewModule.CreateRenderer();
 
-// 2. 设置渲染器的根Actor（假设你已经有一个有效的 ADisplayClusterRootActor 指针）
-ADisplayClusterRootActor* MyDCRA = /* ... 从场景中获取或创建 ... */;
-FDisplayClusterRootActorPropertyOverrides PropertyOverrides; // 通常使用默认值
-ScenePreviewModule.SetRendererRootActor(RendererId, MyDCRA, PropertyOverrides);
+// 设置根Actor（假设已获取指针）
+ADisplayClusterRootActor* MyRootActor = /* ... */;
+FDisplayClusterRootActorPropertyOverrides PropertyOverrides;
+ScenePreviewModule.SetRendererRootActor(RendererId, MyRootActor, PropertyOverrides);
 
-// 3. （可选）向场景中添加其他需要预览的Actor，比如一个灯光卡
-ADisplayClusterLightCardActor* MyLightCard = /* ... */;
-ScenePreviewModule.AddActorToRenderer(RendererId, MyLightCard);
+// 添加灯光卡到渲染器
+ADisplayClusterLightCardActor* LightCard = /* ... */;
+ScenePreviewModule.AddActorToRenderer(RendererId, LightCard);
 
-// 4. 配置渲染设置
+// 排队渲染预览
 FDisplayClusterMeshProjectionRenderSettings RenderSettings;
-RenderSettings.ProjectionType = EDisplayClusterMeshProjectionType::UV; // 例如使用UV投影
 RenderSettings.ViewLocation = FVector::ZeroVector;
-// ... 设置其他参数如FOV、分辨率等
+FIntPoint ImageSize(512, 512);
 
-// 5. 执行即时渲染到一个画布
-FCanvas Canvas(/* ... 渲染目标等参数 ... */);
-if (ScenePreviewModule.Render(RendererId, RenderSettings, Canvas))
+FRenderResultDelegate ResultDelegate;
+ResultDelegate.BindLambda([RendererId](FRenderTarget* RenderTarget)
 {
-    // 渲染成功，Canvas现在包含预览图像
-}
-
-// 6. 或者，排队一个异步渲染
-FIntPoint DesiredSize(1920, 1080);
-FRenderResultDelegate ResultDelegate = FRenderResultDelegate::CreateLambda(
-    [](FRenderTarget* InRenderTarget)
+    if (RenderTarget)
     {
-        if (InRenderTarget)
-        {
-            // 处理渲染结果，例如创建纹理或显示在UI上
-        }
-    });
-ScenePreviewModule.RenderQueued(RendererId, RenderSettings, DesiredSize, ResultDelegate);
+        // 处理渲染结果
+        UE_LOG(LogTemp, Log, TEXT("渲染完成，渲染器ID: %d"), RendererId);
+    }
+});
 
-// 7. 在使用完毕后销毁渲染器，释放资源
+ScenePreviewModule.RenderQueued(RendererId, RenderSettings, ImageSize, ResultDelegate);
+
+// 清理资源
 ScenePreviewModule.DestroyRenderer(RendererId);
 ```
 
-**来源文件路径**: 基于 `Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterScenePreview/Public/IDisplayClusterScenePreview.h` 和 `Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterScenePreview/Private/DisplayClusterScenePreviewModule.h` 的接口分析。
-
 ### 进阶用法
 
-使用 `FDisplayClusterLightCardEditorHelper` 进行精确的坐标转换和交互。
 ```cpp
-// 创建一个灯光卡编辑器辅助器，它内部会创建或复用一个预览渲染器
-FDisplayClusterLightCardEditorHelper LightCardHelper(RendererId); // 传入已有的渲染器ID
+// 来源: DisplayClusterLightCardEditorHelper.h
+// 使用灯光卡编辑助手进行球面坐标系操作
 
-// 设置投影模式，例如用于穹顶投影
-LightCardHelper.SetProjectionMode(EDisplayClusterMeshProjectionType::Spherical);
+// 创建灯光卡编辑助手
+FDisplayClusterLightCardEditorHelper LightCardHelper(RendererId);
+LightCardHelper.SetProjectionMode(EDisplayClusterMeshProjectionType::UV);
+LightCardHelper.SetRootActor(*MyRootActor);
 
-// 假设我们在处理一个鼠标点击事件，想在预览视口中放置一个灯光卡
-FIntPoint PixelPos = /* 鼠标点击的像素坐标 */;
-const FSceneView& SceneView = /* 从编辑器视口获取的当前场景视图 */;
+// 定义球面坐标系中的位置
+FDisplayClusterLightCardEditorHelper::FSphericalCoordinates SphericalCoords;
+SphericalCoords.Radius = 1000.0f;          // 距离中心点的距离
+SphericalCoords.Inclination = FMath::DegreesToRadians(45.0f);  // 俯仰角（0到180度）
+SphericalCoords.Azimuth = FMath::DegreesToRadians(90.0f);     // 方位角（-180到180度）
 
-// 计算从该像素位置发射出的世界空间射线原点和方向
-FVector RayOrigin, RayDirection;
-LightCardHelper.CalculateOriginAndDirectionFromPixelPosition(PixelPos, SceneView, FVector::ZeroVector, RayOrigin, RayDirection);
+// 移动灯光卡到指定球面坐标
+TArray<FDisplayClusterWeakStageActorPtr> LightCards;
+LightCards.Add(MakeWeakObjectPtr(LightCard));
+LightCardHelper.MoveActorsTo(LightCards, SphericalCoords);
 
-// 使用该射线与舞台几何体进行求交，以获得一个合理的放置点
-FVector HitLocation, HitNormal;
-if (LightCardHelper.CalculateNormalAndPositionInDirection(RayOrigin, RayDirection, HitLocation, HitNormal))
-{
-    // 将命中点转换为球面坐标，用于设置灯光卡位置
-    FDisplayClusterLightCardEditorHelper::FSphericalCoordinates SphericalCoords(HitLocation);
-    // 创建灯光卡
-    FDisplayClusterLightCardEditorHelper::FSpawnActorArgs SpawnArgs;
-    SpawnArgs.RootActor = MyDCRA;
-    SpawnArgs.ActorClass = ADisplayClusterLightCardActor::StaticClass();
-    SpawnArgs.ProjectionMode = EDisplayClusterMeshProjectionType::Spherical;
-    AActor* NewActor = FDisplayClusterLightCardEditorHelper::SpawnStageActor(SpawnArgs);
-    
-    // 将新创建的灯光卡移动到计算出的球面坐标
-    TArray<FDisplayClusterWeakStageActorPtr> ActorsToMove;
-    ActorsToMove.Add(NewActor);
-    LightCardHelper.MoveActorsTo(ActorsToMove, SphericalCoords);
-}
+// 转换坐标系
+FVector CartesianPosition = SphericalCoords.AsCartesian();
+UE_LOG(LogTemp, Log, TEXT("笛卡尔坐标: %s"), *CartesianPosition.ToString());
+
+// 坐标拖拽操作（模拟编辑器中的拖拽）
+FIntPoint DragPixelPos(256, 256);
+FSceneView SceneView; // 从当前视口获取
+FVector DragWidgetOffset = FVector::ZeroVector;
+
+LightCardHelper.DragActors(LightCards, DragPixelPos, SceneView,
+    FDisplayClusterLightCardEditorHelper::ECoordinateSystem::Spherical,
+    DragWidgetOffset, EAxisList::XY);
 ```
 
 ## Demo 示例
 
-一个最小化的可编译示例，展示如何在游戏运行时初始化并请求一次预览渲染。
-
 ```cpp
-// MyNDisplayPreviewDemo.h
+// DisplayClusterPreviewDemo.h
 #pragma once
+
 #include "CoreMinimal.h"
+#include "DisplayClusterScenePreview.h"
+#include "DisplayClusterLightCardEditorHelper.h"
 #include "GameFramework/Actor.h"
-#include "IDisplayClusterScenePreview.h"
-#include "MyNDisplayPreviewDemo.generated.h"
+#include "DisplayClusterPreviewDemo.generated.h"
 
 UCLASS()
-class MYPROJECT_API AMyNDisplayPreviewDemo : public AActor
+class ADisplayClusterPreviewDemo : public AActor
 {
     GENERATED_BODY()
-    
+
 public:
-    AMyNDisplayPreviewDemo();
+    ADisplayClusterPreviewDemo();
+
+protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-    UFUNCTION(BlueprintCallable, Category = "nDisplay Preview")
-    void RequestPreviewRender();
+    // 场景预览渲染器ID
+    int32 PreviewRendererId = INDEX_NONE;
 
-private:
-    int32 PreviewRendererId;
-    FDelegateHandle RenderResultHandle;
+    // 灯光卡编辑助手
+    TUniquePtr<FDisplayClusterLightCardEditorHelper> LightCardHelper;
 
-    void OnPreviewRendered(FRenderTarget* RenderTarget);
+    // 预览图像纹理
+    UPROPERTY()
+    UTexture2D* PreviewTexture;
+
+    // 渲染结果委托
+    FRenderResultDelegate RenderResultDelegate;
+
+    // 委托回调函数
+    void OnPreviewRenderCompleted(FRenderTarget* RenderTarget);
+
+public:
+    UFUNCTION(BlueprintCallable, Category = "nDisplay Demo")
+    void StartPreviewRender(ADisplayClusterRootActor* RootActor);
+
+    UFUNCTION(BlueprintCallable, Category = "nDisplay Demo")
+    void MoveLightCardToSphericalPosition(ADisplayClusterLightCardActor* LightCard, float Radius, float Inclination, float Azimuth);
+
+    UFUNCTION(BlueprintCallable, Category = "nDisplay Demo")
+    UTexture2D* GetLastPreviewTexture() const { return PreviewTexture; }
 };
+```
 
-// MyNDisplayPreviewDemo.cpp
-#include "MyNDisplayPreviewDemo.h"
+```cpp
+// DisplayClusterPreviewDemo.cpp
+#include "DisplayClusterPreviewDemo.h"
+#include "Engine/Texture2D.h"
 #include "DisplayClusterRootActor.h"
-#include "DisplayClusterScenePreviewEnums.h"
+#include "DisplayClusterLightCardActor.h"
 
-AMyNDisplayPreviewDemo::AMyNDisplayPreviewDemo()
+ADisplayClusterPreviewDemo::ADisplayClusterPreviewDemo()
 {
-    PrimaryActorTick.bCanEverTick = false;
-    PreviewRendererId = INDEX_NONE;
+    PrimaryActorTick.bCanEverTick = true;
 }
 
-void AMyNDisplayPreviewDemo::BeginPlay()
+void ADisplayClusterPreviewDemo::BeginPlay()
 {
     Super::BeginPlay();
-    
-    if (IDisplayClusterScenePreview::IsAvailable())
-    {
-        IDisplayClusterScenePreview& PreviewModule = IDisplayClusterScenePreview::Get();
-        PreviewRendererId = PreviewModule.CreateRenderer();
-        
-        // 尝试在场景中查找一个ADisplayClusterRootActor作为预览根
-        TArray<AActor*> FoundActors;
-        UGameplayStatics::GetAllActorsOfClass(GetWorld(), ADisplayClusterRootActor::StaticClass(), FoundActors);
-        if (FoundActors.Num() > 0)
-        {
-            ADisplayClusterRootActor* DCRA = Cast<ADisplayClusterRootActor>(FoundActors[0]);
-            FDisplayClusterRootActorPropertyOverrides Overrides;
-            PreviewModule.SetRendererRootActor(PreviewRendererId, DCRA, Overrides);
-        }
-    }
+
+    // 绑定渲染结果委托
+    RenderResultDelegate.BindUObject(this, &ADisplayClusterPreviewDemo::OnPreviewRenderCompleted);
 }
 
-void AMyNDisplayPreviewDemo::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void ADisplayClusterPreviewDemo::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    if (IDisplayClusterScenePreview::IsAvailable() && PreviewRendererId != INDEX_NONE)
+    // 销毁预览渲染器
+    if (PreviewRendererId != INDEX_NONE && IDisplayClusterScenePreview::IsAvailable())
     {
-        IDisplayClusterScenePreview& PreviewModule = IDisplayClusterScenePreview::Get();
-        PreviewModule.DestroyRenderer(PreviewRendererId);
+        IDisplayClusterScenePreview::Get().DestroyRenderer(PreviewRendererId);
         PreviewRendererId = INDEX_NONE;
     }
+
     Super::EndPlay(EndPlayReason);
 }
 
-void AMyNDisplayPreviewDemo::RequestPreviewRender()
+void ADisplayClusterPreviewDemo::StartPreviewRender(ADisplayClusterRootActor* RootActor)
 {
-    if (!IDisplayClusterScenePreview::IsAvailable() || PreviewRendererId == INDEX_NONE)
+    if (!IDisplayClusterScenePreview::IsAvailable() || !RootActor)
     {
+        UE_LOG(LogTemp, Warning, TEXT("场景预览模块不可用或根Actor无效"));
         return;
     }
 
-    IDisplayClusterScenePreview& PreviewModule = IDisplayClusterScenePreview::Get();
-    
-    FDisplayClusterMeshProjectionRenderSettings Settings;
-    Settings.ProjectionType = EDisplayClusterMeshProjectionType::UV; // 示例投影类型
-    Settings.ViewLocation = GetActorLocation(); // 示例视图位置
-    Settings.FOV = 90.0f;
-    
-    FIntPoint RenderSize(512, 512); // 小尺寸预览
-    
-    // 设置回调以接收渲染结果
-    RenderResultHandle = PreviewModule.RenderQueued(
-        PreviewRendererId, 
-        Settings, 
-        RenderSize, 
-        FRenderResultDelegate::CreateUObject(this, &AMyNDisplayPreviewDemo::OnPreviewRendered)
-    );
+    IDisplayClusterScenePreview& ScenePreview = IDisplayClusterScenePreview::Get();
+
+    // 创建或重新使用渲染器
+    if (PreviewRendererId == INDEX_NONE)
+    {
+        PreviewRendererId = ScenePreview.CreateRenderer();
+    }
+
+    // 配置渲染器
+    FDisplayClusterRootActorPropertyOverrides Overrides;
+    ScenePreview.SetRendererRootActor(PreviewRendererId, RootActor, Overrides);
+
+    // 创建灯光卡编辑助手（使用同一个渲染器）
+    LightCardHelper = MakeUnique<FDisplayClusterLightCardEditorHelper>(PreviewRendererId);
+    LightCardHelper->SetRootActor(*RootActor);
+
+    // 请求渲染
+    FDisplayClusterMeshProjectionRenderSettings RenderSettings;
+    RenderSettings.ViewLocation = FVector::ZeroVector;
+    FIntPoint PreviewSize(1024, 1024);
+
+    ScenePreview.RenderQueued(PreviewRendererId, RenderSettings, PreviewSize, RenderResultDelegate);
+
+    UE_LOG(LogTemp, Log, TEXT("开始nDisplay预览渲染，渲染器ID: %d"), PreviewRendererId);
 }
 
-void AMyNDisplayPreviewDemo::OnPreviewRendered(FRenderTarget* RenderTarget)
+void ADisplayClusterPreviewDemo::MoveLightCardToSphericalPosition(
+    ADisplayClusterLightCardActor* LightCard, 
+    float Radius, 
+    float Inclination, 
+    float Azimuth)
+{
+    if (!LightCardHelper.IsValid() || !LightCard)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("灯光卡助手或灯光卡无效"));
+        return;
+    }
+
+    // 设置球面坐标
+    FDisplayClusterLightCardEditorHelper::FSphericalCoordinates SphericalCoords;
+    SphericalCoords.Radius = Radius;
+    SphericalCoords.Inclination = FMath::DegreesToRadians(Inclination);
+    SphericalCoords.Azimuth = FMath::DegreesToRadians(Azimuth);
+
+    // 转换为灯光卡Actor数组
+    TArray<FDisplayClusterWeakStageActorPtr> LightCards;
+    LightCards.Add(MakeWeakObjectPtr(LightCard));
+
+    // 移动灯光卡
+    LightCardHelper->MoveActorsTo(LightCards, SphericalCoords);
+
+    UE_LOG(LogTemp, Log, TEXT("灯光卡已移动到球面坐标: 半径=%.1f, 俯仰=%.1f°, 方位=%.1f°"), 
+        Radius, Inclination, Azimuth);
+}
+
+void ADisplayClusterPreviewDemo::OnPreviewRenderCompleted(FRenderTarget* RenderTarget)
 {
     if (RenderTarget)
     {
-        UE_LOG(LogTemp, Log, TEXT("nDisplay preview rendered successfully! Texture size: %dx%d"), 
+        // 将渲染目标转换为纹理
+        // 注意：实际项目中需要根据渲染目标格式进行适当处理
+        UE_LOG(LogTemp, Log, TEXT("预览渲染完成，渲染目标大小: %dx%d"), 
             RenderTarget->GetSizeX(), RenderTarget->GetSizeY());
-        // 这里可以将 RenderTarget 绑定到 UTextureRenderTarget2D 以显示在UI上，或用于其他用途。
+
+        // 这里可以将RenderTarget转换为UTexture2D或直接用于显示
+        // 简化示例：记录渲染完成
+        PreviewTexture = NewObject<UTexture2D>();
+        
+        // 触发蓝图事件（如果有需要）
+        // OnPreviewRenderedEvent.Broadcast(PreviewTexture);
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("nDisplay preview render failed."));
+        UE_LOG(LogTemp, Error, TEXT("预览渲染失败"));
     }
-    // 清除句柄（可选，取决于生命周期管理）
-    RenderResultHandle.Reset();
 }
 ```
 
 ## 模块依赖
 
-从 `DisplayClusterScenePreview` 模块的构建文件分析，其独特依赖如下：
+从 Build.cs 分析，nDisplay 插件依赖以下非标准模块：
 
 | 模块 | 用途 |
 |---|---|
-| `UnrealEd` | 提供编辑器相关的功能，如场景视图、Actor选择事件、蓝图编译事件等，用于实现场景预览和灯光卡编辑的交互逻辑。 |
+| `UnrealEd` | 编辑器集成和编辑器专用功能 |
+| `EditorWidgets` | 编辑器UI控件 |
+| `LevelEditor` | 关卡编辑器集成 |
+| `D3D12RHI` | Direct3D 12 渲染硬件接口（用于共享内存媒体） |
 
-**注**： nDisplay 插件整体依赖非常庞大且复杂，涉及渲染、媒体、网络、编辑器工具等多个子系统。`DisplayClusterScenePreview` 模块的依赖相对聚焦。其他核心模块如 `DisplayCluster`, `DisplayClusterProjection`, `DisplayClusterShaders` 等，可能依赖 `Renderer`, `RenderCore`, `MediaUtils`, `Networking` 等更底层的引擎模块。
+无特殊依赖（仅标准 Core/Engine/Slate 等）
 
 ## 维护状态
 
@@ -296,23 +342,28 @@ void AMyNDisplayPreviewDemo::OnPreviewRendered(FRenderTarget* RenderTarget)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 在MovieGraph和nDisplay中增加对EXR多图层格式的支持。 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | nDisplay电影管线：将WarpBlendAlpha模式合并到WarpBlend模式中。 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复MRG中拓扑感知的相机命名；修复MPCDI/ICVFX着色器中的不透明alpha问题。 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | nDisplay：在输出帧编码回退路径中尊重非默认的DisplayGamma设置。 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复当GUI纹理尺寸小于视口尺寸时的闪烁问题。 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 添加EXR多层支持，用于电影图和nDisplay的集成 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 将WarpBlendAlpha模式合并到WarpBlend中，简化电影管道配置 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复拓扑感知相机命名和MPCDI/ICVFX着色器中的不透明度问题 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复输出帧编码回退时的Gamma值处理 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复GUI纹理尺寸小于视口尺寸时的闪烁问题 |
 
 ### 维护评价
 
-nDisplay 作为 Unreal Engine 虚拟制片战略的核心支柱之一，处于**极其活跃**的维护状态。
-- **创建时间**： 始于 2018 年，是 UE4 时代为虚拟制片需求而生的老牌插件，已持续迭代约 8 年。
-- **近期更新频率**： 从 git 记录看，**最近一个月（2026年5月）有5次实质性更新**，涵盖功能增强（EXR多图层）、Bug修复、着色器优化和电影管线整合。这表明 Epic 对其投入巨大。
-- **活跃维护**： 是，不仅活跃，而且是 Epic 官方重点发展的领域。更新紧跟 UE5 新功能（如 MovieGraph、MPCDI标准）。
-- **已知限制**： 由于其复杂性，配置和调试门槛较高。对网络同步和硬件（如同步信号发生器）有特定要求。
-- **推荐使用**： **强烈推荐**给所有有专业级虚拟制片、沉浸式体验或多屏渲染需求的项目。它是 UE 在此领域的官方且成熟的解决方案。
+**活跃维护** - nDisplay插件处于积极维护状态。最近更新集中在以下方面：
+1. **功能增强**：添加EXR多层支持，改进电影管道集成
+2. **Bug修复**：解决各种渲染问题和兼容性问题
+3. **性能优化**：修复闪烁和渲染问题
+4. **API简化**：合并相关功能模块
+
+该插件创建于2018年，已有约8年历史，是Epic Games官方支持的成熟产品。它广泛应用于虚拟制片、主题公园、模拟训练等专业领域，是UE5中最重要的多显示器渲染解决方案。
+
+虽然`EnabledByDefault=false`，但这只是因为该插件需要特定的硬件配置和场景需求，不代表它是实验性或不可靠的。实际上，这是Epic Games在商业项目中广泛使用的技术。
+
+**推荐使用**：如果你的项目需要多屏幕同步渲染、投影映射或沉浸式显示环境，nDisplay是最佳选择。它提供了完整的工具链，从编辑器配置到运行时控制。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://docs.unrealengine.com/5.0/en-US/nDisplay-in-Unreal-Engine/)（Unreal Engine 官方文档站有详细的nDisplay指南）
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/nDisplay-in-Unreal-Engine/)（基于一般UE文档结构）
 - [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)
