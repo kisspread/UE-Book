@@ -1,14 +1,14 @@
-# nDisplay
+# nDisplay Operator
 
-> Support for synchronized clustered rendering using multiple PCs in mono or stereo
+> Support for synchronized clustered rendering using multiple PCs in mono or stereo（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 集群渲染 |
+| 中文名 | nDisplay 操作面板 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产、着色器、第三方库） |
-| 模块 | `DisplayCluster` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterWarp` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMultiUser` (Runtime), `SharedMemoryMedia` (Runtime), `ScalableMPCDI` (External), 等共 30 个模块 |
+| 包含内容 | ✅ 有（编辑器UI资产） |
+| 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
 | 年龄标签 | 👴 老古董（约 8 年） |
@@ -16,50 +16,37 @@
 
 ## 用途
 
-nDisplay 是 UE 的**多机集群同步渲染**系统，解决的核心问题是：用多台 PC 协同渲染同一场景，然后将画面拼合投射到多个物理显示器上（如 LED 墙、穹顶投影、多屏 CAVE 等）。
-
-它的存在原因包括：
-- 单台 PC 的 GPU 性能不足以驱动超大分辨率（如 8K+ LED Volume）或多屏输出
-- 需要精确的帧同步（genlock）和跨机器状态同步
-- 需要复杂的投影校正（MPCDI、网格变形、边缘融合）以适配各种物理屏幕布局
-- 虚拟制片（Virtual Production）中 ICVFX LED Volume 的标准基础设施
-
-**注意**：此插件默认未启用（`EnabledByDefault: false`），需要在项目设置中手动开启。
+`nDisplay` 插件的核心功能是支持使用多台 PC 进行同步的集群渲染，适用于单眼或立体显示。其中的 `DisplayClusterOperator` 模块专门提供了一个**编辑器操作面板**，用于在编辑器中可视化地管理和配置 nDisplay 集群渲染系统中的根 Actor（`ADisplayClusterRootActor`）。它不是一个运行时功能，而是一个强大的编辑器工具，解决了在复杂集群渲染场景中，难以直观地检查、编辑和调试各个显示节点、视口及参数配置的痛点。
 
 ## 使用场景
 
-- 你在做**虚拟制片**（Virtual Production），需要用 LED Volume 实时渲染背景 → 用 nDisplay
-- 你需要在 **CAVE 系统**（多面投影房间）中做沉浸式体验 → 用 nDisplay
-- 你有一个**多屏显示器墙**（如主题公园、展览馆），需要多台 PC 协同渲染 → 用 nDisplay
-- 你需要 **Movie Render Queue** 渲染 nDisplay 集群的多视角画面 → 用 `DisplayClusterMoviePipeline`
-- 你需要将 nDisplay 集群状态通过**多用户编辑**同步给其他开发者 → 用 `DisplayClusterMultiUser`
-- 你需要在编辑器中**可视化和管理**集群配置、预览各屏画面 → 用 `DisplayClusterOperator`
+- 你正在为大型 LED 虚拟影棚（如 VP 舞台）搭建 nDisplay 集群渲染系统，需要在编辑器中集中查看和调整所有参与渲染的 PC 配置。
+- 你需要在一个统一的界面中快速切换和编辑场景中不同的 `ADisplayClusterRootActor` 实例，而无需在场景大纲中反复查找。
+- 你希望为 nDisplay 操作面板扩展自定义的工具栏按钮、状态栏窗口或命令，以集成自己的工具或调试视图。
 
 ## 蓝图用法
 
-nDisplay 的核心运行时逻辑主要通过配置驱动（`.ndisplay` 配置文件 + `ADisplayClusterRootActor`），蓝图层面的节点相对集中在 Root Actor 上。由于当前模块（DisplayClusterOperator）是编辑器工具面板，不暴露 BlueprintCallable 节点。以下列出其他子模块中常见的蓝图 API：
+**注意**：`DisplayClusterOperator` 模块主要提供的是编辑器 UI 和 C++ 接口，其公开的 API 主要面向其他编辑器模块扩展，**没有公开的蓝图可调用函数**。其功能主要在编辑器面板中操作。
 
-### 核心节点
+### 核心节点（编辑器内部使用）
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| 获取/设置 Root Actor | 通过 Operator 模块获取当前场景中的 nDisplay 根 Actor | `ADisplayClusterRootActor` |
-| `ToggleDrawer` | 切换操作面板抽屉的开/关状态 | `IDisplayClusterOperator` |
-| `ForceDismissDrawers` | 强制关闭操作面板所有已打开的抽屉 | `IDisplayClusterOperator` |
+| `RegisterApp` | 向操作面板注册一个自定义应用视图 | `IDisplayClusterOperator` |
+| `UnregisterApp` | 从操作面板注销一个自定义应用视图 | `IDisplayClusterOperator` |
+| `GetOperatorViewModel` | 获取操作面板的视图模型，用于与面板状态交互 | `IDisplayClusterOperator` |
+| `GetRootActorLevelInstances` | 获取当前关卡中所有的 nDisplay 根 Actor 实例 | `IDisplayClusterOperator` |
+| `ToggleDrawer` | 切换状态栏上指定ID的抽屉窗口的打开/关闭状态 | `IDisplayClusterOperator` |
 
-### 使用示例（蓝图描述）
+### 使用示例（编辑器面板操作）
 
-nDisplay 的使用以**配置文件**为核心：
-1. 创建一个 `ADisplayClusterRootActor` 放入场景
-2. 在 Root Actor 的 Details 面板中指定 `.ndisplay` 配置文件
-3. 配置文件定义了：集群节点（Cluster Nodes）、视口（Viewports）、投影策略（Projection）、屏幕（Screens）
-4. 启动时各台 PC 加载同一配置，根据自身 Cluster Node 名称自动分配渲染任务
-
-在编辑器中，通过菜单 **Window > nDisplay > Operator** 打开操作面板，即可在面板中切换 Root Actor、查看各视口预览、编辑属性。
+1.  **打开操作面板**：在编辑器菜单中，通过 `Window` -> `nDisplay` -> `Operator` 打开操作面板标签页。
+2.  **选择根 Actor**：在面板顶部的工具栏下拉框中，选择你想要编辑的 `ADisplayClusterRootActor`。
+3.  **编辑属性**：在下方的“Details”面板中查看并修改该根 Actor 的属性。
+4.  **查看组件**：在“Root Actor”面板中，可以展开查看该 Actor 的所有组件结构。
+5.  **扩展面板**：其他插件可以通过 `IDisplayClusterOperator` 接口注册自定义的标签页到主区域（`PrimaryTabExtensionId`）或辅助区域（`AuxilliaryTabExtensionId`），或向工具栏和状态栏添加元素。
 
 ## C++ 用法
-
-DisplayClusterOperator 模块提供了一个高度可扩展的编辑器操作面板框架，允许外部模块注册自定义 App、扩展工具栏和状态栏。
 
 ### 头文件引入
 
@@ -69,196 +56,136 @@ DisplayClusterOperator 模块提供了一个高度可扩展的编辑器操作面
 
 ### 基本用法
 
-通过模块接口获取 Operator 模块实例，注册自定义 App 扩展：
+主要通过模块单例 `IDisplayClusterOperator::Get()` 访问功能。
+来源: `Source/DisplayClusterOperator/Public/IDisplayClusterOperator.h`
 
 ```cpp
-// 来源: Source/DisplayClusterOperator/Public/IDisplayClusterOperator.h
-#include "IDisplayClusterOperator.h"
-
-// 检查模块是否可用
+// 检查模块是否加载
 if (IDisplayClusterOperator::IsAvailable())
 {
+    // 获取模块实例
     IDisplayClusterOperator& OperatorModule = IDisplayClusterOperator::Get();
 
-    // 获取当前活跃的 Root Actor
+    // 获取当前场景中所有的 nDisplay 根 Actor
+    TArray<ADisplayClusterRootActor*> RootActors;
+    OperatorModule.GetRootActorLevelInstances(RootActors);
+
+    // 获取操作面板的视图模型，以便监听或改变面板状态
     TSharedRef<IDisplayClusterOperatorViewModel> ViewModel = OperatorModule.GetOperatorViewModel();
-    if (ViewModel->HasRootActor())
+
+    // 监听当前编辑的根 Actor 变化
+    ViewModel->OnActiveRootActorChanged().AddLambda([](ADisplayClusterRootActor* NewRootActor)
     {
-        ADisplayClusterRootActor* RootActor = ViewModel->GetRootActor();
-        // 对 Root Actor 进行操作...
-    }
+        // 当用户在操作面板切换根 Actor 时触发
+    });
+
+    // 在操作面板的详细视图中显示指定对象
+    UObject* ObjectToInspect = ...;
+    ViewModel->ShowDetailsForObject(ObjectToInspect);
+
+    // 切换操作面板状态栏上的“日志”抽屉窗口
+    const FName LogDrawerId = TEXT("LogDrawer");
+    OperatorModule.ToggleDrawer(LogDrawerId);
 }
 ```
 
-### 进阶用法
+### 进阶用法：扩展操作面板
 
-注册自定义 App 和扩展操作面板的工具栏/状态栏：
+你可以通过操作面板提供的委托，向其 UI 中添加自定义内容。
+来源: `Source/DisplayClusterOperator/Public/IDisplayClusterOperator.h`, `DisplayClusterOperatorStatusBarExtender.h`
 
 ```cpp
-// 来源: Source/DisplayClusterOperator/Public/IDisplayClusterOperator.h
-// 来源: Source/DisplayClusterOperator/Public/DisplayClusterOperatorStatusBarExtender.h
-#include "IDisplayClusterOperator.h"
-#include "IDisplayClusterOperatorApp.h"
-#include "DisplayClusterOperatorStatusBarExtender.h"
-
-// 注册自定义 App
+// 1. 向工具栏添加一个自定义按钮
 IDisplayClusterOperator& OperatorModule = IDisplayClusterOperator::Get();
+TSharedPtr<FExtensibilityManager> ToolbarManager = OperatorModule.GetOperatorToolBarExtensibilityManager();
+if (ToolbarManager.IsValid())
+{
+    // 创建并注册一个自定义的工具栏扩展器（需要自己实现 FExtender 逻辑）
+    TSharedPtr<FExtender> MyToolbarExtender = MakeShared<FExtender>();
+    MyToolbarExtender->AddToolBarExtension("YourExtensionPoint", EExtensionHook::After, OperatorModule.GetOperatorViewModel().ToSharedRef()->GetTabManager(), FToolBarExtensionDelegate::CreateLambda([](FToolBarBuilder& Builder){ /* 添加按钮 */ }));
+    ToolbarManager->AddExtender(MyToolbarExtender);
+}
 
-FDelegateHandle AppHandle = OperatorModule.RegisterApp(
-    IDisplayClusterOperator::FOnGetAppInstance::CreateLambda(
-        [](TSharedRef<IDisplayClusterOperatorViewModel> InViewModel) -> TSharedRef<IDisplayClusterOperatorApp>
-        {
-            // 返回你的自定义 App 实例
-            return MakeShared<FMyCustomOperatorApp>(InViewModel);
-        }
-    )
-);
-
-// 扩展工具栏（添加自定义按钮）
-OperatorModule.GetOperatorToolBarExtensibilityManager()->AddExtender(MyToolbarExtender);
-
-// 扩展状态栏（添加抽屉面板）
-OperatorModule.OnRegisterStatusBarExtensions().AddLambda(
-    [](FDisplayClusterOperatorStatusBarExtender& StatusBarExtender)
-    {
-        FWidgetDrawerConfig DrawerConfig;
-        DrawerConfig.DrawerId = FName("MyCustomDrawer");
-        DrawerConfig.Label = LOCTEXT("MyDrawer", "My Tool");
-        DrawerConfig.Content = SNew(SMyDrawerWidget);
-        StatusBarExtender.AddWidgetDrawer(DrawerConfig);
-    }
-);
-
-// 监听 Root Actor 切换
-ViewModel->OnActiveRootActorChanged().AddLambda(
-    [](ADisplayClusterRootActor* NewRootActor)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Root Actor changed to: %s"), *GetNameSafe(NewRootActor));
-    }
-);
-
-// 监听详情面板对象变化
-ViewModel->OnDetailObjectsChanged().AddLambda(
-    [](const TArray<UObject*>& Objects)
-    {
-        // 详情面板显示了新的对象
-    }
-);
-
-// 使用完后注销
-OperatorModule.UnregisterApp(AppHandle);
+// 2. 向状态栏添加一个抽屉窗口（例如自定义监控窗口）
+OperatorModule.OnRegisterStatusBarExtensions().AddLambda([](FDisplayClusterOperatorStatusBarExtender& StatusBarExtender)
+{
+    FWidgetDrawerConfig DrawerConfig;
+    DrawerConfig.Name = TEXT("MyCustomMonitor");
+    DrawerConfig.Icon = FAppStyle::Get().GetBrush("Icons.Analytics");
+    DrawerConfig.Label = LOCTEXT("MyMonitorLabel", "My Monitor");
+    DrawerConfig.CreateDrawerContentWidget = SNew(SMyCustomMonitorWidget); // 你的自定义Slate控件
+    StatusBarExtender.AddWidgetDrawer(DrawerConfig, 0); // 插入到状态栏第一个位置
+});
 ```
 
 ## Demo 示例
 
-一个自定义 Operator App 扩展的最小示例：
+一个最小的示例，展示如何从另一个编辑器模块访问 `DisplayClusterOperator` 并监听根 Actor 变化。
 
+**MyNDisplayMonitorModule.h**
 ```cpp
-// MyOperatorApp.h
 #pragma once
+#include "Modules/ModuleManager.h"
 
-#include "IDisplayClusterOperatorApp.h"
-#include "IDisplayClusterOperatorViewModel.h"
-
-class FMyOperatorApp : public IDisplayClusterOperatorApp
+class FMyNDisplayMonitorModule : public IModuleInterface
 {
 public:
-    FMyOperatorApp(TSharedRef<IDisplayClusterOperatorViewModel> InViewModel)
-        : ViewModel(InViewModel)
-    {
-        // 监听 Root Actor 变化
-        RootActorChangedHandle = ViewModel->OnActiveRootActorChanged().AddRaw(
-            this, &FMyOperatorApp::OnRootActorChanged);
-    }
-
-    virtual ~FMyOperatorApp() override
-    {
-        if (ViewModel.IsValid())
-        {
-            ViewModel->OnActiveRootActorChanged().Remove(RootActorChangedHandle);
-        }
-    }
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
 
 private:
-    void OnRootActorChanged(ADisplayClusterRootActor* NewRootActor)
-    {
-        UE_LOG(LogTemp, Log, TEXT("MyOperatorApp: Active root actor is now %s"),
-            NewRootActor ? *NewRootActor->GetName() : TEXT("None"));
-    }
-
-    TSharedPtr<IDisplayClusterOperatorViewModel> ViewModel;
-    FDelegateHandle RootActorChangedHandle;
+    FDelegateHandle ActiveRootActorChangedHandle;
 };
 ```
 
+**MyNDisplayMonitorModule.cpp**
 ```cpp
-// MyOperatorExtension.h
-#pragma once
-
+#include "MyNDisplayMonitorModule.h"
 #include "IDisplayClusterOperator.h"
+#include "IDisplayClusterOperatorViewModel.h"
 
-class FMyOperatorExtension
+void FMyNDisplayMonitorModule::StartupModule()
 {
-public:
-    void Register()
+    if (IDisplayClusterOperator::IsAvailable())
     {
-        if (!IDisplayClusterOperator::IsAvailable())
-        {
-            return;
-        }
-
         IDisplayClusterOperator& OperatorModule = IDisplayClusterOperator::Get();
+        TSharedRef<IDisplayClusterOperatorViewModel> ViewModel = OperatorModule.GetOperatorViewModel();
 
-        // 注册 App
-        AppHandle = OperatorModule.RegisterApp(
-            IDisplayClusterOperator::FOnGetAppInstance::CreateRaw(
-                this, &FMyOperatorExtension::CreateApp));
-
-        // 注册状态栏扩展
-        OperatorModule.OnRegisterStatusBarExtensions().AddRaw(
-            this, &FMyOperatorExtension::ExtendStatusBar);
+        // 绑定到根 Actor 变化事件
+        ActiveRootActorChangedHandle = ViewModel->OnActiveRootActorChanged().AddLambda(
+            [](ADisplayClusterRootActor* NewRootActor)
+            {
+                if (NewRootActor)
+                {
+                    UE_LOG(LogTemp, Log, TEXT("Operator panel switched to root actor: %s"), *NewRootActor->GetName());
+                }
+            }
+        );
     }
+}
 
-    void Unregister()
+void FMyNDisplayMonitorModule::ShutdownModule()
+{
+    if (IDisplayClusterOperator::IsAvailable() && ActiveRootActorChangedHandle.IsValid())
     {
-        if (IDisplayClusterOperator::IsAvailable())
-        {
-            IDisplayClusterOperator::Get().UnregisterApp(AppHandle);
-        }
+        IDisplayClusterOperator::Get().GetOperatorViewModel()->OnActiveRootActorChanged().Remove(ActiveRootActorChangedHandle);
     }
+}
 
-private:
-    TSharedRef<IDisplayClusterOperatorApp> CreateApp(
-        TSharedRef<IDisplayClusterOperatorViewModel> InViewModel)
-    {
-        return MakeShared<FMyOperatorApp>(InViewModel);
-    }
-
-    void ExtendStatusBar(FDisplayClusterOperatorStatusBarExtender& Extender)
-    {
-        FWidgetDrawerConfig Config;
-        Config.DrawerId = FName("MyStatusDrawer");
-        Config.Label = FText::FromString(TEXT("My Info"));
-        // Config.Content = SNew(SMyStatusWidget); // 需要实际的 Widget
-        Extender.AddWidgetDrawer(Config);
-    }
-
-    FDelegateHandle AppHandle;
-};
+IMPLEMENT_MODULE(FMyNDisplayMonitorModule, MyNDisplayMonitor);
 ```
 
 ## 模块依赖
 
-nDisplay 是一个庞大的插件，不同子模块依赖差异较大。以下是该插件**独特**的、不常见的依赖项：
+要使用或集成 `DisplayClusterOperator` 模块，你的模块需要在 `Build.cs` 中添加以下依赖：
 
 | 模块 | 用途 |
 |---|---|
-| `D3D12RHI` | 共享内存媒体传输（SharedMemoryMedia）的 D3D12 资源访问 |
-| `LevelEditor` | Operator 面板集成到关卡编辑器 |
-| `EditorWidgets` | Operator 面板的编辑器 UI 组件 |
-| `ScalableMPCDI` (External) | 第三方 MPCDI 投影校正库 |
-
-> 注：由于插件包含 30 个模块，各模块还可能依赖 Slate、RenderCore、RHI、MediaFramework 等标准渲染/媒体模块。具体依赖请参考各子模块的 `.Build.cs` 文件。
+| `DisplayClusterOperator` | 操作面板模块本身 |
+| `DisplayClusterConfiguration` | nDisplay 配置系统 |
+| `UnrealEd` | 编辑器基础功能 |
+| `EditorWidgets` | 提供编辑器控件（如 `SSubobjectEditor`） |
+| `LevelEditor` | 与关卡编辑器交互 |
 
 ## 维护状态
 
@@ -266,22 +193,18 @@ nDisplay 是一个庞大的插件，不同子模块依赖差异较大。以下�
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | MovieGraph 支持 nDisplay EXR 多层输出 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | MoviePipeline 合并 WarpBlendAlpha 模式到 WarpBlend |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知相机命名及 MPCDI 着色器不透明 alpha |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复输出帧编码时未使用非默认 DisplayGamma |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理小于视口尺寸时的闪烁问题 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 nDisplay 的影片渲染管线添加了 EXR 多层支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | nDisplay 影片渲染管线：合并了 WarpBlendAlpha 模式到 WarpBlend 中。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了在影片渲染队列中拓扑感知相机的命名问题；修复了 MPCDI/ICVFX 着色器中的不透明 Alpha 问题。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | nDisplay：在输出帧编码回退时支持非默认的 DisplayGamma。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理尺寸小于视口尺寸时的闪烁问题。 |
 
 ### 维护评价
 
-- **创建时间**：2018 年（UE 4.20 时代），随虚拟制片需求发展至今
-- **近期活跃度**：非常活跃，最近一次更新距今不到 1 周，持续修复 bug 和添加功能
-- **维护状态**：**活跃维护中** — 由 Epic 核心团队维护，是虚拟制片的关键基础设施
-- **模块规模**：30 个模块、1351 个源文件，属于 UE 中最大的 Runtime 插件之一
-- **推荐程度**：如果你的项目涉及多机渲染、LED Volume、CAVE 投影等场景，这是**唯一**的官方解决方案，必须使用。普通单机项目无需启用。
-- **注意**：插件默认未启用，需手动在项目设置中开启；文档相对匮乏，主要依赖源码和官方虚拟制片指南学习。
+`nDisplay` 是一个为特定高端应用（虚拟制片、专业可视化）设计的大型、成熟插件。尽管创建于约 8 年前，但**维护非常活跃**。从近期提交记录可以看出，团队在持续修复 Bug、优化性能并添加新功能（如与 MovieRenderGraph 集成）。该插件不属于“实验性”，但因其复杂性（`EnabledByDefault: false`）和专业性，建议在需要时手动启用。鉴于其持续活跃的维护和广泛的实际应用，**推荐在符合条件的项目中使用**。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://docs.unrealengine.com/en-US/ProductionPipelines/VirtualProduction/nDisplay/)（虚拟制片 / nDisplay 章节）
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/nDisplay-in-Unreal-Engine/)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)

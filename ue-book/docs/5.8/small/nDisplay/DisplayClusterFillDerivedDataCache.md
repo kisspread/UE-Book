@@ -1,14 +1,14 @@
-# nDisplay
+# nDisplay Fill Derived Data Cache
 
-> Support for synchronized clustered rendering using multiple PCs in mono or stereo
+> 该模块负责在编辑器启动时异步执行 DDC（Derived Data Cache）填充任务，以预先缓存 nDisplay 所需的着色器和材质资源，避免项目运行时首次加载时出现卡顿。
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 集群渲染同步 |
+| 中文名 | nDisplay DDC 预热模块 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、材质模板、测试资源、编辑器工具） |
-| 模块 | `DisplayCluster` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterWarp` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMultiUser` (Runtime) |
+| 包含内容 | ✅ 有（配置资产、蓝图、材质等） |
+| 模块 | `DisplayCluster` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
 | 年龄标签 | 👴 老古董（约 8 年） |
@@ -16,250 +16,172 @@
 
 ## 用途
 
-nDisplay 是 Unreal Engine 中用于驱动大规模、高分辨率沉浸式显示系统的核心框架。其核心目标是实现跨多个物理PC的**集群渲染**，确保所有节点上渲染的视口（Viewport）在时间和空间上精确同步。
+本模块是 nDisplay 虚拟制片插件的一个辅助模块，核心功能是**预热衍生数据缓存（DDC）**。
 
-它解决的关键问题包括：
-1.  **同步**：保证多个PC渲染的每一帧都完全对齐，用于立体投影、多通道投影或大型拼接墙。
-2.  **投影与变形**：支持复杂的投影几何体（如穹顶、弧形屏幕），并通过Warper和MPCDI进行像素级的几何校正。
-3.  **集群管理**：提供编辑器和运行时工具来配置、部署和监控整个渲染集群。
-4.  **媒体集成**：通过共享内存（SharedMemoryMedia）等方式，实现集群与外部视频设备或采集卡的高效数据传输。
-5.  **后期集成**：与Movie Render Queue、Sequencer等编辑器功能深度集成，支持离线渲染高质量的集群内容。
+在复杂的虚拟制片（Virtual Production）项目中，nDisplay 需要编译大量特殊的着色器（如用于几何校正、色彩映射的着色器）。这些着色器在首次加载或修改后都需要进行编译，可能会导致编辑器或运行时出现可感知的延迟（如“着色器编译中...”的卡顿）。
 
-它主要用于**虚拟制片（Virtual Production）**、**主题公园大型游乐设施**、**沉浸式展览**、**驾驶模拟器**和**科研可视化**等需要多PC协同渲染单一或立体场景的领域。
+**`DisplayClusterFillDerivedDataCache` 模块的存在就是为了解决这个问题**。它通过在编辑器后台异步运行一个 DDC 填充命令行（`DerivedDataCacheCommandlet`），预先将 nDisplay 所需的资源编译并存入本地 DDC。当用户后续打开 nDisplay 配置或运行项目时，所需资源已存在于缓存中，从而显著提升了编辑器的响应速度和项目的启动体验。
 
 ## 使用场景
 
--   **虚拟制片 LED墙**：使用多台PC驱动一块巨大的LED墙，每一台PC负责渲染墙的一个或多个面板，需要像素级完美的拼接和同步。
--   **穹顶投影系统**：为天文馆或飞行模拟器驱动一个穹顶投影，需要通过几何校正将3D场景正确投射到球面上。
--   **立体3D投影**：为每只眼睛独立渲染视图（左眼/右眼），并通过同步确保立体效果无撕裂。
--   **多GPU渲染**：在一台拥有多个高端GPU的PC上，将渲染任务分配给不同GPU，以提升单机多屏渲染的性能。
--   **数据大屏可视化**：需要将实时渲染的数据可视化内容，以超高清分辨率输出到大型监控墙或指挥中心。
+- **你正在开发一个使用 nDisplay 进行 LED 墙渲染的虚拟制片项目**，项目中包含大量 nDisplay 的配置文件和自定义材质。项目首次在新电脑上打开或拉取新版本后，启动编辑器会非常缓慢。
+- **希望避免在会议演示或实时拍摄前，因着色器编译导致意外延迟**。启用此插件可以在后台提前完成编译工作。
+- **你是一个技术美术或管线工程师，需要为团队优化项目的工作流**，可以预先配置此插件，让所有成员的编辑器启动后自动进行 DDC 预热。
 
 ## 蓝图用法
 
-nDisplay 提供了丰富的蓝图节点用于控制集群。以下为核心功能节点分组：
+该模块没有暴露任何公开的蓝图 API。其所有功能均为后台自动化任务，由模块在编辑器启动时自动触发，或通过控制台命令手动触发。无需在蓝图中直接调用。
 
 ### 核心节点
 
-| 节点 | 说明 | 所在类 |
-|---|---|---|
-| `Start Cluster` | 启动本地和远程节点上的nDisplay集群。 | `UDisplayClusterBlueprintAPI` |
-| `Stop Cluster` | 停止正在运行的nDisplay集群。 | `UDisplayClusterBlueprintAPI` |
-| `Get Cluster Nodes Ids` | 获取当前集群中所有节点的ID列表。 | `UDisplayClusterBlueprintAPI` |
-| `Set Viewport Buffer Ratio` | 动态设置指定视口的渲染分辨率比例。 | `UDisplayClusterBlueprintAPI` |
-| `Get Viewport Buffer Ratio` | 获取指定视口的当前渲染分辨率比例。 | `UDisplayClusterBlueprintAPI` |
-| `Set Cluster Render Mode` | 设置集群的渲染模式（如单眼、立体等）。 | `UDisplayClusterBlueprintAPI` |
-| `Get Cluster Render Mode` | 获取当前集群的渲染模式。 | `UDisplayClusterBlueprintAPI` |
-| `Get Viewport Context` | 获取指定视口的渲染上下文信息。 | `UDisplayClusterBlueprintAPI` |
-| `Render Texture to Viewport` | 将一张纹理直接渲染到指定的视口上（覆盖场景）。 | `UDisplayClusterBlueprintAPI` |
-| `Reset Viewport` | 重置视口，清除之前渲染的纹理覆盖。 | `UDisplayClusterBlueprintAPI` |
-
-### 使用示例（蓝图描述）
-
-1.  **启动集群**：在 `BeginPlay` 事件中，调用 `Start Cluster` 节点，并将 `bAutoConnect` 参数设为 `true`，即可让当前PC（主节点）尝试连接并启动配置文件中定义的所有从节点。
-2.  **动态调整画质**：当检测到性能不足时，可以通过 `Get Cluster Nodes Ids` 获取节点，然后对每个节点调用 `Set Viewport Buffer Ratio` 将其渲染分辨率从 1.0 降至 0.75，以提高帧率。
-3.  **显示调试信息**：创建一个简单的UI，使用 `Get Viewport Context` 节点获取某个视口的当前帧号、时间等信息，并显示在屏幕上。
+无公开蓝图 API。该模块的操作完全由系统自动管理或通过控制台命令 `DisplayCluster.FillDerivedDataCache` 执行。
 
 ## C++ 用法
 
-nDisplay 主要通过其模块接口和蓝图API进行控制。以下为C++中的基本操作示例。
+此模块主要通过模块生命周期自动工作，开发者通常无需直接与其 C++ 接口交互。但了解其内部工作机制有助于定制或调试。
 
 ### 头文件引入
 
 ```cpp
-// 核心API头文件
-#include "DisplayClusterBlueprintAPI.h"
-// 如果需要直接操作配置
-#include "DisplayClusterConfigurationTypes.h"
+// 如果需要直接访问模块接口（通常不需要）
+#include "DisplayClusterFillDerivedDataCacheModule.h"
 ```
 
-### 基本用法
+### 基本用法（模块行为）
 
-以下是通过C++代码控制nDisplay集群的基础示例。
+该模块在编辑器启动时自动注册一个引擎初始化完成的委托，并在回调中创建一个异步任务工作者（`FDisplayClusterFillDerivedDataCacheWorker`）来执行 DDC 填充。
 
-**来源文件**: 基于 `DisplayClusterBlueprintAPI` 公共接口推断的典型用法。
-
+**来源文件**: `Source/DisplayClusterFillDerivedDataCache/Public/DisplayClusterFillDerivedDataCacheModule.h`
 ```cpp
-#include "DisplayClusterBlueprintAPI.h"
-
-void AMyClusterController::StartMyCluster()
+// 模块启动时的简化逻辑
+void FDisplayClusterFillDerivedDataCacheModule::StartupModule()
 {
-    // 获取nDisplay蓝图API单例
-    UDisplayClusterBlueprintAPI* API = UDisplayClusterBlueprintAPI::Get();
-    if (API)
-    {
-        // 在编辑器或独立进程中启动集群
-        // 第一个参数是配置文件路径（可选，通常使用默认或当前加载的）
-        // 第二个参数指定是否自动连接所有节点
-        API->StartCluster(TEXT(""), true);
-        
-        UE_LOG(LogTemp, Log, TEXT("nDisplay Cluster Started."));
-    }
+    // 注册引擎初始化完成的回调
+    FCoreDelegates::OnFEngineLoopInitComplete.AddRaw(this, &FDisplayClusterFillDerivedDataCacheModule::OnFEngineLoopInitComplete);
 }
 
-void AMyClusterController::SetDynamicResolution()
+// 回调中创建工作线程
+void FDisplayClusterFillDerivedDataCacheModule::OnFEngineLoopInitComplete()
 {
-    UDisplayClusterBlueprintAPI* API = UDisplayClusterBlueprintAPI::Get();
-    if (API)
-    {
-        // 获取所有节点的ID
-        TArray<FString> NodeIds;
-        API->GetClusterNodesIds(NodeIds);
-        
-        // 为每个视口设置80%的渲染分辨率以提升性能
-        for (const FString& NodeId : NodeIds)
-        {
-            // 这里假设每个节点都有一个名为 “Viewport_1” 的视口
-            // 实际视口ID需根据.nDisplay配置文件确定
-            const FString ViewportId = FString::Printf(TEXT("%s_Viewport_1"), *NodeId);
-            API->SetViewportBufferRatio(ViewportId, 0.8f);
-        }
-    }
+    CreateAsyncTaskWorker(); // 启动后台任务
 }
 ```
 
-### 进阶用法：手动触发DDC预填充
+### 进阶用法（任务工作者）
 
-`DisplayClusterFillDerivedDataCache` 模块用于在编辑器启动时异步填充nDisplay相关的派生数据缓存（如材质、着色器），以避免运行时卡顿。以下是其内部工作机制的简化说明。
+后台工作者 (`FDisplayClusterFillDerivedDataCacheWorker`) 继承自 `FRunnable`，在独立线程中执行命令行程序，并监控其输出以更新编辑器通知。
 
-**来源文件**: `DisplayClusterFillDerivedDataCacheWorker.h`
-
+**来源文件**: `Source/DisplayClusterFillDerivedDataCache/Public/DisplayClusterFillDerivedDataCacheWorker.h`
 ```cpp
-#include "DisplayClusterFillDerivedDataCacheWorker.h"
-#include "Async/AsyncWork.h"
-
-// 理论上，模块启动时会自动创建并运行此Worker
-// 如需手动触发或控制，可参考其模式
-class FMyDDCFillTask : public FRunnable
+// 工作者核心运行逻辑
+uint32 FDisplayClusterFillDerivedDataCacheWorker::Run()
 {
-public:
-    virtual uint32 Run() override
-    {
-        // 此Worker的核心是启动一个外部命令行进程（Commandlet），
-        // 该进程负责扫描nDisplay资产并预编译/填充DDC。
-        // Worker通过管道读取该进程的输出，并解析进度信息（编译总数、已完成数）。
-        // 同时，它会更新编辑器的通知区域，显示“正在预热nDisplay缓存...”。
-        
-        FString CommandletParams = TEXT("-run=FillDerivedDataCache -platform=Win64");
-        // 启动子进程并监控其输出...
-        
-        return 0;
-    }
-};
+    ReadCommandletOutputAndUpdateEditorNotification(); // 阻塞，读取命令行输出
+    return 0;
+}
+
+// 解析命令行输出以获取进度
+void FDisplayClusterFillDerivedDataCacheWorker::ReadCommandletOutputAndUpdateEditorNotification()
+{
+    // 循环读取进程的标准输出管道
+    // 使用正则表达式解析日志，提取“枚举资源总数”、“加载进度”、“编译进度”
+    // 根据解析结果更新 TUniquePtr<FAsyncTaskNotification> ProgressNotification
+    // 例如：
+    // RegexParseForEnumerationCount(LogString); // 解析正在枚举的资源数量
+    // RegexParseForLoadingProgress(LogString);  // 解析加载进度
+    // RegexParseForCompilationProgress(LogString); // 解析着色器编译进度
+}
 ```
 
 ## Demo 示例
 
-一个最小化的C++类，演示如何从代码中启动和查询nDisplay状态。
+本模块为编辑器自动化后台服务，不适用于创建运行时 Demo。其“使用”方式是在插件描述中启用该模块。以下为模块初始化的核心框架代码示例：
 
-**MyDisplayClusterManager.h**
+**DisplayClusterFillDerivedDataCacheWorker.h (关键部分)**
 ```cpp
-// MyDisplayClusterManager.h
 #pragma once
+#include "HAL/Runnable.h"
 
-#include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "MyDisplayClusterManager.generated.h"
-
-class UDisplayClusterBlueprintAPI;
-
-UCLASS()
-class MYPROJECT_API AMyDisplayClusterManager : public AActor
+class FDisplayClusterFillDerivedDataCacheWorker : public FRunnable, public FSingleThreadRunnable
 {
-    GENERATED_BODY()
-    
 public:
-    AMyDisplayClusterManager();
+    FDisplayClusterFillDerivedDataCacheWorker();
+    virtual ~FDisplayClusterFillDerivedDataCacheWorker() override;
 
-protected:
-    virtual void BeginPlay() override;
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+    // FRunnable 接口
+    virtual uint32 Run() override;
+    virtual void Stop() override;
 
-public:
-    /** 从蓝图调用，启动集群 */
-    UFUNCTION(BlueprintCallable, Category = "nDisplay")
-    void StartDisplayCluster();
-
-    /** 从蓝图调用，查询并打印集群状态 */
-    UFUNCTION(BlueprintCallable, Category = "nDisplay")
-    void PrintClusterStatus();
+    // FSingleThreadRunnable 接口 (用于编辑器tick)
+    virtual void Tick() override;
+    virtual FSingleThreadRunnable* GetSingleThreadInterface() override;
 
 private:
-    /** 保存的API指针 */
-    UPROPERTY()
-    UDisplayClusterBlueprintAPI* DisplayClusterAPI = nullptr;
+    void ReadCommandletOutputAndUpdateEditorNotification();
+    void CancelTask();
+
+    TUniquePtr<FAsyncTaskNotification> ProgressNotification;
+    FProcHandle ProcessHandle;
+    void* ReadPipe;
+    void* WritePipe;
+    // ... 其他进度跟踪变量
 };
 ```
 
-**MyDisplayClusterManager.cpp**
+**DisplayClusterFillDerivedDataCacheWorker.cpp (简化示例)**
 ```cpp
-// MyDisplayClusterManager.cpp
-#include "MyDisplayClusterManager.h"
-#include "DisplayClusterBlueprintAPI.h"
-#include "Kismet/GameplayStatics.h"
+#include "DisplayClusterFillDerivedDataCacheWorker.h"
+#include "Async/AsyncWork.h"
+#include "Misc/ScopedSlowTask.h"
 
-AMyDisplayClusterManager::AMyDisplayClusterManager()
+uint32 FDisplayClusterFillDerivedDataCacheWorker::Run()
 {
-    PrimaryActorTick.bCanEverTick = false;
-}
+    // 构建并启动 DDC 填充命令行程序
+    // 例如：UProject.exe -run=DerivedDataCacheCommandlet -Fill -platform=Windows
+    FString ExePath = FPlatformProcess::ExecutablePath();
+    FString Params = GetDdcCommandletParams();
+    FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
+    ProcessHandle = FPlatformProcess::CreateProc(*ExePath, *Params, false, true, true, nullptr, 0, nullptr, WritePipe);
 
-void AMyDisplayClusterManager::BeginPlay()
-{
-    Super::BeginPlay();
-    // 获取API实例
-    DisplayClusterAPI = UDisplayClusterBlueprintAPI::Get();
-}
-
-void AMyDisplayClusterManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    // 考虑在结束时停止集群
-    if (DisplayClusterAPI)
+    if (ProcessHandle.IsValid())
     {
-        DisplayClusterAPI->StopCluster();
+        // 进入循环，持续读取管道输出并更新通知
+        ReadCommandletOutputAndUpdateEditorNotification();
     }
-    Super::EndPlay(EndPlayReason);
+    return 0;
 }
 
-void AMyDisplayClusterManager::StartDisplayCluster()
+void FDisplayClusterFillDerivedDataCacheWorker::Stop()
 {
-    if (DisplayClusterAPI)
-    {
-        DisplayClusterAPI->StartCluster(TEXT(""), true);
-        UE_LOG(LogTemp, Warning, TEXT("Display Cluster Start Command Issued."));
-    }
+    CancelTask(); // 请求取消任务
 }
 
-void AMyDisplayClusterManager::PrintClusterStatus()
+void FDisplayClusterFillDerivedDataCacheWorker::Tick()
 {
-    if (!DisplayClusterAPI) return;
+    // 在单线程模式下（编辑器Tick）定期检查状态并更新UI通知
+    ReadCommandletOutputAndUpdateEditorNotification();
+}
 
-    TArray<FString> NodeIds;
-    DisplayClusterAPI->GetClusterNodesIds(NodeIds);
-    
-    UE_LOG(LogTemp, Log, TEXT("--- nDisplay Cluster Status ---"));
-    UE_LOG(LogTemp, Log, TEXT("Connected Nodes: %d"), NodeIds.Num());
-    
-    for (const FString& NodeId : NodeIds)
+void FDisplayClusterFillDerivedDataCacheWorker::CancelTask()
+{
+    bWasCancelled = true;
+    if (ProcessHandle.IsValid())
     {
-        // 获取该节点上的一些基础信息，例如渲染模式
-        EDisplayClusterRenderMode RenderMode = EDisplayClusterRenderMode::Mono;
-        // 假设我们有一个函数可以获取模式，此处为示例
-        UE_LOG(LogTemp, Log, TEXT("Node: %s"), *NodeId);
+        FPlatformProcess::TerminateProc(ProcessHandle);
     }
+    CompleteCommandletAndShowNotification();
 }
 ```
 
 ## 模块依赖
 
-nDisplay插件包含多个模块，不同模块有不同的依赖。以下是**非标准**的依赖列表：
+该模块自身的 `Build.cs` 未在提供的信息中列出详细依赖。但作为 nDisplay 插件的一部分，其隐含的运行时依赖通常包括 nDisplay 的核心模块。
 
 | 模块 | 用途 |
 |---|---|
-| `D3D12RHI` | 用于DisplayClusterMedia和SharedMemoryMedia模块，支持基于DirectX 12的GPU间共享内存通信。 |
-| `ScalableMPCDI` | (External) 第三方库，用于读取和应用MPCDI格式的投影校正配置文件。 |
-| `UnrealEd` | 多个编辑器相关模块（如DisplayClusterConfigurator, DisplayClusterWarp）的依赖，用于提供编辑器工具、资产编辑和UI。 |
-
-*其他如Core, CoreUObject, Engine, Slate等常见模块的依赖已省略。*
+| `DisplayCluster` | nDisplay 核心运行时模块 |
+| `DisplayClusterConfiguration` | 加载和解析 nDisplay 配置文件（.ndisplay） |
+| `DisplayClusterShaders` | 包含 nDisplay 特殊着色器，是 DDC 预热的主要目标之一 |
 
 ## 维护状态
 
@@ -267,23 +189,21 @@ nDisplay插件包含多个模块，不同模块有不同的依赖。以下是**�
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | nDisplay与Movie Graph结合，新增EXR多图层输出支持。 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 简化了Movie Pipeline中的WarpBlend模式，合并了Alpha通道处理。 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了Movie Render Queue中的相机命名问题，并解决了MPCDI/ICVFX着色器中的透明度错误。 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复了输出帧编码时未能正确遵循自定义Gamma值的问题。 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当UI纹理尺寸小于视口尺寸时可能出现的渲染闪烁问题。 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | nDisplay 支持 MovieGraph 的多层 EXR 输出。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 统一了 MoviePipeline 中的 WarpBlend 和 WarpBlendAlpha 模式。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了 MRG 中拓扑感知相机命名及 MPCDI/ICVFX 着色器中的不透明度问题。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复了输出帧编码回退时未使用自定义 DisplayGamma 的问题。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了 GUI 纹理尺寸小于视口尺寸时出现的闪烁问题。 |
 
 ### 维护评价
 
-nDisplay 是 Unreal Engine 中用于**高端商业和虚拟制片领域**的**核心组件**，而非实验性功能。
-*   **创建时间**：2018年，已是一个成熟的插件。
-*   **更新频率**：**极其活跃**。从提交记录看，几乎每周甚至每天都有更新，内容涉及新功能（EXR多图层）、Bug修复（闪烁、透明度、Gamma）以及与Movie Render Graph等新系统的集成。
-*   **维护状态**：**积极维护中**。Epic Games持续投入资源，确保其与最新的UE引擎功能（如Movie Graph）兼容并修复问题。
-*   **已知限制**：作为默认禁用的插件，需要用户主动启用并具备相应的硬件（多PC、专业GPU、投影设备）和网络环境。配置过程相对复杂，对新手不友好。
-*   **推荐**：**强烈推荐**给所有从事**虚拟制片、大型沉浸式体验、飞行/驾驶模拟器、专业可视化**等项目的开发者。它是实现像素级精确的多机同步渲染的**唯一官方解决方案**。对于普通游戏开发或小型项目则无需关注。
+- **创建时间**：约 8 年前（2018年），是一个非常成熟的模块。
+- **维护状态**：**活跃维护**。从近期提交记录看，nDisplay 作为一个整体（包括此模块）仍在持续获得新功能和 Bug 修复，最近的活动集中在支持新的 Movie Graph 管线和修复着色器问题。
+- **推荐度**：**推荐使用**。对于任何使用 nDisplay 进行虚拟制片的项目，启用此模块可以显著改善编辑器工作流体验，尤其在资产量大的情况下。它作为 Epic Games 官方维护的核心插件的一部分，稳定性和可靠性有保障。
+- **注意事项**：此模块为**可选模块**（`EnabledByDefault: false`），需要在插件设置中手动启用。它仅在编辑器运行时生效，对打包后的项目无影响。
 
 ## 相关链接
 
-- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/ndisplay-in-unreal-engine/) (通常为DocsURL为空时，引擎有通用文档页)
-- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests) (DisplayClusterTests模块)
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterFillDerivedDataCache)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/nDisplay-in-Unreal-Engine/)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests) (整个 nDisplay 插件的测试集)

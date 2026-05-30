@@ -4,255 +4,279 @@
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 集群显示渲染 |
+| 中文名 | 集群渲染 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产、着色器、编辑器工具） |
-| 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
+| 包含内容 | ✅ 有（材质、着色器、配置模板） |
+| 模块 | `DisplayCluster` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterMedia` (Runtime), `SharedMemoryMedia` (Runtime) 等 30 个模块 |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
-| 年龄标签 | 👴 老古董（约 8 年） |
+| 年龄标签 | 👴 老古董（约 7 年） |
 | [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay) | |
 
 ## 用途
 
-nDisplay 是 UE5 的**多机集群同步渲染系统**，解决的核心问题是：**将一个场景的渲染工作分散到多台 PC 上，每台 PC 负责渲染画面的一个子区域（视口），最终拼合成一个完整的超大画面**。
+nDisplay 是 Unreal Engine 的分布式集群渲染系统，解决的核心问题是：**如何让多台 PC 同步渲染同一场景的不同视角，并将画面输出到多块物理屏幕或投影仪上，形成一个完整、无缝的虚拟环境**。
 
-它的存在价值在于：
+典型应用场景包括 CAVE 系统（沉浸式立方体投影室）、LED 虚拟摄影棚（如 ICVFX/In-Camera VFX）、穹顶投影、环幕驾驶模拟器，以及任何需要多台机器协同渲染的大型显示系统。
 
-- **突破单机性能上限**：单台 PC 的 GPU 无法驱动超高分辨率（如 8K×4K LED 墙），nDisplay 让多台 PC 各渲染一部分
-- **精确的投影几何矫正**：支持弧面屏幕、多投影仪拼接、CAVE 洞穴等复杂几何形状的实时投影映射
-- **帧同步保障**：所有集群节点在严格同步的帧时序下渲染，避免画面撕裂和延迟
-- **虚拟制片（Virtual Production）**：配合 LED 卷幕墙实现摄影机内外的实时合成渲染
-- **影视离线渲染**：通过 Movie Pipeline / Movie Render Graph 集成，将 nDisplay 集群配置用于高质量离线序列帧渲染
+nDisplay 通过一个 `ADisplayClusterRootActor`（DCRA）在场景中定义整个集群的拓扑结构——哪些 PC 负责哪些视口、如何投影（平面/球面/MPCDI）、如何变形混合（WarpBlend）——然后由集群中的每个节点同步执行渲染，保证所有屏幕的画面在时间上完全对齐。
 
-简而言之，nDisplay 是 UE5 面向**虚拟制片、大型模拟器、沉浸式投影装置**等专业场景的核心基础设施。
+本文档重点介绍 **DisplayClusterMoviePipeline** 子模块，它将 nDisplay 集成到 Movie Render Pipeline（MRP）和 Movie Render Graph（MRG）中，使你能够以离线、高质量的方式渲染 nDisplay 配置，用于影视级输出。
 
 ## 使用场景
 
-- 你在搭建 **LED 虚拟制片影棚**（类似《曼达洛人》的 StageCraft） → 用 nDisplay 配置 LED 墙的视口和投影映射
-- 你需要构建 **驾驶模拟器**，多台投影仪投射到弧面屏幕上 → 用 nDisplay 的 MPCDI/WarpBlend 投影策略
-- 你要做 **CAVE 沉浸式环境**，多个面各由独立 PC 渲染 → 用 nDisplay 配置多集群节点
-- 你想将 nDisplay 集群配置用于 **Movie Render Graph 离线渲染** → 用 DisplayClusterMoviePipeline 模块
-- 你需要 **多台 PC 的 EXR 多层输出**，将不同视口打包到单个 EXR 文件中 → 用 EXR Layer Grouping 功能
+- 你正在搭建 LED 虚拟摄影棚（ICVFX）→ 需要用 nDisplay 管理多块 LED 屏的渲染和投影
+- 你有一个 CAVE 系统需要多台 PC 同步渲染不同墙壁的画面 → 用 nDisplay 配置集群拓扑
+- 你需要将 nDisplay 集群的渲染结果通过 Movie Pipeline 离线录制为高质量视频或 EXR 序列 → 用 DisplayClusterMoviePipeline
+- 你需要将 nDisplay 的渲染结果输出为 360° 等距柱状投影的全景图 → 选择 FullProjection 输出模式
+- 你需要将多个 nDisplay 视口的渲染结果合并到一个多层 EXR 文件中 → 使用 EXR Layer Grouping 功能
 
 ## 蓝图用法
 
-nDisplay 的核心功能通过编辑器配置和 `ADisplayClusterRootActor` 实现，Movie Pipeline 集成部分主要通过 `UMoviePipelineSetting` 和渲染通道节点暴露给蓝图。
+DisplayClusterMoviePipeline 模块主要通过 Movie Pipeline 的设置和渲染节点来使用，蓝图交互以配置为主。
 
-### 核心节点
+### 核心属性
 
-| 节点 | 说明 | 所在类 |
+#### 渲染通道节点（Deferred / PathTracer）
+
+| 属性 | 说明 | 所在类 |
 |---|---|---|
-| `GetRootActor` | 从当前世界获取 nDisplay 根 Actor | `UDisplayClusterMoviePipelineSettings` |
-| `GetViewports` | 收集用于 Movie Pipeline 渲染的视口列表及其分辨率 | `UDisplayClusterMoviePipelineSettings` |
+| `OutputMethod` | nDisplay 输出方式：逐视口、逐节点输出映射、全集群输出映射、180°/360° 等距柱状投影、自定义网格投影 | `UDisplayClusterMovieGraphDeferredRenderPassNode` / `UDisplayClusterMovieGraphPathTracerRenderPassNode` |
+| `ResolutionScale` | 统一缩放视口分辨率 [0.01, 1.0] | 同上 |
+| `OutputResolution` | 覆盖输出分辨率 | 同上 |
+| `WarpBlendMode` | 变形混合模式：None 或 WarpBlend | 同上 |
+| `StereoMode` | 立体渲染模式：无、立体、仅左眼、仅右眼 | 同上 |
+| `OverscanMode` | 过扫描来源：默认（MRP）或 nDisplay 视口 | 同上 |
+| `RootActorRef` | 指定使用的 nDisplay Root Actor | 同上 |
+| `AllowedViewportNamesList` | 仅渲染指定视口 | 同上 |
+| `AllowedNodeNamesList` | 仅渲染指定集群节点 | 同上 |
+| `EXRLayerGrouping` | 多层 EXR 分组方式：无、按视口、按节点、按集群 | 同上 |
 
-### Movie Pipeline 渲染通道
+#### 渲染通道（Viewport Pass）
 
-在 Movie Pipeline 配置中可添加以下 nDisplay 专用渲染通道：
-
-| 渲染通道类 | 显示名称 | 说明 |
+| 属性 | 说明 | 所在类 |
 |---|---|---|
-| `UDisplayClusterMoviePipelineViewportPassBase` | nDisplay Rendering | 基础 Lit 渲染通道 |
-| `UDisplayClusterMoviePipelineViewportPass_Unlit` | nDisplay Rendering (Unlit) | 无光照渲染通道 |
-| `UDisplayClusterMoviePipelineViewportPass_DetailLighting` | nDisplay Rendering (Detail Lighting) | 细节光照渲染通道 |
-| `UDisplayClusterMoviePipelineViewportPass_LightingOnly` | nDisplay Rendering (Lighting Only) | 仅光照渲染通道 |
-| `UDisplayClusterMoviePipelineViewportPass_ReflectionsOnly` | nDisplay Rendering (Reflections Only) | 仅反射渲染通道 |
-| `UDisplayClusterMoviePipelineViewportPass_PathTracer` | nDisplay Path Tracer | 路径追踪渲染通道 |
+| `bEnabledWarpBlend` | 是否启用变形混合 | `UDisplayClusterMoviePipelineViewportPassBase` |
 
-### Movie Render Graph 节点
+#### Movie Pipeline 设置
 
-在 Movie Render Graph 编辑器中可添加以下 nDisplay 专用节点：
-
-| 节点类 | 说明 |
-|---|---|
-| `UDisplayClusterMovieGraphDeferredRenderPassNode` | nDisplay 延迟渲染通道节点 |
-| `UDisplayClusterMovieGraphPathTracerRenderPassNode` | nDisplay 路径追踪渲染通道节点 |
+| 属性 | 说明 | 所在类 |
+|---|---|---|
+| `Configuration.DCRootActor` | 指定 DC Root Actor 引用 | `UDisplayClusterMoviePipelineSettings` |
+| `Configuration.bUseViewportResolutions` | 使用 nDisplay 视口分辨率 | 同上 |
+| `Configuration.bRenderAllViewports` | 渲染所有视口 | 同上 |
+| `Configuration.AllowedViewportNamesList` | 仅渲染指定视口列表 | 同上 |
 
 ### 使用示例（蓝图描述）
 
-**配置 Movie Pipeline 使用 nDisplay 渲染**：
+在 Movie Render Queue 的作业配置中：
 
-1. 在 Sequencer 中打开 Movie Pipeline 配置资产
-2. 添加 `UDisplayClusterMoviePipelineSettings` 设置项，在 `Configuration` 字段中指定 `DCRootActor`（或留空自动查找场景中第一个 DCRA）
-3. 添加 nDisplay 渲染通道（如 `UDisplayClusterMoviePipelineViewportPassBase`）
-4. 在渲染通道的 `bEnabledWarpBlend` 中启用/禁用 WarpBlend 混合
-5. 执行渲染，Movie Pipeline 会自动解析 nDisplay 集群拓扑并为每个视口生成对应的渲染任务
-
-**配置 Movie Render Graph 使用 nDisplay**：
-
-1. 在 MRG 编辑器中，添加 `UDisplayClusterMovieGraphDeferredRenderPassNode` 或 `UDisplayClusterMovieGraphPathTracerRenderPassNode`
-2. 设置 `OutputMethod`（逐视口/逐节点映射/全集群映射/等距柱状投影等）
-3. 可选设置 `StereoMode`（单目/立体/仅左眼/仅右眼）
-4. 可选设置 `EXRLayerGrouping`（无/按视口/按节点/按集群）控制多层 EXR 输出分组
-5. 指定 `RootActorRef` 或留空自动解析
+1. 添加 `nDisplay` 设置（`UDisplayClusterMoviePipelineSettings`），配置要使用的 DC Root Actor
+2. 在渲染通道中选择 `nDisplay Rendering`（Lit）、`nDisplay Rendering (Unlit)`、`nDisplay Path Tracer` 等通道之一
+3. 如果使用 Movie Render Graph，在图中添加 `DisplayClusterMovieGraphDeferredRenderPassNode` 或 `DisplayClusterMovieGraphPathTracerRenderPassNode`
+4. 在节点属性中设置 OutputMethod、StereoMode、WarpBlendMode 等
+5. 通过 `AllowedViewportNamesList` 筛选要渲染的视口
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-// Movie Pipeline 集成
 #include "DisplayClusterMoviePipelineViewportPass.h"
 #include "DisplayClusterMoviePipelineSettings.h"
 #include "DisplayClusterMoviePipelineEnums.h"
-
-// Movie Render Graph 节点
-#include "Graph/Nodes/DisplayClusterMovieGraphDeferredPassNode.h"
-#include "Graph/Nodes/DisplayClusterMovieGraphPathTracerPassNode.h"
-
-// 内部视口管理
-#include "DisplayClusterMoviePipelineViewportManager.h"
-#include "DisplayClusterMoviePipelineViewportCameraInfo.h"
-#include "DisplayClusterMoviePipelineRenderSettings.h"
+#include "DisplayClusterMovieGraphRenderCameraSource.h"
 ```
 
-### 基本用法
+### 基本用法 — 配置 Movie Pipeline Settings
 
-**解析 nDisplay 根 Actor 并获取视口信息**（来源：`DisplayClusterMoviePipelineViewportManager.h`）：
+通过 C++ 动态配置 nDisplay 的 Movie Pipeline 设置。
 
 ```cpp
-// 从序列播放器中解析 nDisplay 根 Actor
-// 搜索优先级：1. 序列绑定 > 2. 世界中的 Actor
-// 匹配优先级：a. 精确名称+类匹配 > b. 仅类匹配 > c. 任意 DCRA
-ADisplayClusterRootActor* RootActor = FDisplayClusterMoviePipelineViewportManager::ResolveRootActor(
-    SequencePlayer,           // UMovieSceneSequencePlayer*
-    TSoftObjectPtr<ADisplayClusterRootActor>(SpecificActorPath),  // 优先使用的 Actor 引用
-    TSoftClassPtr<ADisplayClusterRootActor>(RootActorClassPath)   // 优先使用的类引用
-);
+// 来源: Public/DisplayClusterMoviePipelineSettings.h
+#include "DisplayClusterMoviePipelineSettings.h"
+
+// 获取 nDisplay Movie Pipeline 设置并配置
+UDisplayClusterMoviePipelineSettings* NdSettings = NewObject<UDisplayClusterMoviePipelineSettings>();
+NdSettings->Configuration.bUseViewportResolutions = true;
+NdSettings->Configuration.bRenderAllViewports = false;
+
+// 仅渲染指定视口
+NdSettings->Configuration.AllowedViewportNamesList.Add(TEXT("VP_Camera1"));
+NdSettings->Configuration.AllowedViewportNamesList.Add(TEXT("VP_Camera2"));
+
+// 将设置添加到 Movie Pipeline 配置
+UMoviePipeline* Pipeline = ...; // 已有的 Movie Pipeline 实例
+Pipeline->GetConfiguration()->FindOrAddSettingByClass(UDisplayClusterMoviePipelineSettings::StaticClass());
 ```
 
-**创建视口管理器并构建渲染帧**（来源：`DisplayClusterMoviePipelineViewportManager.h`）：
+### 基本用法 — 查询可用视口
 
 ```cpp
-// 为指定集群节点创建视口管理器
-FDisplayClusterMoviePipelineViewportManager ViewportManager(ClusterNodeId, RootActor);
+// 来源: Public/DisplayClusterMoviePipelineSettings.h
+#include "DisplayClusterMoviePipelineSettings.h"
 
-// 构建新一帧的渲染数据
-UE::DisplayClusterMoviePipeline::FRenderSettings RenderSettings;
-RenderSettings.RenderMode = EDisplayClusterRenderFrameMode::Stereo;
-RenderSettings.WarpBlendMode = EDisplayClusterMoviePipelineWarpBlendMode::WarpBlend;
-
-bool bSuccess = ViewportManager.BeginNewFrame(RenderSettings, World, &FrameNumber);
-```
-
-### 进阶用法
-
-**通过 C++ 配置 Movie Pipeline 的 nDisplay 设置**（来源：`DisplayClusterMoviePipelineSettings.h`）：
-
-```cpp
-// 获取 Movie Pipeline 设置
-UDisplayClusterMoviePipelineSettings* Settings = MyPipeline->FindSetting<UDisplayClusterMoviePipelineSettings>();
-
-// 配置根 Actor
-Settings->Configuration.DCRootActor = TSoftObjectPtr<ADisplayClusterRootActor>(MyDCRAPath);
-Settings->Configuration.bUseViewportResolutions = true;
-Settings->Configuration.bRenderAllViewports = false;
-
-// 指定只渲染特定视口
-Settings->Configuration.AllowedViewportNamesList.Add(TEXT("viewport_left"));
-Settings->Configuration.AllowedViewportNamesList.Add(TEXT("viewport_right"));
-
-// 收集视口信息
+UDisplayClusterMoviePipelineSettings* Settings = GetNdSettings();
 TArray<FString> ViewportNames;
 TArray<FIntPoint> ViewportResolutions;
-bool bHasViewports = Settings->GetViewports(World, ViewportNames, ViewportResolutions);
+
+// 获取当前世界的 nDisplay 视口列表及其分辨率
+if (Settings->GetViewports(GetWorld(), ViewportNames, ViewportResolutions))
+{
+    for (int32 i = 0; i < ViewportNames.Num(); ++i)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Viewport: %s, Resolution: %dx%d"),
+            *ViewportNames[i], ViewportResolutions[i].X, ViewportResolutions[i].Y);
+    }
+}
 ```
 
-**在渲染线程中应用 WarpBlend**（来源：`DisplayClusterMoviePipelineViewportManager.h`）：
+### 进阶用法 — 使用 ViewportManager 管理渲染帧
 
 ```cpp
-// 在渲染线程中对视口应用 WarpBlend 后处理
-// 流程：RTT → copy → TempIn → WarpShader → TempOut → copy back → RTT
-void MyRenderFunction(FRHICommandListImmediate& RHICmdList,
-                      IDisplayClusterViewportProxy* ViewportProxy,
-                      uint32 ContextNum,
-                      FTextureRHIRef& RenderTarget)
+// 来源: Private/DisplayClusterMoviePipelineViewportManager.h
+#include "DisplayClusterMoviePipelineViewportManager.h"
+
+// 为特定集群节点创建视口管理器
+const FString ClusterNodeId = TEXT("Node_0");
+ADisplayClusterRootActor* RootActor = GetRootActor();
+
+FDisplayClusterMoviePipelineViewportManager ViewportManager(ClusterNodeId, RootActor);
+
+// 配置渲染设置
+UE::DisplayClusterMoviePipeline::FRenderSettings RenderSettings;
+RenderSettings.RenderMode = EDisplayClusterRenderFrameMode::Mono;
+RenderSettings.WarpBlendMode = EDisplayClusterMoviePipelineWarpBlendMode::WarpBlend;
+RenderSettings.RenderResolutionScale = 1.0f;
+
+// 开始新帧的渲染
+if (ViewportManager.BeginNewFrame(RenderSettings))
 {
-    ViewportManager.ApplyWarpBlend_RenderThread(
-        RHICmdList, ViewportProxy, ContextNum, RenderTarget);
+    // 渲染帧已构建成功，RenderFrame 中包含了所有视口的渲染数据
+    // 实际渲染由 Movie Pipeline 系统驱动
+}
+```
+
+### 进阶用法 — 解析 Root Actor
+
+```cpp
+// 来源: Private/DisplayClusterMoviePipelineViewportManager.h
+// 根据软引用和类引用来查找最佳匹配的 DCRA
+UMovieSceneSequencePlayer* SequencePlayer = GetSequencePlayer();
+TSoftObjectPtr<ADisplayClusterRootActor> PreferredActor = nullptr; // 不指定特定 Actor
+TSoftClassPtr<ADisplayClusterRootActor> PreferredClass = nullptr;  // 不指定特定类
+
+ADisplayClusterRootActor* ResolvedActor = FDisplayClusterMoviePipelineViewportManager::ResolveRootActor(
+    SequencePlayer,
+    PreferredActor,
+    PreferredClass
+);
+
+if (ResolvedActor)
+{
+    // 找到了可用的 DCRA，可以用于渲染
+    UE_LOG(LogTemp, Log, TEXT("Resolved DCRA: %s"), *ResolvedActor->GetName());
+}
+```
+
+### 进阶用法 — Movie Render Graph Camera Source
+
+```cpp
+// 来源: Private/Graph/DisplayClusterMovieGraphRenderCameraSource.h
+#include "DisplayClusterMovieGraphRenderCameraSource.h"
+
+// 在 Movie Graph 渲染流程中，nDisplay 通过 FDisplayClusterMovieGraphRenderCameraSource
+// 将 nDisplay 视口映射为 MRG 相机
+
+FDisplayClusterMovieGraphRenderCameraSource CameraSource;
+
+// 初始化：解析 DCRA、枚举视口、创建每节点的 ViewportManager
+bool bSuccess = CameraSource.Initialize(RenderPassNode, MovieGraphPipeline, EvaluatedConfig);
+
+if (bSuccess)
+{
+    // 查询相机数量（每个视口上下文 = 一个相机）
+    int32 NumCameras = CameraSource.GetNumCameras();
+
+    for (int32 i = 0; i < NumCameras; ++i)
+    {
+        FString CameraName;
+        CameraSource.GetCameraName(i, CameraName);
+
+        FMinimalViewInfo ViewInfo;
+        CameraSource.GetCameraViewInfo(i, ViewInfo);
+
+        UE_LOG(LogTemp, Log, TEXT("Camera %d: %s, FOV: %.1f"), i, *CameraName, ViewInfo.FOV);
+    }
 }
 ```
 
 ## Demo 示例
 
-以下展示如何在 C++ 中创建自定义的 nDisplay Movie Pipeline 渲染通道：
+以下示例展示如何创建一个自定义的 Movie Pipeline 渲染通道来利用 nDisplay 视口。
 
 ```cpp
-// MyNDisplayRenderJob.h
+// MyNdDisplayRenderJob.h
 #pragma once
 
-#include "MoviePipeline.h"
-#include "DisplayClusterMoviePipelineSettings.h"
+#include "CoreMinimal.h"
+#include "DisplayClusterMoviePipelineViewportManager.h"
+#include "DisplayClusterMoviePipelineEnums.h"
 
-class FMyNDisplayRenderHelper
+class FMyNdDisplayRenderHelper
 {
 public:
-    /** 配置并启动 nDisplay 离线渲染 */
-    static bool StartNDisplayRender(UMoviePipeline* InPipeline, ADisplayClusterRootActor* InDCRA)
+    /** 为指定集群节点创建视口管理器并执行一帧渲染。 */
+    static bool RenderFrame(
+        ADisplayClusterRootActor* InRootActor,
+        const FString& InClusterNodeId,
+        const bool bEnableWarpBlend = true)
     {
-        if (!InPipeline || !InDCRA)
+        if (!InRootActor)
         {
             return false;
         }
 
-        // 1. 获取或创建 nDisplay 设置
-        UDisplayClusterMoviePipelineSettings* NDSettings =
-            InPipeline->FindOrAddSettingForShot<UDisplayClusterMoviePipelineSettings>(nullptr);
-        if (!NDSettings)
-        {
-            return false;
-        }
+        // 创建视口管理器（绑定到特定集群节点）
+        FDisplayClusterMoviePipelineViewportManager ViewportMgr(InClusterNodeId, InRootActor);
 
-        // 2. 指定 nDisplay 根 Actor
-        NDSettings->Configuration.DCRootActor =
-            TSoftObjectPtr<ADisplayClusterRootActor>(InDCRA);
+        // 配置渲染参数
+        UE::DisplayClusterMoviePipeline::FRenderSettings Settings;
+        Settings.RenderMode = EDisplayClusterRenderFrameMode::Mono;
+        Settings.WarpBlendMode = bEnableWarpBlend
+            ? EDisplayClusterMoviePipelineWarpBlendMode::WarpBlend
+            : EDisplayClusterMoviePipelineWarpBlendMode::None;
+        Settings.RenderResolutionScale = 1.0f;
 
-        // 3. 使用视口原始分辨率
-        NDSettings->Configuration.bUseViewportResolutions = true;
-
-        // 4. 渲染所有视口
-        NDSettings->Configuration.bRenderAllViewports = true;
-
-        // 5. 收集视口信息验证配置
-        TArray<FString> ViewportNames;
-        TArray<FIntPoint> ViewportResolutions;
-        const UWorld* World = InDCRA->GetWorld();
-        if (NDSettings->GetViewports(World, ViewportNames, ViewportResolutions))
-        {
-            UE_LOG(LogTemp, Log,
-                TEXT("nDisplay render configured: %d viewports ready"), ViewportNames.Num());
-            for (int32 i = 0; i < ViewportNames.Num(); ++i)
-            {
-                UE_LOG(LogTemp, Log,
-                    TEXT("  Viewport[%d]: %s (%dx%d)"),
-                    i, *ViewportNames[i],
-                    ViewportResolutions[i].X, ViewportResolutions[i].Y);
-            }
-        }
-
-        return true;
+        // 构建渲染帧
+        return ViewportMgr.BeginNewFrame(Settings);
     }
 };
 ```
 
 ```cpp
-// MyNDisplayRenderJob.cpp
-#include "MyNDisplayRenderJob.h"
-#include "DisplayClusterRootActor.h"
+// MyNdDisplayRenderJob.cpp
+#include "MyNdDisplayRenderJob.h"
+// FMyNdDisplayRenderHelper 的所有实现已在头文件中以静态方法形式提供
 ```
 
 ## 模块依赖
 
-从 Build.cs 分析，nDisplay 插件依赖了大量 UE 标准模块，同时有一些**独特依赖**：
+DisplayClusterMoviePipeline 模块依赖以下非标准模块：
 
 | 模块 | 用途 |
 |---|---|
-| `D3D12RHI` | DisplayClusterMedia、SharedMemoryMedia 模块的 DirectX 12 共享内存渲染支持 |
-| `ScalableMPCDI` (External) | 第三方 MPCDI（Multi-Projector Calibration Data Interchange）投影校准数据格式支持 |
-| `UnrealEd` | 多个模块（DisplayCluster、DisplayClusterMedia、DisplayClusterProjection 等）依赖编辑器功能 |
+| `MovieRenderPipelineCore` | Movie Pipeline 基础框架 |
+| `MovieRenderPipelineRenderPasses` | 延迟渲染通道基类（`UMoviePipelineDeferredPassBase`） |
+| `MovieGraph` / `MovieRenderPipelineCore` | Movie Render Graph 节点和相机源（`UMovieGraphDeferredRenderPassNode` 等） |
+| `DisplayCluster` | nDisplay 核心模块，提供视口管理器和集群通信 |
+| `DisplayClusterConfiguration` | nDisplay 集群配置数据 |
+| `RenderCore` / `RHI` | 渲染线程操作（`FRHICommandListImmediate`、`FTextureRHIRef`） |
+| `Renderer` | 场景视图和渲染管线 |
+| `D3D12RHI` | Direct3D 12 渲染硬件接口（Windows 平台） |
 
-注意：许多标记为 Runtime 的模块（如 DisplayClusterConfigurator、DisplayClusterEditor、DisplayClusterOperator 等）实际上包含了编辑器 UI 代码，存在对 UnrealEd 的依赖。
+整个 nDisplay 插件还依赖 `UnrealEd`（编辑器集成）、`LevelEditor`、`D3D12RHI`、`DisplayClusterWarp`（变形混合策略）、`DisplayClusterProjection`（投影策略）等。
 
 ## 维护状态
 
@@ -260,27 +284,25 @@ public:
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 Movie Render Graph 添加 nDisplay EXR 多层输出支持 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 将 WarpBlendAlpha 模式合并到 WarpBlend，简化配置 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知的相机命名和 MPCDI/ICVFX 着色器不透明 Alpha 问题 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复输出帧编码回退时未使用非默认 DisplayGamma 的问题 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理尺寸小于视口尺寸时的闪烁问题 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | Movie Graph 中添加 nDisplay 多层 EXR 输出支持 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 将 WarpBlendAlpha 模式合并到 WarpBlend 中简化配置 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知的相机命名和 MPCDI 着色器的 alpha 问题 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复非默认 DisplayGamma 在输出帧编码回退路径中的处理 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理尺寸小于视口尺寸时的画面闪烁问题 |
 
 ### 维护评价
 
-**活跃维护**。nDisplay 是 Epic Games 持续投入的核心虚拟制片基础设施，具备以下特征：
+nDisplay 是 Epic Games 官方维护的核心企业级功能，自 2018 年引入以来持续活跃更新。从最近的 commit 记录来看，**维护非常活跃**——最近一周内就有 5 次实质性提交，涵盖新功能（EXR 多层输出）、功能简化（WarpBlendAlpha 合并）、以及多个 bug 修复。
 
-- **更新频繁**：近 10 天内有 5 次实质性提交，涵盖新功能（EXR 多层输出）、重构（WarpBlend 合并）和 Bug 修复
-- **持续演进**：与 Movie Render Graph 的深度集成仍在积极开发中，支持最新的渲染管线特性
-- **成熟稳定**：自 2018 年创建以来已走过 8 年，从 UE4.20 发展到 UE5.8，代码规模达 1351 个源文件、29 个模块
-- **生产验证**：广泛用于虚拟制片行业（LED Volume、CAVE、模拟器等）
-- **默认未启用**：由于功能专业且依赖特定硬件配置，`EnabledByDefault=false`，需要用户手动启用
-
-⚠️ **注意**：nDisplay 是一个大型复杂插件（29 个模块），建议有特定硬件需求（LED 墙、多投影仪、集群渲染）时再启用。普通项目无需开启此插件。
+关键评价：
+- **活跃度**：极高，属于 Epic 的重点维护项目，服务于虚拟制片（Virtual Production）核心工作流
+- **稳定性**：已有 7 年历史，经过大量商业项目验证（LED 虚拟摄影棚等）
+- **复杂度**：插件规模极大（1351 个源文件，30 个模块），学习曲线陡峭
+- **平台支持**：仅支持 Win64 和 Linux，不支持 macOS/主机平台
+- **推荐使用**：✅ 如果你的项目涉及多机协同渲染、LED 墙或 CAVE 系统，这是 UE5 中的唯一选择且质量可靠；对于简单的单机项目则不需要
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [Movie Pipeline 渲染通道源码](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterMoviePipeline/)
-- [Movie Render Graph 节点源码](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterMoviePipeline/Public/Graph/Nodes/)
-- [枚举定义](https://github.com/EpicGames/UnrealEngine/blob/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterMoviePipeline/Public/DisplayClusterMoviePipelineEnums.h)
+- [官方文档](https://dev.epicgames.com/documentation/en-us/unreal-engine/ndisplay-in-unreal-engine)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)

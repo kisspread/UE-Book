@@ -183,9 +183,9 @@
       "doc_path": "docs/5.8/small/AsyncMessageSystemTests/"
     },
     "AudioCQTests": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AudioCQTests/"
+      "doc_path": "docs/5.8/small/AudioCQTests/"
     },
     "AudioCapture": {
       "generated_in": "5.8",
@@ -193,9 +193,9 @@
       "doc_path": "docs/5.8/small/AudioCapture/"
     },
     "AutomationDriverTests": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/AutomationDriverTests/"
+      "doc_path": "docs/5.8/small/AutomationDriverTests/"
     },
     "AutomationUtils": {
       "generated_in": "5.8",
@@ -253,14 +253,14 @@
       "doc_path": "docs/5.8/small/CLionSourceCodeAccess/"
     },
     "CQTest": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/CQTest/"
+      "doc_path": "docs/5.8/small/CQTest/"
     },
     "CQTestEnhancedInput": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/CQTestEnhancedInput/"
+      "doc_path": "docs/5.8/small/CQTestEnhancedInput/"
     },
     "CQTestExperimental": {
       "generated_in": "5.7",
@@ -323,9 +323,9 @@
       "doc_path": "docs/5.8/small/CompositeCore/"
     },
     "CompositePlane": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/CompositePlane/"
+      "doc_path": "docs/5.8/small/CompositePlane/"
     },
     "ConcertInsightsClient": {
       "generated_in": "5.8",
@@ -388,9 +388,9 @@
       "doc_path": "docs/5.8/small/CustomizableSequencerTracks/"
     },
     "DMXDisplayCluster": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/DMXDisplayCluster/"
+      "doc_path": "docs/5.8/small/DMXDisplayCluster/"
     },
     "DMXFixtures": {
       "generated_in": "5.8",
@@ -483,9 +483,9 @@
       "doc_path": "docs/5.8/small/EditorSysConfigAssistant/"
     },
     "EpicStageApp": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/EpicStageApp/"
+      "doc_path": "docs/5.8/small/EpicStageApp/"
     },
     "ExampleDeviceProfileSelector": {
       "generated_in": "5.8",
@@ -544,9 +544,9 @@
       "doc_path": "docs/5.8/small/GameplayBehaviorSmartObjects/"
     },
     "GeForceNOWWrapper": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/GeForceNOWWrapper/"
+      "doc_path": "docs/5.8/small/GeForceNOWWrapper/"
     },
     "GitSourceControl": {
       "generated_in": "5.8",
@@ -599,9 +599,9 @@
       "doc_path": "docs/5.8/small/HttpBlueprint/"
     },
     "ICVFX": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ICVFX/"
+      "doc_path": "docs/5.8/small/ICVFX/"
     },
     "ICVFXTesting": {
       "generated_in": "5.7",
@@ -814,9 +814,9 @@
       "doc_path": "docs/5.8/small/ModelViewViewModelPreview/"
     },
     "ModularGameplay": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/ModularGameplay/"
+      "doc_path": "docs/5.8/small/ModularGameplay/"
     },
     "MotionTrajectory": {
       "generated_in": "5.8",
@@ -834,9 +834,9 @@
       "doc_path": "docs/5.8/small/MovieSceneTextTrack/"
     },
     "MsQuic": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/MsQuic/"
+      "doc_path": "docs/5.8/small/MsQuic/"
     },
     "MultiUserTakes": {
       "generated_in": "5.8",
@@ -915,14 +915,14 @@
       "doc_path": "docs/5.8/small/OpenXRHandTracking/"
     },
     "OpenXRMsftHandInteraction": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/OpenXRMsftHandInteraction/"
+      "doc_path": "docs/5.8/small/OpenXRMsftHandInteraction/"
     },
     "OpenXRViveTracker": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/OpenXRViveTracker/"
+      "doc_path": "docs/5.8/small/OpenXRViveTracker/"
     },
     "Optimus": {
       "generated_in": "5.8",
@@ -930,9 +930,9 @@
       "doc_path": "docs/5.8/small/Optimus/"
     },
     "OptionalMobileFeaturesBPLibrary": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/OptionalMobileFeaturesBPLibrary/"
+      "doc_path": "docs/5.8/small/OptionalMobileFeaturesBPLibrary/"
     },
     "PCGExternalDataInterop": {
       "generated_in": "5.8",
@@ -1120,9 +1120,9 @@
       "doc_path": "docs/5.8/small/SkeletalMeshMorphTargetEditingTools/"
     },
     "SlateScripting": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/SlateScripting/"
+      "doc_path": "docs/5.8/small/SlateScripting/"
     },
     "SocketSubsystemEOS": {
       "generated_in": "5.8",
@@ -1190,9 +1190,9 @@
       "doc_path": "docs/5.7/small/SteamSockets/"
     },
     "StormSyncAvalancheBridge": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/StormSyncAvalancheBridge/"
+      "doc_path": "docs/5.8/small/StormSyncAvalancheBridge/"
     },
     "SunPosition": {
       "generated_in": "5.8",
@@ -1275,19 +1275,19 @@
       "doc_path": "docs/5.8/small/WebAuth/"
     },
     "WebBrowserNativeProxy": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/WebBrowserNativeProxy/"
+      "doc_path": "docs/5.8/small/WebBrowserNativeProxy/"
     },
     "WebBrowserWidget": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/WebBrowserWidget/"
+      "doc_path": "docs/5.8/small/WebBrowserWidget/"
     },
     "WebMMoviePlayer": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "small",
-      "doc_path": "docs/5.7/small/WebMMoviePlayer/"
+      "doc_path": "docs/5.8/small/WebMMoviePlayer/"
     },
     "WidgetAutomationTests": {
       "generated_in": "5.8",
@@ -1485,9 +1485,9 @@
       "doc_path": "docs/5.8/medium/CurveExpression/"
     },
     "CustomDetailsView": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/CustomDetailsView/"
+      "doc_path": "docs/5.8/medium/CustomDetailsView/"
     },
     "DataLinkOAuth": {
       "generated_in": "5.8",
@@ -1636,19 +1636,19 @@
       "doc_path": "docs/5.8/medium/NearestNeighborModel/"
     },
     "NetworkPrediction": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/NetworkPrediction/"
+      "doc_path": "docs/5.8/medium/NetworkPrediction/"
     },
     "NetworkPredictionExtras": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/NetworkPredictionExtras/"
+      "doc_path": "docs/5.8/medium/NetworkPredictionExtras/"
     },
     "NetworkPredictionInsights": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/NetworkPredictionInsights/"
+      "doc_path": "docs/5.8/medium/NetworkPredictionInsights/"
     },
     "NeuralMorphModel": {
       "generated_in": "5.8",
@@ -1821,9 +1821,9 @@
       "doc_path": "docs/5.8/medium/SubversionSourceControl/"
     },
     "Switchboard": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "medium",
-      "doc_path": "docs/5.7/medium/Switchboard/"
+      "doc_path": "docs/5.8/medium/Switchboard/"
     },
     "TimedDataMonitor": {
       "generated_in": "5.8",
@@ -1906,9 +1906,9 @@
       "doc_path": "docs/5.8/large/ChaosClothAsset/"
     },
     "CinematicAssemblyTools": {
-      "generated_in": "5.7",
-      "size": "large",
-      "doc_path": "docs/5.7/large/CinematicAssemblyTools/"
+      "generated_in": "5.8",
+      "size": "xlarge",
+      "doc_path": "docs/5.8/xlarge/CinematicAssemblyTools/"
     },
     "Composite": {
       "generated_in": "5.8",
@@ -1991,9 +1991,9 @@
       "doc_path": "docs/5.8/large/GeoReferencing/"
     },
     "GeometryMask": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/GeometryMask/"
+      "doc_path": "docs/5.8/large/GeometryMask/"
     },
     "GeometryScripting": {
       "generated_in": "5.7",
@@ -2096,9 +2096,9 @@
       "doc_path": "docs/5.7/large/RivermaxCore/"
     },
     "SVGImporter": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "large",
-      "doc_path": "docs/5.7/large/SVGImporter/"
+      "doc_path": "docs/5.8/large/SVGImporter/"
     },
     "ScriptableToolsFramework": {
       "generated_in": "5.8",
@@ -2196,9 +2196,9 @@
       "doc_path": "docs/5.8/xlarge/Chooser/"
     },
     "ClonerEffector": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/ClonerEffector/"
+      "doc_path": "docs/5.8/xlarge/ClonerEffector/"
     },
     "CommonUI": {
       "generated_in": "5.8",
@@ -2226,9 +2226,9 @@
       "doc_path": "docs/5.8/xlarge/ControlRig/"
     },
     "DMXControlConsole": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/DMXControlConsole/"
+      "doc_path": "docs/5.8/xlarge/DMXControlConsole/"
     },
     "DMXEngine": {
       "generated_in": "5.8",
@@ -2281,9 +2281,9 @@
       "doc_path": "docs/5.8/xlarge/DeformerGraph/"
     },
     "DynamicMaterial": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/DynamicMaterial/"
+      "doc_path": "docs/5.8/xlarge/DynamicMaterial/"
     },
     "EngineAssetDefinitions": {
       "generated_in": "5.8",
@@ -2406,9 +2406,9 @@
       "doc_path": "docs/5.8/xlarge/Metasound/"
     },
     "ModelViewViewModel": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/ModelViewViewModel/"
+      "doc_path": "docs/5.8/xlarge/ModelViewViewModel/"
     },
     "MovieRenderPipeline": {
       "generated_in": "5.8",
@@ -2496,9 +2496,9 @@
       "doc_path": "docs/5.8/xlarge/RigVM/"
     },
     "SceneState": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/SceneState/"
+      "doc_path": "docs/5.8/xlarge/SceneState/"
     },
     "SmartObjects": {
       "generated_in": "5.8",
@@ -2511,9 +2511,9 @@
       "doc_path": "docs/5.7/xlarge/StateTree/"
     },
     "StormSync": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/StormSync/"
+      "doc_path": "docs/5.8/xlarge/StormSync/"
     },
     "Synthesis": {
       "generated_in": "5.8",
@@ -2521,9 +2521,9 @@
       "doc_path": "docs/5.8/xlarge/Synthesis/"
     },
     "Takes": {
-      "generated_in": "5.7",
+      "generated_in": "5.8",
       "size": "xlarge",
-      "doc_path": "docs/5.7/xlarge/Takes/"
+      "doc_path": "docs/5.8/xlarge/Takes/"
     },
     "Text3D": {
       "generated_in": "5.8",
@@ -4511,6 +4511,16 @@
       "generated_in": "5.8",
       "size": "small",
       "doc_path": "docs/5.8/small/LiveLinkOBSDevice/"
+    },
+    "ModularViewports": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/ModularViewports/"
+    },
+    "MSGameOSSSelector": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/MSGameOSSSelector/"
     }
   }
 }

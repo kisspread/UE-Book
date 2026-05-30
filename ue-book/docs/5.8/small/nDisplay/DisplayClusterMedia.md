@@ -1,233 +1,223 @@
-# Display Cluster Media
+# nDisplay
 
-> Support for synchronized clustered rendering using multiple PCs in mono or stereo
+> Support for synchronized clustered rendering using multiple PCs in mono or stereo（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 集群媒体模块 |
+| 中文名 | 集群同步渲染 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产，配置数据） |
-| 模块 | `DisplayClusterMedia` (Runtime) |
+| 包含内容 | ✅ 有（蓝图资产、材质、着色器、配置资产） |
+| 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
-| 创建时间 | 2018-06-07 |
+| 创建时间 | 2018-06-08 |
 | 年龄标签 | 👴 老古董（约 8 年） |
-| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterMedia) | |
+| [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay) | |
 
 ## 用途
 
-`DisplayClusterMedia` 模块是 nDisplay 插件的核心子模块之一，专门负责管理 nDisplay 集群中所有与 **媒体输入、输出及同步** 相关的逻辑。它解决的核心问题是：在由多台 PC 组成的 nDisplay 集群中，如何高效、精确地在各个节点（PC）之间捕获、传输和同步渲染画面。
+基于源码分析，nDisplay 是一个用于构建**多PC、多显示器同步渲染系统**的框架。它解决的核心问题是：如何让多台计算机（集群节点）作为一个整体，精确同步地渲染同一场景，并输出到由多个物理显示器（如投影仪、LED墙、CAVE系统）组成的复杂显示环境。
 
-具体来说，该模块提供了以下关键能力：
-1.  **媒体捕获**：将 nDisplay 中单个或多个视口（Viewport）的渲染画面，或者整个后缓冲（Backbuffer）的画面，通过 UE 的 Media Output 框架捕获并输出到外部设备（如采集卡、编码器）。
-2.  **媒体输入**：接收来自外部设备（如摄像机、视频流）的媒体源，并将其作为纹理输入到 nDisplay 的视口或虚拟制片（ICVFX）相机中，实现外部视频合成。
-3.  **帧同步**：通过可配置的同步策略（如 Ethernet Barrier 或 V-blank），确保集群中所有节点的媒体输出在精确的时间点对齐，避免画面撕裂或延迟不一致。
-4.  **延迟队列**：实现可控的渲染延迟，用于补偿网络传输或实现特定的视觉效果。
-5.  **OCIO 支持**：在媒体输入/输出路径上集成 OpenColorIO 颜色管理。
+它不仅仅是一个简单的多窗口管理器，而是一个完整的分布式渲染解决方案，包含了：
+1.  **集群节点管理与同步**：管理集群中的各个PC节点，确保它们渲染同一帧的内容。
+2.  **视图（Viewport）管理**：将物理显示器抽象为逻辑视图，并定义每个视图的投影几何（如弯曲屏幕、多投影、全景）。
+3.  **媒体流传输**：将渲染好的图像帧从一台PC传输到另一台PC，或从集群节点传输到最终的显示器。
+4.  **色彩管理**：在集群中进行统一的色彩校正（Color Grading）和OpenColorIO（OCIO）转换。
+5.  **工具链支持**：提供编辑器工具（Configurator）进行可视化配置，以及与Sequencer（MoviePipeline）的集成，用于离线渲染。
 
-该模块的存在使得 nDisplay 能够无缝接入影视级虚拟制片（VP）、大型 LED 墙、多投影仪融合等专业工作流，这些场景对画面同步性和媒体集成有着极高要求。
+插件默认禁用，因为它面向的是特定的硬件和行业应用（如虚拟制片、主题公园、仿真模拟、可视化设计评审）。
 
 ## 使用场景
 
--   **虚拟制片（In-Camera VFX）**：将 Unreal Engine 的实时渲染画面作为背景，通过采集卡输出到 LED 墙或给后期使用。同时，可以将真实摄像机的视频流输入回引擎，用于实时合成。
--   **大型 LED 墙系统**：由多台 PC 分别驱动 LED 墙的不同区域（Tile），该模块负责将每台 PC 捕获的对应区域画面准确输出，并保持全局同步。
--   **多通道投影融合**：类似 LED 墙，但输出端是投影仪。模块捕获每个视口画面并输出到对应的投影仪，同步策略确保融合区无撕裂。
--   **实时视频合成与监看**：在集群渲染的同时，将特定视口或相机的画面通过 SDI、NDI 等协议输出给现场监视器或导播系统。
--   **电影渲染队列集成**：与 `DisplayClusterMoviePipeline` 模块配合，在离线渲染时精确捕获和同步多机位画面。
+-   你在构建一个**虚拟制片（Virtual Production）LED墙**，需要多台机器同步渲染背景，与实拍演员合成。
+-   你在开发一个**多通道投影系统**（如CAVE），需要将一个场景分割渲染到多个环绕用户的大屏幕上。
+-   你需要为**大型主题公园**设计驾驶模拟器，使用多台投影仪拼接出巨大的视野。
+-   你在进行**高端汽车设计评审**，需要将实时渲染画面输出到高分辨率的LED显示墙，供多人同时观看。
+-   你需要一个**高性能的离线渲染管道**，利用多台机器的GPU资源并行渲染高分辨率或高帧率的视频序列。
 
 ## 蓝图用法
 
-该模块的蓝图接口主要集中在**同步策略**的配置上。这些策略是 `UObject`，可以在 nDisplay 配置资产或通过蓝图动态创建和分配。
+nDisplay 的核心逻辑和配置主要通过编辑器工具和配置资产完成，直接暴露给蓝图的可调用节点相对有限。主要的蓝图交互点在于配置资产的参数。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Set Barrier Timeout` | 设置以太网屏障（Ethernet Barrier）同步策略的等待超时时间（毫秒）。 | `UDisplayClusterMediaOutputSynchronizationPolicyEthernetBarrierBase` |
-| `Set Margin` | 设置基于阈值（Threshold）同步策略（如 V-blank）的时间裕量（毫秒）。 | `UDisplayClusterMediaOutputSynchronizationPolicyThresholdBase` |
-| `Get Handler` | 获取同步策略对应的具体处理程序实例。 | `UDisplayClusterMediaOutputSynchronizationPolicy` |
-| `Create Ethernet Barrier Policy` | 创建一个基于以太网屏障的同步策略实例。 | `UDisplayClusterMediaOutputSynchronizationPolicyEthernetBarrier` |
-| `Create V-blank Policy` | 创建一个基于垂直同步（V-blank）的同步策略实例。 | `UDisplayClusterMediaOutputSynchronizationPolicyVblank` |
+| `BarrierTimeoutMs` (属性) | 设置网络屏障同步的超时时间（毫秒），用于以太网同步策略。 | `UDisplayClusterMediaOutputSynchronizationPolicyEthernetBarrierBase` |
+| `MarginMs` (属性) | 设置基于阈值的同步策略（如V-blank）的同步容差（毫秒）。 | `UDisplayClusterMediaOutputSynchronizationPolicyThresholdBase` |
 
 ### 使用示例（蓝图描述）
 
-假设你需要为 nDisplay 集群配置一个使用以太网同步、超时为 5 秒的媒体输出策略：
-
-1.  在 nDisplay 根 Actor 的配置中，找到 `Media` 相关部分。
-2.  为 `MediaOutputSyncPolicy` 属性创建一个新的 `UDisplayClusterMediaOutputSynchronizationPolicyEthernetBarrier` 对象。
-3.  在该策略对象的细节面板中，将 `BarrierTimeoutMs` 设置为 `5000`。
-4.  这个策略对象将被 nDisplay 系统自动用于同步所有关联的媒体输出设备。
+1.  **配置同步策略**：在编辑器中打开nDisplay配置资产，在媒体输出节点的属性中，可以创建并分配一个`UDisplayClusterMediaOutputSynchronizationPolicy`的子类实例（如`Vblank`或`EthernetBarrier`）。然后在该策略实例的细节面板中，调整`BarrierTimeoutMs`或`MarginMs`等蓝图可编辑的属性，以优化你的硬件环境下的同步性能。
+2.  **操作nDisplay根Actor**：在场景中放置一个`ADisplayClusterRootActor`。通过蓝图可以动态获取它，并访问其集群配置、视口组件等，但直接操控媒体设备（捕获/输入）通常由nDisplay框架内部管理。
 
 ## C++ 用法
 
+DisplayClusterMedia 模块负责管理整个 nDisplay 系统中的媒体输入、输出和同步。其C++接口主要用于底层扩展和自定义同步策略。
+
 ### 头文件引入
 
-使用该模块的核心功能，通常需要引入以下头文件：
 ```cpp
-// 媒体模块入口
 #include "DisplayClusterMediaModule.h"
-
-// 同步策略基类与具体实现
-#include "DisplayClusterMediaOutputSynchronizationPolicy.h"
-#include "DisplayClusterMediaOutputSynchronizationPolicyEthernetBarrier.h"
-#include "DisplayClusterMediaOutputSynchronizationPolicyVblank.h"
-
-// 媒体输入/输出基类（用于理解架构）
-#include "DisplayClusterMediaCaptureBase.h"
-#include "DisplayClusterMediaInputBase.h"
+#include "DisplayClusterMediaHelpers.h"
+// 包含特定同步策略或媒体设备基类的头文件
+#include "Synchronization/DisplayClusterMediaOutputSynchronizationPolicy.h"
 ```
 
 ### 基本用法
 
-从架构看，开发者通常不直接实例化 `FDisplayClusterMediaCaptureViewportFull` 等类，而是通过 **nDisplay 配置系统** 或 **模块内部逻辑** 来驱动它们。配置示例（代码风格）：
+以下代码展示了如何通过模块接口访问和管理媒体设备。通常，媒体设备由nDisplay在初始化时根据配置自动创建，但理解其底层管理方式有助于调试和扩展。
+
 ```cpp
-// 通常通过 UDisplayClusterConfigurationViewport 或 UDisplayClusterConfigurationClusterNode 配置媒体
-// 以下为概念性代码，展示配置如何映射到内部对象
-UDisplayClusterConfigurationViewport* ViewportConfig = GetMyViewportConfig();
+// 来源: DisplayClusterMediaModule.h - 理解模块如何管理设备
+void FDisplayClusterMediaModule::InitializeMedia()
+{
+    // 此函数在nDisplay实例初始化时被调用
+    // 它遍历集群配置，为每个需要媒体功能的视口、ICVFX相机等创建对应的
+    // FDisplayClusterMediaCaptureBase 和 FDisplayClusterMediaInputBase 实例
+    // 并将它们存储在 CaptureDevices 和 InputDevices TMap中
+}
 
-// 设置该视口的媒体输出源为 “MediaOutput_1”，这是一个 UMediaOutput 资产
-ViewportConfig->MediaOutput.MediaOutputId = TEXT("MediaOutput_1");
-
-// 设置该视口的媒体输出同步策略为一个以太网屏障策略
-ViewportConfig->MediaOutput.SyncPolicy = NewObject<UDisplayClusterMediaOutputSynchronizationPolicyEthernetBarrier>(ViewportConfig);
-Cast<UDisplayClusterMediaOutputSynchronizationPolicyEthernetBarrier>(ViewportConfig->MediaOutput.SyncPolicy)->BarrierTimeoutMs = 3000;
-
-// nDisplay 的 DisplayClusterMediaModule 会在初始化时根据这些配置，创建相应的
-// FDisplayClusterMediaCaptureViewportFull 和 FDisplayClusterMediaOutputSynchronizationPolicyHandler
+// 手动获取某个媒体捕获设备（仅为演示，通常不直接调用）
+void ExampleGetMediaDevice()
+{
+    // 假设已知设备ID
+    FString MediaId = TEXT("MyViewport_Capture_0");
+    
+    // 通过单例模块访问
+    // 注意: FDisplayClusterMediaModule 可能需要从模块管理器获取
+    // FDisplayClusterMediaModule* MediaModule = FModuleManager::GetModulePtr<FDisplayClusterMediaModule>(TEXT("DisplayClusterMedia"));
+    // if(MediaModule)
+    // {
+    //     // 内部查找，公共接口可能未直接暴露此查找方法
+    //     // TSharedPtr<FDisplayClusterMediaCaptureBase> CaptureDevice = MediaModule->CaptureDevices.FindRef(MediaId);
+    // }
+}
 ```
 
 ### 进阶用法
 
-**动态更改同步策略**：
+实现一个自定义的媒体输出同步策略。这是DisplayClusterMedia模块最典型的扩展点。
+
 ```cpp
-#include "DisplayClusterMediaModule.h"
-
-// 获取媒体模块实例
-FDisplayClusterMediaModule* MediaModule = FModuleManager::GetModulePtr<FDisplayClusterMediaModule>(TEXT("DisplayClusterMedia"));
-if (MediaModule)
+// 来源: Synchronization/DisplayClusterMediaOutputSynchronizationPolicyEthernetBarrier.h/.cpp 作为参考
+// 1. 创建策略处理器接口的实现
+class FMyCustomSyncPolicyHandler : public IDisplayClusterMediaOutputSynchronizationPolicyHandler
 {
-    // 假设我们知道某个媒体输出设备的ID
-    const FString MediaOutputDeviceId = TEXT("ViewportOut_MyViewport");
+public:
+    virtual void Initialize(UMediaOutput* MediaOutput, UMediaCapture* MediaCapture) override
+    {
+        // 初始化同步机制，例如建立自定义的网络连接或硬件触发
+    }
+    virtual void StartCapture() override
+    {
+        // 开始捕获前的同步准备
+    }
+    virtual void SyncBeforeExportMediaData_RenderThread(FRDGBuilder& GraphBuilder) override
+    {
+        // 在渲染线程的每一帧，实际导出媒体数据之前执行的同步等待
+        // 这是实现精确帧同步的关键函数
+        // 例如，等待来自“主节点”的以太网屏障信号
+    }
+    virtual void StopCapture() override
+    {
+        // 清理同步资源
+    }
+};
 
-    // 创建一个新的V-blank策略，设置2ms的裕量
-    UDisplayClusterMediaOutputSynchronizationPolicyVblank* NewVblankPolicy = NewObject<UDisplayClusterMediaOutputSynchronizationPolicyVblank>();
-    NewVblankPolicy->MarginMs = 2;
-
-    // 通过模块接口更新特定设备的同步策略（具体API需查阅模块公开接口）
-    // MediaModule->UpdateMediaOutputSyncPolicy(MediaOutputDeviceId, NewVblankPolicy);
-}
-```
-
-**理解延迟队列**：
-延迟队列 (`FDisplayClusterFrameQueue`) 用于在渲染管线中插入可控延迟。它缓存每一帧所有视口的纹理和着色器参数。当 `nDisplay` 的 `FrameLatency` 属性被设置时，该队列生效。
-```cpp
-// 队列内部逻辑（简化）
-void FDisplayClusterFrameQueue::HandleEndDraw()
+// 2. 创建同步策略UObject，它持有策略处理器
+UCLASS(editinlinenew, Blueprintable)
+class UMyCustomSyncPolicy : public UDisplayClusterMediaOutputSynchronizationPolicy
 {
-    // 当前帧数据进入队列头部
-    FDisplayClusterFrameQueueItem& HeadItem = Frames[IdxHead];
-    // ... 保存当前所有视口的纹理和数据到 HeadItem
-
-    // 队列尾部的数据被用于最终输出
-    const FDisplayClusterFrameQueueItem& TailItem = Frames[IdxTail];
-    // ... 从 TailItem 加载数据用于合成输出
-
-    // 移动队列索引
-    StepQueueIndices_RenderThread();
-}
+    GENERATED_BODY()
+public:
+    virtual TSharedPtr<IDisplayClusterMediaOutputSynchronizationPolicyHandler> GetHandler() override
+    {
+        if (!Handler.IsValid())
+        {
+            Handler = MakeShared<FMyCustomSyncPolicyHandler>();
+        }
+        return Handler;
+    }
+protected:
+    TSharedPtr<IDisplayClusterMediaOutputSynchronizationPolicyHandler> Handler;
+};
 ```
 
 ## Demo 示例
 
-以下是一个最小示例，展示如何创建一个使用以太网同步策略的媒体输出设备，并将其绑定到一个视口配置上。**注意**：实际使用中，这些配置通常通过 nDisplay 的配置资产完成，此代码仅为演示底层对象关系。
+一个最小的C++示例，演示如何注册一个自定义的媒体同步策略。在实际nDisplay项目中，策略的创建和分配由配置器（Configurator）工具完成。
 
-**MediaDemo.h**
 ```cpp
+// MyCustomSyncPolicy.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "MediaDemo.generated.h"
+#include "Synchronization/DisplayClusterMediaOutputSynchronizationPolicy.h"
+#include "MyCustomSyncPolicy.generated.h"
 
-class UMediaOutput;
-class UDisplayClusterMediaOutputSynchronizationPolicyEthernetBarrier;
+class FMyCustomSyncHandler;
 
-UCLASS(ClassGroup=(nDisplay), meta=(BlueprintSpawnableComponent))
-class YOURPROJECT_API UMediaDemoComponent : public UActorComponent
+UCLASS(editinlinenew, Blueprintable, meta = (DisplayName = "My Custom Sync"))
+class MYPROJECT_API UMyCustomSyncPolicy : public UDisplayClusterMediaOutputSynchronizationPolicy
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    UMediaDemoComponent();
+	virtual TSharedPtr<IDisplayClusterMediaOutputSynchronizationPolicyHandler> GetHandler() override;
 
-    virtual void BeginPlay() override;
-
-    // 在蓝图中可设置的媒体输出资产
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "nDisplay Media Demo")
-    TObjectPtr<UMediaOutput> DemoMediaOutput;
-
-    // 创建并应用同步策略
-    UFUNCTION(BlueprintCallable, Category = "nDisplay Media Demo")
-    void ApplyEthernetSyncPolicy(int32 TimeoutMs = 3000);
-
-private:
-    // 内部使用的同步策略实例
-    UPROPERTY()
-    TObjectPtr<UDisplayClusterMediaOutputSynchronizationPolicyEthernetBarrier> SyncPolicy;
+protected:
+	UPROPERTY()
+	TObjectPtr<FMyCustomSyncHandler> Handler;
 };
+
+// MyCustomSyncPolicy.cpp
+#include "MyCustomSyncPolicy.h"
+// #include "MyCustomSyncHandler.h" // 假设的处理器头文件
+
+TSharedPtr<IDisplayClusterMediaOutputSynchronizationPolicyHandler> UMyCustomSyncPolicy::GetHandler()
+{
+	if (!Handler)
+	{
+		Handler = NewObject<FMyCustomSyncHandler>();
+	}
+	return Handler->AsShared();
+}
 ```
 
-**MediaDemo.cpp**
 ```cpp
-#include "MediaDemo.h"
-#include "DisplayClusterMediaOutputSynchronizationPolicyEthernetBarrier.h"
-#include "MediaOutput.h"
+// MyCustomSyncHandler.h
+#pragma once
 
-UMediaDemoComponent::UMediaDemoComponent()
+#include "CoreMinimal.h"
+#include "Synchronization/IDisplayClusterMediaOutputSynchronizationPolicyHandler.h"
+
+class FMyCustomSyncHandler : public IDisplayClusterMediaOutputSynchronizationPolicyHandler
 {
-    PrimaryComponentTick.bCanEverTick = false;
-}
+public:
+	virtual void Initialize(UMediaOutput* MediaOutput, UMediaCapture* MediaCapture) override;
+	virtual void StartCapture() override;
+	virtual void SyncBeforeExportMediaData_RenderThread(FRDGBuilder& GraphBuilder) override;
+	virtual void StopCapture() override;
 
-void UMediaDemoComponent::BeginPlay()
-{
-    Super::BeginPlay();
-    if (!SyncPolicy)
-    {
-        ApplyEthernetSyncPolicy();
-    }
-}
-
-void UMediaDemoComponent::ApplyEthernetSyncPolicy(int32 TimeoutMs)
-{
-    if (!DemoMediaOutput)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("MediaDemoComponent: DemoMediaOutput is not set."));
-        return;
-    }
-
-    // 创建一个以太网屏障同步策略
-    SyncPolicy = NewObject<UDisplayClusterMediaOutputSynchronizationPolicyEthernetBarrier>(this);
-    SyncPolicy->BarrierTimeoutMs = TimeoutMs;
-
-    UE_LOG(LogTemp, Log, TEXT("MediaDemoComponent: Created Ethernet Barrier Sync Policy with Timeout: %d ms."), TimeoutMs);
-
-    // 在实际的 nDisplay 系统中，你需要将这个 SyncPolicy 和 MediaOutput
-    // 通过配置关联到一个具体的 nDisplay 视口。
-    // 例如，你可以将其保存到某个 UDisplayClusterConfigurationViewport 资产中。
-    // 此处仅为演示对象的创建。
-}
+private:
+	// 自定义同步状态
+	bool bIsInitialized = false;
+	// ... 其他成员，如网络连接句柄，硬件触发器指针等
+};
 ```
 
 ## 模块依赖
 
-从 `DisplayClusterMedia.Build.cs` 分析，该模块有以下关键依赖：
+`DisplayClusterMedia` 模块的核心依赖如其Build.cs所示：
 
 | 模块 | 用途 |
 |---|---|
-| `D3D12RHI` | 提供 DirectX 12 底层渲染硬件接口支持。媒体捕获和输入操作，特别是跨 GPU 传输和纹理操作，深度依赖于图形 API。 |
-| `UnrealEd` | 提供编辑器相关功能。虽然标记为 Runtime，但模块内可能包含用于在编辑器中配置和预览 nDisplay 媒体设置的工具代码。 |
-
-**注意**：该模块是 `nDisplay` 插件的一部分，因此也隐式依赖于 `DisplayCluster` 核心模块以及 `MediaFrameworkUtilities`、`MediaUtils` 等 UE 标准媒体模块。
+| `UnrealEd` | 用于编辑器相关的媒体捕获和预览功能。 |
+| `D3D12RHI` | 用于深度集成D3D12图形API，实现高性能的跨GPU纹理共享和媒体捕获。 |
+| `DisplayClusterConfiguration` | 提供nDisplay集群配置数据的读取能力，媒体模块根据此配置初始化设备。 |
+| `MediaUtils`, `MediaAssets` | Unreal Engine标准的媒体框架，用于驱动`UMediaCapture`和`UMediaPlayer`。 |
+| `RenderCore`, `RHI` | 底层渲染和图形硬件接口，用于渲染线程的纹理操作和屏障同步。 |
 
 ## 维护状态
 
@@ -235,23 +225,22 @@ void UMediaDemoComponent::ApplyEthernetSyncPolicy(int32 TimeoutMs)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2025-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为电影渲染图（MovieGraph）的 nDisplay 输出添加了 EXR 多图层支持。 |
-| 2025-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 将电影管线中的 WarpBlendAlpha 模式合并到 WarpBlend 功能中，简化了配置。 |
-| 2025-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了在媒体渲染图（MRG）中拓扑感知相机命名问题，以及 MPCDI/ICVFX 着色器中不透明度（Alpha）的问题。 |
-| 2025-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复了在输出帧编码回退路径中，未能正确遵循非默认 DisplayGamma 设置的问题。 |
-| 2025-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理尺寸小于视口尺寸时导致的画面闪烁问题。 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为MovieGraph和nDisplay集成添加了EXR多图层输出支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 将MoviePipeline中WarpBlendAlpha模式合并到WarpBlend模式中，简化了配置。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了Movie Render Graph中的相机命名问题，以及MPCDI和ICVFX着色器中的不透明度Alpha通道错误。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复了当使用非默认的DisplayGamma时，输出帧编码回退路径未能正确应用Gamma值的问题。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当GUI纹理尺寸小于视口尺寸时可能导致画面闪烁的问题。 |
 
 ### 维护评价
 
-`DisplayClusterMedia` 模块作为 nDisplay 的核心媒体管线，**维护状态非常活跃**。
-1.  **创建时间**：模块起源于 2018 年的 UE 4.20 企业版，历经多年发展。
-2.  **近期更新**：从 git 历史看，2025 年内有多次实质性功能更新和关键 Bug 修复（如 EXR 多图层、着色器修复、Gamma 处理等），表明 Epic 对其在虚拟制片和电影渲染领域的持续投入。
-3.  **功能复杂度**：模块包含 29 个头文件，涉及捕获、输入、同步、延迟、颜色管理等多个子系统，是 nDisplay 中较为复杂的模块之一。
-4.  **平台支持**：明确支持 Win64 和 Linux，这是专业制作环境的基本要求。
-5.  **推荐度**：**强烈推荐使用**。对于任何需要在多机 nDisplay 集群中进行专业媒体集成和同步输出的项目（尤其是虚拟制片），该模块是必不可少的。虽然功能复杂，但作为官方支持的核心组件，其稳定性和兼容性有保障。对于初学者，建议先理解 nDisplay 的基本配置，再深入该模块的高级功能。
+**积极维护中**。
+
+-   **活跃度**：最后的实质性提交发生在2026年5月，距今非常近，且提交内容涉及功能增强和bug修复，表明插件处于**高强度活跃维护**状态。
+-   **稳定性**：提交历史显示团队持续在修复边缘案例、优化性能和完善与MoviePipeline等核心系统的集成。
+-   **推荐程度**：**强烈推荐**。nDisplay是UE官方支持的专业级集群渲染解决方案，拥有完整的工具链和持续的更新。对于有相应硬件和需求的项目，它是唯一且可靠的选择。唯一需要注意的是其较高的学习曲线和硬件配置要求。
 
 ## 相关链接
 
--   [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterMedia)
--   官方文档: 通常包含在 [nDisplay 官方文档](https://docs.unrealengine.com/en-US/Engine/Rendering/nDisplay/index.html) 的媒体与同步章节中。
--   测试用例: 测试代码通常位于 `Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests/` 目录下，具体媒体相关测试需在该目录内查找。
+- [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/nDisplay-in-Unreal-Engine/) (UE官方文档链接)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)

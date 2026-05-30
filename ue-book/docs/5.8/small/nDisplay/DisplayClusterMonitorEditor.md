@@ -1,13 +1,13 @@
 # nDisplay
 
-> Support for synchronized clustered rendering using multiple PCs in mono or stereo
+> Support for synchronized clustered rendering using multiple PCs in mono or stereo（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
 | 中文名 | 多机同步渲染 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（内容资产） |
+| 包含内容 | ✅ 有（蓝图资产，编辑器工具，材质模板） |
 | 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
@@ -16,315 +16,185 @@
 
 ## 用途
 
-nDisplay 是 UE5 的多机集群渲染框架，解决的核心问题是：**如何让多台 PC 同步渲染同一个场景，并输出到多个物理显示设备上**。
+nDisplay 是 Unreal Engine 中用于**多机集群同步渲染**的核心插件。它解决的核心问题是：如何让多台 PC（节点）协同工作，各自负责渲染一个大场景（如 LED 墙、CAVE 环境、球幕）的一部分，并保持画面的完全同步。
 
-典型应用场景：
-- **LED 虚拟影棚（Virtual Production）**：多个 LED 面板拼接成一面墙，每块面板由独立 PC 渲染
-- **CAVE 系统**：多面投影环境，每面墙由独立 PC 驱动
-- **多屏展示**：大型展会、主题公园的环绕式屏幕
-
-该插件包含 29 个子模块，覆盖从配置、投影、校准、媒体输出、电影渲染管线到多用户同步的完整工作流。本文档聚焦于 **DisplayClusterMonitorEditor** 模块——集群监控编辑器。
-
-**DisplayClusterMonitorEditor** 的职责是提供一个编辑器内的监控面板，让你能：
-- 发现并浏览集群中所有节点和可观察对象（Viewports、Backbuffer、ICVFX Camera 等）
-- 实时查看各节点的渲染画面（通过 NDI 媒体流）
-- 管理观察会话（开始/暂停/停止）
-- 监控节点连接状态和健康状况
+该插件的存在是为了满足虚拟制片（VP）、大型沉浸式体验、科研可视化等对超大分辨率或特殊投影格式有需求的场景。`DisplayClusterMonitorEditor` 模块作为其编辑器扩展，专门用于在编辑器内**监控和管理**整个渲染集群的运行状态、会话和媒体流，是集群调试和运维的关键工具。
 
 ## 使用场景
 
-- 你在搭建 LED 虚拟影棚 → 用 nDisplay 配置集群拓扑和投影
-- 你需要在编辑器中远程查看各集群节点的渲染输出 → 用 DisplayClusterMonitorEditor 的集群监控面板
-- 你需要调试某个节点的画面是否有问题 → 用监控面板的观察会话功能
-- 你需要通过 Movie Pipeline 录制 nDisplay 输出 → 用 DisplayClusterMoviePipeline
+- 你在搭建一个 VP 虚拟制片影棚，使用多块 LED 屏幕组合成一面墙 → 使用 nDisplay 配置屏幕拓扑，并通过 `DisplayClusterMonitorEditor` 监控每块屏幕节点的渲染状态和延迟。
+- 你需要为 CAVE 洞穴式 VR 环境（由多个投影仪驱动）设置同步渲染 → 使用 nDisplay 进行投影校正和集群同步，并使用监控面板检查各投影节点的健康状况。
+- 你在调试一个复杂的多机渲染项目，需要实时查看各节点渲染的最终画面 → 使用 `DisplayClusterMonitorEditor` 的会话视图，远程预览任意节点的后缓冲、UI 层或摄像机画面。
 
 ## 蓝图用法
 
-DisplayClusterMonitorEditor 是一个纯编辑器 UI 模块，不暴露蓝图 API。它的功能通过编辑器菜单栏的 **Cluster Monitor** 面板访问。
+`DisplayClusterMonitorEditor` 模块主要提供编辑器 UI 和底层集群管理逻辑，其核心功能通过 C++ 接口暴露。在蓝图中直接调用的节点较少，主要通过编辑器面板交互。
+
+### 核心节点
+
+| 节点 | 说明 | 所在类 |
+|---|---|---|
+| （无主要公开蓝图节点） | 该模块的功能集成在编辑器窗口和 C++ API 中 | `FClusterMonitorController` |
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "Core/IClusterMonitorController.h"
-#include "Core/IClusterObservable.h"
-#include "Core/IClusterResidence.h"
+#include "IClusterMonitorController.h"
+#include "IClusterObservable.h"
 ```
 
-### 基本用法：创建集群监控控制器
+### 基本用法
+
+获取集群监控控制器并监听事件。
+(来源: `Private/Core/ClusterMonitorController.h`, `Private/Core/IClusterMonitorController.h`)
 
 ```cpp
-// 来源: Private/Core/ClusterMonitorController.h
-#include "Core/IClusterMonitorController.h"
-#include "Core/ClusterMonitorController.h"
+// 假设你有一个对 IClusterMonitorController 的有效引用
+TSharedPtr<IClusterMonitorController> MonitorController = ...;
 
-// 创建监控控制器实例
-TSharedRef<FClusterMonitorController> Controller = MakeShared<FClusterMonitorController>();
+// 开始集群发现和通信
+bool bStarted = MonitorController->StartCommunication();
 
-// 启动通信（开始集群发现和消息传递）
-bool bStarted = Controller->StartCommunication();
+// 绑定事件：当有新的可观测对象（节点、视口等）被发现时
+MonitorController->OnObservableJoined().AddLambda([](const TSharedRef<IClusterObservable>& Observable) {
+    UE_LOG(LogTemp, Log, TEXT("New Observable Found: %s"), *Observable->GetName());
+});
 
-// 获取当前发现的可观察对象数量
-int32 ObservableCount = Controller->GetObservablesNum();
-int32 ActiveSessions = Controller->GetActiveSessionsNum();
-int32 UnresponsiveNodes = Controller->GetUnresponsiveNodesNum();
+// 请求启动某个可观测对象的会话（开始接收其媒体流）
+FGuid ObservableId = ...; // 从某个来源获取
+MonitorController->RequestSessionStart(ObservableId);
 ```
 
-### 基本用法：监听集群事件
+### 进阶用法
+
+管理可观测对象的状态并响应会话变化。
+(来源: `Private/Core/IClusterObservable.h`, `Private/Core/ClusterObservable.h`)
 
 ```cpp
-// 来源: Private/Core/IClusterMonitorController.h
-
-// 监听新的可观察对象被发现
-Controller->OnObservableJoined().AddLambda(
-    [](const TSharedRef<IClusterObservable>& Observable)
-    {
-        UE_LOG(LogClusterMonitorEditor, Log, TEXT("Observable joined: %s [%s]"),
-            *Observable->GetName(),
-            *Observable->GetId().ToString());
-    });
-
-// 监听可观察对象状态更新
-Controller->OnObservableUpdated().AddLambda(
-    [](const TSharedRef<IClusterObservable>& Observable)
-    {
-        UE_LOG(LogClusterMonitorEditor, Log, TEXT("Observable updated: %s"),
-            *Observable->GetName());
-    });
-
-// 监听可观察对象离线
-Controller->OnObservableLeft().AddLambda(
-    [](const TSharedRef<IClusterObservable>& Observable, const FString& Reason)
-    {
-        UE_LOG(LogClusterMonitorEditor, Warning, TEXT("Observable left: %s, Reason: %s"),
-            *Observable->GetName(), *Reason);
-    });
-
-// 监听节点超时（无响应）
-Controller->OnObservableTimeout().AddLambda(
-    [](const TSharedRef<IClusterObservable>& Observable)
-    {
-        UE_LOG(LogClusterMonitorEditor, Warning, TEXT("Observable timeout: %s"),
-            *Observable->GetName());
-    });
-```
-
-### 进阶用法：管理观察会话
-
-```cpp
-// 来源: Private/Core/IClusterMonitorController.h, Private/Core/IClusterObservable.h
-
-// 监听会话状态变化
-Controller->OnSessionStarted().AddLambda(
-    [](const TSharedRef<IClusterObservable>& Observable)
-    {
-        UE_LOG(LogClusterMonitorEditor, Log, TEXT("Session started for: %s"),
-            *Observable->GetName());
-    });
-
-Controller->OnSessionStopped().AddLambda(
-    [](const TSharedRef<IClusterObservable>& Observable)
-    {
-        UE_LOG(LogClusterMonitorEditor, Log, TEXT("Session stopped for: %s"),
-            *Observable->GetName());
-    });
-
-// 请求启动某个可观察对象的观察会话
-FGuid TargetObservableId = /* ... */;
-Controller->RequestSessionStart(TargetObservableId);
-
-// 请求停止特定会话
-Controller->RequestSessionStop(TargetObservableId);
-
-// 请求停止所有活跃会话
-Controller->RequestAllSessionsStop();
-
-// 重新扫描集群
-Controller->Rescan();
-
-// 清除所有无响应节点
-Controller->ClearUnresponsiveEndpoints();
-```
-
-### 进阶用法：查询可观察对象详情
-
-```cpp
-// 来源: Private/Core/IClusterObservable.h, Private/Core/IClusterResidence.h
-
-// 获取特定可观察对象
-TSharedPtr<IClusterObservable> Observable = Controller->GetObservable(ObservableId);
+// 获取一个具体的可观测对象
+TSharedPtr<IClusterObservable> Observable = MonitorController->GetObservable(ObservableId);
 if (Observable.IsValid())
 {
-    // 基本信息
+    // 获取其基本信息
     FString Name = Observable->GetName();
     EDCObservableType Type = Observable->GetType();
     FIntPoint Resolution = Observable->GetResolution();
 
-    // 是否是 Tile（拼接块）
-    bool bIsTile = Observable->IsTile();
-    if (bIsTile)
-    {
-        TOptional<FString> ParentName = Observable->GetParentName();
-        TOptional<FIntPoint> TilePos = Observable->GetTilePos();
-    }
+    // 绑定会话状态变化事件
+    Observable->OnSessionStateChanged().AddLambda([](IClusterObservable::ESessionState NewState) {
+        switch (NewState)
+        {
+        case IClusterObservable::ESessionState::Active:
+            UE_LOG(LogTemp, Log, TEXT("Session is active and streaming."));
+            break;
+        case IClusterObservable::ESessionState::Error:
+            UE_LOG(LogTemp, Error, TEXT("Session encountered an error."));
+            break;
+        // ...
+        }
+    });
 
-    // 获取所属的集群节点（Residence）
-    TSharedRef<IClusterResidence> Residence = Observable->GetResidence();
-    FString ClusterName = Residence->GetClusterName();
-    FString NodeName = Residence->GetNodeName();
-    FString Hostname = Residence->GetHostname();
-    bool bIsOffscreen = Residence->IsNodeOffscreen();
-    IClusterResidence::EConnectionState ConnState = Residence->GetConnectionState();
-
-    // 会话控制
-    IClusterObservable::ESessionState SessionState = Observable->GetSessionState();
+    // 如果会话已启动，可以控制媒体播放
     if (Observable->IsSessionRunning())
     {
-        Observable->Play();
-        // Observable->Pause();
-        // Observable->Stop();
+        Observable->Pause(); // 暂停流
+        Observable->Play();  // 恢复播放
     }
-
-    // 获取媒体资源（用于自定义渲染）
-    UNDIMediaSource* MediaSource = Observable->GetMediaSource();
-    UMediaTexture* MediaTexture = Observable->GetMediaTexture();
-    UMediaPlayer* MediaPlayer = Observable->GetMediaPlayer();
 }
 ```
 
 ## Demo 示例
 
-### DisplayClusterMonitorEditor 模块入口
-
+一个最小化的监控控制器使用示例，展示如何创建控制器并处理基本事件。
 ```cpp
-// DCMonitorEditorModule.h
+// MyClusterMonitorActor.h
 #pragma once
-
 #include "CoreMinimal.h"
-#include "Modules/ModuleManager.h"
+#include "GameFramework/Actor.h"
+#include "IClusterMonitorController.h"
+#include "MyClusterMonitorActor.generated.h"
 
-class FDCMonitorEditorModule : public IModuleInterface
+UCLASS()
+class AMyClusterMonitorActor : public AActor
 {
+    GENERATED_BODY()
+
 public:
-    virtual void StartupModule() override;
-    virtual void ShutdownModule() override;
-};
-```
-
-```cpp
-// DCMonitorEditorModule.cpp
-#include "DCMonitorEditorModule.h"
-#include "DCMonitorEditorLog.h"
-#include "DCMonitorEditorStyle.h"
-#include "Widgets/SClusterMonitorPanel.h"
-
-DEFINE_LOG_CATEGORY(LogClusterMonitorEditor);
-
-static const FLazyName NAME_ClusterMonitor_Container("nDisplay");
-static const FLazyName NAME_ClusterMonitor_Category("Cluster Monitor");
-static const FLazyName NAME_ClusterMonitor_Section("General");
-
-void FDCMonitorEditorModule::StartupModule()
-{
-    // 注册编辑器样式
-    FDCMonitorEditorStyle::Get();
-
-    // 注册设置项和 UI 面板标签页
-    RegisterSettings();
-    RegisterTabs();
-}
-
-void FDCMonitorEditorModule::ShutdownModule()
-{
-    UnregisterSettings();
-    UnregisterTabs();
-}
-```
-
-### 自定义监控面板集成示例
-
-```cpp
-// MyMonitorExtension.h
-#pragma once
-
-#include "CoreMinimal.h"
-#include "Core/IClusterMonitorController.h"
-#include "Core/IClusterObservable.h"
-
-// 演示如何在自定义模块中集成集群监控功能
-class FMyMonitorExtension
-{
-public:
-    void Initialize(TSharedRef<IClusterMonitorController> InController)
-    {
-        Controller = InController;
-
-        // 绑定事件
-        Controller->OnObservableJoined().AddSP(
-            SharedThis(this), &FMyMonitorExtension::HandleObservableJoined);
-
-        Controller->OnObservableTimeout().AddSP(
-            SharedThis(this), &FMyMonitorExtension::HandleObservableTimeout);
-
-        // 启动通信
-        Controller->StartCommunication();
-    }
-
-    void Shutdown()
-    {
-        if (Controller.IsValid())
-        {
-            Controller->StopCommunication();
-            Controller.Reset();
-        }
-    }
-
-    // 列出所有当前活跃的可观察对象
-    void ListAllObservables()
-    {
-        int32 Count = Controller->GetObservablesNum();
-        UE_LOG(LogTemp, Log, TEXT("Found %d observables in cluster"), Count);
-
-        // 注意：接口未提供遍历所有 Observable 的方法，
-        // 需通过事件回调逐个收集
-    }
+    virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-    void HandleObservableJoined(const TSharedRef<IClusterObservable>& Observable)
-    {
-        UE_LOG(LogTemp, Log, TEXT("[Joined] %s (Type: %d) on node: %s"),
-            *Observable->GetName(),
-            static_cast<int32>(Observable->GetType()),
-            *Observable->GetResidence()->GetNodeName());
-    }
+    TSharedPtr<IClusterMonitorController> ClusterMonitor;
 
-    void HandleObservableTimeout(const TSharedRef<IClusterObservable>& Observable)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[Timeout] %s on host: %s"),
-            *Observable->GetName(),
-            *Observable->GetResidence()->GetHostname());
-    }
-
-    TSharedPtr<IClusterMonitorController> Controller;
+    // 事件处理函数
+    void HandleObservableJoined(const TSharedRef<IClusterObservable>& Observable);
+    void HandleSessionStarted(const TSharedRef<IClusterObservable>& Observable);
 };
+```
+
+```cpp
+// MyClusterMonitorActor.cpp
+#include "MyClusterMonitorActor.h"
+
+void AMyClusterMonitorActor::BeginPlay()
+{
+    Super::BeginPlay();
+
+    // 创建并初始化监控控制器（通常由编辑器模块管理，此处为演示）
+    // 注意：在实际编辑器代码中，控制器实例通常是单例或由模块持有。
+    ClusterMonitor = MakeShared<FClusterMonitorController>();
+
+    // 绑定事件
+    ClusterMonitor->OnObservableJoined().AddUObject(this, &AMyClusterMonitorActor::HandleObservableJoined);
+    ClusterMonitor->OnSessionStarted().AddUObject(this, &AMyClusterMonitorActor::HandleSessionStarted);
+
+    // 启动通信
+    ClusterMonitor->StartCommunication();
+    UE_LOG(LogTemp, Log, TEXT("Cluster Monitor Communication Started."));
+}
+
+void AMyClusterMonitorActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (ClusterMonitor.IsValid())
+    {
+        // 解绑事件
+        ClusterMonitor->OnObservableJoined().RemoveAll(this);
+        ClusterMonitor->OnSessionStarted().RemoveAll(this);
+
+        // 停止通信并释放资源
+        ClusterMonitor->StopCommunication();
+        ClusterMonitor.Reset();
+    }
+
+    Super::EndPlay(EndPlayReason);
+}
+
+void AMyClusterMonitorActor::HandleObservableJoined(const TSharedRef<IClusterObservable>& Observable)
+{
+    UE_LOG(LogTemp, Log, TEXT("Actor Detected New Observable: %s (Type: %d)"),
+        *Observable->GetName(),
+        static_cast<int32>(Observable->GetType()));
+}
+
+void AMyClusterMonitorActor::HandleSessionStarted(const TSharedRef<IClusterObservable>& Observable)
+{
+    UE_LOG(LogTemp, Log, TEXT("Session Started for: %s. Media source available: %s"),
+        *Observable->GetName(),
+        Observable->GetMediaSource() ? TEXT("Yes") : TEXT("No"));
+}
 ```
 
 ## 模块依赖
 
-DisplayClusterMonitorEditor 模块自身 Build.cs 中的特殊依赖：
+从 `DisplayClusterMonitorEditor.Build.cs` 分析，该模块是一个**编辑器模块**，其功能依赖于 Unreal Engine 的编辑器框架。
 
 | 模块 | 用途 |
 |---|---|
-| `UnrealEd` | 编辑器框架集成（设置注册、标签页管理） |
+| `UnrealEd` | 用于创建编辑器面板、工具栏、Tab 等 UI 组件。 |
 
-nDisplay 插件整体还有其他独特依赖（跨模块）：
-
-| 模块 | 用途 |
-|---|---|
-| `D3D12RHI` | Direct3D 12 渲染硬件接口（DisplayClusterMedia, SharedMemoryMedia） |
-| `LevelEditor` | 关卡编辑器集成（DisplayCluster） |
-| `EditorWidgets` | 编辑器控件（DisplayCluster） |
+**注意**：该插件包含大量其他模块（如 `DisplayCluster`, `DisplayClusterProjection`, `DisplayClusterMedia` 等），这些是核心运行时模块，拥有更广泛的依赖（如 `Core`, `Engine`, `RHI`, `Media`, `Networking` 等）。`DisplayClusterMonitorEditor` 作为其编辑器部分，本身依赖较少，但使用整个 nDisplay 系统需要所有这些模块协同工作。
 
 ## 维护状态
 
@@ -332,26 +202,21 @@ nDisplay 插件整体还有其他独特依赖（跨模块）：
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | MovieGraph 添加 EXR 多层渲染支持 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | MoviePipeline 合并 WarpBlendAlpha 模式到 WarpBlend |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复拓扑感知相机命名和 MPCDI/ICVFX 着色器的不透明 Alpha 问题 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 输出帧编码回退时支持非默认 DisplayGamma |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理尺寸小于视口尺寸时的闪烁问题 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为电影管线（MovieGraph）和 nDisplay 添加 EXR 多层渲染支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 电影管线：将 WarpBlendAlpha 模式合并到 WarpBlend 功能中。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知摄像机的命名问题；修复 MPCDI/ICVFX 着色器中的不透明度通道。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | nDisplay：在输出帧编码回退路径中，遵守非默认的 DisplayGamma 设置。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复当 GUI 纹理尺寸小于视口尺寸时发生的闪烁问题。 |
 
 ### 维护评价
 
-**活跃维护** ★★★★★
+**活跃维护**。
 
-- **创建于 2018 年**，约 8 年历史，是 UE 虚拟制片（Virtual Production）核心功能之一
-- **最近一周内有多次提交**（2026-05-16 至 2026-05-26），更新频率极高
-- 更新内容涵盖功能增强（EXR 多层支持、WarpBlend 模式合并）和 Bug 修复（着色器、Gamma、闪烁）
-- 作为 Epic Games 官方维护的虚拟制片基础设施，长期获得持续投入
-- `EnabledByDefault: false` 表示该插件需要手动启用，适合特定的虚拟制片/多屏渲染场景
-- **强烈推荐**用于 LED 虚拟影棚、多机集群渲染等专业场景
+nDisplay 作为 Epic Games 重点维护的大型企业级功能插件，持续收到更新。从提供的 git 历史看，最近一次提交在 **2026年5月**，内容涉及新特性支持（EXR 多层）、电影管线集成、着色器 Bug 修复和编辑器体验优化，表明该项目仍在**积极开发和完善中**。
 
-> ⚠️ 注意：这是一个超大型插件（29 个模块，1351 个源文件），本文档仅覆盖 DisplayClusterMonitorEditor 模块。完整文档需要按子模块拆分。
+尽管插件创建于 2018 年（约8年），但其功能复杂且面向专业领域，持续有稳定的功能迭代和问题修复。**强烈推荐在有相关需求的项目中使用**。需要注意的是，该插件默认未启用（`EnabledByDefault: false`），需要在项目设置中手动开启。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- 官方文档：（未提供 DocsURL，请参考 [UE 官方 nDisplay 文档](https://docs.unrealengine.com/en-US/ProductionPipelines/VirtualProduction/nDisplay/)）
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/n-display-in-unreal-engine/) (通用 nDisplay 文档)

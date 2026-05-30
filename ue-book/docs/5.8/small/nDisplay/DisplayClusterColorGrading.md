@@ -1,14 +1,14 @@
-# nDisplay
+# DisplayClusterColorGrading
 
-> Support for synchronized clustered rendering using multiple PCs in mono or stereo（照抄，不翻译）
+> 支持使用多台 PC 在单眼或立体模式下进行同步的集群渲染
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 多PC集群渲染 |
+| 中文名 | 颜色分级模块 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产） |
-| 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
+| 包含内容 | ❌ 无 |
+| 模块 | `DisplayClusterColorGrading` (Runtime) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
 | 年龄标签 | 👴 老古董（约 8 年） |
@@ -16,37 +16,42 @@
 
 ## 用途
 
-nDisplay 是一个用于**同步集群渲染**的核心系统，它解决了使用多台计算机（PC）驱动多个显示设备（如投影仪、LED墙）进行大规模、高分辨率或沉浸式显示时的渲染同步和内容管理问题。它允许将一个UE场景的渲染负载分布到多个计算机上，同时确保所有屏幕的渲染内容在空间和时间上保持精确同步。
+`DisplayClusterColorGrading` 是 nDisplay 集群渲染插件中的一个核心编辑器/运行时模块。它解决的主要问题是：**在虚拟制作（如 LED 墙拍摄）和多通道渲染等场景中，为艺术家和操作员提供一个统一的、直观的颜色分级界面，以管理集群中所有渲染节点（PC）的颜色校正设置。**
 
-`DisplayClusterColorGrading` 模块是 nDisplay 生态中的一个**编辑器扩展模块**，它专门负责在 nDisplay 操作面板中集成颜色分级（Color Grading）编辑器。它解决了为复杂的多视口/多节点显示系统（例如 LED 墙的多个区域）提供直观、高效的颜色分级工作流的问题。它通过生成数据模型，将 nDisplay 特有的颜色分级设置（如按视口或按ICVFX相机分组）暴露给标准的 UMG 颜色分级面板，使美术师能够精细调整每个显示区域的最终画面效果。
+在传统的单一工作站工作流中，调色通常在一个应用窗口内完成。但在 nDisplay 集群渲染中，一个完整的画面被切分并分布在多台机器的多个显示器或投影仪上输出。此模块的作用是抽象底层的复杂性，提供一个单一的 UI（颜色分级面板），允许用户同时控制集群中多个视口（Viewports）或节点（Nodes）的全局颜色设置，确保所有输出在颜色上保持一致和艺术可控。它特别针对 `ADisplayClusterRootActor` 和 `UDisplayClusterICVFXCameraComponent` 等 nDisplay 核心资产设计了数据模型生成器。
 
 ## 使用场景
 
-- **虚拟制作 (Virtual Production) / LED 墙拍摄**: 你使用大型 LED 墙作为背景，需要为屏幕上不同区域（例如天空、地平线、前景）分别调整颜色和曝光，以匹配现场布光和摄影机设置。使用 `DisplayClusterColorGrading` 可以为每个独立的渲染节点或视口创建颜色分级组。
-- **大型沉浸式环境 (Immersive Environments)**: 你在搭建一个由多台投影机拼接的穹顶或 CAVE 系统。不同投影区域由于投影仪特性和幕布材质，可能需要单独的颜色校正。此模块允许你针对每个投影区域（对应 nDisplay 中的一个节点或视口）进行独立的 LUT 和色彩调整。
-- **复杂多屏展示系统**: 例如主题公园游乐设施、展览馆，需要多台 PC 同步渲染多个显示器上的内容，并需要为每个显示器精细匹配色彩一致性。
-- **高级视觉特效 (ICVFX) 工作流**: 当使用 nDisplay 的 In-Camera VFX 功能时，需要为虚拟相机看到的 LED 墙部分（即虚拟背景）进行独立的颜色分级，以完美融入实拍画面。`DisplayClusterColorGradingGenerator_ICVFXCamera` 就是为此设计的。
+- 你正在使用 nDisplay 设置一个由多台 PC 驱动的大型 LED 墙进行虚拟拍摄 → 需要使用此模块为整个 LED 墙的各个部分进行统一的颜色分级。
+- 你的项目需要将一个场景渲染到多个显示器（例如环幕、CAVE）上，且需要在编辑器中精确控制每个显示器的输出色调、饱和度等。
+- 你作为虚拟制作的技术美术或现场操作员，需要在 nDisplay Operator 面板内快速调整整个集群渲染效果的颜色外观。
+- 你正在开发基于 nDisplay 的多通道渲染流程，并需要集成专业的颜色校正工具链。
 
 ## 蓝图用法
 
-`DisplayClusterColorGrading` 模块主要作为编辑器扩展工作，其核心功能是通过 C++ 接口和编辑器 UI 暴露，蓝图节点相对较少。主要的交互入口是通过模块接口获取颜色分级抽屉的单例。
+此模块主要提供编辑器 UI 和运行时数据模型管理，其公开的蓝图接口相对有限，主要用于模块访问和面板控制。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Get Color Grading Drawer Singleton` | 获取管理颜色分级抽屉 UI 的单例对象，用于打开或刷新抽屉。 | `IDisplayClusterColorGrading` |
-| `Dock Color Grading Drawer` | 将颜色分级抽屉停靠到 nDisplay 操作面板的标签页中。 | `IDisplayClusterColorGradingDrawerSingleton` |
-| `Refresh Color Grading Drawers` | 刷新所有已打开的颜色分级抽屉的 UI，使其与当前关卡和活动根 Actor 的状态同步。 | `IDisplayClusterColorGradingDrawerSingleton` |
+| `Get` | 获取 `DisplayClusterColorGrading` 模块的单例接口。在模块可用后调用。 | `IDisplayClusterColorGrading` |
+| `IsAvailable` | 检查颜色分级模块是否已加载并准备就绪。 | `IDisplayClusterColorGrading` |
+| `GetColorGradingDrawerSingleton` | 获取用于管理颜色分级抽屉面板的单例对象。 | `IDisplayClusterColorGrading` |
+| `DockColorGradingDrawer` | 将颜色分级面板永久停靠到 nDisplay Operator 窗口的标签页中。 | `IDisplayClusterColorGradingDrawerSingleton` |
+| `RefreshColorGradingDrawers` | 强制刷新所有已打开的颜色分级面板的 UI，以匹配当前关卡和激活的根 Actor 状态。 | `IDisplayClusterColorGradingDrawerSingleton` |
 
 ### 使用示例（蓝图描述）
 
-1.  在任意蓝图（如你的编辑器工具蓝图）中，调用 `IDisplayClusterColorGrading::Get()` 函数（需要先确保 `DisplayClusterColorGrading` 模块可用）。
-2.  将返回的接口对象引线连接到 `Get Color Grading Drawer Singleton` 节点，获取 `IDisplayClusterColorGradingDrawerSingleton` 对象。
-3.  调用 `Dock Color Grading Drawer` 节点。这将在你的 nDisplay 操作面板界面中创建一个新的标签页，其中包含完整的颜色分级界面。
-4.  之后，可以通过 `Refresh Color Grading Drawers` 节点来更新该界面，例如在关卡变化或 Actor 选择变化后。
+在自定义的编辑器工具蓝图或编辑器 Utility Widget 中，你可以按以下逻辑使用：
+1. 首先，调用 `IDisplayClusterColorGrading::IsAvailable()` 确认模块已加载。
+2. 如果可用，调用 `IDisplayClusterColorGrading::Get()` 获取模块实例。
+3. 通过实例调用 `GetColorGradingDrawerSingleton()` 获取面板管理器。
+4. 使用管理器的 `DockColorGradingDrawer()` 或 `RefreshColorGradingDrawers()` 来控制颜色分级面板的显示和更新。
 
 ## C++ 用法
+
+该模块的 C++ 接口主要用于与 nDisplay 编辑器框架深度集成，自定义颜色分级数据源或扩展面板功能。
 
 ### 头文件引入
 
@@ -57,134 +62,98 @@ nDisplay 是一个用于**同步集群渲染**的核心系统，它解决了使�
 
 ### 基本用法
 
-主要通过单例接口控制颜色分级抽屉的显示和刷新。
-
+获取模块单例并访问其管理的对象。
 ```cpp
-// 来源: Public/IDisplayClusterColorGrading.h, Public/IDisplayClusterColorGradingDrawerSingleton.h
+// 检查模块是否就绪
 if (IDisplayClusterColorGrading::IsAvailable())
 {
-    // 获取颜色分级模块接口
+    // 获取模块接口
     IDisplayClusterColorGrading& ColorGradingModule = IDisplayClusterColorGrading::Get();
-    // 获取抽屉管理器单例
+    
+    // 获取颜色分级面板管理器
     IDisplayClusterColorGradingDrawerSingleton& DrawerSingleton = ColorGradingModule.GetColorGradingDrawerSingleton();
-
-    // 将颜色分级抽屉停靠在操作面板中
-    DrawerSingleton.DockColorGradingDrawer();
-
-    // 当某些状态改变时，刷新UI
+    
+    // 刷新面板以反映最新的关卡数据变化
     DrawerSingleton.RefreshColorGradingDrawers();
 }
 ```
 
-### 进阶用法
+### 进阶用法：自定义颜色分级数据模型生成器
 
-创建自定义的颜色分级数据模型生成器，以扩展 nDisplay 颜色分级系统，支持新的对象类型。以下示例展示如何注册一个新的生成器来处理 `ADisplayClusterRootActor` 的自定义颜色分级属性。
+你可以通过继承 `IColorGradingEditorDataModelGenerator` 接口并使用模块提供的基类，为自定义的 nDisplay 相关组件创建颜色分级数据源。这允许你将自己的组件属性暴露到标准的颜色分级面板中。
 
 ```cpp
-// 来源: Private/DataModelGenerators/DisplayClusterColorGradingGenerator_RootActor.h
-// 假设你有一个自定义的根Actor子类，需要特殊的颜色分级处理。
-class FMyCustomColorGradingGenerator : public FDisplayClusterColorGradingGenerator_ColorGradingRenderingSettings
+// 假设你有一个自定义的摄像机后处理组件 UMyPostProcessComponent
+// 1. 创建一个数据模型生成器类
+class FMyComponentColorGradingGenerator : public FDisplayClusterColorGradingGenerator_ColorGradingRenderingSettings
 {
 public:
-    static TSharedRef<IColorGradingEditorDataModelGenerator> MakeInstance()
-    {
-        return MakeShareable(new FMyCustomColorGradingGenerator());
-    }
+    static TSharedRef<IColorGradingEditorDataModelGenerator> MakeInstance();
+    
+    virtual void Initialize(const TSharedRef<FColorGradingEditorDataModel>& InDataModel, const TSharedRef<IPropertyRowGenerator>& InPropertyRowGenerator) override;
+    virtual void GenerateDataModel(IPropertyRowGenerator& PropertyRowGenerator, FColorGradingEditorDataModel& OutDataModel) override;
 
-    //~ IColorGradingEditorDataModelGenerator interface
-    virtual void GenerateDataModel(IPropertyRowGenerator& PropertyRowGenerator, FColorGradingEditorDataModel& OutColorGradingDataModel) override
-    {
-        // 1. 在PropertyRowGenerator中查找你的自定义属性句柄
-        // 2. 使用基类提供的 CreateColorGradingGroup 或 CreateColorGradingElement 方法构建数据模型
-        // 3. 将构建好的组添加到 OutColorGradingDataModel 中
-    }
-    // ... 其他虚函数实现
+    // ... 实现其他必要的虚函数
+    // 使用基类提供的辅助函数如 CreateColorGradingGroup, FindPropertyHandle 等来构建数据模型
 };
 
-// 在某个合适的地方（如模块启动时）注册这个生成器
-// 注册通常由DisplayClusterColorGrading模块内部管理，但你可以通过扩展接口添加。
+// 2. 在某个编辑器初始化点（如模块的 StartupModule 中）注册你的生成器
+// 需要查找 nDisplay 颜色分级系统注册自定义生成器的具体接口或流程。
 ```
 
 ## Demo 示例
 
-一个最小的编辑器工具，展示如何触发 nDisplay 颜色分级抽屉的停靠操作。
+一个最小化的、演示如何与 `DisplayClusterColorGrading` 模块交互的 C++ 类示例。
 
-**ColorGradingDrawerControlTool.h**
+**MyColorGradingHelper.h**
 ```cpp
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Toolkits/AssetEditorToolkit.h"
 
-class FColorGradingDrawerControlTool : public FAssetEditorToolkit
+class FMyColorGradingHelper
 {
 public:
-    void InitEditor(const TArray<UObject*>& InObjects);
-
-    // 一个简单的按钮回调，用于打开颜色分级抽屉
-    void OnOpenColorGradingDrawerClicked();
-
-    // IToolkit interface
-    virtual FName GetToolkitFName() const override;
-    virtual FText GetBaseToolkitName() const override;
-    virtual FLinearColor GetWorldCentricTabColorScale() const override;
-    virtual FString GetWorldCentricTabPrefix() const override;
+    // 刷新颜色分级面板
+    static void RefreshColorGradingPanel();
+    
+    // 将颜色分级面板停靠到Operator窗口
+    static void DockColorGradingPanel();
 };
 ```
 
-**ColorGradingDrawerControlTool.cpp**
+**MyColorGradingHelper.cpp**
 ```cpp
-#include "ColorGradingDrawerControlTool.h"
+#include "MyColorGradingHelper.h"
 #include "IDisplayClusterColorGrading.h"
-#include "Widgets/Input/SButton.h"
-#include "Widgets/SBoxPanel.h"
+#include "IDisplayClusterColorGradingDrawerSingleton.h"
 
-void FColorGradingDrawerControlTool::InitEditor(const TArray<UObject*>& InObjects)
+void FMyColorGradingHelper::RefreshColorGradingPanel()
 {
-    // 创建一个简单的UI，包含一个按钮
-    TSharedRef<SVerticalBox> Widget = SNew(SVerticalBox)
-        + SVerticalBox::Slot()
-        .AutoHeight()
-        .Padding(10.0f)
-        [
-            SNew(SButton)
-            .Text(FText::FromString(TEXT("停靠 nDisplay 颜色分级面板")))
-            .OnClicked_Lambda([this]()
-            {
-                OnOpenColorGradingDrawerClicked();
-                return FReply::Handled();
-            })
-        ];
+    if (IDisplayClusterColorGrading::IsAvailable())
+    {
+        IDisplayClusterColorGrading::Get().GetColorGradingDrawerSingleton().RefreshColorGradingDrawers();
+    }
 }
 
-void FColorGradingDrawerControlTool::OnOpenColorGradingDrawerClicked()
+void FMyColorGradingHelper::DockColorGradingPanel()
 {
     if (IDisplayClusterColorGrading::IsAvailable())
     {
         IDisplayClusterColorGrading::Get().GetColorGradingDrawerSingleton().DockColorGradingDrawer();
     }
 }
-
-FName FColorGradingDrawerControlTool::GetToolkitFName() const
-{
-    return FName("ColorGradingDrawerControlTool");
-}
-
-// ... 其他虚函数实现
 ```
 
 ## 模块依赖
 
-从 `DisplayClusterColorGrading.Build.cs` 分析。依赖了多个与编辑器UI和属性编辑相关的模块。
+此模块为 `DisplayClusterColorGrading` (Runtime)，但它深度集成于编辑器。其构建依赖中包含了多个编辑器相关模块，用于创建 UI 和与编辑器选择系统交互。
 
 | 模块 | 用途 |
 |---|---|
-| `PropertyEditor` | 用于与细节面板和属性行生成器交互，是颜色分级数据模型生成的基础。 |
-| `DisplayClusterConfiguration` | 获取 nDisplay 配置数据，例如节点、视口信息，用于构建按视口分组的颜色分级选项。 |
-| `DisplayClusterOperator` | 集成到 nDisplay 操作面板，这是颜色分级抽屉的主要宿主界面。 |
-| `ColorGradingEditor` | UE 内置的颜色分级编辑器模块，`SColorGradingPanel` 等 UI 控件的来源。 |
-| `EditorWidgets` | 提供一些通用的编辑器控件，如 `SInlineEditableTextBlock`，用于重命名颜色分级组。 |
-| `WorkspaceMenuStructure` | 用于在编辑器工作区菜单中注册新标签页。 |
+| `UnrealEd` | 访问编辑器核心功能，如属性行生成器 (`IPropertyRowGenerator`)、细节面板节点等。 |
+| `EditorWidgets` | 提供编辑器通用的 UI 控件。 |
+| `LevelEditor` | 与关卡编辑器集成，监听选择变化等事件。 |
 
 ## 维护状态
 
@@ -192,26 +161,22 @@ FName FColorGradingDrawerControlTool::GetToolkitFName() const
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 MovieGraph 和 nDisplay 增加 EXR 多图层支持，提升渲染输出灵活性。 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | nDisplay 电影管线：将 WarpBlendAlpha 模式合并到 WarpBlend 中，简化配置。 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知相机命名问题；修复 MPCDI/ICVFX 着色器中的不透明 Alpha 问题。 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复在输出帧编码回退时未遵循非默认 DisplayGamma 设置的问题。 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 MovieGraph 和 nDisplay 添加了 EXR 多层支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并了 MoviePipeline 中的 WarpBlendAlpha 模式到 WarpBlend。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了 MRG 中拓扑感知的摄像机命名问题，以及 MPCDI/ICVFX 着色器中的不透明 Alpha 问题。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | nDisplay：在输出帧编码的回退路径中遵守非默认的 DisplayGamma 设置。 |
 | 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理尺寸小于视口尺寸时出现的闪烁问题。 |
 
 ### 维护评价
 
-**综合评价：活跃维护中，核心企业级功能。**
-
-1.  **创建时间与年龄**：创建于 2018 年，已有 8 年历史，是一个成熟的企业级功能。
-2.  **更新频率**：**极其活跃**。提供的 git 历史显示，仅在 2026 年 5 月的最后一周内就有至少 5 次提交，修复 bug 并增加新功能（如 EXR 多图层支持）。
-3.  **维护状态**：**持续维护**。Epic Games 仍在积极开发和修复 nDisplay，这从其密集的更新记录可以看出。
-4.  **已知问题与限制**：
-    *   系统复杂，学习曲线陡峭。
-    *   需要专门的硬件（多台 PC、同步设备、投影仪等）才能发挥其作用。
-    *   默认禁用 (`EnabledByDefault: false`)，需要用户手动在项目设置中启用。
-5.  **推荐使用**：**强烈推荐**用于专业虚拟制作、沉浸式体验或任何需要多 PC 同步高分辨率渲染的项目。它是 Unreal Engine 在该领域的标准解决方案。
+该模块属于 **活跃维护** 状态。
+- **年龄**：创建于 2018 年，已有 8 年历史，是 nDisplay 功能集的成熟组成部分。
+- **近期更新**：最近的提交（2026年5月）集中在功能增强（如 EXR 多层）、渲染管线优化（WarpBlend 模式合并）和关键 bug 修复（如着色器、闪烁问题）。这些更新表明模块仍在积极开发，以支持更复杂的虚拟制作流程（如 MovieGraph）。
+- **是否活跃**：非常活跃。更新频繁且与当前的虚拟制作技术演进同步。
+- **已知限制**：作为复杂的集群渲染工具链的一部分，其使用和调试需要一定的 nDisplay 配置知识。模块本身不直接暴露高级蓝图 API，更侧重于提供编辑器内工具。
+- **推荐使用**：**强烈推荐**。对于任何涉及 nDisplay 多机渲染和专业调色的项目，此模块是必不可少的核心工具。它由 Epic Games 直接维护，与引擎其他部分的集成度高，稳定性有保障。
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://docs.unrealengine.com/5.8/en-US/n-display-in-unreal-engine/)（UE 官方 nDisplay 文档）
+- 官方文档：无（.uplugin 中 DocsURL 为空）

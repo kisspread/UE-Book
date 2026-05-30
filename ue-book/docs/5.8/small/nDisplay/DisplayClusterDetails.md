@@ -1,14 +1,14 @@
-# nDisplay
+# nDisplay Details Panel
 
 > Support for synchronized clustered rendering using multiple PCs in mono or stereo
 
 | 属性 | 值 |
 |---|---|
-| 中文名 | 集群渲染 |
+| 中文名 | nDisplay详情面板 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（配置资产、着色器、编辑器工具） |
-| 模块 | `DisplayCluster` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterWarp` (Runtime), `DisplayClusterMedia` (Runtime), `SharedMemoryMedia` (Runtime) 等 (共 29 个模块) |
+| 包含内容 | ✅ 有（蓝图资产） |
+| 模块 | `DisplayClusterDetails` (Runtime), `DisplayCluster` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterShaders` (Runtime), `SharedMemoryMedia` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
 | 年龄标签 | 👴 老古董（约 7 年） |
@@ -16,172 +16,251 @@
 
 ## 用途
 
-nDisplay 是一个高级的集群渲染解决方案，用于在多个物理显示器、投影仪或计算机节点上同步渲染同一场景。它不仅仅是将画面扩展到多个屏幕，而是实现了一套完整的分布式渲染框架。其核心目标是解决以下问题：
-1.  **多屏同步**：确保所有参与渲染的PC（集群节点）在每一帧都渲染完全一致的视图，实现无缝拼接。
-2.  **高级投影校正**：支持复杂的投影表面（如曲面屏、LED墙、穹顶），并通过内置的投影映射（Projection Mapping）和变形（Warping）功能进行几何校正。
-3.  **摄影机内视效（ICVFX）**：专为虚拟制片优化，支持将虚拟场景实时渲染到LED墙上，并与物理摄影机完美同步，用于拍摄。
-4.  **立体声（Stereo）渲染**：支持为VR或3D显示进行立体渲染。
+`DisplayClusterDetails` 模块是 nDisplay 插件的一个专门组件，用于在 Unreal Editor 的 nDisplay Operator（操作员）面板中提供一个可停靠的详情抽屉。其核心功能是为选定的 `ADisplayClusterRootActor`（nDisplay 根 Actor）及其 `UDisplayClusterICVFXCameraComponent`（ICVFX 相机组件）显示一个经过筛选和组织的属性面板。
 
-它通过一个中心的“根Actor”来管理整个集群的拓扑结构、视口配置和同步逻辑。
+这个模块解决了在多显示器集群渲染环境下，艺术家或灯光师需要频繁调整大量相互关联的 Actor 和组件属性时的操作效率问题。它不是一个通用的细节面板，而是一个专门针对 nDisplay ICVFX（In-Camera Visual Effects）工作流优化的工具。它允许用户将相关的属性分组（Section）、自定义显示，并将面板状态（如选择的对象、展开的子节）持久化，从而提供比标准细节面板更高效、更专注的编辑体验。
 
 ## 使用场景
 
--   **虚拟制片（LED Volume）**：你在搭建一个用LED墙作为背景的拍摄现场，需要用实时渲染的虚拟场景替代绿幕 → 用 nDisplay 管理整个LED墙的渲染集群，并与摄影机跟踪系统同步。
--   **多屏显示装置**：你在创建一个沉浸式的飞行模拟器或科学可视化CAVE系统，需要多个投影仪无缝拼接 → 用 nDisplay 进行边缘融合和几何校正。
--   **大型活动或展览**：你在策划一个使用多台投影仪进行建筑投影映射的灯光秀 → 用 nDisplay 控制内容在异形表面上的精确映射。
--   **多机位同步录制/广播**：你需要从同一个虚拟场景中，同时渲染并输出多个不同机位的高清视频流 → 用 nDisplay 的多视口功能。
+- **虚拟制片（LED Volume）**：在使用 nDisplay 驱动的大型 LED 墙进行虚拟拍摄时，灯光师或实时操作员需要快速调整主摄像机、各个 ICVFX 摄像机的曝光、颜色校正、遮罩形状等参数。本模块的抽屉面板提供了经过整理的、上下文相关的属性访问。
+- **主题公园/大型装置**：在驾驶舱模拟器、穹顶投影或 CAVE（Cave Automatic Virtual Environment）等使用多台PC同步渲染的装置中，通过详情面板统一管理所有显示节点的投影校准和渲染设置。
+- **需要扩展属性编辑**：当标准细节面板因包含过多无关属性而效率低下时，开发人员可以通过数据模型生成器（DataModelGenerator）机制，为特定的 nDisplay 相关 Actor 或组件类型注册自定义的、仅包含关键属性的详情视图。
 
 ## 蓝图用法
 
-由于 nDisplay 的核心逻辑（集群同步、帧同步）高度依赖C++和底层网络，其主要的用户交互接口是**编辑器工具**和**配置资产**。通过蓝图可控制的运行时节点相对有限，主要集中在状态查询和控制上。
+本模块主要面向编辑器扩展和 C++ 开发，直接暴露给蓝图的节点较少。其主要的公开接口是模块单例和抽屉单例的访问。
 
 ### 核心节点
 
 | 节点 | 说明 | 所在类 |
 |---|---|---|
-| `Is nDisplay Cluster` | 检查当前运行环境是否为 nDisplay 集群的一部分 | `UDisplayClusterBlueprintAPI` |
-| `Get Active Root Actor` | 获取当前场景中激活的 `ADisplayClusterRootActor` | `UDisplayClusterBlueprintAPI` |
-| `Get nDisplay Node ID` | 获取当前节点的名称（如 “node0”） | `UDisplayClusterBlueprintAPI` |
-| `Set Cluster Sync Settings` | 运行时调整集群同步相关的设置 | `UDisplayClusterBlueprintAPI` |
+| `Get Details Module` | 获取 `IDisplayClusterDetails` 模块单例，用于访问详情面板功能。 | `IDisplayClusterDetails` |
+| `Is Details Module Available` | 检查详情模块是否已加载并可用。 | `IDisplayClusterDetails` |
+| `Dock Details Drawer` | 请求将详情抽屉停靠到 nDisplay Operator 面板的标签页中。 | `IDisplayClusterDetailsDrawerSingleton` |
+| `Refresh Details Drawers` | 刷新所有已打开的详情抽屉实例的 UI。参数 `bPreserveDrawerState` 决定是否保持当前的选择状态。 | `IDisplayClusterDetailsDrawerSingleton` |
 
 ### 使用示例（蓝图描述）
-你无法直接通过蓝图构建一个完整的 nDisplay 集群，这需要通过编辑器中的 `ADisplayClusterRootActor` 和 nDisplay 配置编辑器来完成。蓝图主要用于在运行时读取状态或触发特定事件。
-例如，在关卡蓝图中，你可以使用 `Get Active Root Actor` 节点获取当前的根Actor，然后通过它访问其配置的视口信息。
+
+虽然不能直接在事件图表中放置大量详情面板逻辑，但可以通过蓝图编辑器扩展（Editor Utility Widget）来间接使用。一个典型的流程是：
+1.  在你的编辑器工具蓝图中，获取 `IDisplayClusterDetails` 模块。
+2.  调用 `Get Details Drawer Singleton` 节点。
+3.  使用该单例的 `Refresh Details Drawers` 节点，当你的工具检测到需要刷新显示时（例如，根 Actor 属性发生变化后），强制更新详情面板。
 
 ## C++ 用法
 
+本模块的核心价值在于其**可扩展的数据模型生成器（DataModel Generator）机制**。开发者可以为自己的 Actor 或组件类型注册自定义的详情面板视图。
+
 ### 头文件引入
-使用 nDisplay 的C++ API通常需要引入特定模块的头文件。
+
 ```cpp
-#include "DisplayClusterModule.h" // 核心模块
-#include "DisplayClusterRootActor.h" // 根Actor类
-#include "DisplayClusterConfigurationTypes.h" // 配置数据类型
+// 模块接口
+#include "IDisplayClusterDetails.h"
+
+// 数据模型相关（用于扩展）
+#include "DisplayClusterDetailsDataModel.h"
 ```
 
 ### 基本用法
-与蓝图类似，C++ 中更多是用于访问运行时数据和扩展系统功能。
-```cpp
-// 获取 nDisplay 模块接口
-IDisplayCluster& DisplayClusterModule = FModuleManager::GetModuleChecked<IDisplayCluster>(TEXT("DisplayCluster"));
 
-// 检查模块是否已初始化
-if (DisplayClusterModule.IsModuleInitialized())
+**获取并使用详情抽屉单例（来自 `DisplayClusterDetailsModule.h`）**
+
+```cpp
+#include "IDisplayClusterDetails.h"
+
+// 在需要操作详情面板的代码中
+if (IDisplayClusterDetails::IsAvailable())
 {
-    // 通常，nDisplay 的控制权在编辑器的配置资产和 ADisplayClusterRootActor 上。
-    // 运行时，你可能会通过集群的同步机制来协调各节点。
-    UE_LOG(LogTemp, Log, TEXT("nDisplay module is running."));
+    IDisplayClusterDetails& DetailsModule = IDisplayClusterDetails::Get();
+    IDisplayClusterDetailsDrawerSingleton& DrawerSingleton = DetailsModule.GetDetailsDrawerSingleton();
+    
+    // 刷新所有打开的详情抽屉，保持状态
+    DrawerSingleton.RefreshDetailsDrawers(true);
+    
+    // 或者，将抽屉停靠到 Operator 面板
+    // DrawerSingleton.DockDetailsDrawer();
 }
 ```
 
-### 进阶用法：创建自定义投影策略
-nDisplay 的投影系统是可扩展的。你可以实现自己的投影策略。
+### 进阶用法
+
+**注册自定义数据模型生成器（来自 `DisplayClusterDetailsDataModel.h`）**
+
+假设你有一个自定义的 Actor `AMyCustomStageLight`，你希望在 nDisplay 详情面板中为其显示精简的属性。
+
+1.  **定义生成器类**（通常放在你的编辑器模块中）：
 ```cpp
-// 1. 定义一个继承自 IDisplayClusterProjectionPolicyFactory 的工厂类
-class FMyCustomProjectionFactory : public IDisplayClusterProjectionPolicyFactory
+// MyCustomStageLightDetailsGenerator.h
+#pragma once
+
+#include "DisplayClusterDetailsDataModel.h"
+
+class AMyCustomStageLight;
+
+class FMyCustomStageLightDetailsGenerator : public IDisplayClusterDetailsDataModelGenerator
 {
 public:
-    virtual TSharedPtr<IDisplayClusterProjectionPolicy> Create(const FString& ProjectionPolicyId, const FDisplayClusterConfigurationProjection* InConfigurationProjectionPolicy) override
-    {
-        // 根据配置创建并返回你的自定义投影策略实例
-        return MakeShared<FMyCustomProjectionPolicy>(ProjectionPolicyId, InConfigurationProjectionPolicy);
-    }
-};
+    static TSharedRef<IDisplayClusterDetailsDataModelGenerator> MakeInstance();
 
-// 2. 在你的模块启动时注册这个工厂
-void FMyModule::StartupModule()
+    // IDisplayClusterDetailsDataModelGenerator interface
+    virtual void Initialize(const TSharedRef<FDisplayClusterDetailsDataModel>& DetailsDataModel, const TSharedRef<IPropertyRowGenerator>& PropertyRowGenerator) override;
+    virtual void Destroy(const TSharedRef<FDisplayClusterDetailsDataModel>& DetailsDataModel, const TSharedRef<IPropertyRowGenerator>& PropertyRowGenerator) override;
+    virtual void GenerateDataModel(IPropertyRowGenerator& PropertyRowGenerator, FDisplayClusterDetailsDataModel& OutDetailsDataModel) override;
+
+private:
+    TArray<TWeakObjectPtr<AMyCustomStageLight>> StageLights;
+};
+```
+
+2.  **实现并注册**：
+```cpp
+// MyCustomStageLightDetailsGenerator.cpp
+#include "MyCustomStageLightDetailsGenerator.h"
+#include "MyCustomStageLight.h"
+
+TSharedRef<IDisplayClusterDetailsDataModelGenerator> FMyCustomStageLightDetailsGenerator::MakeInstance()
 {
-    IDisplayCluster& DCModule = IDisplayCluster::Get();
-    if (DCModule.IsModuleInitialized())
-    {
-        // 注册工厂，使得配置中可以使用 “MyCustom” 作为投影策略类型
-        DCModule.GetProjectionFactory().RegisterProjectionPolicyFactory(TEXT("MyCustom"), MakeShared<FMyCustomProjectionFactory>());
-    }
+    return MakeShared<FMyCustomStageLightDetailsGenerator>();
+}
+
+void FMyCustomStageLightDetailsGenerator::Initialize(...)
+{
+    // 在此处获取将要生成数据模型的 AMyCustomStageLight 实例指针
+    // StageLights = ...
+}
+
+void FMyCustomStageLightDetailsGenerator::Destroy(...) { /* 清理工作 */ }
+
+void FMyCustomStageLightDetailsGenerator::GenerateDataModel(IPropertyRowGenerator& PropertyRowGenerator, FDisplayClusterDetailsDataModel& OutDetailsDataModel)
+{
+    // 为 OutDetailsDataModel.DetailsSections 添加自定义的 Section
+    // 例如，只添加“Intensity”和“Color”属性到一个新的 Section。
+    FDisplayClusterDetailsDataModel::FDetailsSection CustomSection;
+    CustomSection.DisplayName = NSLOCTEXT("MySection", "LightProperties", "Light Properties");
+    // ... 配置 CustomSection 的 Subsections 和 Categories
+    
+    OutDetailsDataModel.DetailsSections.Add(CustomSection);
+}
+```
+
+3.  **在模块启动时注册**：
+```cpp
+// 在你的编辑器模块的 StartupModule() 中
+#include "DisplayClusterDetailsDataModel.h"
+
+void FMyEditorModule::StartupModule()
+{
+    FDisplayClusterDetailsDataModel::RegisterDetailsDataModelGenerator<AMyCustomStageLight>(
+        FGetDetailsDataModelGenerator::CreateStatic(&FMyCustomStageLightDetailsGenerator::MakeInstance)
+    );
 }
 ```
 
 ## Demo 示例
 
-以下是一个最小化的C++示例，展示如何在模块中注册一个自定义的投影策略工厂。
-**MyProjectionModule.h**
+以下示例展示如何创建一个最小的数据模型生成器，为自定义 Actor 注册详情面板。
+
+**MyDemoActorDetailsGenerator.h**
 ```cpp
 #pragma once
-#include "Modules/ModuleManager.h"
+#include "DisplayClusterDetailsDataModel.h"
 
-class FMyProjectionModule : public IModuleInterface
+class AMyDemoActor;
+
+class FMyDemoActorDetailsGenerator : public IDisplayClusterDetailsDataModelGenerator
 {
 public:
-    virtual void StartupModule() override;
-    virtual void ShutdownModule() override;
+    static TSharedRef<IDisplayClusterDetailsDataModelGenerator> MakeInstance();
 
-    static inline FMyProjectionModule& Get()
-    {
-        return FModuleManager::GetModuleChecked<FMyProjectionModule>(TEXT("MyProjectionModule"));
-    }
+    virtual void Initialize(const TSharedRef<FDisplayClusterDetailsDataModel>& InDataModel, const TSharedRef<IPropertyRowGenerator>& InPropertyRowGenerator) override;
+    virtual void Destroy(const TSharedRef<FDisplayClusterDetailsDataModel>& InDataModel, const TSharedRef<IPropertyRowGenerator>& InPropertyRowGenerator) override;
+    virtual void GenerateDataModel(IPropertyRowGenerator& PropertyRowGenerator, FDisplayClusterDetailsDataModel& OutDataModel) override;
+
+private:
+    TArray<TWeakObjectPtr<AMyDemoActor>> CachedActors;
 };
 ```
 
-**MyProjectionModule.cpp**
+**MyDemoActorDetailsGenerator.cpp**
 ```cpp
-#include "MyProjectionModule.h"
-#include "DisplayClusterModule.h"
-#include "Render/Projection/IDisplayClusterProjectionPolicyFactory.h"
-#include "Render/Projection/IDisplayClusterProjectionPolicy.h"
+#include "MyDemoActorDetailsGenerator.h"
+#include "MyDemoActor.h" // 假设这是你的自定义 Actor 类
 
-// 假设你已实现了 FMyCustomProjectionPolicy 和 FMyCustomProjectionFactory
-// #include "MyCustomProjectionPolicy.h"
-
-void FMyProjectionModule::StartupModule()
+TSharedRef<IDisplayClusterDetailsDataModelGenerator> FMyDemoActorDetailsGenerator::MakeInstance()
 {
-    // 等待 nDisplay 模块初始化完成
-    FCoreDelegates::OnAllModuleLoadingComplete.AddLambda([]()
-    {
-        if (IDisplayCluster::IsAvailable())
-        {
-            IDisplayCluster& DCModule = IDisplayCluster::Get();
-            // 注册自定义的投影策略工厂
-            // DCModule.GetProjectionFactory().RegisterProjectionPolicyFactory(TEXT("MyCustom"), MakeShared<FMyCustomProjectionFactory>());
-            UE_LOG(LogTemp, Log, TEXT("Custom projection policy factory registered (example)."));
-        }
-    });
+    return MakeShared<FMyDemoActorDetailsGenerator>();
 }
 
-void FMyProjectionModule::ShutdownModule()
+void FMyDemoActorDetailsGenerator::Initialize(const TSharedRef<FDisplayClusterDetailsDataModel>& InDataModel, const TSharedRef<IPropertyRowGenerator>& InPropertyRowGenerator)
 {
-    // 清理工作，如果需要的话
+    // InDataModel->GetObjects() 可能包含多个 UObjects，你需要筛选出 AMyDemoActor
+    // 这里简化为：假设列表已被正确过滤。
+    // 通常，Generator 的创建是通过静态注册的委托，由系统在需要时调用。
 }
 
-IMPLEMENT_MODULE(FMyProjectionModule, MyProjectionModule)
+void FMyDemoActorDetailsGenerator::Destroy(...) {}
+
+void FMyDemoActorDetailsGenerator::GenerateDataModel(IPropertyRowGenerator& PropertyRowGenerator, FDisplayClusterDetailsDataModel& OutDataModel)
+{
+    // 为你的 Actor 创建一个自定义的详情节 (Section)
+    FDisplayClusterDetailsDataModel::FDetailsSection DemoSection;
+    DemoSection.DisplayName = FText::FromString(TEXT("Demo Actor Properties"));
+    
+    // 你可以创建子节 (Subsections) 以进一步组织属性
+    FDisplayClusterDetailsDataModel::FDetailsSubsection MainSub;
+    MainSub.DisplayName = FText::FromString(TEXT("Main"));
+    DemoSection.Subsections.Add(MainSub);
+
+    // 这里只创建结构，实际的属性过滤和定制通过 DetailCustomizationDelegate 或 Categories 完成
+    // 更高级的用法可以重写 IDetailCustomization 来精确控制哪些属性显示。
+
+    OutDataModel.DetailsSections.Add(DemoSection);
+}
+```
+
+**注册（在你的编辑器模块 StartupModule 中）**：
+```cpp
+#include "DisplayClusterDetailsDataModel.h"
+
+FDisplayClusterDetailsDataModel::RegisterDetailsDataModelGenerator<AMyDemoActor>(
+    FGetDetailsDataModelGenerator::CreateStatic(&FMyDemoActorDetailsGenerator::MakeInstance)
+);
 ```
 
 ## 模块依赖
 
-nDisplay 包含多个子模块。要使用其核心功能（如创建根Actor、进行投影），你的模块通常需要依赖以下模块：
+本模块 (`DisplayClusterDetails`) 的功能依赖于 nDisplay 的核心和 Operator 模块。对于希望**扩展**详情面板内容的开发者，需要关注以下模块。
 
 | 模块 | 用途 |
 |---|---|
-| `DisplayCluster` | nDisplay 的核心运行时模块，包含集群同步、视口管理等基础功能 |
-| `DisplayClusterConfiguration` | 处理 nDisplay 的配置数据（.ndisplay资产） |
-| `DisplayClusterProjection` | 投影策略和映射算法 |
-| `SharedMemoryMedia` | 用于节点间基于共享内存的高性能媒体（纹理）传输 |
-| `DisplayClusterMedia` | 整合媒体框架，处理纹理在集群中的分发 |
+| `DisplayCluster` | nDisplay 核心运行时模块，提供 `ADisplayClusterRootActor` 等基础类型。 |
+| `DisplayClusterOperator` | nDisplay Operator 面板模块，详情抽屉需要集成到其中。 |
+
+*注：上表仅列出该模块独特且关键的依赖。其 `Build.cs` 还隐含依赖了常见的 `Core`, `CoreUObject`, `Engine`, `Slate`, `UMG` 等标准模块。*
 
 ## 维护状态
 
 ### 近期更新
+
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 nDisplay 的 MovieGraph 管线添加 EXR 多图层输出支持。 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并MoviePipeline中的WarpBlendAlpha模式到WarpBlend，简化接口。 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复MRG中拓扑感知相机命名；修复MPCDI/ICVFX着色器中的不透明度问题。 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 在输出帧编码回退时，正确处理非默认的显示伽马值。 |
-| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复当GUI纹理尺寸小于视口尺寸时可能出现的闪烁问题。 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | 为 nDisplay 的 Movie Graph 输出添加 EXR 多层支持。 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 将 MoviePipeline 中的 WarpBlendAlpha 模式合并到 WarpBlend 模式。 |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复了 MRG 中拓扑感知相机命名问题以及 MPCDI/ICVFX 着色器中的不透明度 Alpha 问题。 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复在输出帧编码回退路径中未正确使用非默认 DisplayGamma 设置的问题。 |
+| 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复了当 GUI 纹理尺寸小于视口尺寸时可能导致的闪烁问题。 |
 
 ### 维护评价
-nDisplay 虽然创建于2018年（约7年前），是一个“老古董”级别的插件，但它一直是 Epic Games 虚拟制片战略的核心组成部分。**从近期的提交记录（2025年）来看，它仍在被非常活跃地维护和开发**，更新内容聚焦于功能增强（如EXR多层支持）、与新系统（MovieGraph）的集成以及重要的Bug修复。这表明它是一个成熟、稳定且持续投入的关键技术。
 
-**推荐使用**：如果你需要开发涉及多屏同步渲染、投影校正、尤其是虚拟制片（ICVFX）的项目，nDisplay 是UE5中官方的、功能完备的解决方案。尽管入门门槛较高，但其稳定性和功能深度值得投入学习。
+- **维护状态**：**活跃维护**。
+- **分析**：
+    1.  **创建时间早**：该插件/模块创建于 2018 年，是 Epic 官方为支持企业级和虚拟制片需求而开发的核心组件。
+    2.  **更新非常频繁**：仅从提供的最后几次提交记录（均在 2026 年 5 月）来看，其维护非常活跃，持续有功能增强（如 EXR 多层、模式合并）和关键 bug 修复。
+    3.  **核心组件**：作为 Unreal Engine 虚拟制片和大型显示解决方案的核心部分，它会被长期支持和维护。
+    4.  **已知问题/限制**：由于其复杂性和与特定硬件/软件的集成（如多 PC 同步、特定 GPU），在不同配置下可能会遇到特定问题，但 Epic 通过持续的更新来应对。
+- **结论**：**强烈推荐使用**。这是用于专业虚拟制片、主题娱乐和大型沉浸式体验的标准工具，拥有来自 Epic 的官方和持续支持。
 
 ## 相关链接
+
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- 官方文档（请参考 Epic Games 官方文档站点，路径通常为“引擎功能 > 虚拟制片 > nDisplay”）
-- 测试用例：插件内部包含 `DisplayClusterTests` 模块，路径为 `Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests/`。
+- [官方文档](https://docs.unrealengine.com/5.8/en-US/in-camera-vfx-in-unreal-engine/)
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)

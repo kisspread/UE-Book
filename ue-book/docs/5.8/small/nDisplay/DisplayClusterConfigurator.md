@@ -1,13 +1,13 @@
 # nDisplay
 
-> Support for synchronized clustered rendering using multiple PCs in mono or stereo
+> Support for synchronized clustered rendering using multiple PCs in mono or stereo（照抄，不翻译）
 
 | 属性 | 值 |
 |---|---|
 | 中文名 | 集群显示 |
 | 分类 | Misc |
 | 默认启用 | ❌ 否 |
-| 包含内容 | ✅ 有（蓝图资产、配置数据、着色器、编辑器工具） |
+| 包含内容 | ✅ 有（配置蓝图资产、材质、测试资源） |
 | 模块 | `DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External) |
 | 实验性 | 否 |
 | 创建时间 | 2018-06-07 |
@@ -16,230 +16,255 @@
 
 ## 用途
 
-nDisplay 是 UE5 中用于**多机集群同步渲染**的核心插件，解决在多台 PC 上同步渲染并输出到多个物理显示器（或投影仪）的技术需求。它主要用于：
+nDisplay 是 UE5 的**集群渲染同步系统**，用于在**多台 PC** 上驱动**多屏幕投影显示**，支持单目和立体（Stereo）渲染模式。
 
-- **LED 虚拟拍摄**（ICVFX）：在 LED 墙上实时渲染摄像机视口内容，支持 Camera Frustum 追踪
-- **CAVE/穹顶投影**：多台投影仪拼接输出到曲面屏幕，支持 MPCDI、EasyBlend、Mesh 等多种变形校正方案
-- **多屏同步输出**：将一个 UE 场景渲染到多个物理显示器上，保持帧同步
-- **投影策略系统**：支持 Simple、Camera、Mesh、Dome、VIOSO、EasyBlend、MPCDI、Manual、Reference 等多种投影映射方式
-- **媒体 IO 集成**：支持 SharedMemoryMedia、Rivermax 等媒体传输协议，支持分块媒体（Tiled Media）配置
-- **电影管线集成**：通过 MoviePipeline 模块支持离线渲染 nDisplay 场景为 EXR 序列
+**核心解决的问题**：
 
-插件默认**不启用**（`EnabledByDefault: false`），需要在项目设置中手动开启，因为它是专业级虚拟制作工具，仅在特定硬件集群环境中使用。
+1. **多机同步渲染**：在多台独立 PC 上同时渲染同一场景的不同视口，并保持帧同步（frame lock）和状态同步，适用于 CAVE、Powerwall、LED Volume 等沉浸式显示环境
+2. **投影变形与边缘融合**：支持多种投影策略（MPCDI、EasyBlend、Manual、Mesh、Dome 等），处理投影面的几何变形（warp）和多投影仪之间的边缘融合（blend）
+3. **ICVFX 虚拟制片**：通过 ICVFX Camera 组件支持 LED Volume 上的虚拟场景渲染，是 Unreal 虚拟制片管线的关键组件
+4. **媒体输入/输出集成**：支持与 Rivermax、SharedMemoryMedia 等媒体框架集成，实现 NDI/SMPTE 2110 等专业视频信号的输入输出
+5. **配置管理**：通过配置蓝图（DisplayClusterBlueprint）集中管理所有节点、视口、投影策略和显示拓扑
+
+**为什么存在**：传统的单机多显示器方案无法满足专业显示行业对帧同步、几何校正和大规模集群的需求。nDisplay 提供了从配置、编辑、调试到运行时的完整工具链，是 Unreal 在沉浸式显示和虚拟制片领域的核心基础设施。
 
 ## 使用场景
 
-- 你在做**虚拟拍摄（Virtual Production）**，需要 LED 墙实时显示场景 → 用 nDisplay 配置 ICVFX Camera 和 LED Viewport
-- 你需要搭建 **CAVE 沉浸式环境**，多台投影仪拼接投影 → 用 nDisplay 配置多 ClusterNode + Mesh/MPCDI 投影策略
-- 你有多台 PC 组成渲染集群，需要**帧同步渲染**到多个显示器 → 用 nDisplay 配置 Cluster 拓扑和渲染同步策略
-- 你需要将 nDisplay 场景**离线渲染为视频序列帧** → 用 DisplayClusterMoviePipeline 模块
-- 你需要通过**媒体流**（SharedMemory 或网络）将渲染结果输出到外部设备 → 用 DisplayClusterMedia + SharedMemoryMedia
+- 你在搭建 **CAVE 洞穴式 VR 显示系统**，需要多台 PC 同步渲染不同墙面 → 用 nDisplay 配置多节点集群
+- 你在做 **LED Volume 虚拟制片**（如 The Mandalorian 风格），需要将虚拟场景渲染到 LED 墙上 → 用 nDisplay 的 ICVFX 功能
+- 你需要在 **球幕/穹顶投影** 中进行几何校正 → 用 nDisplay 的 Dome/MPCDI 投影策略
+- 你有一个 **Powerwall 多投影仪拼接显示**，需要边缘融合 → 用 nDisplay 的 Warp/Blend 模块
+- 你需要将渲染输出通过 **SMPTE 2110 / Rivermax** 发送到专业视频设备 → 用 nDisplay 的 Media 模块
+- 你要在 **影视虚拟制片** 中使用 Movie Render Queue 录制多视口 → 用 nDisplay 的 MoviePipeline 集成
 
 ## 蓝图用法
 
-nDisplay 的核心配置主要通过 **DisplayClusterBlueprint 资产**和编辑器 UI 完成，而非传统的蓝图节点调用。以下是关键的可操作节点：
+> **注意**：nDisplay 的运行时蓝图 API 主要集中在 `DisplayCluster` 和 `DisplayClusterConfiguration` 模块中。以下基于 `DisplayClusterConfigurator` 编辑器模块中的可配置属性和工作流提取。
 
 ### 核心节点
 
-| 节点 | 说明 | 所在类 |
+nDisplay 的使用主要通过 **配置蓝图（DisplayCluster Blueprint）** 而非运行时蓝图节点。核心工作流如下：
+
+| 操作 | 说明 | 所在类/模块 |
 |---|---|---|
-| `UDisplayClusterBlueprint` | nDisplay 配置蓝图资产，包含 Cluster、Layout、Screen 等所有配置 | `UDisplayClusterBlueprint` |
-| `UDisplayClusterConfiguratorEditorSubsystem.ImportAsset` | 从 .cfg/.ndisplay 文件导入配置到蓝图资产 | `UDisplayClusterConfiguratorEditorSubsystem` |
-| `UDisplayClusterConfiguratorEditorSubsystem.SaveConfig` | 将配置数据导出为 .cfg 文件 | `UDisplayClusterConfiguratorEditorSubsystem` |
-| `UDisplayClusterConfiguratorEditorSubsystem.ReloadConfig` | 从文件重新加载配置数据 | `UDisplayClusterConfiguratorEditorSubsystem` |
+| 创建 nDisplay 配置蓝图 | 在 Content Browser 右键 → Miscellaneous → nDisplay Configuration | `UDisplayClusterBlueprint` |
+| 配置集群节点 | 在 Cluster 面板中添加主机和节点 | `UDisplayClusterConfigurationCluster` |
+| 配置视口 | 为每个集群节点添加视口，设置分辨率和区域 | `UDisplayClusterConfigurationViewport` |
+| 选择投影策略 | 在 Viewport Details 中选择 MPCDI/Mesh/Dome/EasyBlend 等 | `FDisplayClusterConfiguratorProjectionCustomization` |
+| 配置渲染同步策略 | 设置帧同步策略（NVIDIA/None/自定义） | `FDisplayClusterConfiguratorRenderSyncPolicyCustomization` |
+| 导入 MPCDI 配置 | 导入 MPCDI 文件自动生成投影配置 | `FDisplayClusterConfiguratorMPCDIImporter` |
 
-### 使用示例（编辑器工作流）
+### 配置蓝图编辑器面板
 
-1. **创建 nDisplay 配置**：在 Content Browser 右键 → Miscellaneous → nDisplay Configuration，创建 `UDisplayClusterBlueprint` 资产
-2. **双击打开编辑器**：打开 DisplayClusterConfigurator 蓝图编辑器，包含以下面板：
-   - **Cluster 面板**：管理集群节点（Host IP、Viewport、ICVFX Camera）
-   - **Output Mapping 面板**：可视化编辑多显示器布局映射
-   - **SCS 编辑器**：管理组件层级（Screen、Camera、XForm 等）
-3. **导入 MPCDI 文件**：通过工具栏 Import → MPCDI，自动创建 Screen 和 Viewport 配置
-4. **导出配置**：通过 File → Export 将配置保存为 .cfg 文件，供集群中的各 PC 使用
+nDisplay 配置蓝图编辑器提供以下面板：
+
+| 面板 | 功能 |
+|---|---|
+| **Cluster 树视图** | 管理主机、集群节点和视口的层级结构 |
+| **Output Mapping** | 可视化编辑各视口在屏幕上的位置映射关系 |
+| **Details** | 编辑选中对象的属性（投影策略、同步策略、媒体配置等） |
+| **Scene Preview** | 3D 预览场景中 nDisplay 组件的布局 |
+
+### 使用示例（编辑器配置流程）
+
+1. **创建配置蓝图**：Content Browser → 右键 → Miscellaneous → nDisplay Configuration
+2. **双击打开编辑器**：在 Cluster 树视图中可以看到默认的集群结构
+3. **添加集群节点**：右键 Cluster → Add Cluster Node，设置主机 IP 和视口数量
+4. **配置视口**：选中视口节点，在 Details 面板中设置：
+   - **Region**：视口在屏幕上的位置和大小（X, Y, W, H）
+   - **Camera**：关联的相机组件
+   - **Projection Policy**：选择投影策略（如 MPCDI、Mesh、Manual 等）
+5. **Output Mapping 编辑**：在 Output Mapping 面板中拖拽调整各视口的屏幕布局
+6. **导出配置**：File → Export Configuration 保存为 .cfg 文件，供集群运行时使用
 
 ## C++ 用法
 
 ### 头文件引入
 
 ```cpp
-#include "DisplayClusterConfiguratorBlueprintEditor.h"
-#include "DisplayClusterConfiguratorModule.h"
-#include "DisplayClusterConfigurationClusterUtils.h"
-```
+// 集群配置工具
+#include "ClusterConfiguration/DisplayClusterConfiguratorClusterUtils.h"
 
-### 基本用法
-
-从 `DisplayClusterConfiguratorClusterUtils.h` 提取的集群操作工具函数：
-
-```cpp
-// 来源：Public/ClusterConfiguration/DisplayClusterConfiguratorClusterUtils.h
-#include "DisplayClusterConfigurationClusterUtils.h"
-
-// 创建一个新的集群节点并添加到集群中
-UDisplayClusterConfigurationClusterNode* NewNode = UE::DisplayClusterConfiguratorClusterUtils::AddClusterNodeToCluster(
-    ClusterNode, Cluster, TEXT("MyClusterNode"));
-
-// 将视口添加到集群节点
-UDisplayClusterConfigurationViewport* NewViewport = UE::DisplayClusterConfiguratorClusterUtils::AddViewportToClusterNode(
-    Viewport, ClusterNode, TEXT("MyViewport"));
-
-// 设置主节点
-bool bSuccess = UE::DisplayClusterConfiguratorClusterUtils::SetClusterNodeAsPrimary(ClusterNode);
-
-// 重命名集群节点（自动去重）
-bool bRenamed = UE::DisplayClusterConfiguratorClusterUtils::RenameClusterNode(ClusterNode, TEXT("NewNodeName"));
-
-// 按主机排序集群节点
-TMap<FString, TMap<FString, UDisplayClusterConfigurationClusterNode*>> SortedNodes;
-UE::DisplayClusterConfiguratorClusterUtils::SortClusterNodesByHost(ClusterNodesMap, SortedNodes);
-```
-
-### 进阶用法
-
-通过编辑器子系统进行配置的导入/导出操作：
-
-```cpp
-// 来源：Private/DisplayClusterConfiguratorEditorSubsystem.h
-#include "DisplayClusterConfiguratorEditorSubsystem.h"
-
-// 获取编辑器子系统
-UDisplayClusterConfiguratorEditorSubsystem* Subsystem = GEditor->GetEditorSubsystem<UDisplayClusterConfiguratorEditorSubsystem>();
-
-// 从文件导入配置
-UDisplayClusterBlueprint* Blueprint = Subsystem->ImportAsset(Parent, FName("MyConfig"), TEXT("/Path/to/config.cfg"));
-
-// 重新加载配置
-UDisplayClusterConfigurationData* ConfigData = Subsystem->ReloadConfig(Blueprint, TEXT("/Path/to/config.cfg"));
-
-// 将配置导出为字符串
-FString ConfigString;
-Subsystem->ConfigAsString(ConfigData, ConfigString);
-
-// 保存配置到文件
-Subsystem->SaveToFile(ConfigData, TEXT("/Path/to/output.cfg"));
-```
-
-使用属性工具操作配置数据中的 Map 属性：
-
-```cpp
-// 来源：Private/DisplayClusterConfiguratorPropertyUtils.h
+// 属性工具
 #include "DisplayClusterConfiguratorPropertyUtils.h"
 
+// 树视图接口
+#include "Views/TreeViews/IDisplayClusterConfiguratorTreeItem.h"
+#include "Views/TreeViews/IDisplayClusterConfiguratorViewTree.h"
+#include "Views/TreeViews/IDisplayClusterConfiguratorTreeBuilder.h"
+```
+
+### 基本用法：集群节点管理
+
+```cpp
+// 来源: Public/ClusterConfiguration/DisplayClusterConfiguratorClusterUtils.h
+
+#include "ClusterConfiguration/DisplayClusterConfiguratorClusterUtils.h"
+
+using namespace UE::DisplayClusterConfiguratorClusterUtils;
+
+// 添加集群节点到集群
+UDisplayClusterConfigurationClusterNode* NewNode = AddClusterNodeToCluster(
+    ClusterNode,
+    Cluster,
+    TEXT("MyClusterNode")
+);
+
+// 重命名集群节点
+RenameClusterNode(ClusterNode, TEXT("NewNodeName"));
+
+// 设置为主节点
+SetClusterNodeAsPrimary(ClusterNode);
+
+// 检查是否为主节点
+bool bIsPrimary = IsClusterNodePrimary(ClusterNode);
+
+// 添加视口到集群节点
+UDisplayClusterConfigurationViewport* NewViewport = AddViewportToClusterNode(
+    Viewport,
+    ClusterNode,
+    TEXT("Viewport_0")
+);
+
+// 获取唯一名称
+FString UniqueName = GetUniqueNameForClusterNode(
+    TEXT("Node"), ParentCluster, false
+);
+```
+
+### 进阶用法：属性工具操作
+
+```cpp
+// 来源: Private/DisplayClusterConfiguratorPropertyUtils.h
+
+#include "DisplayClusterConfiguratorPropertyUtils.h"
+
+using namespace UE::DisplayClusterConfiguratorPropertyUtils;
+
 // 获取属性视图
-TSharedPtr<ISinglePropertyView> PropView = UE::DisplayClusterConfiguratorPropertyUtils::GetPropertyView(Owner, FName("MyPropertyName"));
+TSharedPtr<ISinglePropertyView> PropView = GetPropertyView(
+    MyObject, GET_MEMBER_NAME_CHECKED(UMyClass, MyProperty)
+);
 
-// 向 Map 属性添加键值对
-UE::DisplayClusterConfiguratorPropertyUtils::AddKeyValueToMap(MapOwner, MapPropertyHandle, TEXT("Key"), TEXT("Value"));
+// 设置属性值
+SetPropertyHandleValue(MyObject, TEXT("ProjectionPolicy"), TEXT("MPCDI"));
 
-// 从 Map 属性移除键
-UE::DisplayClusterConfiguratorPropertyUtils::RemoveKeyFromMap(MapOwner, MapPropertyHandle, TEXT("Key"));
+// 向 Map 属性添加键值对（带实例化对象）
+UObject* AddedValue = AddKeyWithInstancedValueToMap(
+    MapOwner, TEXT("ViewportMap"), TEXT("VP_0"), ViewportObject
+);
+
+// 向 Map 添加格式化字符串值
+TSharedPtr<IPropertyHandle> KeyHandle = AddKeyValueToMap(
+    MapOwnerAddress, MapPropertyHandle, TEXT("Key"), TEXT("Value")
+);
+
+// 从 Map 移除键
+RemoveKeyFromMap(MapOwner, TEXT("ViewportMap"), TEXT("VP_0"));
+
+// 清空 Map
+EmptyMap(MapOwnerAddress, MapPropertyHandle);
 ```
 
 ## Demo 示例
 
-### 通过 C++ 创建集群节点并添加视口
+以下展示如何以 C++ 方式创建一个简单的 nDisplay 集群配置工具类：
 
 ```cpp
-// MyClusterSetup.h
+// MyClusterSetupTool.h
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Subsystems/EditorSubsystem.h"
+#include "MyClusterSetupTool.generated.h"
 
 class UDisplayClusterConfigurationCluster;
 class UDisplayClusterConfigurationClusterNode;
 class UDisplayClusterConfigurationViewport;
 
-class FMyClusterSetup
+UCLASS()
+class UMyClusterSetupTool : public UEditorSubsystem
 {
+    GENERATED_BODY()
+
 public:
-    /** 在集群中创建一个主机和两个视口的简单配置 */
-    static void SetupBasicCluster(UDisplayClusterConfigurationCluster* Cluster);
+    /**
+     * 快速创建一个三屏幕 Powerwall 集群配置
+     * @param ConfigData - 要配置的 nDisplay 配置数据
+     * @param ViewportWidth - 每个视口的宽度（像素）
+     * @param ViewportHeight - 每个视口的高度（像素）
+     */
+    void SetupPowerwall(
+        UDisplayClusterConfigurationData* ConfigData,
+        int32 ViewportWidth = 1920,
+        int32 ViewportHeight = 1080
+    );
 };
 ```
 
 ```cpp
-// MyClusterSetup.cpp
-#include "MyClusterSetup.h"
-#include "DisplayClusterConfigurationClusterUtils.h"
-#include "DisplayClusterConfigurationData.h"
+// MyClusterSetupTool.cpp
+#include "MyClusterSetupTool.h"
+#include "DisplayClusterConfigurationTypes.h"
+#include "ClusterConfiguration/DisplayClusterConfiguratorClusterUtils.h"
 
-void FMyClusterSetup::SetupBasicCluster(UDisplayClusterConfigurationCluster* Cluster)
+using namespace UE::DisplayClusterConfiguratorClusterUtils;
+
+void UMyClusterSetupTool::SetupPowerwall(
+    UDisplayClusterConfigurationData* ConfigData,
+    int32 ViewportWidth,
+    int32 ViewportHeight)
 {
-    if (!Cluster)
+    if (!ConfigData || !ConfigData->Cluster)
     {
         return;
     }
 
-    // 创建第一个集群节点（主节点）
-    UDisplayClusterConfigurationClusterNode* PrimaryNode = 
-        UE::DisplayClusterConfiguratorClusterUtils::AddClusterNodeToCluster(
-            nullptr, Cluster, TEXT("Node_Primary"));
-    
-    if (PrimaryNode)
+    UDisplayClusterConfigurationCluster* Cluster = ConfigData->Cluster;
+
+    // 创建主节点
+    UDisplayClusterConfigurationClusterNode* PrimaryNode = NewObject<UDisplayClusterConfigurationClusterNode>(Cluster);
+    AddClusterNodeToCluster(PrimaryNode, Cluster, TEXT("Node_0"));
+    SetClusterNodeAsPrimary(PrimaryNode);
+
+    // 为三屏 Powerwall 创建三个视口
+    for (int32 i = 0; i < 3; ++i)
     {
-        // 设置为主节点
-        UE::DisplayClusterConfiguratorClusterUtils::SetClusterNodeAsPrimary(PrimaryNode);
+        UDisplayClusterConfigurationViewport* Viewport = NewObject<UDisplayClusterConfigurationViewport>(PrimaryNode);
 
-        // 为主节点添加左视口
-        UE::DisplayClusterConfiguratorClusterUtils::AddViewportToClusterNode(
-            nullptr, PrimaryNode, TEXT("Viewport_Left"));
+        // 设置视口区域（水平排列）
+        Viewport->Region.X = i * ViewportWidth;
+        Viewport->Region.Y = 0;
+        Viewport->Region.W = ViewportWidth;
+        Viewport->Region.H = ViewportHeight;
 
-        // 为主节点添加右视口
-        UE::DisplayClusterConfiguratorClusterUtils::AddViewportToClusterNode(
-            nullptr, PrimaryNode, TEXT("Viewport_Right"));
+        FString ViewportName = FString::Printf(TEXT("Viewport_%d"), i);
+        AddViewportToClusterNode(Viewport, PrimaryNode, ViewportName);
     }
 
-    // 创建第二个集群节点（从节点）
-    UDisplayClusterConfigurationClusterNode* SecondaryNode = 
-        UE::DisplayClusterConfiguratorClusterUtils::AddClusterNodeToCluster(
-            nullptr, Cluster, TEXT("Node_Secondary"));
-
-    if (SecondaryNode)
+    // 设置投影策略为 MPCDI
+    for (auto& ViewportPair : PrimaryNode->Viewports)
     {
-        // 为从节点添加视口
-        UE::DisplayClusterConfiguratorClusterUtils::AddViewportToClusterNode(
-            nullptr, SecondaryNode, TEXT("Viewport_Center"));
+        UDisplayClusterConfigurationViewport* VP = ViewportPair.Value;
+        VP->ProjectionPolicy.Type = TEXT("MPCDI");
     }
-
-    // 按主机排序，检查配置结果
-    TMap<FString, TMap<FString, UDisplayClusterConfigurationClusterNode*>> SortedNodes;
-    UE::DisplayClusterConfiguratorClusterUtils::SortClusterNodesByHost(
-        Cluster->ClusterNodes, SortedNodes);
 }
 ```
 
 ## 模块依赖
 
-nDisplay 是一个大型插件，包含 29 个模块。以下是各模块的独特依赖（省略常见的 Core/Engine/Slate 等）：
+由于 nDisplay 是大型插件，各模块依赖差异较大。以下是关键的**非通用依赖**：
 
 | 模块 | 用途 |
 |---|---|
-| `UnrealEd` | 多个编辑器模块（Configurator、Editor、Monitor、Projection 等）依赖 |
-| `LevelEditor` | DisplayCluster 主模块依赖，用于关卡编辑器集成 |
-| `D3D12RHI` | DisplayClusterMedia 和 SharedMemoryMedia 依赖，用于 DirectX 12 共享内存传输 |
-| `ScalableMPCDI` | 第三方 MPCDI 库，用于 MPCDI 投影变形配置 |
+| `D3D12RHI` | Direct3D 12 渲染硬件接口（SharedMemoryMedia、DisplayClusterMedia 使用） |
+| `LevelEditor` | 编辑器关卡编辑器集成（DisplayCluster 模块使用） |
+| `EditorWidgets` | 编辑器专用 Widget（DisplayCluster 模块使用） |
+| `RenderCore` | 渲染核心功能 |
+| `MediaFrameworkUtilities` | 媒体框架工具 |
+| `MPCDI` (ThirdParty) | MPCDI 标准文件格式解析（通过 ScalableMPCDI 外部模块） |
 
-使用者无需直接依赖所有模块。在你的 `.Build.cs` 中通常只需添加：
-
-```csharp
-PublicDependencyModuleNames.AddRange(new string[] {
-    "DisplayCluster",         // 核心运行时功能
-    "DisplayClusterConfiguration"  // 配置数据结构
-});
-
-// 如需媒体功能
-PrivateDependencyModuleNames.AddRange(new string[] {
-    "DisplayClusterMedia",
-    "SharedMemoryMedia"
-});
-
-// 如需编辑器扩展
-if (Target.bBuildEditor)
-{
-    PrivateDependencyModuleNames.Add("DisplayClusterConfigurator");
-}
-```
+> **注意**：大部分模块还依赖 UnrealEd 等编辑器模块（尽管标记为 Runtime），这是因为 nDisplay 的许多"Runtime"模块实际上包含了编辑器辅助功能。
 
 ## 维护状态
 
@@ -247,26 +272,25 @@ if (Target.bBuildEditor)
 
 | 日期 | Hash | 原文 | 中文解读 |
 |---|---|---|---|
-| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | MovieGraph 管线支持 EXR 多图层输出 |
-| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | 合并 WarpBlendAlpha 模式到 WarpBlend，简化混合模式 |
-| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知摄像机命名和 MPCDI/ICVFX 着色器的不透明 alpha 问题 |
-| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 修复输出帧编码回退时未使用非默认 DisplayGamma 的问题 |
+| 2026-05-26 | `b75c0fdc` | [MovieGraph][nDisplay] EXR multi-layer support. | MovieGraph 集成新增 EXR 多层支持 |
+| 2026-05-26 | `1c0f63c6` | [nDisplay] MoviePipeline: merge WarpBlendAlpha mode into WarpBlend | MoviePipeline 中将 WarpBlendAlpha 模式合并到 WarpBlend |
+| 2026-05-21 | `63098dc2` | [nDisplay] Fix topology-aware camera naming in MRG; fix opaque alpha in MPCDI/ICVFX shaders | 修复 MRG 中拓扑感知相机命名及 MPCDI/ICVFX 着色器的不透明度问题 |
+| 2026-05-19 | `f8f04c61` | nDisplay: Honor non-default DisplayGamma at output-frame encoding fallback | 输出帧编码回退时支持非默认 DisplayGamma 设置 |
 | 2026-05-16 | `f8b15904` | [nDisplay] Fixed flickering when GUI texture size is less than viewport size | 修复 GUI 纹理尺寸小于视口尺寸时的闪烁问题 |
 
 ### 维护评价
 
-nDisplay 是一个**活跃维护**中的大型专业插件：
+**活跃维护** ⭐⭐⭐⭐⭐
 
-- ✅ **持续更新**：最近的提交集中在 2026 年 5 月，每周都有功能性修复和增强
-- ✅ **功能不断演进**：新增 EXR 多图层支持、MoviePipeline 集成改进、ICVFX 着色器优化等
-- ✅ **企业级支持**：由 Epic Games 维护，是 Virtual Production 工作流的核心组件
-- ✅ **跨平台支持**：支持 Win64 和 Linux
-- ⚠️ **复杂度高**：29 个模块、1351 个源文件，学习曲线较陡
-- ⚠️ **需要特定硬件**：正常使用需要多机集群环境，不适合单机开发调试
-
-**推荐使用**：如果你在做虚拟制作（Virtual Production）、LED 虚拟拍摄（ICVFX）或多投影 CAVE 环境，nDisplay 是必不可少的官方方案。对于单显示器开发场景则无需使用。
+- **年龄**：约 8 年（创建于 2018 年 6 月），是 Epic 长期投入的企业级功能
+- **更新频率**：极高，近 10 天内有 5 次实质性提交，涵盖功能增强、Bug 修复和性能优化
+- **活跃程度**：作为 Unreal 虚拟制片管线的核心组件，持续得到 Epic 工程团队的维护
+- **代码规模**：1351 个源文件、29 个模块，是 UE5 中最大的插件之一
+- **功能成熟度**：功能完善，支持 MPCDI、NVIDIA 帧同步、ICVFX、多种投影策略等专业特性
+- **推荐度**：✅ **强烈推荐**用于任何需要集群渲染或多屏幕投影的项目。注意 `EnabledByDefault=false`，需要在项目设置中手动启用插件
 
 ## 相关链接
 
 - [源码](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay)
-- [官方文档](https://docs.unrealengine.com/en-US/ProductionPipelines/VirtualProduction/nDisplay/)（Unreal Engine 文档中心 - nDisplay 章节）
+- [官方文档](https://docs.unrealengine.com/en-US/ProductionPipelines/DisplayCluster/)（nDisplay 专栏文档）
+- [测试用例](https://github.com/EpicGames/UnrealEngine/tree/5.8/Engine/Plugins/Runtime/nDisplay/Source/DisplayClusterTests)
