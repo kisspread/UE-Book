@@ -4521,6 +4521,11 @@
       "generated_in": "5.8",
       "size": "small",
       "doc_path": "docs/5.8/small/MSGameOSSSelector/"
+    },
+    "PICOController": {
+      "generated_in": "5.8",
+      "size": "small",
+      "doc_path": "docs/5.8/small/PICOController/"
     }
   }
 }
