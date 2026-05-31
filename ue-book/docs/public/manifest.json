@@ -182,6 +182,38 @@
       "age_tier": "fresh"
     },
     {
+      "name": "AESGCMHandlerComponent",
+      "name_cn": "AES GCM 网络数据包处理器",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/AESGCMHandlerComponent/",
+      "description": "Provides a packet handler component to do AES GCM encryption and decryption.",
+      "description_cn": "该插件是一个用于 Unreal 网络子系统的数据包处理器组件，其核心功能是为网络数据包提供 AES 256 GCM (Galois/Counter Mode) 加密和解密能力。它并非独立运行的插件，而是被集成到 UE 的 Packet Handler 管线中，在数据包发送和接收时自动执行加密操作，从…",
+      "category": "Misc",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`AESGCMHandlerComponent` (Runtime)",
+      "experimental": false,
+      "created_at": "2019-05-31",
+      "age_tier": "old"
+    },
+    {
+      "name": "AESHandlerComponent",
+      "name_cn": "AES网络数据包处理器",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/AESHandlerComponent/",
+      "description": "Provides a packet handler component to do AES encryption and decryption.",
+      "description_cn": "AESHandlerComponent 是一个网络数据包处理组件（Packet Handler Component），其主要功能是对游戏网络流量进行 AES 加密和解密。它通常与 PlatformCrypto 插件和引擎内置的网络加密握手流程配合使用。通过网络连接时的 NMT_Hello 消息交换 …",
+      "category": "Misc",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`AESHandlerComponent` (Runtime)",
+      "experimental": false,
+      "created_at": "2017-08-18",
+      "age_tier": "old"
+    },
+    {
       "name": "AIAssistant",
       "name_cn": "AI 助手",
       "version": "5.8",
@@ -3071,6 +3103,22 @@
       "age_tier": "fresh"
     },
     {
+      "name": "CQTestExperimental",
+      "name_cn": "实验性测试插件",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/CQTestExperimental/",
+      "description": "Simplified testing of experimental features for Unreal Engine（照抄，不翻译）",
+      "description_cn": "该插件是 Epic Games 为验证 Unreal Engine 实验性功能而提供的一个隔离测试框架。其核心目的不是提供给最终游戏使用的运行时功能，而是作为一个专用的“沙盒”，允许引擎开发者和早期技术验证者，为即将到来的、尚未完全稳定的引擎特性编写自动化测试用例，确保其正确性和稳定性。目前，其主要…",
+      "category": "Testing",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`CQTestExperimentalTests` (DeveloperTool)",
+      "experimental": true,
+      "created_at": "2025-05-09",
+      "age_tier": "fresh"
+    },
+    {
       "name": "CryptoKeys",
       "name_cn": "加密密钥",
       "version": "5.8",
@@ -4047,6 +4095,22 @@
       "age_tier": "fresh"
     },
     {
+      "name": "EditorTests",
+      "name_cn": "编辑器测试",
+      "version": "5.8",
+      "size": "medium",
+      "link": "/5.8/EditorTests/",
+      "description": null,
+      "description_cn": "EditorTests 插件是一个为 Unreal Engine 编辑器功能提供自动化测试框架和工具集的插件。它包含一组蓝图函数库，用于测试编辑器中的特定功能，如网格体合并、材质烘焙、蓝图控件编辑等。其核心目的是为引擎开发者（主要是 Epic Games 内部）提供一套编写、运行和验证编辑器功能正确…",
+      "category": "Testing",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`EditorTests` (Editor)",
+      "experimental": false,
+      "created_at": "2016-09-21",
+      "age_tier": "relic"
+    },
+    {
       "name": "EditorToolset",
       "name_cn": "编辑器工具集",
       "version": "5.8",
@@ -4429,6 +4493,22 @@
       "experimental": true,
       "created_at": "2025-03-20",
       "age_tier": "fresh"
+    },
+    {
+      "name": "FbxAutomationTestBuilder",
+      "name_cn": "FBX自动化测试构建器",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/FbxAutomationTestBuilder/",
+      "description": null,
+      "description_cn": "该插件是一个内部开发与质量保证（QA）工具，用于批量管理和执行 FBX 资产导入流程的自动化测试。它通过提供一个图形界面来创建、编辑、保存和运行针对特定 FBX 文件的导入“测试计划”（Test Plan），旨在验证 FBX 导入管线（Pipeline）的正确性和一致性。其核心目标是提升 FBX 相…",
+      "category": "Testing",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`FbxAutomationTestBuilder` (Editor)",
+      "experimental": false,
+      "created_at": "2016-09-21",
+      "age_tier": "relic"
     },
     {
       "name": "FieldNotificationTrace",
@@ -5039,6 +5119,38 @@
       "age_tier": "old"
     },
     {
+      "name": "GeometryProcessing",
+      "name_cn": "几何处理",
+      "version": "5.8",
+      "size": "xlarge",
+      "link": "/5.8/GeometryProcessing/",
+      "description": "Data Structures and Algorithms for Processing 2D and 3D Geometry（照抄，不翻译）",
+      "description_cn": "Geometry Processing 插件是 UE5 中处理 2D 和 3D 几何数据的核心底层库。它解决的核心问题是为引擎和编辑器工具提供一套高性能、可扩展的几何数据结构（如 FDynamicMesh3）和算法（如网格简化、布尔运算、空间查询、几何优化）。该插件是 MeshModelingToo…",
+      "category": "Geometry",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`GeometryAlgorithms` (Runtime), `DynamicMesh` (Runtime), `MeshFileUtils` (DeveloperTool)",
+      "experimental": true,
+      "created_at": "2021-07-26",
+      "age_tier": "old"
+    },
+    {
+      "name": "GeometryScripting",
+      "name_cn": "几何脚本",
+      "version": "5.8",
+      "size": "xlarge",
+      "link": "/5.8/GeometryScripting/",
+      "description": "Geometry Script provides a library of functions for creating and editing Meshes in Blueprints and Python",
+      "description_cn": "GeometryScript 是一个运行时几何脚本系统，它将复杂的几何处理算法（如网格布尔运算、简化、重拓扑、UV生成、属性计算等）封装为可在蓝图（Blueprint）和 Python 脚本中直接调用的函数库。其核心目的是通过程序化方式在 Unreal Engine 内部创建和编辑网格资产（USta…",
+      "category": "Geometry",
+      "enabled_by_default": true,
+      "has_content": true,
+      "modules": "`GeometryScriptingCore` (Runtime), `GeometryScriptingEditor` (Editor)",
+      "experimental": false,
+      "created_at": "2024-02-01",
+      "age_tier": "fresh"
+    },
+    {
       "name": "GeoReferencing",
       "name_cn": "地理坐标参考系统",
       "version": "5.8",
@@ -5151,6 +5263,22 @@
       "age_tier": "old"
     },
     {
+      "name": "GoogleCloudMessaging",
+      "name_cn": "GCM推送",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/GoogleCloudMessaging/",
+      "description": "Support for remote notifications using Google Cloud Messaging",
+      "description_cn": "该插件是 Unreal Engine 在 Android 平台上对 Google Cloud Messaging (GCM) 服务的封装。GCM 是一种允许服务器向安装了特定应用的 Android 设备发送数据消息的服务。这个插件为 UE 项目提供了接入 GCM 推送通知的能力，常用于实现后台消息推…",
+      "category": "Online",
+      "enabled_by_default": true,
+      "has_content": false,
+      "modules": "`GoogleCloudMessaging` (Runtime)",
+      "experimental": false,
+      "created_at": "2017-02-10",
+      "age_tier": "old"
+    },
+    {
       "name": "GPULightmass",
       "name_cn": "GPU 光照构建",
       "version": "5.8",
@@ -5228,6 +5356,22 @@
       "modules": "`HairModelingToolset` (Runtime)",
       "experimental": true,
       "created_at": "2021-09-30",
+      "age_tier": "old"
+    },
+    {
+      "name": "HairStrands",
+      "name_cn": "毛发系统",
+      "version": "5.8",
+      "size": "xlarge",
+      "link": "/5.8/HairStrands/",
+      "description": "Rendering and simulation of grooms",
+      "description_cn": "HairStrands（Groom）插件为 Unreal Engine 5 提供了一套完整的、基于发束（Strands）的毛发资产创建、渲染与模拟系统。它取代并扩展了旧的毛发解决方案，专注于实现影视级别的高精度、高动态毛发效果，同时优化了实时渲染性能。该插件解决了在 UE 中处理复杂、大规模毛发数据…",
+      "category": "Geometry",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`HairCardGeneratorFramework` (Runtime), `HairStrandsCore` (Runtime), `HairStrandsDataflow` (Runtime), `HairStrandsDeformer` (Runtime), `HairStrandsEditor` (Runtime), `HairStrandsRuntime` (Runtime), `HairStrandsSolver` (Runtime)",
+      "experimental": false,
+      "created_at": "2020-11-24",
       "age_tier": "old"
     },
     {
@@ -5343,6 +5487,22 @@
       "age_tier": "fresh"
     },
     {
+      "name": "HPMotionController",
+      "name_cn": "HP运动控制器",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/HPMotionController/",
+      "description": "Controller mappings for the HP Reverb G2 motion controller in OpenXR and SteamVR",
+      "description_cn": "本插件是为 HP Reverb G2 混合现实头显的动作控制器提供的专用 OpenXR 扩展插件。它通过实现 IOpenXRExtensionPlugin 接口，向 Unreal Engine 的 OpenXR 子系统注册了 HP Reverb G2 控制器的交互配置文件（Interaction P…",
+      "category": "Virtual Reality",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`HPMotionController` (Runtime)",
+      "experimental": false,
+      "created_at": "2020-10-22",
+      "age_tier": "old"
+    },
+    {
       "name": "HTNPlanner",
       "name_cn": "分层任务网络规划器",
       "version": "5.8",
@@ -5375,6 +5535,22 @@
       "age_tier": "fresh"
     },
     {
+      "name": "HTTPChunkInstaller",
+      "name_cn": "HTTP分块安装器",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/HTTPChunkInstaller/",
+      "description": "Implements a streaming install client",
+      "description_cn": "HTTPChunkInstaller 是一个为大型游戏设计的流式内容分发系统。它解决了游戏初始下载包体积过大的问题，允许玩家先下载一个较小的启动包，然后根据游戏进程，动态地从远程服务器（如CDN）下载并安装游戏所需的资源包（Chunk）。",
+      "category": "Online",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`HTTPChunkInstaller` (Runtime)",
+      "experimental": false,
+      "created_at": "2017-06-14",
+      "age_tier": "old"
+    },
+    {
       "name": "HttpInsights",
       "name_cn": "HTTP调试洞察",
       "version": "5.8",
@@ -5405,6 +5581,22 @@
       "experimental": true,
       "created_at": "2021-04-29",
       "age_tier": "old"
+    },
+    {
+      "name": "ICVFXTesting",
+      "name_cn": "ICVFX 测试工具",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/ICVFXTesting/",
+      "description": "Testing utilities to be used by ICVFX projects",
+      "description_cn": "ICVFXTesting 为 In-Camera Visual Effects（摄像机内视觉特效，即 LED 墙虚拟拍摄）项目提供自动化性能测试框架。它基于 Unreal 的 Gauntlet 自动化测试系统，解决了以下问题：",
+      "category": "VirtualProduction",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`ICVFXTesting` (Runtime)",
+      "experimental": true,
+      "created_at": "2023-01-31",
+      "age_tier": "fresh"
     },
     {
       "name": "IKRig",
@@ -5950,6 +6142,22 @@
       "age_tier": "old"
     },
     {
+      "name": "LensComponent",
+      "name_cn": "镜头畸变组件",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/LensComponent/",
+      "description": "Implements the Lens Component for adding distortion to a cinematic camera",
+      "description_cn": "LensComponent 是一个从 CameraCalibrationCore 插件中分离出来的独立组件，其核心功能是将相机标定数据（镜头畸变、焦距等）以组件形式应用到电影摄像机上。",
+      "category": "VirtualProduction",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`LensComponent` (Runtime), `LensComponentEditor` (Editor)",
+      "experimental": true,
+      "created_at": "2023-12-21",
+      "age_tier": "fresh"
+    },
+    {
       "name": "LensDistortion",
       "name_cn": "镜头畸变",
       "version": "5.8",
@@ -5996,6 +6204,22 @@
       "experimental": true,
       "created_at": "2025-05-14",
       "age_tier": "fresh"
+    },
+    {
+      "name": "LevelSnapshots",
+      "name_cn": "关卡快照",
+      "version": "5.8",
+      "size": "xlarge",
+      "link": "/5.8/LevelSnapshots/",
+      "description": "快照工具，用于捕获和恢复关卡状态",
+      "description_cn": "LevelSnapshots 是一个用于关卡状态管理的高级工具。它解决了虚拟制片和复杂关卡迭代中的核心痛点：在编辑器中进行大量修改（如调整灯光、移动Actor、修改材质参数）后，很难精确回退到之前的某个状态。传统的“撤销”操作栈有限，且无法跨会话保存状态。",
+      "category": "VirtualProduction",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`LevelSnapshots` (Runtime), `LevelSnapshotFilters` (Runtime), `FoliageSupport` (Runtime), `LevelSnapshotsEditor` (Runtime), `nDisplaySupport` (Runtime)",
+      "experimental": true,
+      "created_at": "2021-02-03",
+      "age_tier": "old"
     },
     {
       "name": "LevelStreamingPersistence",
@@ -8254,6 +8478,22 @@
       "age_tier": "fresh"
     },
     {
+      "name": "nDisplay",
+      "name_cn": "多机同步渲染",
+      "version": "5.8",
+      "size": "xlarge",
+      "link": "/5.8/nDisplay/",
+      "description": "Support for synchronized clustered rendering using multiple PCs in mono or stereo",
+      "description_cn": "nDisplay 是 Unreal Engine 中用于构建大规模、多屏幕、沉浸式显示环境的核心系统。它解决了使用多台独立 PC（渲染节点）来驱动一个跨越多个物理显示器（如投影仪、LED 墙）的单一、连续虚拟场景的复杂问题。通过精确的同步和通信，nDisplay 让这些 PC 协同工作，仿佛是一个拥…",
+      "category": "Misc",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`DisplayCluster` (Runtime), `DisplayClusterColorGrading` (Runtime), `DisplayClusterConfiguration` (Runtime), `DisplayClusterConfigurator` (Runtime), `DisplayClusterDetails` (Runtime), `DisplayClusterEditor` (Runtime), `DisplayClusterFillDerivedDataCache` (Runtime), `DisplayClusterLightCardEditor` (Runtime), `DisplayClusterLightCardEditorShaders` (Runtime), `DisplayClusterMedia` (Runtime), `DisplayClusterMediaEditor` (Runtime), `DisplayClusterMessageInterception` (Runtime), `DisplayClusterMonitor` (Runtime), `DisplayClusterMonitorEditor` (Runtime), `DisplayClusterMoviePipeline` (Runtime), `DisplayClusterMoviePipelineEditor` (Runtime), `DisplayClusterMultiUser` (Runtime), `DisplayClusterOperator` (Runtime), `DisplayClusterProjection` (Runtime), `DisplayClusterRemoteControlInterceptor` (Runtime), `DisplayClusterReplication` (Runtime), `DisplayClusterScenePreview` (Runtime), `DisplayClusterShaders` (Runtime), `DisplayClusterStageMonitoring` (Runtime), `DisplayClusterTests` (Runtime), `DisplayClusterWarp` (Runtime), `SharedMemoryMedia` (Runtime), `SharedMemoryMediaEditor` (Runtime), `ScalableMPCDI` (External)",
+      "experimental": false,
+      "created_at": "2018-06-07",
+      "age_tier": "old"
+    },
+    {
       "name": "nDisplayModularFeatures",
       "name_cn": "nDisplay 模块化功能",
       "version": "5.8",
@@ -10334,6 +10574,22 @@
       "age_tier": "fresh"
     },
     {
+      "name": "PythonAutomationTest",
+      "name_cn": "Python 自动化测试",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/PythonAutomationTest/",
+      "description": null,
+      "description_cn": "这个插件为 Unreal Engine 的自动化测试框架（Gauntlet 或其他）提供了一个与 Python 脚本进行集成的桥梁。它本身不包含测试用例，而是提供了一套蓝图和 C++ 接口，用于在自动化测试流程中启动、监控和管理 Python 潜命令（Latent Command）的执行状态。它解决…",
+      "category": "Testing",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`PythonAutomationTest` (Editor)",
+      "experimental": true,
+      "created_at": "2019-09-17",
+      "age_tier": "old"
+    },
+    {
       "name": "PythonFoundationPackages",
       "name_cn": "基础 Python 包",
       "version": "5.8",
@@ -10492,6 +10748,70 @@
       "experimental": true,
       "created_at": "2024-01-29",
       "age_tier": "fresh"
+    },
+    {
+      "name": "RemoteControlProtocolDMX",
+      "name_cn": "DMX 远程控制协议",
+      "version": "5.8",
+      "size": "medium",
+      "link": "/5.8/RemoteControlProtocolDMX/",
+      "description": "Allows interactions between DMX and RemoteControl API.",
+      "description_cn": "本插件是DMX 协议与虚幻引擎远程控制 API (Remote Control) 之间的桥梁。它允许外部 DMX 控制台或软件（如灯光控台）通过标准的 Art-Net 或 sACN 协议，实时读取和控制引擎内的各种属性（如 Actor 位置、材质参数、光源强度等）。这主要应用于虚拟制作 (Virtu…",
+      "category": "Messaging",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`RemoteControlProtocolDMX` (Runtime), `RemoteControlProtocolDMXEditor` (Editor)",
+      "experimental": false,
+      "created_at": "2021-04-08",
+      "age_tier": "old"
+    },
+    {
+      "name": "RemoteControlProtocolMIDI",
+      "name_cn": "MIDI 远程控制协议",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/RemoteControlProtocolMIDI/",
+      "description": "Allows interactions between MIDI and RemoteControl API.",
+      "description_cn": "本插件是一个协议桥接器，它将 MIDI 设备协议与 Unreal Engine 的 RemoteControl API 连接起来。其核心功能是允许开发者和艺术家通过标准的物理 MIDI 控制器（键盘、打击垫、推子、旋钮等）来实时远程控制引擎中的任何属性或函数。它解决了在虚拟制片、音乐可视化或现场演出…",
+      "category": "Messaging",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`RemoteControlProtocolMIDI` (Runtime), `RemoteControlProtocolMIDIEditor` (Editor)",
+      "experimental": false,
+      "created_at": "2021-04-08",
+      "age_tier": "old"
+    },
+    {
+      "name": "RemoteControlProtocolOSC",
+      "name_cn": "远程控制OSC协议",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/RemoteControlProtocolOSC/",
+      "description": "Allows interactions between OSC and RemoteControl API.",
+      "description_cn": "该插件为 Unreal Engine 的 Remote Control API 提供 OSC（Open Sound Control）协议支持，使外部 OSC 设备或软件能够通过网络控制引擎内的属性。",
+      "category": "Messaging",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`RemoteControlProtocolOSC` (Runtime)",
+      "experimental": false,
+      "created_at": "2021-04-08",
+      "age_tier": "old"
+    },
+    {
+      "name": "RemoteControlWebInterface",
+      "name_cn": "远程控制 Web 界面",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/RemoteControlWebInterface/",
+      "description": "Provides a web interface to control unreal engine via presets, requires nodejs to be installed",
+      "description_cn": "本插件为 Remote Control 插件提供了一个基于浏览器的 Web 界面。它在后台启动一个 Node.js 进程作为中间层服务器（Middleman Server），通过 WebSocket 与 UE 引擎通信，使得用户可以通过网页远程控制 UE 中通过 Remote Control Pre…",
+      "category": "Messaging",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`RemoteControlWebInterface` (Runtime)",
+      "experimental": false,
+      "created_at": "2020-12-11",
+      "age_tier": "old"
     },
     {
       "name": "RemoteDatabaseSupport",
@@ -10670,6 +10990,22 @@
       "age_tier": "old"
     },
     {
+      "name": "RHITests",
+      "name_cn": "RHI 单元测试",
+      "version": "5.8",
+      "size": "medium",
+      "link": "/5.8/RHITests/",
+      "description": "（Description 字段为空）",
+      "description_cn": "该插件并非面向游戏开发者的功能插件，而是一套针对 Unreal Engine 底层渲染硬件接口 (RHI) 的自动化单元测试集合。其核心目的是在不同的图形 API (D3D12, Vulkan 等) 和平台下，验证 RHI 功能的正确性、稳定性和一致性。",
+      "category": "Testing",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`RHITests` (Runtime)",
+      "experimental": false,
+      "created_at": "2020-09-24",
+      "age_tier": "old"
+    },
+    {
       "name": "RiderSourceCodeAccess",
       "name_cn": "Rider 集成",
       "version": "5.8",
@@ -10763,6 +11099,22 @@
       "modules": "`RigVM` (Runtime), `RigVMDeveloper` (Runtime), `RigVMEditor` (Runtime)",
       "experimental": false,
       "created_at": "2023-03-28",
+      "age_tier": "fresh"
+    },
+    {
+      "name": "RivermaxSync",
+      "name_cn": "Rivermax 同步",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/RivermaxSync/",
+      "description": "Adding NVIDIA Rivermax synchronization capabilities for nDisplay",
+      "description_cn": "为 nDisplay 虚拟制片系统添加 NVIDIA Rivermax 媒体同步能力。在 LED 虚拟制片场景中，多个渲染节点（nDisplay cluster）需要严格同步视频输出到 LED 墙，RivermaxSync 利用 NVIDIA Rivermax SDK 提供的低延迟 IP 视频 I/…",
+      "category": "VirtualProduction",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`RivermaxSync` (Runtime), `RivermaxSyncEditor` (Editor)",
+      "experimental": true,
+      "created_at": "2023-03-22",
       "age_tier": "fresh"
     },
     {
@@ -11182,6 +11534,22 @@
       "age_tier": "relic"
     },
     {
+      "name": "SkeletalMerging",
+      "name_cn": "骨骼合并",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/SkeletalMerging/",
+      "description": "Provides Blueprint functionality to perform runtime Skeletal Mesh merging",
+      "description_cn": "Skeletal Merging 插件的核心功能是提供运行时合并骨骼网格体（Skeletal Mesh）和骨架（Skeleton）的蓝图接口。它解决的主要问题是：在游戏运行时，动态地将多个独立的骨骼网格体组合成一个整体，或者将多个骨架的骨骼结构、插槽、动画曲线等数据合并到一个新的骨架中。",
+      "category": "Misc",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`SkeletalMerging` (Runtime)",
+      "experimental": false,
+      "created_at": "2022-01-06",
+      "age_tier": "fresh"
+    },
+    {
       "name": "SkeletalMeshModelingTools",
       "name_cn": "骨骼网格体编辑工具",
       "version": "5.8",
@@ -11454,6 +11822,22 @@
       "age_tier": "old"
     },
     {
+      "name": "Spatialization",
+      "name_cn": "音频空间化",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/Spatialization/",
+      "description": "Plugin featuring a variety of basic audio spatialization solutions.",
+      "description_cn": "Spatialization 插件提供了一组基础的音频空间化方案。它旨在作为更高级、复杂空间化系统（如基于物理的HRTF）的轻量级替代或补充，或用于快速原型开发。其核心解决的是将3D音频位置信息映射到2D扬声器布局（如立体声、环绕声）的问题，提供诸如立体声扩展、简单头部相关传输函数（HRTF）滤波等…",
+      "category": "Audio",
+      "enabled_by_default": true,
+      "has_content": false,
+      "modules": "`Spatialization` (Runtime), `SpatializationEditor` (Editor)",
+      "experimental": false,
+      "created_at": "2019-01-25",
+      "age_tier": "old"
+    },
+    {
       "name": "SpatialReadiness",
       "name_cn": "空间就绪管理",
       "version": "5.8",
@@ -11580,6 +11964,54 @@
       "experimental": true,
       "created_at": "2024-02-01",
       "age_tier": "fresh"
+    },
+    {
+      "name": "SteamController",
+      "name_cn": "Steam 手柄",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/SteamController/",
+      "description": "InputDevice plugin for Steam controller（照抄，不翻译）",
+      "description_cn": "该插件是一个运行时输入设备模块，用于将 Steam 手柄（Valve 的 Steam Controller）集成到 Unreal Engine 的输入系统中。它实现了 IInputDeviceModule 接口，使得引擎能够识别、初始化和管理 Steam 手柄，并将该手柄的独特输入（如触控板、背部按…",
+      "category": "Input Devices",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`SteamController` (Runtime)",
+      "experimental": false,
+      "created_at": "2015-01-23",
+      "age_tier": "relic"
+    },
+    {
+      "name": "SteamShared",
+      "name_cn": "Steam共享模块",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/SteamShared/",
+      "description": "Shared module loader for the Steam API（照抄，不翻译）",
+      "description_cn": "SteamShared插件是Steamworks SDK集成到虚幻引擎中的底层基础模块。它并非面向最终用户的功能插件，而是为上层SteamOnlineSubsystem等模块提供共享的、集中管理的Steam API加载与实例化服务。",
+      "category": "Online",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`SteamShared` (Runtime)",
+      "experimental": false,
+      "created_at": "2019-07-16",
+      "age_tier": "old"
+    },
+    {
+      "name": "SteamSockets",
+      "name_cn": "Steam Socket 网络",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/SteamSockets/",
+      "description": "New Steamworks Networking code that supports the SteamSockets interface. NOTE: This plugin is only compatible with the SteamSockets Netdriver. It will not work if the proper netdriver definitions have not been set.",
+      "description_cn": "本插件提供了一套基于 Valve 新版 Steam 网络接口 (Steam Networking Sockets) 的网络驱动（NetDriver）和 Socket 子系统（Socket Subsystem）实现。它的主要目的是替换 Unreal Engine 默认的 IP 套接字通信方式，转而使用…",
+      "category": "Networking",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`SteamSockets` (Runtime)",
+      "experimental": false,
+      "created_at": "2019-10-03",
+      "age_tier": "old"
     },
     {
       "name": "StormSync",
