@@ -1286,6 +1286,38 @@
       "age_tier": "fresh"
     },
     {
+      "name": "Avalanche",
+      "name_cn": "动态设计",
+      "version": "5.8",
+      "size": "xlarge",
+      "link": "/5.8/Avalanche/",
+      "description": "Compositing, designer and broadcasting tool.",
+      "description_cn": "Motion Design 是一个综合性的虚拟制作工具套件，为广播图形、动态影像和实时合成提供了一个集成的设计环境。它解决的核心问题是将传统后期合成软件（如 After Effects）中的图层合成、动态图形设计和模板化工作流，与 Unreal Engine 的实时渲染和场景管理能力相结合。其存在是…",
+      "category": "VirtualProduction",
+      "enabled_by_default": true,
+      "has_content": true,
+      "modules": "`Avalanche` (Runtime), `AvalancheAttribute` (Runtime), `AvalancheAttributeEditor` (Runtime), `AvalancheCamera` (Runtime), `AvalancheComponentVisualizers` (Runtime), `AvalancheCore` (Runtime), `AvalancheEditor` (Runtime), `AvalancheEditorCore` (Runtime), `AvalancheEffectors` (Runtime), `AvalancheEffectorsEditor` (Runtime), `AvalancheFunctionalTest` (Runtime), `AvalancheInteractiveTools` (Runtime), `AvalancheInteractiveToolsRuntime` (Runtime), `AvalancheLevelViewport` (Runtime), `AvalancheMRQ` (Runtime), `AvalancheMRQEditor` (Runtime), `AvalancheMask` (Runtime), `AvalancheMaskEditor` (Runtime), `AvalancheMaterial` (Runtime), `AvalancheMedia` (Runtime), `AvalancheMediaEditor` (Runtime), `AvalancheModifiers` (Runtime), `AvalancheModifiersEditor` (Runtime), `AvalancheOutliner` (Runtime), `AvalanchePropertyAnimator` (Runtime), `AvalanchePropertyAnimatorEditor` (Runtime), `AvalancheRemoteControl` (Runtime), `AvalancheRemoteControlEditor` (Runtime), `AvalancheSVGEditor` (Runtime), `AvalancheSceneRig` (Runtime), `AvalancheSceneRigEditor` (Runtime), `AvalancheSceneTree` (Runtime), `AvalancheSequence` (Runtime), `AvalancheSequencer` (Runtime), `AvalancheShapes` (Runtime), `AvalancheShapesEditor` (Runtime), `AvalancheTag` (Runtime), `AvalancheTagEditor` (Runtime), `AvalancheText` (Runtime), `AvalancheTextEditor` (Runtime), `AvalancheTransition` (Runtime), `AvalancheTransitionEditor` (Runtime), `AvalancheViewport` (Runtime)",
+      "experimental": false,
+      "created_at": "2025-05-09",
+      "age_tier": "fresh"
+    },
+    {
+      "name": "AvalancheDataLink",
+      "name_cn": "运动设计数据连接",
+      "version": "5.8",
+      "size": "medium",
+      "link": "/5.8/AvalancheDataLink/",
+      "description": null,
+      "description_cn": "该插件是 Motion Design（运动设计） 和 DataLink（数据链接） 两个虚拟制作子系统之间的桥梁。它解决了在 Motion Design 环境中实时消费和驱动 DataLink 提供的数据流的问题。插件本身不定义新的数据源或动画系统，而是作为集成层，使得 Motion Design …",
+      "category": "Motion Design",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`AvalancheDataLink` (Runtime), `AvalancheDataLinkEditor` (Editor)",
+      "experimental": true,
+      "created_at": "2025-08-27",
+      "age_tier": "fresh"
+    },
+    {
       "name": "AvalancheDisplayCluster",
       "name_cn": "Motion Design nDisplay同步",
       "version": "5.8",
@@ -1299,6 +1331,22 @@
       "modules": "`AvalancheDisplayCluster` (Runtime)",
       "experimental": true,
       "created_at": "2024-06-15",
+      "age_tier": "fresh"
+    },
+    {
+      "name": "AvalancheSceneState",
+      "name_cn": "运动设计场景状态集成",
+      "version": "5.8",
+      "size": "medium",
+      "link": "/5.8/AvalancheSceneState/",
+      "description": "（Description from .uplugin）",
+      "description_cn": "本插件是 Motion Design 虚拟制片系统与 Scene State 场景状态管理系统的集成桥梁。它解决了在 Motion Design 工作流中，需要根据复杂的场景状态变化来驱动、同步和自动化运动设计任务的问题。通过将 Scene State 的状态机逻辑引入 Motion Design，…",
+      "category": "Misc",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`AvalancheSceneState` (Runtime), `AvalancheSceneStateBlueprint` (UncookedOnly), `AvalancheSceneStateEditor` (Editor)",
+      "experimental": true,
+      "created_at": "2025-08-27",
       "age_tier": "fresh"
     },
     {
@@ -1779,6 +1827,22 @@
       "modules": "`CPSLiveLinkDevice` (Runtime), `MonoVideoIngestDevice` (Runtime), `StereoVideoIngestDevice` (Runtime), `TakeArchiveIngestDevice` (Runtime), `VideoLiveLinkDeviceCommon` (Runtime)",
       "experimental": false,
       "created_at": "2025-02-14",
+      "age_tier": "fresh"
+    },
+    {
+      "name": "CaptureManagerEditor",
+      "name_cn": "捕获管理器编辑器",
+      "version": "5.8",
+      "size": "large",
+      "link": "/5.8/CaptureManagerEditor/",
+      "description": "The Capture Manager Editor plugin is used for importing the Capture archive data into UE/UEFN to create necessary assets.",
+      "description_cn": "本插件是 Epic Games 虚拟制片（Virtual Production）工具链中的一个核心编辑器扩展，专注于数据导入与资产管理。它解决的核心问题是：将来自外部采集设备（如多相机阵列、LiDAR扫描仪等）生成的复杂、结构化的“捕获存档”（Capture Archive）数据，高效、可靠地转化为…",
+      "category": "VirtualProduction",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`CaptureManagerDeviceBlueprint` (Runtime), `CaptureManagerEditorSettings` (Runtime), `CaptureManagerIngestBlueprint` (Runtime), `DataIngestCoreEditor` (Runtime), `LiveLinkHubDiscoveryEditor` (Runtime), `LiveLinkHubExportServer` (Runtime), `LiveLinkHubWorkerManager` (Runtime)",
+      "experimental": true,
+      "created_at": "2026-04-30",
       "age_tier": "fresh"
     },
     {
@@ -4655,6 +4719,22 @@
       "age_tier": "old"
     },
     {
+      "name": "FunctionalTestingEditor",
+      "name_cn": "编辑器功能测试",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/FunctionalTestingEditor/",
+      "description": "（无描述）",
+      "description_cn": "FunctionalTestingEditor 插件是为编辑器环境扩展标准功能测试 (FunctionalTesting) 框架的专用插件。它解决的核心问题是允许开发者创建和运行仅在编辑器中才有意义或需要编辑器特定API才能执行的功能测试。",
+      "category": "Testing",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`FunctionalTestingEditor` (Editor)",
+      "experimental": false,
+      "created_at": "2016-10-05",
+      "age_tier": "relic"
+    },
+    {
       "name": "GameFeatures",
       "name_cn": "游戏特性",
       "version": "5.8",
@@ -5007,6 +5087,22 @@
       "age_tier": "fresh"
     },
     {
+      "name": "GeometryCache",
+      "name_cn": "几何缓存",
+      "version": "5.8",
+      "size": "xlarge",
+      "link": "/5.8/GeometryCache/",
+      "description": "Support for distilled Geometry animations",
+      "description_cn": "GeometryCache 插件用于在 Unreal Engine 中导入和播放预先烘焙的几何体动画序列。它解决了实时计算大量复杂网格变形（如布料、流体、头发模拟）所带来的性能问题。通过将 DCC 软件（如 Maya, Houdini）中模拟并导出的几何体动画序列（通常为 Alembic .abc …",
+      "category": "Import/Export",
+      "enabled_by_default": true,
+      "has_content": false,
+      "modules": "`GeometryCache` (Runtime), `GeometryCacheEd` (Runtime), `GeometryCacheSequencer` (Runtime), `GeometryCacheStreamer` (Runtime), `GeometryCacheTracks` (Runtime)",
+      "experimental": false,
+      "created_at": "2022-01-26",
+      "age_tier": "fresh"
+    },
+    {
       "name": "GeometryCacheAbcFile",
       "name_cn": "Alembic 文件几何缓存",
       "version": "5.8",
@@ -5279,6 +5375,22 @@
       "age_tier": "old"
     },
     {
+      "name": "GooglePAD",
+      "name_cn": "谷歌资产交付",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/GooglePAD/",
+      "description": "Google Play Asset Delivery for Android.",
+      "description_cn": "该插件封装了 Google Play Asset Delivery API，允许 UE 项目在 Android 平台上实现按需下载游戏资产（如关卡、模型、纹理包）。通过将大型资产从初始安装包（APK）中分离，可以显著减小应用首次下载的大小，并让玩家在需要时再下载所需内容。",
+      "category": "Android",
+      "enabled_by_default": true,
+      "has_content": false,
+      "modules": "`GooglePAD` (Runtime), `GooglePADEditor` (Editor)",
+      "experimental": false,
+      "created_at": "2020-04-21",
+      "age_tier": "old"
+    },
+    {
       "name": "GPULightmass",
       "name_cn": "GPU 光照构建",
       "version": "5.8",
@@ -5436,6 +5548,38 @@
       "modules": "`EncoderAMF` (Runtime), `EncoderNVENC` (Runtime)",
       "experimental": true,
       "created_at": "2021-10-26",
+      "age_tier": "old"
+    },
+    {
+      "name": "Harmonix",
+      "name_cn": "音乐功能集",
+      "version": "5.8",
+      "size": "xlarge",
+      "link": "/5.8/Harmonix/",
+      "description": "A package of Harmonix music related audio functionality.",
+      "description_cn": "Harmonix 插件是 Epic Games 旗下 Harmonix 工作室开发的一套全面的音乐与音频功能包。其核心目标是为 UE5 项目提供专业级、高性能的音乐交互与处理能力，特别适用于音乐游戏、互动音乐体验以及需要复杂音频合成与处理的应用场景。",
+      "category": "Audio",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`Harmonix` (Runtime), `HarmonixDsp` (Runtime), `HarmonixDspEditor` (Runtime), `HarmonixDspTests` (Runtime), `HarmonixEditor` (Runtime), `HarmonixMetasound` (Runtime), `HarmonixMetasoundEditor` (Runtime), `HarmonixMetasoundTests` (Runtime), `HarmonixMidi` (Runtime), `HarmonixMidiEditor` (Runtime), `HarmonixMidiTests` (Runtime)",
+      "experimental": true,
+      "created_at": "2024-01-17",
+      "age_tier": "fresh"
+    },
+    {
+      "name": "HDRIBackdrop",
+      "name_cn": "HDRI 背景板",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/HDRIBackdrop/",
+      "description": "A plugin for placing HDRI environment map backdrops in the editor scene.",
+      "description_cn": "HDRIBackdrop 插件提供了一个编辑器内的快捷放置工具，让开发者能够快速在场景中添加一个带有 HDRI 环境贴图的背景球体。它解决了在关卡编辑器中快速搭建环境光照和背景的痛点——无需手动创建球体、分配材质再导入 HDRI 贴图，只需通过编辑器的放置面板（Placement Mode）一键放置…",
+      "category": "Rendering",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`HDRIBackdrop` (Editor)",
+      "experimental": false,
+      "created_at": "2019-08-23",
       "age_tier": "old"
     },
     {
@@ -5932,6 +6076,38 @@
       "experimental": true,
       "created_at": "2026-05-13",
       "age_tier": "fresh"
+    },
+    {
+      "name": "InterchangeTests",
+      "name_cn": "交换测试",
+      "version": "5.8",
+      "size": "large",
+      "link": "/5.8/InterchangeTests/",
+      "description": "Plugin for Interchange automation tests.",
+      "description_cn": "这是一个专为 Interchange 资产交换管线 设计的自动化测试插件。它的核心作用不是向最终用户提供功能，而是作为 Epic 内部及开发者验证 Interchange 导入、导出及处理流程正确性的基础设施。通过该框架编写的测试用例，可以确保各种格式的资产（如静态网格、骨骼网格）在通过 Inter…",
+      "category": "Testing",
+      "enabled_by_default": true,
+      "has_content": false,
+      "modules": "`InterchangeTestEditor` (Runtime), `InterchangeTests` (Runtime)",
+      "experimental": true,
+      "created_at": "2022-02-20",
+      "age_tier": "fresh"
+    },
+    {
+      "name": "IOSDeviceProfileSelector",
+      "name_cn": "iOS设备配置文件选择器",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/IOSDeviceProfileSelector/",
+      "description": "IOS Device Profile Selector used show selection of device profiles on hardware",
+      "description_cn": "该插件的核心功能是根据 iOS、tvOS 和 VisionOS 设备的具体硬件型号，在应用启动时自动加载并应用对应的设备配置文件 (Device Profile)。它解决的核心问题是：不同苹果设备（如不同型号的 iPhone、iPad、Apple TV 和 Vision Pro）拥有差异化的图形处理…",
+      "category": "Device Profile Selectors",
+      "enabled_by_default": true,
+      "has_content": false,
+      "modules": "`IOSDeviceProfileSelector` (RuntimeNoCommandlet), `IOSPreviewDeviceProfileSelector` (Editor)",
+      "experimental": false,
+      "created_at": "2014-03-14",
+      "age_tier": "relic"
     },
     {
       "name": "IOSReplayKit",
@@ -10718,6 +10894,22 @@
       "age_tier": "fresh"
     },
     {
+      "name": "RemoteControl",
+      "name_cn": "远程控制接口",
+      "version": "5.8",
+      "size": "xlarge",
+      "link": "/5.8/RemoteControl/",
+      "description": "A suite of tools for controlling the Unreal Engine, both in Editor or at Runtime via a webserver. This allows users to control Unreal Engine remotely through HTTP or WebSockets requests. This functionality allows developers to control Unreal through 3rd party applications and web services.（照抄，不翻译）",
+      "description_cn": "Remote Control 插件提供了一套标准化的远程控制接口。它解决了在虚拟制片、自动化测试或工具集成等场景下，需要从外部（如网页、移动App、控制面板）实时、安全地读取或设置引擎内属性、调用函数的核心问题。它通过内置的 Web 服务器，将 UE 的对象、属性、函数和事件暴露为可寻址的 HTTP…",
+      "category": "Messaging",
+      "enabled_by_default": true,
+      "has_content": true,
+      "modules": "`RemoteControl` (Runtime), `RemoteControlCommon` (Runtime), `RemoteControlLogic` (Runtime), `RemoteControlMultiUser` (Runtime), `RemoteControlProtocol` (Runtime), `RemoteControlProtocolWidgets` (Runtime), `RemoteControlUI` (Runtime), `WebRemoteControl` (Runtime)",
+      "experimental": false,
+      "created_at": "2019-06-07",
+      "age_tier": "old"
+    },
+    {
       "name": "RemoteControlActorModifierBridge",
       "name_cn": "远程控制与修改器桥接",
       "version": "5.8",
@@ -10748,6 +10940,22 @@
       "experimental": true,
       "created_at": "2024-01-29",
       "age_tier": "fresh"
+    },
+    {
+      "name": "RemoteControlInterception",
+      "name_cn": "远程控制拦截接口",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/RemoteControlInterception/",
+      "description": "Plugin that allows to intercept Remote Control commands（照抄，不翻译）",
+      "description_cn": "这个插件的核心目的是为 Unreal Engine 的 Remote Control 系统提供一个可扩展的拦截框架。它本身不包含任何具体的拦截或处理逻辑，而是定义了一组抽象接口和数据结构。",
+      "category": "Messaging",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`RemoteControlInterception` (Runtime)",
+      "experimental": false,
+      "created_at": "2021-04-29",
+      "age_tier": "old"
     },
     {
       "name": "RemoteControlProtocolDMX",
@@ -11099,6 +11307,38 @@
       "modules": "`RigVM` (Runtime), `RigVMDeveloper` (Runtime), `RigVMEditor` (Runtime)",
       "experimental": false,
       "created_at": "2023-03-28",
+      "age_tier": "fresh"
+    },
+    {
+      "name": "RivermaxCore",
+      "name_cn": "Rivermax 核心",
+      "version": "5.8",
+      "size": "large",
+      "link": "/5.8/RivermaxCore/",
+      "description": "Base plugin exposing rivermax to engine（照抄，不翻译）",
+      "description_cn": "此插件为 Unreal Engine 提供了与 Rivermax 库集成的底层核心功能。Rivermax 是 NVIDIA 提供的用于高速网络传输（特别是符合 SMPTE ST 2110 标准）的库。RivermaxCore 插件的主要目的是管理通过 IP 网络（如 25/100GbE）发送和接收未…",
+      "category": "VirtualProduction",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`RivermaxCore` (Runtime), `RivermaxEditor` (Editor), `RivermaxRendering` (Runtime)",
+      "experimental": true,
+      "created_at": "2022-03-30",
+      "age_tier": "fresh"
+    },
+    {
+      "name": "RivermaxMedia",
+      "name_cn": "Rivermax 媒体流",
+      "version": "5.8",
+      "size": "medium",
+      "link": "/5.8/RivermaxMedia/",
+      "description": "Adding NVIDIA Rivermax capabilities for Media Captures and Media Players",
+      "description_cn": "该插件为 UE5 集成 NVIDIA Rivermax SDK，提供基于 IP 的专业级媒体采集和播放能力。Rivermax 是 NVIDIA 提供的硬件加速 RDMA（远程直接内存访问）网络库，专为超低延迟、高吞吐量的视频传输设计。",
+      "category": "VirtualProduction",
+      "enabled_by_default": false,
+      "has_content": false,
+      "modules": "`RivermaxMedia` (Runtime), `RivermaxMediaEditor` (Runtime), `RivermaxMediaFactory` (Runtime)",
+      "experimental": true,
+      "created_at": "2022-03-30",
       "age_tier": "fresh"
     },
     {
@@ -11934,6 +12174,22 @@
       "age_tier": "fresh"
     },
     {
+      "name": "StateTree",
+      "name_cn": "状态树",
+      "version": "5.8",
+      "size": "xlarge",
+      "link": "/5.8/StateTree/",
+      "description": "General purpose hierarchical state machine",
+      "description_cn": "StateTree 是 Unreal Engine 的通用层级状态机（Hierarchical State Machine）系统，用于替代或补充传统行为树（Behavior Tree）方案。它提供了可视化编辑器，支持复杂的状态逻辑、条件转换、任务执行和属性绑定。",
+      "category": "Gameplay",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`StateTreeModule` (Runtime), `StateTreeEditorModule` (Runtime), `StateTreeDeveloper` (Runtime), `StateTreeTestSuite` (Runtime)",
+      "experimental": false,
+      "created_at": "2021-09-28",
+      "age_tier": "old"
+    },
+    {
       "name": "StateTreeToolset",
       "name_cn": "状态树工具集",
       "version": "5.8",
@@ -11964,6 +12220,22 @@
       "experimental": true,
       "created_at": "2024-02-01",
       "age_tier": "fresh"
+    },
+    {
+      "name": "SteamAudio",
+      "name_cn": "已弃用蒸汽音频",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/SteamAudio/",
+      "description": "This plugin is deprecated and will be removed in a future engine release. Please use the plugin from Valve's website.（照抄，不翻译）",
+      "description_cn": "此插件旨在将 Valve 的 Steam Audio 空间音频技术集成到 Unreal Engine 中，提供基于物理的声学模拟、HRTF（头相关传输函数）渲染和声学反射等功能。然而，该插件已被官方弃用，其核心功能应由 Valve 官方网站提供的更新版本插件替代。此插件的存在主要是为了向后兼容，不推…",
+      "category": "Audio",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`SteamAudio` (Runtime)",
+      "experimental": true,
+      "created_at": "2017-05-02",
+      "age_tier": "old"
     },
     {
       "name": "SteamController",
@@ -13342,6 +13614,22 @@
       "age_tier": "fresh"
     },
     {
+      "name": "WarpUtils",
+      "name_cn": "投影融合工具",
+      "version": "5.8",
+      "size": "small",
+      "link": "/5.8/WarpUtils/",
+      "description": "PFM/MPCDI generation & visualization",
+      "description_cn": "该插件为 nDisplay 系统提供核心的投影几何校正与色彩融合支持。它主要用于生成和处理 PFM 文件（一种存储每像素相机映射信息的格式）以及 MPCDI 文件（一种标准化的投影仪配置数据格式）。这些文件是驱动多投影仪系统进行精确的几何扭曲 (Warp) 和边缘融合 (Blend) 的基础数据，确…",
+      "category": "Misc",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`PFMExporter` (Runtime), `WarpUtils` (Runtime)",
+      "experimental": true,
+      "created_at": "2019-07-18",
+      "age_tier": "old"
+    },
+    {
       "name": "Water",
       "name_cn": "水体",
       "version": "5.8",
@@ -13419,6 +13707,22 @@
       "modules": "`WaveFunctionCollapse` (Runtime)",
       "experimental": true,
       "created_at": "2022-03-01",
+      "age_tier": "fresh"
+    },
+    {
+      "name": "WaveTable",
+      "name_cn": "波表",
+      "version": "5.8",
+      "size": "medium",
+      "link": "/5.8/WaveTable/",
+      "description": "Default implementation of WaveTable support within the Unreal Audio Engine.",
+      "description_cn": "WaveTable 插件提供了 UE5 音频引擎中波表 (WaveTable) 的核心数据结构和运行时支持。波表是一种用于音频合成和调制的技术，它将波形存储在表格中，通过查表方式高效地生成或调制声音信号。此插件为音频设计师提供了基础的波表数据结构和相关工具，旨在被 MetaSound、音频调制等系统…",
+      "category": "Audio",
+      "enabled_by_default": false,
+      "has_content": true,
+      "modules": "`WaveTable` (Runtime), `WaveTableEditor` (Editor)",
+      "experimental": true,
+      "created_at": "2022-06-15",
       "age_tier": "fresh"
     },
     {
