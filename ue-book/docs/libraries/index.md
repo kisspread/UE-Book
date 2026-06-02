@@ -280,6 +280,12 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 这是一个概念明确且具有扩展潜力的 UE5 音频工具，其亮点在于将 DAW 工作流（如钢琴卷帘、混音器）集成到编辑器中，并借助 Metasound 系统实现。不过，从 README 可以看出项目仍在积极开发中，部分功能尚未完成或维护，稳定性有待观察。
   🔗 [SMUFL Fonts - Bravura](https://github.com/steinbergmedia/bravura)
 
+- [Blueprint Auto Layout](https://github.com/ibrews/blueprint-auto-layout)  Pin-aware auto-layout for Unreal Engine Blueprint graphs.
+  ![Blueprint Auto Layout screenshot](https://raw.githubusercontent.com/ibrews/blueprint-auto-layout/main/Docs/demo.gif)
+  ![Blueprint Auto Layout screenshot](https://raw.githubusercontent.com/ibrews/blueprint-auto-layout/main/Docs/before-after.png)
+  ![Blueprint Auto Layout screenshot](https://raw.githubusercontent.com/ibrews/blueprint-auto-layout/main/Docs/grouped-colored.png)
+  - 💬 一个采用专业布局算法（Sugiyama, Brandes-Köpf）的蓝图编辑器插件，专注于解决蓝图图表“面条化”的痛点，实用性很强。
+
 
 
 ## Animation
