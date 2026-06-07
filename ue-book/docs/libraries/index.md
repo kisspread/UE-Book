@@ -621,6 +621,13 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 项目结构清晰，提供了详细的使用说明和兼容性信息，适合学习或应用自定义后处理效果，但功能较为基础，可能需进一步扩展。
   🔗 [Urban Myth Dissolution Center (『都市伝説解体センター』)](https://umdc.shueisha-games.com/) · [Link to blog](https://zenn.dev/nlnnn/articles/2c33ea89605559)
 
+- [ShadowMask](https://github.com/proceduralit/ShadowMask)  Calculating shadow area based on MVP matrices in Shader and Niagara
+  ![ShadowMask screenshot](https://raw.githubusercontent.com/proceduralit/ShadowMask/main/doc_res/ParagonSample.jpg "")
+  ![ShadowMask screenshot](https://raw.githubusercontent.com/proceduralit/ShadowMask/main/doc_res/SunLocation.jpg "")
+  ![ShadowMask screenshot](https://raw.githubusercontent.com/proceduralit/ShadowMask/main/doc_res/ShadowParameters.jpg "")
+  - 💬 项目专注于在UE的材质和Niagara系统中，通过矩阵运算实时计算阴影区域，实现视觉效果。技术上有一定深度，适用于需要程序化阴影控制的场景。
+  🔗 [Clover Patches On Grass](https://quixel.com/megascans/home?search=clover&search=patches&search=on&search=grass&assetId=sgmkajak)
+
 
 
 ## NetWork
