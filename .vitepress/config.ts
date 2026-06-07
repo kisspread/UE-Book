@@ -93,7 +93,9 @@ const weeklyFiles = allUpdateFiles
   .filter(f => /^\d{4}-\d{2}-\d{2}\.md$/.test(f))
   .sort().reverse()
 
-const updatesSidebar: any[] = []
+const updatesSidebar: any[] = [
+  { text: '关于', link: '/updates/about' },
+]
 
 if (monthlyFiles.length > 0) {
   updatesSidebar.push({

@@ -253,6 +253,11 @@ if (reportFiles.length > 0) {
     JSON.stringify({ slug: latestSlug }),
     'utf-8',
   );
+
+  // Copy latest report content into index.md so /updates/ always shows the newest
+  const latestContent = fs.readFileSync(path.join(UPDATES_DIR, reportFiles[0]), 'utf-8');
+  fs.writeFileSync(path.join(UPDATES_DIR, 'index.md'), latestContent, 'utf-8');
+
   console.log('  Latest update: ' + latestSlug);
 }
 
