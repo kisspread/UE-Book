@@ -42,8 +42,8 @@ def fetch_commits(branch: str, since: str) -> list[dict]:
         capture_output=True, text=True, timeout=60,
     )
     if result.returncode != 0:
-        print(f"gh api error: {result.stderr}")
-        return []
+        print(f"gh api error: {result.stderr}", file=sys.stderr)
+        sys.exit(1)
 
     try:
         raw = json.loads(result.stdout)
@@ -175,7 +175,11 @@ def main():
 只输出 Markdown，不要多余解释。"""
 
     print(f"\nGenerating {label} report ({len(commits)} commits)...")
-    report = call_llm(system_prompt, commits_text)
+    try:
+        report = call_llm(system_prompt, commits_text)
+    except Exception as e:
+        print(f"LLM call failed: {e}", file=sys.stderr)
+        sys.exit(1)
 
     UPDATES_DIR.mkdir(parents=True, exist_ok=True)
     output_path.write_text(report, encoding="utf-8")
