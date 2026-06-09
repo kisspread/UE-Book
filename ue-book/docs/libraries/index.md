@@ -925,6 +925,13 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 这是一个专注于经典 FPS 移动机制的 UE 插件，实现了 HL2 中的多种高级技巧如 bunnyhopping 和滑行，但需要 C++ 项目支持，且部分游戏特定功能未完全公开，适用于开发类似 Half-Life 风格的 FPS 游戏。
   🔗 [simple Blueprint example](https://blueprintue.com/blueprint/mhk2sgn9/)
 
+- [Dependency Analyser](https://github.com/alessianigretti/DependencyAnalyser)  UE5 plugin for analyzing asset dependency sizes and bottlenecks.
+  ![Dependency Analyser screenshot](https://github.com/YAGER-Development/DependencyAnalyser/assets/17513294/c799d3d2-dbc4-4a32-8d90-6175635345da)
+  ![Dependency Analyser screenshot](https://github.com/YAGER-Development/DependencyAnalyser/assets/17513294/9878555a-1d8c-406d-aa03-3e4b4bf9c598)
+  ![Dependency Analyser screenshot](https://github.com/YAGER-Development/DependencyAnalyser/assets/17513294/4311e056-ea7f-42db-a314-266b71c273e8)
+  - 💬 该插件专注于 UE5 资产依赖分析，能帮助开发者快速识别依赖链瓶颈并优化项目性能，集成自动化测试框架提升了实用性，适合大型 UE 项目定期使用。
+  🔗 [asset dependency](https://docs.unrealengine.com/5.3/en-US/referencing-assets-in-unreal-engine/) · [Unreal Engine guidelines](https://docs.unrealengine.com/5.0/en-US/working-with-plugins-in-unreal-engine/) · [Functional Testing Editor plugin enabled](https://docs.unrealengine.com/5.3/en-US/automation-system-in-unreal-engine/#automationtestsmovedtoplugins)
+
 
 
 ## Engine
