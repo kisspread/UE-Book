@@ -784,6 +784,9 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 一个基于 Unreal Engine 几何脚本系统实现的“光剑雕刻”概念原型，创意有趣，展示了运行时网格操作的能力，但更偏向技术演示和创意实验，离成熟的游戏玩法工具尚有距离。
   🔗 [MIT](https://choosealicense.com/licenses/mit/) · [@SirFansi](https://github.com/Fansi129)
 
+- [UEPlugins_DisableDefault](https://github.com/DarknessFX/UEPlugins_DisableDefault)  Tool for managing Unreal Engine plugins' EnabledByDefault settings.
+  - 💬 该工具专注于解决 UE 开发者管理插件默认设置的痛点，通过批量处理 .uplugin 文件提升效率，但功能较为单一，适用于需要定制引擎配置的场景。
+
 
 - [UnrealGPUSwarm](https://github.com/timdecode/UnrealGPUSwarm) 学习compute shaders的例子。 This project is a good starting point for learning how to write compute shaders in Unreal. It implements a boid simulation the GPU. It achieves 0.5 million boids at 45 fps on a GTX 1080.
   <video src="https://user-images.githubusercontent.com/980432/132757577-500416e4-5f27-4add-9c50-641889336d69.mp4" controls autoplay loop> 
