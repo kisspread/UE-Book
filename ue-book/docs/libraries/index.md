@@ -949,6 +949,13 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 该插件专注于 UE5 资产依赖分析，能帮助开发者快速识别依赖链瓶颈并优化项目性能，集成自动化测试框架提升了实用性，适合大型 UE 项目定期使用。
   🔗 [asset dependency](https://docs.unrealengine.com/5.3/en-US/referencing-assets-in-unreal-engine/) · [Unreal Engine guidelines](https://docs.unrealengine.com/5.0/en-US/working-with-plugins-in-unreal-engine/) · [Functional Testing Editor plugin enabled](https://docs.unrealengine.com/5.3/en-US/automation-system-in-unreal-engine/#automationtestsmovedtoplugins)
 
+- [Pool Manager](https://github.com/JanSeliv/PoolManager)  Unreal Engine 5 plugin for object pooling to improve performance
+  ![Pool Manager screenshot](https://github.com/JanSeliv/PoolManager/assets/20540872/0af55b33-732c-435d-a5b3-2d7e36cdebf2)
+  ![Pool Manager screenshot](https://github.com/user-attachments/assets/3a0501f6-28ed-4bc9-8f06-93bf95385625)
+  ![Pool Manager screenshot](https://github.com/user-attachments/assets/8cd05e9b-3877-43ed-9285-50a56641132f)
+  - 💬 该插件通过对象池机制优化游戏性能，支持Actor、UObject和Widget等对象类型，兼容UE5多个版本，适合需要频繁生成销毁对象的游戏开发场景。
+  🔗 [game project repository](https://github.com/JanSeliv/Bomber) · [Priorities](https://docs.google.com/document/d/1YxbIdc9lZRl5ozI7_1LTBfdzJWTwhxwz2RKA-r0Q4po/edit?tab=t.0#heading=h.72e3golkh2jm) · [Pool Object Callback interface](https://docs.google.com/document/d/1YxbIdc9lZRl5ozI7_1LTBfdzJWTwhxwz2RKA-r0Q4po/edit?tab=t.0#heading=h.re9d8tpdk6q1)
+
 
 
 ## Engine
