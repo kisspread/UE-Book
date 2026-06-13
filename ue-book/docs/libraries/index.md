@@ -553,6 +553,13 @@ Including open source and non-open source, commercial and non-commercial.
   - ReactorUMG 是一个 Unreal Engine 的辅助插件，允许使用 React 构建 UMG 游戏 UI 和编辑器 UI。它基于 PuertTS 脚本，支持 AI 辅助开发，提供实时预览和热重载功能，以简化 UI 开发流程。
   - 💬 项目处于 Alpha 阶段，API 尚未稳定，但引入了 Web 前端开发模式到 UE UI 中，亮点在于支持 AI 辅助和热重载，更适合快速开发编辑器工具而非生产级游戏 UI。
 
+- [Custom Shape Button](https://github.com/JanSeliv/CustomShapeButton)  Open-source plugin that allows to make buttons of any shape in UE5.7
+  ![Custom Shape Button screenshot](https://github.com/user-attachments/assets/68190cb1-a8a1-4931-9a75-fbe04ff37ec9)
+  ![Custom Shape Button screenshot](https://github.com/JanSeliv/CustomShapeButton/assets/20540872/c4a083d2-494e-400f-b363-1ffa795024fa)
+  - Custom Shape Button 是一个 Unreal Engine 插件，用于创建任意自定义形状的按钮，突破传统矩形限制，并支持无缝的悬停和按下交互行为。
+  - 💬 该项目解决了UE中按钮形状的常见限制，实用性强，文档和示例齐全，但需注意其版本依赖性，适合UI设计需求较高的游戏开发者。
+  🔗 [here](https://docs.google.com/document/d/1Ws76obIHRMtsdOjB6YP9K7LTjJR-R56h2uv65PKUBL4) · [doc](https://docs.google.com/document/d/1Ws76obIHRMtsdOjB6YP9K7LTjJR-R56h2uv65PKUBL4/edit#heading=h.jlxkng80vqbe) · [Discord](https://discord.gg/jbWgwDefnE)
+
 
 
 ## Material
