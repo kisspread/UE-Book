@@ -286,6 +286,13 @@ Including open source and non-open source, commercial and non-commercial.
   ![Blueprint Auto Layout screenshot](https://raw.githubusercontent.com/ibrews/blueprint-auto-layout/main/Docs/grouped-colored.png)
   - 💬 一个采用专业布局算法（Sugiyama, Brandes-Köpf）的蓝图编辑器插件，专注于解决蓝图图表“面条化”的痛点，实用性很强。
 
+- [String Table Browser](https://github.com/matoroid/StringTableBrowser)  An Unreal Engine editor plugin for browsing, searching, and referencing string table entries from a single panel.
+  ![String Table Browser screenshot](https://raw.githubusercontent.com/matoroid/StringTableBrowser/main/Docs/Screenshots/browser_panel.png)
+  ![String Table Browser screenshot](https://raw.githubusercontent.com/matoroid/StringTableBrowser/main/Docs/Screenshots/search_demo.gif)
+  ![String Table Browser screenshot](https://raw.githubusercontent.com/matoroid/StringTableBrowser/main/Docs/Screenshots/row_actions.gif)
+  - 这是一个 Unreal Engine 编辑器插件，允许用户在单一面板中浏览、搜索和引用项目中的所有字符串表条目。它提供了统一视图、实时搜索、可排序列等功能，并支持增量缓存和磁盘缓存以优化性能。
+  - 💬 该插件功能全面，设计注重性能优化，如增量缓存和磁盘缓存，适合大型项目中管理本地化字符串，但作为编辑器工具，主要面向开发者。
+
 
 
 ## Animation
