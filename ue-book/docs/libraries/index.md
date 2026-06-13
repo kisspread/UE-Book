@@ -560,6 +560,11 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 该项目解决了UE中按钮形状的常见限制，实用性强，文档和示例齐全，但需注意其版本依赖性，适合UI设计需求较高的游戏开发者。
   🔗 [here](https://docs.google.com/document/d/1Ws76obIHRMtsdOjB6YP9K7LTjJR-R56h2uv65PKUBL4) · [doc](https://docs.google.com/document/d/1Ws76obIHRMtsdOjB6YP9K7LTjJR-R56h2uv65PKUBL4/edit#heading=h.jlxkng80vqbe) · [Discord](https://discord.gg/jbWgwDefnE)
 
+- [Settings Widget Constructor](https://github.com/JanSeliv/SettingsWidgetConstructor)  Open-source plugin for UI generation of game settings from data table in UE5.7
+  ![Settings Widget Constructor screenshot](https://user-images.githubusercontent.com/20540872/147825296-ce7d33da-dfda-4757-b070-bfd08f700134.jpg)
+  - 💬 这是一个基于数据表自动生成游戏设置 UI 的 Unreal Engine 插件，支持多语言本地化，适用于需要快速构建可定制设置界面的游戏项目。
+  🔗 [game project repository](https://github.com/JanSeliv/Bomber) · [see doc](https://docs.google.com/document/d/1IXnOqrgaXTClP-0cIo28a9f6GHc9N1BCgTNnMk-X9VQ/edit#heading=h.cix3vjszb2vm) · [Discord](https://discord.gg/jbWgwDefnE)
+
 
 
 ## Material
