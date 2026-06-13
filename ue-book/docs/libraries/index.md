@@ -647,6 +647,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 项目专注于在UE的材质和Niagara系统中，通过矩阵运算实时计算阴影区域，实现视觉效果。技术上有一定深度，适用于需要程序化阴影控制的场景。
   🔗 [Clover Patches On Grass](https://quixel.com/megascans/home?search=clover&search=patches&search=on&search=grass&assetId=sgmkajak)
 
+- [Phyronnaz/HLSLMaterial](https://github.com/Phyronnaz/HLSLMaterial)  Write complex Unreal Engine material functions directly in HLSL
+  - 这是一个Unreal Engine插件，允许开发者直接在HLSL文件中编写复杂的材质函数，并自动转换为UE材质系统可用的材质函数。支持UE4.26、4.27及5.0，具备实时更新、团队协作友好等特性。
+  - 💬 该项目精准地解决了UE材质编辑中编写复杂逻辑函数的痛点，将UE的图形化编程与直接编写HLSL代码的优势相结合，提高了开发效率和灵活性。但其功能相对垂直，更适合熟悉HLSL且对材质系统有较高定制需求的开发者，且部分高级功能（如实时更新）仅限Windows平台。
+
 
 
 ## NetWork
