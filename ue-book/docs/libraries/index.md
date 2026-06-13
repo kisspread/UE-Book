@@ -1130,6 +1130,9 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
   - 💬 项目充分利用了 UE5 的先进特性如 GAS 和 Mover 2.0，代码结构清晰且文档齐全，适合作为学习 UE5 游戏开发的范例。但项目体积较大，对初学者可能有一定门槛。
   🔗 [**Download Bomberrage Demo**](https://store.steampowered.com/app/1873240/Bomberrage/) · [![Download on Steam](https://github.com/user-attachments/assets/39bbd233-fc1f-4a16-aec4-f33983a92cd8) · [[doc](https://trello.com/c/HGscMUdK)
 
+- [UnrealMultithreadingDemo](https://github.com/casefc3s/UnrealMultithreadingDemo)  A practical Unreal Engine multithreading sandbox for performance analysis
+  - 💬 该项目通过具体案例演示了Unreal Engine的多线程优化策略，结合Unreal Insights进行性能分析，适合开发者学习引擎内部工作方式和性能调优。
+
 
 
 ## Other
