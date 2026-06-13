@@ -806,6 +806,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 - [UEPlugins_DisableDefault](https://github.com/DarknessFX/UEPlugins_DisableDefault)  Tool for managing Unreal Engine plugins' EnabledByDefault settings.
   - 💬 该工具专注于解决 UE 开发者管理插件默认设置的痛点，通过批量处理 .uplugin 文件提升效率，但功能较为单一，适用于需要定制引擎配置的场景。
 
+- [VlcMediaPlayer](https://github.com/obitodaitu/VlcMediaPlayer)  Implements a media player using the libvlc for unreal engine.
+  - 这是一个基于 libVLC 实现的 Unreal Engine 媒体播放器插件。作者参考了 ue4plugins 项目，并为了便于修改，采用了头文件而非纯动态库的方式进行集成。
+  - 💬 项目实现了 VLC 媒体库到 UE 的集成，支持格式广泛，但知名度较低，适合作为特定格式播放的参考或基础。
+
 
 - [UnrealGPUSwarm](https://github.com/timdecode/UnrealGPUSwarm) 学习compute shaders的例子。 This project is a good starting point for learning how to write compute shaders in Unreal. It implements a boid simulation the GPU. It achieves 0.5 million boids at 45 fps on a GTX 1080.
   <video src="https://user-images.githubusercontent.com/980432/132757577-500416e4-5f27-4add-9c50-641889336d69.mp4" controls autoplay loop> 
