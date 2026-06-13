@@ -1106,6 +1106,14 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
   - 💬 项目整合了 EOS、Steam 等主流在线服务和 ALS 等高级系统，亮点在于提供开箱即用的多人游戏模板，但作为模板可能需要用户根据需求自行扩展和优化。
   🔗 [Codeberg](https://codeberg.org/Voidware-Prohibited/) · [GitHub](https://github.com/Voidware-Prohibited/ALSXT/) · [GitLab](https://gitlab.com/Voidware-Prohibited/ALSXT/)
 
+- [Bomberrage](https://github.com/JanSeliv/Bomber)  Open-source Unreal Engine 5 multiplayer game available on Steam.
+  ![Bomberrage screenshot](https://github.com/user-attachments/assets/e8774b8b-2f76-42f1-8eae-e6849658d2d3)
+  ![Bomberrage screenshot](https://github.com/user-attachments/assets/39bbd233-fc1f-4a16-aec4-f33983a92cd8)
+  ![Bomberrage screenshot](https://github.com/user-attachments/assets/48dcb22d-91fd-4285-b695-0283db0f62c6)
+  - 这是一个基于 Unreal Engine 5.6 开发的开源多人游戏项目，支持 Windows、macOS 和 Linux 平台。游戏包含快节奏的多人对战、AI 挑战和 Steam 集成等功能。
+  - 💬 项目充分利用了 UE5 的先进特性如 GAS 和 Mover 2.0，代码结构清晰且文档齐全，适合作为学习 UE5 游戏开发的范例。但项目体积较大，对初学者可能有一定门槛。
+  🔗 [**Download Bomberrage Demo**](https://store.steampowered.com/app/1873240/Bomberrage/) · [![Download on Steam](https://github.com/user-attachments/assets/39bbd233-fc1f-4a16-aec4-f33983a92cd8) · [[doc](https://trello.com/c/HGscMUdK)
+
 
 
 ## Other
