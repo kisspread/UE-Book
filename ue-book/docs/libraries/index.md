@@ -286,6 +286,13 @@ Including open source and non-open source, commercial and non-commercial.
   ![Blueprint Auto Layout screenshot](https://raw.githubusercontent.com/ibrews/blueprint-auto-layout/main/Docs/grouped-colored.png)
   - 💬 一个采用专业布局算法（Sugiyama, Brandes-Köpf）的蓝图编辑器插件，专注于解决蓝图图表“面条化”的痛点，实用性很强。
 
+- [String Table Browser](https://github.com/matoroid/StringTableBrowser)  An Unreal Engine editor plugin for browsing, searching, and referencing string table entries from a single panel.
+  ![String Table Browser screenshot](https://raw.githubusercontent.com/matoroid/StringTableBrowser/main/Docs/Screenshots/browser_panel.png)
+  ![String Table Browser screenshot](https://raw.githubusercontent.com/matoroid/StringTableBrowser/main/Docs/Screenshots/search_demo.gif)
+  ![String Table Browser screenshot](https://raw.githubusercontent.com/matoroid/StringTableBrowser/main/Docs/Screenshots/row_actions.gif)
+  - 这是一个 Unreal Engine 编辑器插件，允许用户在单一面板中浏览、搜索和引用项目中的所有字符串表条目。它提供了统一视图、实时搜索、可排序列等功能，并支持增量缓存和磁盘缓存以优化性能。
+  - 💬 该插件功能全面，设计注重性能优化，如增量缓存和磁盘缓存，适合大型项目中管理本地化字符串，但作为编辑器工具，主要面向开发者。
+
 
 
 ## Animation
@@ -546,6 +553,18 @@ Including open source and non-open source, commercial and non-commercial.
   - ReactorUMG 是一个 Unreal Engine 的辅助插件，允许使用 React 构建 UMG 游戏 UI 和编辑器 UI。它基于 PuertTS 脚本，支持 AI 辅助开发，提供实时预览和热重载功能，以简化 UI 开发流程。
   - 💬 项目处于 Alpha 阶段，API 尚未稳定，但引入了 Web 前端开发模式到 UE UI 中，亮点在于支持 AI 辅助和热重载，更适合快速开发编辑器工具而非生产级游戏 UI。
 
+- [Custom Shape Button](https://github.com/JanSeliv/CustomShapeButton)  Open-source plugin that allows to make buttons of any shape in UE5.7
+  ![Custom Shape Button screenshot](https://github.com/user-attachments/assets/68190cb1-a8a1-4931-9a75-fbe04ff37ec9)
+  ![Custom Shape Button screenshot](https://github.com/JanSeliv/CustomShapeButton/assets/20540872/c4a083d2-494e-400f-b363-1ffa795024fa)
+  - Custom Shape Button 是一个 Unreal Engine 插件，用于创建任意自定义形状的按钮，突破传统矩形限制，并支持无缝的悬停和按下交互行为。
+  - 💬 该项目解决了UE中按钮形状的常见限制，实用性强，文档和示例齐全，但需注意其版本依赖性，适合UI设计需求较高的游戏开发者。
+  🔗 [here](https://docs.google.com/document/d/1Ws76obIHRMtsdOjB6YP9K7LTjJR-R56h2uv65PKUBL4) · [doc](https://docs.google.com/document/d/1Ws76obIHRMtsdOjB6YP9K7LTjJR-R56h2uv65PKUBL4/edit#heading=h.jlxkng80vqbe) · [Discord](https://discord.gg/jbWgwDefnE)
+
+- [Settings Widget Constructor](https://github.com/JanSeliv/SettingsWidgetConstructor)  Open-source plugin for UI generation of game settings from data table in UE5.7
+  ![Settings Widget Constructor screenshot](https://user-images.githubusercontent.com/20540872/147825296-ce7d33da-dfda-4757-b070-bfd08f700134.jpg)
+  - 💬 这是一个基于数据表自动生成游戏设置 UI 的 Unreal Engine 插件，支持多语言本地化，适用于需要快速构建可定制设置界面的游戏项目。
+  🔗 [game project repository](https://github.com/JanSeliv/Bomber) · [see doc](https://docs.google.com/document/d/1IXnOqrgaXTClP-0cIo28a9f6GHc9N1BCgTNnMk-X9VQ/edit#heading=h.cix3vjszb2vm) · [Discord](https://discord.gg/jbWgwDefnE)
+
 
 
 ## Material
@@ -627,6 +646,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   ![ShadowMask screenshot](https://raw.githubusercontent.com/proceduralit/ShadowMask/main/doc_res/ShadowParameters.jpg "")
   - 💬 项目专注于在UE的材质和Niagara系统中，通过矩阵运算实时计算阴影区域，实现视觉效果。技术上有一定深度，适用于需要程序化阴影控制的场景。
   🔗 [Clover Patches On Grass](https://quixel.com/megascans/home?search=clover&search=patches&search=on&search=grass&assetId=sgmkajak)
+
+- [Phyronnaz/HLSLMaterial](https://github.com/Phyronnaz/HLSLMaterial)  Write complex Unreal Engine material functions directly in HLSL
+  - 这是一个Unreal Engine插件，允许开发者直接在HLSL文件中编写复杂的材质函数，并自动转换为UE材质系统可用的材质函数。支持UE4.26、4.27及5.0，具备实时更新、团队协作友好等特性。
+  - 💬 该项目精准地解决了UE材质编辑中编写复杂逻辑函数的痛点，将UE的图形化编程与直接编写HLSL代码的优势相结合，提高了开发效率和灵活性。但其功能相对垂直，更适合熟悉HLSL且对材质系统有较高定制需求的开发者，且部分高级功能（如实时更新）仅限Windows平台。
 
 
 
@@ -784,6 +807,13 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 一个基于 Unreal Engine 几何脚本系统实现的“光剑雕刻”概念原型，创意有趣，展示了运行时网格操作的能力，但更偏向技术演示和创意实验，离成熟的游戏玩法工具尚有距离。
   🔗 [MIT](https://choosealicense.com/licenses/mit/) · [@SirFansi](https://github.com/Fansi129)
 
+- [UEPlugins_DisableDefault](https://github.com/DarknessFX/UEPlugins_DisableDefault)  Tool for managing Unreal Engine plugins' EnabledByDefault settings.
+  - 💬 该工具专注于解决 UE 开发者管理插件默认设置的痛点，通过批量处理 .uplugin 文件提升效率，但功能较为单一，适用于需要定制引擎配置的场景。
+
+- [VlcMediaPlayer](https://github.com/obitodaitu/VlcMediaPlayer)  Implements a media player using the libvlc for unreal engine.
+  - 这是一个基于 libVLC 实现的 Unreal Engine 媒体播放器插件。作者参考了 ue4plugins 项目，并为了便于修改，采用了头文件而非纯动态库的方式进行集成。
+  - 💬 项目实现了 VLC 媒体库到 UE 的集成，支持格式广泛，但知名度较低，适合作为特定格式播放的参考或基础。
+
 
 - [UnrealGPUSwarm](https://github.com/timdecode/UnrealGPUSwarm) 学习compute shaders的例子。 This project is a good starting point for learning how to write compute shaders in Unreal. It implements a boid simulation the GPU. It achieves 0.5 million boids at 45 fps on a GTX 1080.
   <video src="https://user-images.githubusercontent.com/980432/132757577-500416e4-5f27-4add-9c50-641889336d69.mp4" controls autoplay loop> 
@@ -924,6 +954,20 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
 - [PBCharacterMovement](https://github.com/ProjectBorealis/PBCharacterMovement)  HL2-style, classic FPS movement for Unreal Engine implemented in C++
   - 💬 这是一个专注于经典 FPS 移动机制的 UE 插件，实现了 HL2 中的多种高级技巧如 bunnyhopping 和滑行，但需要 C++ 项目支持，且部分游戏特定功能未完全公开，适用于开发类似 Half-Life 风格的 FPS 游戏。
   🔗 [simple Blueprint example](https://blueprintue.com/blueprint/mhk2sgn9/)
+
+- [Dependency Analyser](https://github.com/alessianigretti/DependencyAnalyser)  UE5 plugin for analyzing asset dependency sizes and bottlenecks.
+  ![Dependency Analyser screenshot](https://github.com/YAGER-Development/DependencyAnalyser/assets/17513294/c799d3d2-dbc4-4a32-8d90-6175635345da)
+  ![Dependency Analyser screenshot](https://github.com/YAGER-Development/DependencyAnalyser/assets/17513294/9878555a-1d8c-406d-aa03-3e4b4bf9c598)
+  ![Dependency Analyser screenshot](https://github.com/YAGER-Development/DependencyAnalyser/assets/17513294/4311e056-ea7f-42db-a314-266b71c273e8)
+  - 💬 该插件专注于 UE5 资产依赖分析，能帮助开发者快速识别依赖链瓶颈并优化项目性能，集成自动化测试框架提升了实用性，适合大型 UE 项目定期使用。
+  🔗 [asset dependency](https://docs.unrealengine.com/5.3/en-US/referencing-assets-in-unreal-engine/) · [Unreal Engine guidelines](https://docs.unrealengine.com/5.0/en-US/working-with-plugins-in-unreal-engine/) · [Functional Testing Editor plugin enabled](https://docs.unrealengine.com/5.3/en-US/automation-system-in-unreal-engine/#automationtestsmovedtoplugins)
+
+- [Pool Manager](https://github.com/JanSeliv/PoolManager)  Unreal Engine 5 plugin for object pooling to improve performance
+  ![Pool Manager screenshot](https://github.com/JanSeliv/PoolManager/assets/20540872/0af55b33-732c-435d-a5b3-2d7e36cdebf2)
+  ![Pool Manager screenshot](https://github.com/user-attachments/assets/3a0501f6-28ed-4bc9-8f06-93bf95385625)
+  ![Pool Manager screenshot](https://github.com/user-attachments/assets/8cd05e9b-3877-43ed-9285-50a56641132f)
+  - 💬 该插件通过对象池机制优化游戏性能，支持Actor、UObject和Widget等对象类型，兼容UE5多个版本，适合需要频繁生成销毁对象的游戏开发场景。
+  🔗 [game project repository](https://github.com/JanSeliv/Bomber) · [Priorities](https://docs.google.com/document/d/1YxbIdc9lZRl5ozI7_1LTBfdzJWTwhxwz2RKA-r0Q4po/edit?tab=t.0#heading=h.72e3golkh2jm) · [Pool Object Callback interface](https://docs.google.com/document/d/1YxbIdc9lZRl5ozI7_1LTBfdzJWTwhxwz2RKA-r0Q4po/edit?tab=t.0#heading=h.re9d8tpdk6q1)
 
 
 
@@ -1081,6 +1125,17 @@ It is actively developed by Hazelight, creators of Split Fiction and It Takes Tw
   - 这是一个 Unreal Engine 5 模板项目，集成了 Epic Online Services、Steam、模块化游戏玩法、Common UI 和 ALS（高级运动系统重构版），旨在提供一个跨平台的多人游戏框架。
   - 💬 项目整合了 EOS、Steam 等主流在线服务和 ALS 等高级系统，亮点在于提供开箱即用的多人游戏模板，但作为模板可能需要用户根据需求自行扩展和优化。
   🔗 [Codeberg](https://codeberg.org/Voidware-Prohibited/) · [GitHub](https://github.com/Voidware-Prohibited/ALSXT/) · [GitLab](https://gitlab.com/Voidware-Prohibited/ALSXT/)
+
+- [Bomberrage](https://github.com/JanSeliv/Bomber)  Open-source Unreal Engine 5 multiplayer game available on Steam.
+  ![Bomberrage screenshot](https://github.com/user-attachments/assets/e8774b8b-2f76-42f1-8eae-e6849658d2d3)
+  ![Bomberrage screenshot](https://github.com/user-attachments/assets/39bbd233-fc1f-4a16-aec4-f33983a92cd8)
+  ![Bomberrage screenshot](https://github.com/user-attachments/assets/48dcb22d-91fd-4285-b695-0283db0f62c6)
+  - 这是一个基于 Unreal Engine 5.6 开发的开源多人游戏项目，支持 Windows、macOS 和 Linux 平台。游戏包含快节奏的多人对战、AI 挑战和 Steam 集成等功能。
+  - 💬 项目充分利用了 UE5 的先进特性如 GAS 和 Mover 2.0，代码结构清晰且文档齐全，适合作为学习 UE5 游戏开发的范例。但项目体积较大，对初学者可能有一定门槛。
+  🔗 [**Download Bomberrage Demo**](https://store.steampowered.com/app/1873240/Bomberrage/) · [![Download on Steam](https://github.com/user-attachments/assets/39bbd233-fc1f-4a16-aec4-f33983a92cd8) · [[doc](https://trello.com/c/HGscMUdK)
+
+- [UnrealMultithreadingDemo](https://github.com/casefc3s/UnrealMultithreadingDemo)  A practical Unreal Engine multithreading sandbox for performance analysis
+  - 💬 该项目通过具体案例演示了Unreal Engine的多线程优化策略，结合Unreal Insights进行性能分析，适合开发者学习引擎内部工作方式和性能调优。
 
 
 
