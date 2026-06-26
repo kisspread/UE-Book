@@ -969,6 +969,11 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 该插件通过对象池机制优化游戏性能，支持Actor、UObject和Widget等对象类型，兼容UE5多个版本，适合需要频繁生成销毁对象的游戏开发场景。
   🔗 [game project repository](https://github.com/JanSeliv/Bomber) · [Priorities](https://docs.google.com/document/d/1YxbIdc9lZRl5ozI7_1LTBfdzJWTwhxwz2RKA-r0Q4po/edit?tab=t.0#heading=h.72e3golkh2jm) · [Pool Object Callback interface](https://docs.google.com/document/d/1YxbIdc9lZRl5ozI7_1LTBfdzJWTwhxwz2RKA-r0Q4po/edit?tab=t.0#heading=h.re9d8tpdk6q1)
 
+- [Unreal ML Agents](https://github.com/AlanLaboratory/UnrealMLAgents)  An open-source toolkit that enables Unreal Engine games and simulations to serve as environments for training intelligent agents with deep reinforcement learning, ported from Unity ML-Agents.
+  ![Unreal ML Agents screenshot](https://readthedocs.org/projects/unrealmlagents/badge/?version=latest)
+  - 💬 填补了 Unreal Engine 中类似 Unity ML-Agents 的空白，目前支持基础向量观察、射线传感器和多智能体训练，但推理和多数传感器尚未实现，适合需要低成本接入强化学习训练的开发者作为早期参考。
+  🔗 [![Documentation Status](https://readthedocs.org/projects/unrealmlagents/badge/?version=latest) · [Unity ML-Agents Toolkit](https://github.com/Unity-Technologies/ml-agents) · [Unreal Learning Agents](https://dev.epicgames.com/community/learning/courses/GAR/unreal-engine-learning-agents-5-5/bZnJ/unreal-engine-learning-agents-5-5)
+
 
 
 ## Engine
