@@ -974,6 +974,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 填补了 Unreal Engine 中类似 Unity ML-Agents 的空白，目前支持基础向量观察、射线传感器和多智能体训练，但推理和多数传感器尚未实现，适合需要低成本接入强化学习训练的开发者作为早期参考。
   🔗 [![Documentation Status](https://readthedocs.org/projects/unrealmlagents/badge/?version=latest) · [Unity ML-Agents Toolkit](https://github.com/Unity-Technologies/ml-agents) · [Unreal Learning Agents](https://dev.epicgames.com/community/learning/courses/GAR/unreal-engine-learning-agents-5-5/bZnJ/unreal-engine-learning-agents-5-5)
 
+- [MEKDualSensePlugin](https://github.com/kacmazemin/MEKDualSensePlugin)  Unreal Engine 5 plugin for Sony DualSense (PS5) controller support.
+  - 💬 功能覆盖DualSense手柄的自适应扳机、触觉反馈、灯光、陀螺仪等特性，与UE5增强输入系统结合良好，但仅支持单控制器且部分触摸/陀螺仪功能未完全测试，适合需要深度适配PS5手柄的独立开发者。
+  🔗 [DualSense-Windows (DS5W)](https://github.com/Ohjurot/DualSense-Windows)
+
 
 
 ## Engine
