@@ -988,6 +988,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 将 Mapbox 真实世界高程数据转换为 UE 地形的实用插件，支持地理配准、GeoJSON 导入和道路生成，适合快速搭建真实环境原型，但依赖外部 Web 服务且版本更新较慢。
   🔗 [L1z4rD89](https://forums.unrealengine.com/u/L1z4rD89)
 
+- [DirectiveUtilities](https://github.com/UnrealDirective/DirectiveUtilities)  An open-source Unreal Engine plugin that provides quality-of-life functionality to developers.
+  - 💬 项目提供了大量实用的蓝图节点和编辑器工具，覆盖数组、字符串、数学、Gameplay Tags、存档等常见需求，模块划分清晰（运行时/编辑器分离），文档完整，适合需要补充引擎原生节点不足的开发者。
+  🔗 [udcore.unrealdirective.com](https://udcore.unrealdirective.com/) · [Unreal Directive](https://unrealdirective.com/) · [Dylan "Tezenari" Amos](https://dylanamos.com/)
+
 
 
 ## Engine
