@@ -978,6 +978,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 功能覆盖DualSense手柄的自适应扳机、触觉反馈、灯光、陀螺仪等特性，与UE5增强输入系统结合良好，但仅支持单控制器且部分触摸/陀螺仪功能未完全测试，适合需要深度适配PS5手柄的独立开发者。
   🔗 [DualSense-Windows (DS5W)](https://github.com/Ohjurot/DualSense-Windows)
 
+- [Seee Scatter Regions](https://github.com/SeeleAI/seele-scatter-regions)  Procedural world-building plugin for Unreal Engine 5 that generates villages, farms, and cemeteries from seeded recipes.
+  - 💬 不依赖UE PCG框架的轻量级程序化生成插件，通过配方和种子实现可复现的村庄、农场与墓地布局，适合需要稳定、可控场景生成的编辑器工作流。目前处于早期测试阶段，功能覆盖较基础。
+  🔗 [Unreal game creation workflow](https://www.seeles.ai/features/create/unreal-game) · [Echoes of the Wildwater on IndieDB](https://www.indiedb.com/games/echoes-of-the-wildwater) · [itch.io game page](https://seeleai.itch.io/echoes-of-the-wildwater)
+
 
 
 ## Engine
