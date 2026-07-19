@@ -982,6 +982,12 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 不依赖UE PCG框架的轻量级程序化生成插件，通过配方和种子实现可复现的村庄、农场与墓地布局，适合需要稳定、可控场景生成的编辑器工作流。目前处于早期测试阶段，功能覆盖较基础。
   🔗 [Unreal game creation workflow](https://www.seeles.ai/features/create/unreal-game) · [Echoes of the Wildwater on IndieDB](https://www.indiedb.com/games/echoes-of-the-wildwater) · [itch.io game page](https://seeleai.itch.io/echoes-of-the-wildwater)
 
+- [Unreal Map Bridge Plugin](https://github.com/delebash/UnrealMapboxBridgePlugin)  Import heightmaps into Unreal from real world locations using Mapbox
+  ![Unreal Map Bridge Plugin screenshot](https://user-images.githubusercontent.com/2220160/177798094-7e1b613d-7f27-402d-b966-5a07288cf6b8.png)
+  ![Unreal Map Bridge Plugin screenshot](https://raw.githubusercontent.com/delebash/UnrealMapboxBridgePlugin/master/Docs/BBSizeInKM.png)
+  - 💬 将 Mapbox 真实世界高程数据转换为 UE 地形的实用插件，支持地理配准、GeoJSON 导入和道路生成，适合快速搭建真实环境原型，但依赖外部 Web 服务且版本更新较慢。
+  🔗 [L1z4rD89](https://forums.unrealengine.com/u/L1z4rD89)
+
 
 
 ## Engine
