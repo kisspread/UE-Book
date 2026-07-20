@@ -565,6 +565,11 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 这是一个基于数据表自动生成游戏设置 UI 的 Unreal Engine 插件，支持多语言本地化，适用于需要快速构建可定制设置界面的游戏项目。
   🔗 [game project repository](https://github.com/JanSeliv/Bomber) · [see doc](https://docs.google.com/document/d/1IXnOqrgaXTClP-0cIo28a9f6GHc9N1BCgTNnMk-X9VQ/edit#heading=h.cix3vjszb2vm) · [Discord](https://discord.gg/jbWgwDefnE)
 
+- [LGUI (Lex GUI)](https://github.com/liufei2008/LGUI)  Powerful 3D UI System for Unreal Engine, with prefab workflow and tween animation
+  - LGUI 是一套 3D UI 系统，支持嵌套预制体工作流和补间动画。近期更新增加了 UMG 控件嵌入、UI 布局组件和无限循环滚动列表等功能。
+  - 💬 功能完整且持续维护的 Unreal 3D UI 解决方案，提供了丰富的预制体和动画支持，适合需要复杂 3D 界面、VR/交互体验的项目。
+  🔗 [MarketPlace](https://www.unrealengine.com/marketplace/slug/92c868e93e1d4dd596f87b200102f0cf) · [MIT](https://opensource.org/licenses/MIT) · [Discord](https://discord.gg/JSjB62yTyv)
+
 
 
 ## Material
