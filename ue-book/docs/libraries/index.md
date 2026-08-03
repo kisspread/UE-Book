@@ -997,6 +997,14 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 项目提供了大量实用的蓝图节点和编辑器工具，覆盖数组、字符串、数学、Gameplay Tags、存档等常见需求，模块划分清晰（运行时/编辑器分离），文档完整，适合需要补充引擎原生节点不足的开发者。
   🔗 [udcore.unrealdirective.com](https://udcore.unrealdirective.com/) · [Unreal Directive](https://unrealdirective.com/) · [Dylan "Tezenari" Amos](https://dylanamos.com/)
 
+- [Box3DUnreal](https://github.com/alattanzio/Box3DUnreal)  Box3D Physics integration for Unreal Engine
+  ![Box3DUnreal screenshot](https://github.com/user-attachments/assets/3ca74b2c-f0f3-433d-9a43-ebb261496428)
+  ![Box3DUnreal screenshot](https://github.com/user-attachments/assets/5310e80b-a24f-41e4-81c6-d864dd74fd3e)
+  ![Box3DUnreal screenshot](https://github.com/user-attachments/assets/8df90aab-c257-4f5e-bfc9-55cdea646532)
+  - 这是一个将 Erin Catto 开发的 Box3D 轻量物理引擎接入虚幻引擎 5 的插件，提供独立于 Chaos 的确定性物理模拟，支持静态网格、基础碰撞体和凸壳，适合需要轻量或自定义物理的游戏实验。
+  - 💬 项目将 Box3D 封装为结构清晰的 UE5 插件，包含运行时与编辑器模块，对想探索确定性物理或替代 Chaos 的开发者有参考价值，目前仍处于早期开发，功能有待扩展。
+  🔗 [Steam Link](https://store.steampowered.com/app/2470010/DEFECT/) · [Steam Link](https://store.steampowered.com/search/?publisher=Mental%20Drink)
+
 
 
 ## Engine
