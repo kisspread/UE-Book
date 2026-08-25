@@ -826,6 +826,13 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 一款专门针对 Unreal Engine 项目磁盘膨胀问题的清理工具，提供可视化界面和命令行两种使用方式，能准确识别可重建的构建缓存而不误删工程文件，适合需要恢复大量磁盘空间的 UE 开发者。
   🔗 [Everything](https://www.voidtools.com/downloads/#cli) · [donations are always welcome](https://www.alexcoulombepresents.com/support) · [Marshall (@nocxr)](https://github.com/nocxr)
 
+- [Trilium-UEGraph](https://github.com/youli42/Trilium-UEGraph)  Record and render Unreal Engine blueprints in Trilium notes
+  ![Trilium-UEGraph screenshot](https://raw.githubusercontent.com/youli42/Trilium-UEGraph/master/file/image.png)
+  ![Trilium-UEGraph screenshot](https://raw.githubusercontent.com/youli42/Trilium-UEGraph/master/<file/image copy.png>)
+  - 在 Trilium 笔记中记录并渲染虚幻引擎蓝图。将 UE 编辑器复制的节点 T3D 文本粘贴到笔记后，自动生成可视化蓝图节点图，支持缩放与拖拽，完全自包含无需外部服务。
+  - 💬 这是一个小而美的工具，解决了 UE 开发者用 Trilium 记录蓝图逻辑的需求，内置 blueprintUE 渲染引擎，使用简单。但功能单一，社区关注度较低，适合特定用户群体。
+  🔗 [TriliumNext/Trilium](https://github.com/TriliumNext/Trilium) · [blueprintue/blueprintue-self-hosted-edition](https://github.com/blueprintue/blueprintue-self-hosted-edition)
+
 
 - [UnrealGPUSwarm](https://github.com/timdecode/UnrealGPUSwarm) 学习compute shaders的例子。 This project is a good starting point for learning how to write compute shaders in Unreal. It implements a boid simulation the GPU. It achieves 0.5 million boids at 45 fps on a GTX 1080.
   <video src="https://user-images.githubusercontent.com/980432/132757577-500416e4-5f27-4add-9c50-641889336d69.mp4" controls autoplay loop> 
