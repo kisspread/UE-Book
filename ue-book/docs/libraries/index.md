@@ -833,6 +833,10 @@ A collection of procedural drawing material samples for Unreal Engine (UE5). Use
   - 💬 这是一个小而美的工具，解决了 UE 开发者用 Trilium 记录蓝图逻辑的需求，内置 blueprintUE 渲染引擎，使用简单。但功能单一，社区关注度较低，适合特定用户群体。
   🔗 [TriliumNext/Trilium](https://github.com/TriliumNext/Trilium) · [blueprintue/blueprintue-self-hosted-edition](https://github.com/blueprintue/blueprintue-self-hosted-edition)
 
+- [Fab Content Downloader](https://github.com/SilenceNoob/fab-chrome-extension)  Chrome extension to download Fab UE assets directly from browser without Epic Games Launcher
+  ![Fab Content Downloader screenshot](https://raw.githubusercontent.com/SilenceNoob/fab-chrome-extension/main/images/page-example.webp)
+  - 💬 这是一个绕过 Epic Games Launcher 直接下载 Fab UE 资产的 Chrome 扩展，实现依赖 Fab 网页接口，存在被官方封锁的风险，且作者自述为低维护项目，适合有技术能力且能接受失效风险的用户。
+
 
 - [UnrealGPUSwarm](https://github.com/timdecode/UnrealGPUSwarm) 学习compute shaders的例子。 This project is a good starting point for learning how to write compute shaders in Unreal. It implements a boid simulation the GPU. It achieves 0.5 million boids at 45 fps on a GTX 1080.
   <video src="https://user-images.githubusercontent.com/980432/132757577-500416e4-5f27-4add-9c50-641889336d69.mp4" controls autoplay loop> 
