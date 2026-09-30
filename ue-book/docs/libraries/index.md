@@ -342,6 +342,10 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 一个全面重构的UE5运动系统插件，优化了网络同步和动画性能，适合需要高质量角色运动解决方案的开发者。
   🔗 [Advanced Locomotion System V4](https://www.fab.com/listings/ef9651a4-fb55-4866-a2d9-1b38b028f9c7)
 
+- [TypeTween](https://github.com/Sven-vh/TypeTween)  Tweening library for Unreal Engine with a fluent C++ API and Blueprint nodes
+  - 💬 功能完整的 UE 补间库，提供流畅的 C++ API 和蓝图节点，支持丰富的缓动函数和回调，适合在 UE 项目中快速实现平滑动画与数值过渡。
+  🔗 [Easings.net](https://easings.net/) · [www.fab.com/listings/ef75203e-5571-4ecf-ab16-09fd1e3df0f6](https://www.fab.com/listings/ef75203e-5571-4ecf-ab16-09fd1e3df0f6)
+
 
 
 ## Niagara
