@@ -346,6 +346,13 @@ Including open source and non-open source, commercial and non-commercial.
   - 💬 功能完整的 UE 补间库，提供流畅的 C++ API 和蓝图节点，支持丰富的缓动函数和回调，适合在 UE 项目中快速实现平滑动画与数值过渡。
   🔗 [Easings.net](https://easings.net/) · [www.fab.com/listings/ef75203e-5571-4ecf-ab16-09fd1e3df0f6](https://www.fab.com/listings/ef75203e-5571-4ecf-ab16-09fd1e3df0f6)
 
+- [GameInstancedAnimationGraph [GIAG]](https://github.com/Eragon-Brisingr/GameInstancedAnimationGraph)  UE GPU/CPU animation simulation system for massive animated entities
+  ![GameInstancedAnimationGraph [GIAG] screenshot](https://raw.githubusercontent.com/Eragon-Brisingr/GameInstancedAnimationGraph/main/Docs/5k_Inst.gif)
+  ![GameInstancedAnimationGraph [GIAG] screenshot](https://raw.githubusercontent.com/Eragon-Brisingr/GameInstancedAnimationGraph/main/Docs/CpuGpuSwitch.gif)
+  ![GameInstancedAnimationGraph [GIAG] screenshot](https://raw.githubusercontent.com/Eragon-Brisingr/GameInstancedAnimationGraph/main/Docs/GIAG_ABP.png)
+  - 💬 项目设计思路清晰，围绕大规模实体动画模拟提供了 CPU/GPU 双路径、事件驱动上传和编译期优化等机制，适合需要处理大量动画实例的场景。但 Stars 较少，社区验证不足，文档偏技术向，上手门槛可能较高。
+  🔗 [Vertex Anim](https://dev.epicgames.com/documentation/en-us/unreal-engine/vertex-animation-tool-in-unreal-engine) · [TurboSequence](https://github.com/LukasFratzl/TurboSequence)
+
 
 
 ## Niagara
