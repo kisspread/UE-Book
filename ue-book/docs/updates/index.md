@@ -1,53 +1,50 @@
 ---
-title: '2026-10-05 引擎周报'
-date: '2026-10-05'
+title: '2026-10-12 引擎周报'
+date: '2026-10-12'
 ---
 
-# 2026-10-05 引擎周报
+# 2026-10-12 引擎周报
 
 ## ✨ 新功能
-
-- RigVM：拖拽变量到输出引脚会自动添加 Set 节点。
-- Curve Editor：为 broken tangents 新增 Lock Tangent 切换，可通过工具栏按钮或默认热键 E 锁定 arrive 和 leave tangent 的角度与权重共同编辑；同时支持在选中不同类型关键帧时编辑时间和值。
-- Gizmos：新增 Camera Space Nudge 热键。
-- Control Rig：首次实现 modular rig projection 的浅层版本。
-- UAF：新增 output variables 和 typed write bindings；FBindableContainer 通过 property bag 支持 object、struct 等类型的 bindable arrays；bindable details picker 允许选择结构体变量中的 enum member，并显示 UserDefinedStruct 成员显示名。
-- UAF：新增 AnimNode descriptor hooks 用于 validation 和 upgrade；允许 module component 过滤 system output pose；新增 system output phases 和默认 injection site 的静态 introspection；Layer Stack UI 改进；AnimSequenceBase 加入允许类型列表；支持通过 FArchive 捕获和恢复 anim node tree state。
-- Sequencer：在 ISequencer 和 Level Sequence Editor blueprint library 中新增 GetDirectlySelectedFolders，用于扩展 EDA 能力。
-- MotionWarping：新增 VectorFromTargetToOwner2D offset direction；新增在 motion warping notify 开始时缓存目标的选项，并支持负偏移。
-- Switchboard：枚举未连接设备的本地 VP roles。
+- 合并了 UE6 Main 的 Gaussian Splat 工作至 UE5 Main（共 7 个批次），引入/更新 Gaussian Splat 渲染与编辑支持。
+- UAF：新增从资产引用播放 Layer Stack 的能力；为所有 UAF Workspace 资产类型提供视口预览；新增可在代码中构建 Node Description Tree 的资产；层内容有效性变化时自动淡入淡出；Slot 驱动的基础层允许使用 Override Asset Slot 层；Layer Stack 已注册到 Anim Node Factory。
+- AnimMixer：Mixer Tree 的逐帧值现在可绑定到 UAF 变量，并能从系统资产解析 UAF target 路由（无其他路由时接管系统输出）。
+- Chooser：UChooserTable 和 UProxyAsset 现在可引用共享的 UChooserSignature 资产；随机化 Chooser 上下文结构体已暴露给 UAF。
+- Control Rig：新增知识库模块及节点目录；Anim Sequence Bake To Control Rig 使用与 Sequencer 一致的 Rig Picker；Double 变量支持映射到 Anim Curves；Modular Rig 变量支持 Verse 往返；Collapse All Layers 采用共享代码自顶向下合并区段，并新增“从选中轨道创建 Anim Layers”选项；Sequencer 支持复制粘贴 Space Channels。
+- RewindDebugger：预览网格与动画类改为异步加载。
+- Nanite 半透明：支持前层渲染、编辑器选择与拾取，且无 Splat 时无 AVBOIT 开销。
 
 ## 🚀 重大变更
-
-- UAF：node transitions 改为必需，并新增 Instant Transition。
-- UAF：默认 bone transform type 改为 VQVd。
-- AIE Smart Compensation：Sequencer.SwitchBoundary.OccupiedLandingMode 默认值从 2 改为 3，并改进同 boundary 上相邻 constraint keys 的补偿逻辑。
+- UAF Runtime：移除了 Inline Anim Node 支持，使用内联节点的项目需迁移到外部节点资产。
 
 ## ⚡ 性能优化
-
-- MovieScene：优化 Editor keying 和 curve-channel tangent 性能。
-- LumenRadiosity：修复 SceneCapture2D 渲染时 Lumen indirect lighting atlas 每帧被清除的问题，避免不必要的性能开销。
-- Sequencer：在单一 bake session 中重建 anim mixer root motion offset cache。
+- RigVM 多项优化：cook 编译去重、图验证/内联缓存、AST 代理指针哈希、ClearInvalidReferences 提前返回。
+- UAF Anim Node 销毁拆分为两个阶段，降低单次销毁集中开销。
+- RewindDebugger 预览网格和动画类异步加载，减少编辑器阻塞。
+- Nanite 半透明在无 Splat 时不产生 AVBOIT 开销。
+- Cook 确定性：Package Access Tracking 修复使依赖记录不再依赖加载顺序/进程。
 
 ## 🐛 Bug 修复
-
-- Control Rig：修复 Control Rig Component 上虚假的 tick dependency 警告；修复 Construction Mode 在 spawned leaf bones 处破坏 mesh；修复 control shape 沿错误轴拉伸；marquee selection 现在尊重 InSelect。
-- RigVM：修复从 Explorer 粘贴函数时丢失对 private functions 的调用；容忍 user-defined type 的移动或重命名。
-- Sequencer：修复 FBX camera import 总是生成新 camera 而不是按名称匹配已有 bindings；恢复 mark 和 mark range toggle commands；修复 UAnimDetailsProxyManager 多次 ForceUpdateProxyValues 排队导致 scrubbing 停止后约束执行挂起。
-- UAF：修复多个崩溃和逻辑问题，包括 cook 时 on-load function reference re-stamp 创建 UObject 导致崩溃，重新打开已关闭 State Tree 或 EventGraph 被移除的 System 时崩溃，无法通过 input pin 设置 variable，decompression retargeting proportions 错误，graph instance 无法解析 root trait 时未报告 asset 和 entry point，anim tree editor data 创建时未初始化等。
-- UAF Runtime：修复 injection/event 相关的多个问题，如 FInjectionSiteTrait 丢失 injections、inline sub-graph input bundles 生命周期、module event dependencies 注销、运行 FRigVMDispatch_EvaluateChooser 前校验 memory handles 和 chooser table 等。
-- Rendering：MegaLights/Lumen 修复可视化中的 sky tonemapping；Lumen Reflections 修复强 sky leaking 或 fog 下的 energy clamp；修复上传超过 GPUScene MAX_INSTANCE_ID 的 instance indices 导致崩溃；FastGeo 修复 unregistration 期间 render state 脏化后的 stale proxy drawing。
-- Landscape：当目标不可编辑时禁用除 New 外的 Manage 工具，修复未加载 LandscapeActor 时使用 Add/Delete 等工具的 asserts；修复两个 landscape components 重叠时 batched edit layers merge 的 assertion。
-- Editor / Platform：WebBrowser 修复 offscreen 模式下关闭时崩溃；VisualStudioSourceCodeAccess 修复点击 Blueprint native parent class 链接时打开第二个 Visual Studio；Apple Platform Web Browser 防止在 0 像素 view 上创建截图纹理；LevelEditor 修复 GC 相关回归导致 MRQ 等系统崩溃；ABrush::PostLoad 修复 null level 解引用并报告无 owning level；Material root node pin inline constant 变化时记录 transaction；MeshDescription 在无 UV 通道时回退到 per-vertex tangent averaging 而不 assert；MeshPaint 绑定 editor mode icon 到 EditorStyle；UAT 强制 commandlets 使用 UTF8 环境；VulkanRHI 添加 ReadSurfaceData null check；XSX 修复 modern GDK folder layout 下 EOS delay-load 崩溃；nDisplay 修复 Multi-User resurrect 删除 light card 时崩溃；PCG 修复 Mesh Partition Interop Plugin 关闭时崩溃。
-- Media：TmvMedia 验证 instanced struct properties 类型；修复 ImgMedia frame 读取序列化和 frame cancellation 问题。
-- Mass / CitySample：在 observers locked 时延迟 agent component removal。
-- MotionWarping：修复 offset transforms 应用方式以支持负值。
-- MHA Identity：修复 subjects 超过约 80cm 时无法诊断失败的问题。
-- Anim Mixer：base keyframe 改为从 reference pose 初始化，避免使用未初始化内存。
+- Sequencer：修复撤销 Space Switch 补偿后 Spawnable 永久消失的问题；修复重合标记范围内解析单个标记的问题；Sequencer Scripting 对空输入进行防护并在指定帧求值。
+- Control Rig：修复重命名控件已存在曲线时仍重映射 Sequencer 曲线的问题；修复每帧更新形状或设置时被约束控件漂移；修复 Vector/Euler Transform 值忽略 Min/Max 限制及详情面板缺少 Transform 动画通道值；修复禁用 Min/Max 限制后动画通道值不可拖动；修复复制粘贴元素丢失设置；修复 Pose Dialog 使用虚拟资产路径导致资产创建失败。
+- AnimMixer：修复参数传给错误 Mixer 的问题；修复 AnimMixer 使用旧 API 的问题。
+- UAF：修复 Content Browser 移动后动画内容失效；修复 Pose History 未检查缺失 Pose；修复系统输出 Pose 未写入时被错误分发；修复 FLODPose 清除标志位错误；为缓存 Pose 未写入提供警告。
+- MotionWarping：修复不同轨道上重叠的 Motion Warping Notify 被忽略的问题。
+- AIE：修复 Smart Compensation 旋转绕数（Euler filter）跳过 1-tick 对及在 switch-key 移动时运行的问题；Time Posing 现在将 delta 应用到 Control Rig 的 section-to-key（Anim Layers / additive / override），而非仅基础区段。
+- Rendering：修复 SubstrateUintPerPixel 位组合错误；修复开启 Separate Translucency 时缩略图噪点/全黑，临时深度缓冲现在正确清除；修复 AVBOIT/MLAB 每条路径透射率应用。
+- Editor：修复强制删除由多个对象编辑器编辑的资产时崩溃。
+- Lumen：增加检测防止 Instance Culling Info 双重释放。
+- Water：防护 Water Info LOD Gather 处理无 Quad 或退化缩放的 Landscape。
+- ElectraProtron：忽略空轨道，避免影片时长被截断为零。
+- RewindDebugger：修复动画姿态更新中的静态分析错误；防止 PIE 专用服务器帧混入客户端时间线；为通知轨道名称查找添加 Provider 读取作用域。
+- RigVM：生成字节码调用栈包含嵌套函数名；修复旧资产子对象在 postload 时未清除 RF_Public 标志的问题。
 
 ## 🔧 API 变更
+- UAF Layering：Layer Content 输入源由 `PreviousLayerOutput` 重命名为 `NestedInput`。
+- UAF：Bindable Value 绑定由非反射 `TUniquePtr` 改为反射的 `TInstancedStruct` 存储。
+- AssetTools：移植了 rename 前置 delegate，引擎侧支持资产重命名前回调。
+- Control Rig/RigVM：补齐 Python 暴露函数，使旧版与新版资产类型的功能集一致。
+- Chooser：随机化上下文结构体已暴露给 UAF。
 
-- UAF：FAnimNextInjectionRequestArgs 成员改为 public，允许在 UAF 外部构建自定义 injection request。
-- UAF：新增 AnimNode descriptor hooks 用于 validation 和 upgrade；新增 system output phases 和默认 injection site 的静态 introspection。
-- Sequencer：ISequencer 和 Level Sequence Editor blueprint library 新增 GetDirectlySelectedFolders。
-- UAF：FBindableContainer 支持 object、struct 等类型的 bindable arrays；bindable import text parsing 支持读取 plain values。
+## ⚠️ 废弃预告
+- TLazyObjectPtr 弃用相关改动已重新集成，相关类型即将弃用。
