@@ -6,7 +6,7 @@ on:
     # Deploy twice daily: 02:00 and 14:00 UTC
     - cron: '0 2,14 * * *'
   workflow_run:
-    workflows: [Weekly Report, Monthly Report Sync, "Generate UE Plugin Docs"]
+    workflows: [Weekly Report, Monthly Report Sync, Library Submission, "Generate UE Plugin Docs"]
     types: [completed]
   push:
     branches: [master]

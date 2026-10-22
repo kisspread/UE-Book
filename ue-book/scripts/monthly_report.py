@@ -12,44 +12,94 @@ Usage:
 
 import argparse
 import json
-import os
 import subprocess
 import sys
-from datetime import datetime
 from pathlib import Path
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 UPDATES_DIR = PROJECT_DIR / "docs" / "updates"
 UPSTREAM_REPO = "pafuhana1213/UnrealEngine-UpdateTrackerReport"
 
-# Last known monthly report: #332 (2026-03), #323 (2026-04) was found manually
-LAST_KNOWN = 332
+
+def list_discussions() -> list[dict]:
+    """List all upstream discussions, newest first.
+
+    The old implementation scanned a fixed numeric window and returned the
+    first monthly report it found. Once that report had been generated, every
+    later run found the same report, skipped it because the output file already
+    existed, and exited successfully. Listing the discussions instead lets us
+    keep moving forward as new monthly reports are published.
+    """
+    discussions: list[dict] = []
+    page = 1
+
+    while page <= 20:  # safety cap: 2,000 discussions
+        result = subprocess.run(
+            [
+                "gh", "api",
+                f"repos/{UPSTREAM_REPO}/discussions"
+                f"?per_page=100&page={page}",
+            ],
+            capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"gh api failed while listing discussions: "
+                f"{result.stderr.strip()[:500]}"
+            )
+
+        page_data = json.loads(result.stdout)
+        if not isinstance(page_data, list):
+            raise RuntimeError(
+                "Unexpected GitHub API response while listing discussions"
+            )
+        discussions.extend(page_data)
+        if len(page_data) < 100:
+            break
+        page += 1
+
+    discussions.sort(key=lambda d: d.get("created_at", ""), reverse=True)
+    return discussions
 
 
 def check_new_monthly() -> dict | None:
-    """Scan discussion numbers > LAST_KNOWN for a new Monthly Report."""
-    print(f"Checking for new Monthly Reports (starting from #{LAST_KNOWN + 1})...")
+    """Return the newest monthly report that has not been translated yet."""
+    print(f"Checking {UPSTREAM_REPO} for Monthly Reports...")
 
-    for num in range(LAST_KNOWN + 1, LAST_KNOWN + 100):
-        result = subprocess.run(
-            ["gh", "api", f"repos/{UPSTREAM_REPO}/discussions/{num}"],
-            capture_output=True, text=True, timeout=15,
+    discussions = list_discussions()
+    existing_months = {
+        path.stem
+        for path in UPDATES_DIR.glob("????-??.md")
+    }
+
+    monthly_reports = []
+    for discussion in discussions:
+        title = discussion.get("title", "")
+        if not title.startswith("Monthly Report:"):
+            continue
+        year_month = extract_year_month(title)
+        if not year_month:
+            continue
+        monthly_reports.append({
+            "title": title,
+            "body": discussion.get("body", ""),
+            "date": discussion.get("created_at", "")[:10],
+            "number": discussion.get("number"),
+            "year_month": year_month,
+        })
+
+    print(f"  Found {len(monthly_reports)} monthly report(s) in discussions")
+
+    for report in monthly_reports:
+        if report["year_month"] in existing_months:
+            continue
+        print(
+            f"  Newest unprocessed: #{report['number']} "
+            f"{report['title']} ({report['date']})"
         )
-        if result.returncode != 0:
-            continue  # 404, skip
+        return report
 
-        d = json.loads(result.stdout)
-        title = d.get("title", "")
-        if title.startswith("Monthly Report:"):
-            print(f"  Found: #{num} {title} ({d['created_at'][:10]})")
-            return {
-                "title": title,
-                "body": d.get("body", ""),
-                "date": d["created_at"][:10],
-                "number": num,
-            }
-
-    print("  No new monthly report found.")
+    print("  No unprocessed monthly report found.")
     return None
 
 
@@ -100,12 +150,10 @@ def translate_report(body: str) -> str:
 
 
 def extract_year_month(title: str) -> str:
-    """Extract YYYY-MM from title like 'Monthly Report: 2026-04'."""
+    """Extract YYYY-MM from a title like 'Monthly Report: 2026-04'."""
     import re
     m = re.search(r"(\d{4}-\d{2})", title)
-    if m:
-        return m.group(1)
-    return datetime.now().strftime("%Y-%m")
+    return m.group(1) if m else ""
 
 
 def main():
@@ -113,11 +161,15 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    monthly = check_new_monthly()
+    try:
+        monthly = check_new_monthly()
+    except (RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as e:
+        print(f"Failed to check monthly reports: {e}", file=sys.stderr)
+        sys.exit(1)
     if not monthly:
         return
 
-    year_month = extract_year_month(monthly["title"])
+    year_month = monthly["year_month"]
     output_path = UPDATES_DIR / f"{year_month}.md"
 
     if output_path.exists():
