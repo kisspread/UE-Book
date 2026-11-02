@@ -11,6 +11,7 @@ on:
 jobs:
   sync-monthly:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: write
 
@@ -34,25 +35,33 @@ jobs:
       - name: Install dependencies
         run: pip install langchain-openai langchain-core
 
-      - name: Run monthly report
+      - name: Run upstream monthly report sync
         id: report
+        continue-on-error: true
         run: python3 ue-book/scripts/monthly_report.py
 
+      - name: Generate missing monthly digests from weekly reports
+        id: digest
+        if: always()
+        run: python3 ue-book/scripts/monthly_digest.py
+
       - name: Sync manifest
+        if: always()
         run: node scripts/sync-manifest.mjs
 
       - name: Commit changes
+        if: always()
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add ue-book/docs/updates/ ue-book/docs/public/
+          git add ue-book/docs/updates/
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "docs: sync monthly report"
+          git commit -m "docs: sync monthly reports"
           git pull --rebase origin master
           git remote set-url origin "https://x-access-token:***@github.com/kisspread/UE-Book.git"
           git push

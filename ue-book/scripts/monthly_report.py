@@ -58,7 +58,10 @@ def list_discussions() -> list[dict]:
             break
         page += 1
 
-    discussions.sort(key=lambda d: d.get("created_at", ""), reverse=True)
+    discussions.sort(
+        key=lambda d: (d.get("created_at", ""), d.get("number", 0)),
+        reverse=True,
+    )
     return discussions
 
 
