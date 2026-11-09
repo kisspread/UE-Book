@@ -1,46 +1,49 @@
 ---
-title: '2026-11-02 引擎周报'
-date: '2026-11-02'
+title: '2026-11-09 引擎周报'
+date: '2026-11-09'
 ---
-
-# 2026-11-02 引擎周报
+# 2026-11-09 引擎周报
 
 ## ✨ 新功能
-
-- **LumenWorldCache**：引入自动表面缓存，取代依赖预计算 mesh cards 的 LumenSurfaceCache。新系统采用完全随机光照，为 Lumen 提供更通用的全局光照缓存。
-- **LumenPT**：从 LumenRef 重命名为 LumenPT，作为实验性直接与间接光照参考模式，并新增高度雾支持。
-- **Nanite Ray Tracing**：新增 FNaniteRayTracingSceneExtension 和 FNaniteRayTracingSceneExtensionRenderer 的基础支持，为 Nanite 硬件光线追踪场景管理提供扩展框架。
-- **HWRT**：有限支持 Nanite ISM/HISM 的 world position offset，统一了静态网格、ISM、HISM 和 Nanite proxy 的 ray tracing world position offset 策略，并添加 DecodeRayTracingInstanceId 以正确路由 GPUScene 实例查找。
+- Wasm：Mac 和 Linux 安装构建现在附带 Wasm 目标平台，由 Win64 游戏编译生成。
+- Wasm Memory64：为 lowered Memory64 链接实现 2 GB 以上堆寻址，所有生成的 JS 堆访问及 pipelines 均可正常工作；新增 WasmSmokeHighHeap Node 测试覆盖 2 GB 以上地址。
+- Web shader 分发：移动端各 tier 的 shader libraries 和 cold shader groups 独立打包到 IoStore container，由 WebGPU RHI 根据实际运行 tier 挂载和加载；页面改为读取 tier 和 late 标签，不再依赖 chunk 编号。
+- Web hosting：游戏文件增加 Cross-Origin-Resource-Policy: cross-origin，允许跨源隔离页面将游戏嵌入 iframe。
 
 ## 🚀 重大变更
-
-- **移除实验性 Lumen 路径**：移除 r.LumenScene.DirectLighting.Stochastic 1 随机表面缓存光照路径和 r.LumenScene.GPUDrivenUpdate GPU 驱动更新路径，由新的 LumenWorldCache 取代。
-- **HWRT 数据迁移**：将 ray tracing 数据迁移至 FRayTracingSceneExtension，移除 FPrimitiveSceneInfo 等中的废弃代码，并统一 ray tracing world position offset 策略。
-- **MegaLights**：移除 Global SDF tracing 支持。
+- UBT：增加构建时拒绝规则，bNoStaticDestructors 仅支持基于 LLVM 20.1 或更高版本的 Clang；bSkipCompilation 模块若可通过名称加载则会被拒绝。
+- Wasm 安装引擎：拒绝 Target.cs web 编译设置中无法与预编译引擎模块匹配的选项，并警告仅影响项目代码的 UBT 选项。
 
 ## ⚡ 性能优化
-
-- **Lumen 系列**：World Cache accumulation buffer 不再每帧清空，仅清理修改条目，但需额外 16MB 非瞬态内存；屏幕像素 dispatch 改为 8x4 tile 波形处理；Lumen scene lighting 与 trace paths 多项 GPU 优化；radiance cache HWRT 减少 pass 依赖并跳过不必要的合成 pass，在 console 上节省约 0.06ms；直接与间接光照分开 dispatch 以重叠异步队列执行。
-- **HWRT**：使用 bitmask 替代 set 跟踪 referenced geometry groups，重构 cached ray tracing data 的失效与更新逻辑，修复竞争条件，并为 SBT 与异步 compute 上 raygen shader pass 添加同步。
-- **RDG**：新增 AddBarrierPass UAV 变体以支持 SkipBarrier 标志的 UAV，避免不必要的 barrier；修复 FRDGBuilder::AddPassDependency 数据竞争和 ExcludeList 未正确处理的问题。
-- **AssetRegistry**：gather cache 分片根据 tag data 大小而非仅 asset count 进行划分。
+- Web：GetMemoryUsedFast 改为无锁读取 heap top。
+- Web RHI：采样 back buffer 的 bind groups 在 web 上缓存。
+- Web prewarm lists：无法等待的使用在 READY 后立即需要的 pipelines 保留在启动部分；Lyra web 桌面 prewarm list 已针对 Lumen dispatch wraps 重新录制。
+- Unreal Canvas：转换缓存导入移至独立的 converter 进程，不再阻塞编辑器。
 
 ## 🐛 Bug 修复
-
-- **StylusInput**：修复 RealTimeStylus COM 对象泄漏及释放顺序问题，修复 Wintab 光标按钮名多于实际按钮数时的崩溃。
-- **HWRT**：修复特定场景下 ray tracing scene 缺失 primitives、instanced static meshes 和 Nanite proxies 相关问题，修复平台预览禁用 raytracing 时的错误，修复 CLAS 装配部件 hit shader 中 WorldNormal 不正确的问题。
-- **Ray Tracing**：翻转几何法线以匹配 detail normal，修复双面材质上的多种渲染 bug。
-- **MegaLights**：修复体积效果忽略 IES 配置文件的问题，修复不支持 async compute 平台上的崩溃。
-- **Lumen**：在 mesh card 捕获期间禁用全局距离场，修复 raster 与 Lumen Surface Cache 使用距离场采样节点时的结果不一致；使用随机浮点量化修复 R11G11B10_Float 存储 World Cache lighting 时的颜色漂移；修复 World Cache 禁用时的路径提前终止并替换为 Russian roulette。
-- **UAF**：修复 BindableValueCustomization；FUAFMirrorAnimOp 在骨架层级变化时重建缓存；FRemapPoseData 检测参考姿势骨骼网格变化；notify injection 仅允许通过 FUAFNotifyInjectedModifierDesc 显式 opt-in 的 modifier。
-- **ChaosVehicles**：修复 vehicle manager 销毁时对 stale vehicles 的 assert。
-- **UMG**：推迟 UCheckBox 和 UWidgetSwitcher 中 FieldNotify 广播，直到 Slate widget 更新。
-- **World Light Grid**：收紧 CVar 钳位，防止误设过高 r.Forward.WorldLightGrid.Resolution 时因内存不足而崩溃。
-
-## 🔧 API 变更
-
-- 移除 FPrimitiveSceneInfo::AddStaticMeshes 和 FPrimitiveSceneInfo::UpdateStaticMeshes 中未使用的参数。
-- 新增 GRHIGlobals.RayTracing.SupportsAsyncRayTraceDispatchIndirect 全局变量，用于检查平台是否支持异步 compute 上的间接 raygen dispatch。
-- 支持在 FD3D12CommandContext 上覆盖 DispatchRays 行为。
-- RDG 新增 AddBarrierPass UAV 变体。
-- HWRT 数据迁移至 FRayTracingSceneExtension，相关 API 结构发生变化。
+- Web GPU bindings：映射用于写入的 buffer range 初始化为零，修正填充长度被误传为结束偏移的问题。
+- Web RHI：只读深度或模板的 pass 不再记录 render bundles，因为浏览器忽略 bundle 的只读标志；writable-depth 跟进修复了 multisampled limit warning、WebKit detector、depth copy stats 和 contracts。
+- Wasm RHI：draws 仅在更新之前排队的工作完成后绑定流式纹理引用的新 target。
+- Web page：无 GPU adapter 时提示硬件加速可能关闭并给出开启方法，而非直接归咎 GPU 或驱动。
+- Web page：file:// 打开的页面提示通过服务器提供服务并命名 Play_ launcher，而非显示服务器头卡片。
+- Web page：deferred pick 与 forward pick 一样运行 2 个 task-graph workers；移动端两个 tier 均设置 phone worker 上限，Firefox 从 forward 启动，丢失设备时使用 forward fallback，Chromium 版本下限设为 133。
+- Web input：Slate 文本框中 Backspace 可正常删除。
+- Web：浏览器保持音频挂起时音频 mixer 继续渲染。
+- Web：安装引擎会 cook 项目在 NeverCookPluginContent 中列出的插件内容。
+- Lyra：语言设置仅列出当前构建可解析的 cultures。
+- Web platform：无 vendor 的 adapter 使用 unknown vendor id，避免 vendor 检查断言。
+- Wasm UAT：stage 命令删除页面的文件列表，确保 restaged kept stage 始终重新打包。
+- Wasm tooling：webdoctor.py 按引擎方式读取容器，并在 Shipping stage 传递正确 host。
+- Wasm：FPThreadEvent::Wait 在事件 mutex 外打开任务工作线程的 oversubscription scope。
+- Wasm：安装构建为项目挂载 Saved，使存档在重载后保留。
+- Wasm：Android pthread pool 调整为 24。
+- Wasm：Wasm_ASTC 保持 alpha 和 UI 纹理为 4x4 blocks，增量 cook 能识别其纹理规则。
+- Wasm：sky capture shadow extension 从 GetOnPostEngineInit() 创建，不再使用废弃的 OnPostEngineInit。
+- Textures：在要求整块 mip 的 RHI 如 WebGPU 上，纹理资源的第一 mip 保持完整 block。
+- Mover：用户自定义结构在数据存在期间保持其 struct type 存活。
+- Mover：在 Uninit 中释放状态机工作数据，不必等到 C++ 析构。
+- Lumen scene direct lighting：对每光源类型的光 tile dispatches 进行 wrap，避免超出 group count 限制。
+- Linux：DeleteFile 和 DeleteDirectory 移除符号链接，包括悬空链接。
+- Mac：替换 UnrealEditorServices 中废弃的 AppKit API。
+- Unreal Canvas Bridge：编辑器退出时若服务器下载进行中，不再崩溃。
+- Unreal Canvas converter：先写出 job 的包到磁盘，待 derived-data cache 持有导入构建内容后再应答 job。
