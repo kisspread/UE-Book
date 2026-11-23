@@ -1,46 +1,70 @@
 ---
-title: '2026-11-16 引擎周报'
-date: '2026-11-16'
+title: '2026-11-23 引擎周报'
+date: '2026-11-23'
 ---
-
-# 2026-11-16 引擎周报
+# 2026-11-23 引擎周报
 
 ## ✨ 新功能
-
-- StateTree 现已支持 transition payloads，可在状态转换之间传递数据，并相应调整了 transition payload 相关的 static_asserts。
-- HWRT/RHI 新增 RHICopyAccelerationStructures，可将已构建的 BLAS 克隆到另一个具有等价拓扑的 geometry 中，之后可基于该 geometry 自身的 vertex buffers 进行更新。
-- Static Meshes 对 OMM（Opacity Micromap）的支持已落地第一阶段，并提供了基础 opacity micromap ray tracing 测试与 shared micromap curve helpers。
-- LumenWorldCache 新增 clipmap 控制参数：r.Lumen.WorldCache.FirstClipmapRadius 和 r.Lumen.WorldCache.ClipmapResolution。
-- Web 错误卡上的“发送报告”按钮现在会说明报告发送的内容和去向。
+- Blueprint Graph DSL 与 Toolsets：C++ DSL 成为唯一 Blueprint graph DSL，扩展覆盖 graph 中 agent 会遇到的其余内容；declaration tools 覆盖 My Blueprint 面板和 Class Settings。
+- 新增 LiveDebugView 实验性引擎插件，提供 agent-drivable runtime debug views 和 trackers，并以 MCP tools 形式服务。
+- ShellToolset 工具抽取到独立的实验性插件。
+- IK Retargeter 新增 Python emitter，可通过 script API 重建 IK Rigs 和 IK Retargeters，并支持逐属性比较。
+- ShaderAudit 新增 Python API，用于加载 SHK 文件并通过 pandas 查询 shader。
+- 新增 Static mesh 到 Skeletal mesh 转换的 Python 和 MCP 访问。
+- Chooser Table Editor 增加 row groups。
+- LevelToolset 增加对 saved level actors、loaded-only actor search 和 level instance levels 的支持。
+- ActorToolset 增加对 editor-only components 和 used materials 的支持。
+- 新增 World Partition per-cell streaming 数据在 cook 期间的可选 CSV 导出，由新的 console variable 控制，供下游工具使用。
+- UMG WidgetBlueprintEditorSubsystem 新增 Palette 收藏与分类的脚本访问：GetPaletteFavorites、AddPaletteFavorite、RemovePaletteFavorite、Get/SetPaletteCategory，并让对应 UI 控件路由到这些函数。
+- WidgetAnimationToolset 新增脚本能力：设置 Widget Material track 的 brush property path，列出 widget animation 的 bindings 及其 widgets，获取/设置 2D transform section 的 active channels。
+- Level Sequence audio section 新增“是否重复”的脚本 getter。
+- Python Levels/Worlds 暴露 World Partition streaming descriptor 给 Python。
+- Smart Objects 和 World Conditions 从 Python 编辑时现在会应用 details panel 所应用的 repairs 和 query compilation，并补充缺失的 script entry points。
+- MaterialEditingLibrary 将 VertexColor 及类似节点的未命名 RGB 输出命名为 "RGB"。
+- PIE 启动时记录每个新进程的日志文件，并在 dedicated server 进程开始监听时向脚本报告。
+- EDA 将 Python interpreter 报告为 sys.executable，并在 execute_python usage text 中加入 level-change 指引。
+- Unreal Canvas Bridge 改进：Build Source 在所有引擎上从 Local 路径开始；支持将资产拖放到 3D preview card 上，并且不会覆盖被拖拽文件旁边的同名文件。
 
 ## 🚀 重大变更
-
-- HWRT 的 BLAS compaction 现在由 FRayTracingGeometryManager 显式执行，默认开启（r.RayTracing.Compaction.Explicit=1）；如需回退到旧的 RHI 内部 compaction，可在启动时将该值设为 0。同时移除了 RHI 侧的 BLAS compaction request handlers。
-- HWRT/RHI 不再在 RHI 层维护 ray tracing geometry streaming 概念。FRayTracingGeometry 的 streaming 状态改为统一的 NotStreamable / StreamedOut / StreamedIn 枚举，并通过 SetInitializer 设置。
+- UMG 的 WidgetAnimationToolset 插件被 UWidgetBlueprintEditorSubsystem 中的函数替代，相关脚本和集成需要迁移。
+- Blueprint Graph DSL 中 C++ DSL 成为唯一 DSL，替代其他实现；declaration tools 相应扩展。
+- ShellToolset 移至实验性插件，原有集成方式改变。
+- ToolsetRegistry 的 cooked-runtime toolset 支持现在从 AIRuntimeCallable tools 推断，替代手动配置。
 
 ## ⚡ 性能优化
-
-- FAnimNode_SaveCachedPose 优化：当缓存的 pose 不会被复用时，不再执行缓存。
-- HWRT/RHI 仅在实际能够读取 ray tracing hit group parameters 时才进行设置，避免无用参数设置开销。
-- LumenWorldCache 在 mod 256 cell coordinate keys 回绕前主动 evict 条目，避免因 key 回绕导致缓存定位错误。
+- GeometryScript 的 primitive-from-list 函数修复 int32 尺寸溢出和避免无界分配，降低资源风险。
+- PythonScriptPlugin 的 Python wrapper type rebuilds 现在持有 GIL，提升并发重建的线程安全性。
 
 ## 🐛 Bug 修复
-
-- WebGPU RHI 多项修复：render pass 内记录的 CPU buffer upload 不再错误切分 pass；非 4 字节对齐的 CPU buffer write 会保留相邻字节；pipeline 因 internal 或 out-of-memory 错误创建失败后不会继续保持绑定；GPU frame time 会忽略不推进的 begin-of-pass timestamp；主线程 WebGPU 调用抛出 JavaScript exception 时通过错误卡停止游戏；prewarm 记录的 pipeline 可在 canvas format 不同的 device 上正确匹配。
-- Web/Wasm 平台修复：IO-worker size 请求对瞬时 HTTP 错误进行重试，失败时不再将 size 误报为 0 字节；UBT 在 no-op Wasm 构建中保留 makefile，确保新添加文件在下次构建可被发现；查询 mask 在长串无 `=` 的 `?` 下改为线性时间处理；fatal stop 后游戏不再在错误卡背后继续运行；修复 Staging 日志占位符与参数数量不匹配的问题；crash report 仅发送固定字段列表并记录 CrashGUID，构建机写入带 line records 的 crash symbols。
-- Web shader format 现在会转换 memory-only barriers，而不是直接 stub 掉整个 shader。
-- nDisplay：从 camera view 获取 DoF focal length，保证 tiled 和 overscanned inner frustums 保留相机的深度场效果。
-- Mac WebBrowser：正确处理 WKWebView 下载，避免将下载内容当作导航加载。
-- Pose Driver：修复当前 LOD 剥离 source bone 时发生的崩溃。
-- CommonUI：修复关闭 modal 后焦点恢复到已禁用 widget 的问题；KeepSharedInputModeTags 现在按 local player 统计 active activatable widgets 添加或移除的 input mode tags，共享 tag 会保留到最后一个持有它的 widget 取消激活。
-- FAnimNode_SaveCachedPose：防止循环 cached pose link 导致的重入 Update/Evaluate。
-- TmvMedia Transcoder：修复 transcode 在取消、超时或失败时仍有帧在编码导致的崩溃。
-- UMG：修复 ToggleWidgetAsVariable 会修改属于其他 Widget Blueprint 的 widget 的问题。
-- RDG：修复多个 AddSetupTask overload 未透传 WaitPoint 的问题。
-- HWRT：修复 ray tracing 禁用期间创建的 skeletal mesh static geometry streaming 状态，并在 LOD stream-in 时跳过已 evicted 的 geometry。
-- UAF：为 RunScriptEventByName 添加 UE_MT_SCOPED_WRITE_ACCESS guard。
+- GeometryScript：修复 CopyBonesFromMesh 在 weighted root bone 及合法但 zero-bone source 下的 fatal checks；修复 ComputeTangents 使用负 UV layer 时的崩溃。
+- PythonScriptPlugin：绑定 Python callable 时若 Blueprint 在 bind 期间重新编译，不再读取已释放的 delegate 数据；移除重复的 RebuildGIL 声明。
+- Python Levels/Worlds：编辑器替换 level 时释放对 open level package 的 Python 引用。
+- IK Retargeter：实验性 op controllers 在 op 消失后拒绝操作、标记 retargeter modified，并通过 ApplySettings 应用设置；脚本 setter 分配 asset reference 时现在咨询 editor 的 asset reference filter，覆盖嵌套引用、op controllers 和 text setters。
+- Physics toolsets：加载 PhysicsAssetEditor 后再请求 subsystem，修复从未打开 physics asset 的编辑器中 toolset 不工作的问题。
+- 防止 Python 使用 LightWeightInstanceFactory 时崩溃。
+- nDisplay：nDisplay Blueprint 在 config factory 外部创建时会获得 factory 的 config setup；通过 config factory 导入 .ndisplay 文件时读取文件而非 assert，且 factory 拥有 .ndisplay 导入；六个 setter 的脚本编辑现在记录用于 undo 和 Multi-User。
+- Movie Render Graph：AddLabeledEdge 在成功创建 edge 时返回 true。
+- CameraCalibrationCore：当 after-tonemap lens distortion pass 的 material 未解析为 post-process material 时跳过该 pass，而不是断言。
+- Mutable：合入 null-dereference 和 pending-update 修复，不包含 scripting refactor。
+- Toolset Level：GetFolders 不再在 actor 移动后列出其保存的旧文件夹。
+- WidgetAnimationToolset：RemoveWidgetAnimation 现在刷新打开的 Widget Blueprint 编辑器的 Animations 列表。
+- PackFactory：加固 .upack 导入，抵御不可信 pack。
+- Audio PATT：在编辑器中将 Synesthesia Meter 切换到 Peak 或 TruePeak 时设置 zero attack 和 digital response。
+- MetaHuman PATT：ProcessPerformance 保留自定义 mono face models，而不是重置为默认值。
+- MVVMToolset：ListBindingConversionOptions 按 binding type 比较 function-backed fields，setter destinations 不再被误报为 unbridgeable；并说明无法比较两个字段的原因。
+- UAnimationBlueprintLibrary::AddAnimationNotifyStateEvent 现在会调用 OnAnimNotifyCreatedInEditor。
+- ToolsetRegistry：在 baked tool schemas 中记录 $ref、$id、definitions 等 location keyword 错误；PerfToolset 的递归树改内联描述。
+- Cheat extension 注册从 CDO constructors 移至 StartupModule/ShutdownModule，并在 module shutdown 时移除扩展。
 
 ## 🔧 API 变更
+- AssetTools 新增 IAssetTools::FindAssetByObjectPath，可查找 package 已存在磁盘但尚未进入 asset registry 的资产；ToolsetRegistry 的 AssetExists 使用该接口。
+- UMG UWidgetBlueprintEditorSubsystem 新增多个 Palette 收藏与分类函数，并替代 WidgetAnimationToolset 插件。
+- WidgetAnimationToolset 新增脚本设置 brush property path、列出 bindings、操作 2D transform section active channels 的能力。
+- Level Sequence audio section 新增 repeats getter。
+- Python Levels/Worlds 暴露 World Partition streaming descriptor。
+- ShaderAudit 新增 Python API。
+- Smart Objects 和 World Conditions 补充 script entry points。
+- MaterialEditingLibrary 将未命名 RGB 输出命名为 "RGB"。
 
-- HWRT/RHI：FRayTracingGeometry 的 streaming state 改为统一枚举（NotStreamable / StreamedOut / StreamedIn），并通过 SetInitializer 设置；新增 FRayTracingCompactedSizeCS 全局 shader，用于需要 compute pass 写入 BLAS compacted sizes 的平台；向高层代码开放 BLAS compaction 功能。
-- StateTree：新增 transition payload 支持，相关 static_asserts 由 TIsDerivedFrom 替换为新的检查方式。
+## ⚠️ 废弃预告
+- ToolsetRegistry 的 EnableCookedRuntimeSupport 已废弃，cooked-runtime toolset 支持改为从 AIRuntimeCallable tools 自动推断。
